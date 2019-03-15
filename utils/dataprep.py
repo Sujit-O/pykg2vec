@@ -13,6 +13,7 @@ import progressbar
 import urllib.request
 import shutil
 import tarfile
+from random import randint, choice
 
 
 class Triple(object):
@@ -20,18 +21,6 @@ class Triple(object):
         self.h = head
         self.r = relation
         self.t = tail
-
-# def cmp_head(a, b):
-#     return (a.h < b.h) or (a.h == b.h and a.r < b.r) or (a.h == b.h and a.r == b.r and a.t < b.t)
-#
-# def cmp_tail(a,b):
-#     return (a.t < b.t) or (a.t == b.t and a.r < b.r) or (a.t == b.t and a.r == b.r and a.h < b.h)
-#
-# def minimal(a,b):
-#     return a if a<b else b
-#
-# def cmp_list(a,b):
-#     return minimal(a.h, a.t) > minimal(b.h, b.t)
 
 def parse_line(line):
     h, r, t = line.split('\t')
@@ -48,7 +37,7 @@ def extract(tar_path, extract_path='.'):
             extract(item.name, "./" + item.name[:item.name.rfind('/')])
 
 class DataPrep(object):
-    def __init__(self, conf = None):
+    def __init__(self, conf = None, dataset='Freebase'):
         # self.id = conf.id
         # self.batch_h = conf.batch_h
         # self.batch_t = conf.batch_t
@@ -57,22 +46,19 @@ class DataPrep(object):
         # self.batchSize  = conf.batchSize
         # self.negRate    = conf.negRate
         # self.negRelRate = conf.negRelRate
-        con = GlobalConfig()
-        if not os.path.exists('../dataset/Freebase/'):
-            os.mkdir('../dataset/Freebase/')
+        self.config = GlobalConfig(dataset=dataset)
 
-            with urllib.request.urlopen(con.url_FB15) as response, open('../dataset/Freebase/FB15k.tgz', 'wb') as out_file:
+        if not os.path.exists(self.config.dataset.root_path):
+            os.mkdir(self.config.dataset.root_path)
+
+            with urllib.request.urlopen(self.config.dataset.url)\
+                    as response, open(self.config.dataset.tar, 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
             try:
-                extract('../dataset/Freebase/FB15k.tgz','../dataset/Freebase/')
+                extract(self.config.dataset.tar,self.config.dataset.root_path)
             except Exception as e:
                 print("Could not extract the tgz file!")
                 print(type(e),e.args)
-
-        if conf is None:
-            self.path_FB15  = con.path_FB15
-        else:
-            self.path_FB15  = conf.path
 
         self.trainTriple = []
         self.testTriple  = []
@@ -87,11 +73,12 @@ class DataPrep(object):
         self.tot_r      = 0
         self.tot_triple = 0
 
+
     def read_triple(self, datatype=None):
         if datatype is None:
             datatype = ['train']
         for data in datatype:
-            with open(self.path_FB15+data+'.txt','r') as f:
+            with open(self.config.dataset.donwnloaded_path +data+'.txt','r') as f:
                 lines=f.readlines()
                 for l in lines:
                     if data == 'train':
@@ -156,11 +143,11 @@ class DataPrep(object):
             idx += 1
         self.tot_r = idx - (self.tot_shared + self.tot_only_h + self.tot_only_t)
 
-        if not os.path.isfile('../dataset/Freebase/FB15k/FB15k_entity2idx.pkl'):
-            with open('../dataset/Freebase/FB15k/FB15k_entity2idx.pkl', 'wb') as f:
+        if not os.path.isfile(self.config.dataset.entity2idx_path):
+            with open(self.config.dataset.entity2idx_path, 'wb') as f:
                 pickle.dump(self.entity2idx, f)
-        if not os.path.isfile('../dataset/Freebase/FB15k/FB15k_idx2entity.pkl'):
-            with open('../dataset/Freebase/FB15k/FB15k_idx2entity.pkl', 'wb') as f:
+        if not os.path.isfile(self.config.dataset.idx2entity_path):
+            with open(self.config.dataset.idx2entity_path, 'wb') as f:
                 pickle.dump(self.idx2entity, f)
 
         print("\n----------Train Triple Stats---------------")
@@ -171,95 +158,212 @@ class DataPrep(object):
         print("Total Relations          :", self.tot_r)
         print("-------------------------------------------")
 
-    def corrupt_head(self):
-        if not self.trainTriple:
-            self.read_triple()
-        #TODO: Corrupt the head for the training data
-        pass
-
-    def corrupt_tail(self):
-        if not self.trainTriple:
-            self.read_triple()
-        #TODO: Corrupt the tail for the training data
-        pass
-
     def prepare_data(self):
         if not self.entity2idx:
-            if os.path.isfile('../dataset/Freebase/FB15k/FB15k_entity2idx.pkl'):
-                with open('../dataset/Freebase/FB15k/FB15k_entity2idx.pkl', 'rb') as f:
+            if os.path.isfile(self.config.dataset.entity2idx_path):
+                with open(self.config.dataset.entity2idx_path, 'rb') as f:
                     self.entity2idx=pickle.load(f)
             else:
                 self.triple_idx_and_stats()
         unseen_entities = []
         removed_triples = []
+
+        pos_triples_cnt = 0
+        neg_triples_cnt = 0
         for data in ['train', 'valid', 'test']:
-            with open(self.path_FB15 + "%s.txt" % data, 'r') as f:
+            with open(self.config.dataset.downloaded_path + "%s.txt" % data, 'r') as f:
                 lines = f.readlines()
 
                 head_list = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
                                      dtype='float32')
-                rel_list = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
+                rel_list  = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
                                      dtype='float32')
                 tail_list = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
                                      dtype='float32')
 
+                head_list_neg = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
+                                          dtype='float32')
+                rel_list_neg  = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
+                                         dtype='float32')
+                tail_list_neg = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
+                                          dtype='float32')
+                pos_triples = {}
+                neg_triples = {}
+                head_idx = []
+                tail_idx = []
+                rel_idx  = []
                 ct = 0
+                ct_neg = 0
                 print("\nProcessing: %s dataset"%data)
                 with progressbar.ProgressBar(max_value=len(lines)) as bar:
                     for i,line in enumerate(lines):
                         triple = parse_line(line)
                         if triple.h in self.entity2idx and triple.t in self.entity2idx and triple.r in self.entity2idx:
                             head_list[self.entity2idx[triple.h], ct] = 1
+                            head_idx.append(self.entity2idx[triple.h])
                             rel_list[self.entity2idx[triple.r], ct]  = 1
+                            rel_idx.append(self.entity2idx[triple.r])
                             tail_list[self.entity2idx[triple.t], ct] = 1
+                            tail_idx.append(self.entity2idx[triple.t])
+                            pos_triples[(self.entity2idx[triple.h],
+                                           self.entity2idx[triple.r],
+                                           self.entity2idx[triple.t])] = 1
                             ct += 1
                         else:
-                            if triple.h in self.entity2idx:
-                                unseen_entities += [triple.h]
-                            if triple.r in self.entity2idx:
-                                unseen_entities += [triple.r]
-                            if triple.t in self.entity2idx:
-                                unseen_entities += [triple.t]
-                            removed_triples += [line]
+                            head_list_neg[self.entity2idx[triple.h], ct_neg] = 1
+                            rel_list_neg[self.entity2idx[triple.r], ct_neg] = 1
+                            tail_list_neg[self.entity2idx[triple.t], ct_neg] = 1
+                            neg_triples[(self.entity2idx[triple.h],
+                                           self.entity2idx[triple.r],
+                                           self.entity2idx[triple.t])] = 1
+                            ct_neg += 1
+                            # if triple.h in self.entity2idx:
+                            #     unseen_entities += [triple.h]
+                            # if triple.r in self.entity2idx:
+                            #     unseen_entities += [triple.r]
+                            # if triple.t in self.entity2idx:
+                            #     unseen_entities += [triple.t]
+                            # removed_triples += [line]
                         bar.update(i)
 
-                    if not os.path.isfile('../dataset/Freebase/FB15k/FB15k_%s_head.pkl'% data):
-                        with open('../dataset/Freebase/FB15k/FB15k_%s_head.pkl'% data, 'wb') as g:
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_head_pos.pkl'% data):
+                        with open(self.config.dataset.prepared_data_path+'%s_head_pos.pkl'% data, 'wb') as g:
                             pickle.dump(head_list.tocsr(), g)
 
-                    if not os.path.isfile('../dataset/Freebase/FB15k/FB15k_%s_tail.pkl'% data):
-                        with open('../dataset/Freebase/FB15k/FB15k_%s_tail.pkl'% data, 'wb') as g:
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_tail_pos.pkl'% data):
+                        with open(self.config.dataset.prepared_data_path+'%s_tail_pos.pkl'% data, 'wb') as g:
                             pickle.dump(tail_list.tocsr(), g)
 
-                    if not os.path.isfile('../dataset/Freebase/FB15k/FB15k_%s_rel.pkl' % data):
-                        with open('../dataset/Freebase/FB15k/FB15k_%s_rel.pkl' % data, 'wb') as g:
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_rel_pos.pkl' % data):
+                        with open(self.config.dataset.prepared_data_path+'%s_rel_pos.pkl' % data, 'wb') as g:
                             pickle.dump(rel_list.tocsr(), g)
 
+                pos_triples_cnt+=len(pos_triples)
+
+                print("\nGenerating Corrupted Data: %s dataset" % data)
+                #TODO: Check when (train, test, validate) and how much to corrupt the data
+                with progressbar.ProgressBar(max_value=len(lines)) as bar:
+                    for i, triple in enumerate(list(pos_triples.keys())):
+                        rand_num=randint(0,900)
+                        if rand_num<300:
+                            # Corrupt Tail
+                            idx = choice(tail_idx)
+                            break_cnt=0
+                            flag=False
+                            while ((triple[0], triple[1], idx) in pos_triples
+                                   or (triple[0], triple[1], idx) in neg_triples):
+                                idx = choice(tail_idx)
+                                break_cnt+=1
+                                if break_cnt>=100:
+                                    flag=True
+                                    break
+                            if flag:
+                                continue
+
+                            head_list_neg[triple[0], ct_neg] = 1
+                            rel_list_neg[triple[1], ct_neg]  = 1
+                            tail_list_neg[idx, ct_neg]       = 1
+                            neg_triples[(triple[0],
+                                           triple[1],
+                                           idx)] = 1
+                            ct_neg += 1
+
+                        elif 300<=rand_num<600:
+                            #Corrupt Head
+                            idx = choice(head_idx)
+                            break_cnt = 0
+                            flag = False
+                            while ((idx, triple[1], triple[2]) in pos_triples or
+                            (idx, triple[1], triple[2]) in neg_triples):
+                                idx = choice(head_idx)
+                                break_cnt += 1
+                                if break_cnt >= 100:
+                                    flag = True
+                                    break
+                            if flag:
+                                continue
+
+                            head_list_neg[idx, ct_neg] = 1
+                            rel_list_neg[triple[1], ct_neg] = 1
+                            tail_list_neg[triple[2], ct_neg] = 1
+                            neg_triples[(idx,
+                                             triple[1],
+                                             triple[2])] = 1
+                            ct_neg += 1
+                        else:
+                            #Corrupt relation
+                            idx = choice(rel_idx)
+                            break_cnt = 0
+                            flag = False
+                            while (triple[0], idx, triple[2]) in pos_triples or\
+                                   (triple[0], idx, triple[2]) in neg_triples:
+                                idx = choice(rel_idx)
+                                break_cnt += 1
+                                if break_cnt >= 100:
+                                    flag = True
+                                    break
+                            if flag:
+                                continue
+
+                            head_list_neg[triple[0], ct_neg] = 1
+                            rel_list_neg[idx, ct_neg] = 1
+                            tail_list_neg[triple[2], ct_neg] = 1
+                            neg_triples[(triple[0],
+                                             idx,
+                                             triple[2])] = 1
+                            ct_neg += 1
+
+                        bar.update(i)
+
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_head_neg.pkl' % data):
+                        with open(self.config.dataset.prepared_data_path+'%s_head_neg.pkl' % data, 'wb') as g:
+                            pickle.dump(head_list_neg.tocsr(), g)
+
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_tail_neg.pkl' % data):
+                        with open(self.config.dataset.prepared_data_path+'%s_tail_neg.pkl' % data, 'wb') as g:
+                            pickle.dump(tail_list_neg.tocsr(), g)
+
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_rel_neg.pkl' % data):
+                        with open(self.config.dataset.prepared_data_path+'%s_rel_neg.pkl' % data, 'wb') as g:
+                            pickle.dump(rel_list_neg.tocsr(), g)
+
+                    neg_triples_cnt+=len(neg_triples)
+
         print("\n----------Data Prep Results--------------")
+        print("Total Positive Triples :", pos_triples_cnt)
+        print("Total Negative Triples :", neg_triples_cnt)
         print("Total Unseen Triples   :", len(list(set(removed_triples))))
         print("Total Unseen Entities  :", len(list(set(unseen_entities))))
         print('-------------------------------------------')
 
     def batch_generator(self, data="train"):
-        if not os.path.isfile('../dataset/Freebase/FB15k/FB15k_%s_head.pkl' % data):
+        if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_head_pos.pkl' % data)\
+                or not os.path.isfile(self.config.dataset.prepared_data_path+'%s_head_neg.pkl' % data):
             self.prepare_data()
 
-        with open('../dataset/Freebase/FB15k/FB15k_%s_head.pkl' % data, 'rb') as g:
-            head_list = pickle.load(g)
+        with open(self.config.dataset.prepared_data_path+'%s_head_pos.pkl' % data, 'rb') as g:
+            head_list_pos = pickle.load(g)
 
-        with open('../dataset/Freebase/FB15k/FB15k_%s_tail.pkl' % data, 'rb') as g:
-            tail_list =pickle.dump(g)
+        with open(self.config.dataset.prepared_data_path+'%s_tail_pos.pkl' % data, 'rb') as g:
+            tail_list_pos = pickle.load(g)
 
-        with open('../dataset/Freebase/FB15k/FB15k_%s_rel.pkl' % data, 'rb') as g:
-            rel_list = pickle.dump(g)
+        with open(self.config.dataset.prepared_data_path+'%s_rel_pos.pkl' % data, 'rb') as g:
+            rel_list_pos = pickle.load(g)
 
-        #TODO: Corrupt the head list
-        #TODO: Corrupt the tail list
+        with open(self.config.dataset.prepared_data_path+'%s_head_neg.pkl' % data, 'rb') as g:
+            head_list_neg = pickle.load(g)
+
+        with open(self.config.dataset.prepared_data_path+'%s_tail_neg.pkl' % data, 'rb') as g:
+            tail_list_neg = pickle.load(g)
+
+        with open(self.config.dataset.prepared_data_path+'%s_rel_neg.pkl' % data, 'rb') as g:
+            rel_list_neg = pickle.load(g)
+
         #TODO: Yield the batch size
         pass
 
 if __name__=='__main__':
-    data_handler = DataPrep()
+    data_handler = DataPrep('Freebase')
     data_handler.prepare_data()
 
 

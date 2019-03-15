@@ -3,10 +3,24 @@
 """
 We store the base configuration of the models here
 """
-class GlobalConfig(object):
+
+class Freebase(object):
 	def __init__(self):
-		self.url_FB15  =  "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
-		self.path_FB15 = '../dataset/Freebase/FB15k/freebase_mtr100_mte100-'
+		self.root_path = '../dataset/Freebase/'
+		self.tar  = '../dataset/Freebase/FB15k.tgz'
+		self.url  =  "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
+		self.downloaded_path    = '../dataset/Freebase/FB15k/freebase_mtr100_mte100-'
+		self.prepared_data_path = '../dataset/Freebase/FB15k/FB15k_'
+		self.entity2idx_path    = '../dataset/Freebase/FB15k/FB15k_entity2idx.pkl'
+		self.idx2entity_path    = '../dataset/Freebase/FB15k/FB15k_idx2entity.pkl'
+
+class GlobalConfig(object):
+	def __init__(self, dataset = 'Freebase'):
+		if dataset =='Freebase':
+			self.dataset = Freebase()
+		else:
+			print("Invalid Dataset!")
+			return
 
 
 class TransEConfig(object):
