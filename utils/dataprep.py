@@ -63,6 +63,7 @@ class DataPrep(object):
         self.tot_shared = 0
         self.tot_r      = 0
         self.tot_triple = 0
+        self.tot_entity = 0
 
 
     def read_triple(self, datatype=None):
@@ -140,6 +141,8 @@ class DataPrep(object):
         if not os.path.isfile(self.config.dataset.idx2entity_path):
             with open(self.config.dataset.idx2entity_path, 'wb') as f:
                 pickle.dump(self.idx2entity, f)
+
+        self.tot_entity = self.tot_only_h+self.tot_only_t-self.tot_shared
 
         print("\n----------Train Triple Stats---------------")
         print("Total Training Triples   :", self.tot_triple)
@@ -315,7 +318,7 @@ class DataPrep(object):
         print("Total Unseen Entities  :", len(list(set(unseen_entities))))
         print('-------------------------------------------')
 
-    def batch_generator(self, data="train"):
+    def batch_generator(self, batch=128, data="train"):
         if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_head_pos.pkl' % data)\
                 or not os.path.isfile(self.config.dataset.prepared_data_path+'%s_head_neg.pkl' % data):
             self.prepare_data()
@@ -338,20 +341,23 @@ class DataPrep(object):
         with open(self.config.dataset.prepared_data_path+'%s_rel_neg.pkl' % data, 'rb') as g:
             rel_list_neg = (pickle.load(g))
 
-        number_of_batches = (len(head_list_pos)) // self.config.batch
+        number_of_batches = (len(head_list_pos)) // batch
         print("Number of bacthes:", number_of_batches)
         counter = 0
         while True:
-            ph = head_list_pos[self.config.batch*counter:self.config.batch*(counter + 1)]
-            pr = rel_list_pos[self.config.batch * counter:self.config.batch * (counter + 1)]
-            pt = tail_list_pos[self.config.batch * counter:self.config.batch * (counter + 1)]
+            ph = head_list_pos[batch*counter:batch*(counter + 1)]
+            pr = rel_list_pos[batch * counter:batch * (counter + 1)]
+            pt = tail_list_pos[batch * counter:batch * (counter + 1)]
 
-            nh = head_list_neg[self.config.batch * counter:self.config.batch * (counter + 1)]
-            nr = rel_list_neg[self.config.batch * counter:self.config.batch * (counter + 1)]
-            nt = tail_list_neg[self.config.batch * counter:self.config.batch * (counter + 1)]
+            nh = head_list_neg[batch * counter:batch * (counter + 1)]
+            nr = rel_list_neg[batch * counter:batch * (counter + 1)]
+            nt = tail_list_neg[batch * counter:batch * (counter + 1)]
 
             counter += 1
-            yield ph, pr, pt, nh, nr, nt
+            if data=='Train':
+                yield ph, pr, pt, nh, nr, nt
+            else:
+                yield ph, pr, pt
             if counter == number_of_batches:
                 counter = 0
 

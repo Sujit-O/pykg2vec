@@ -15,14 +15,12 @@ class Freebase(object):
 		self.idx2entity_path    = '../dataset/Freebase/FB15k/FB15k_idx2entity.pkl'
 
 class GlobalConfig(object):
-	def __init__(self, dataset = 'Freebase', batch = 128):
+	def __init__(self, dataset = 'Freebase'):
 		if dataset =='Freebase':
 			self.dataset = Freebase()
 		else:
 			print("Invalid Dataset!")
 			return
-
-		self.batch = batch
 
 
 class TransEConfig(object):
@@ -32,10 +30,10 @@ class TransEConfig(object):
 		self.loadFromData  = False
 		self.L1_flag       = True
 		self.hidden_size   = 100
-		self.nbatches      = 100
+		self.batch_size    = 128
 		self.entity        = 0
 		self.relation      = 0
-		self.trainTimes    = 1000
+		self.epochs        = 10000
 		self.margin        = 1.0
 
 
