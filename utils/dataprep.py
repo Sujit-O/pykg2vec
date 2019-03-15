@@ -7,8 +7,6 @@ import numpy as np
 from config.config import GlobalConfig
 import pickle
 import os
-import scipy.sparse as sp
-import time
 import progressbar
 import urllib.request
 import shutil
@@ -37,15 +35,8 @@ def extract(tar_path, extract_path='.'):
             extract(item.name, "./" + item.name[:item.name.rfind('/')])
 
 class DataPrep(object):
-    def __init__(self, conf = None, dataset='Freebase'):
-        # self.id = conf.id
-        # self.batch_h = conf.batch_h
-        # self.batch_t = conf.batch_t
-        # self.batch_r = conf.batch_r
-        # self.batch_y = conf.batch_y
-        # self.batchSize  = conf.batchSize
-        # self.negRate    = conf.negRate
-        # self.negRelRate = conf.negRelRate
+    def __init__(self, dataset='Freebase'):
+
         self.config = GlobalConfig(dataset=dataset)
 
         if not os.path.exists(self.config.dataset.root_path):
@@ -78,7 +69,7 @@ class DataPrep(object):
         if datatype is None:
             datatype = ['train']
         for data in datatype:
-            with open(self.config.dataset.donwnloaded_path +data+'.txt','r') as f:
+            with open(self.config.dataset.downloaded_path +data+'.txt','r') as f:
                 lines=f.readlines()
                 for l in lines:
                     if data == 'train':
@@ -165,78 +156,65 @@ class DataPrep(object):
                     self.entity2idx=pickle.load(f)
             else:
                 self.triple_idx_and_stats()
+
         unseen_entities = []
         removed_triples = []
 
         pos_triples_cnt = 0
         neg_triples_cnt = 0
         for data in ['train', 'valid', 'test']:
+            if os.path.isfile(self.config.dataset.prepared_data_path + '%s_head_pos.pkl' % data) \
+                    and os.path.isfile(self.config.dataset.prepared_data_path + '%s_head_neg.pkl' % data):
+                return
             with open(self.config.dataset.downloaded_path + "%s.txt" % data, 'r') as f:
                 lines = f.readlines()
 
-                head_list = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
-                                     dtype='float32')
-                rel_list  = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
-                                     dtype='float32')
-                tail_list = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
-                                     dtype='float32')
+                head_list = []
+                rel_list  = []
+                tail_list = []
 
-                head_list_neg = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
-                                          dtype='float32')
-                rel_list_neg  = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
-                                         dtype='float32')
-                tail_list_neg = sp.lil_matrix((np.max(list(self.entity2idx.values())) + 1, len(lines)),
-                                          dtype='float32')
+                head_list_neg = []
+                rel_list_neg  = []
+                tail_list_neg = []
                 pos_triples = {}
                 neg_triples = {}
-                head_idx = []
-                tail_idx = []
-                rel_idx  = []
-                ct = 0
-                ct_neg = 0
                 print("\nProcessing: %s dataset"%data)
                 with progressbar.ProgressBar(max_value=len(lines)) as bar:
                     for i,line in enumerate(lines):
                         triple = parse_line(line)
                         if triple.h in self.entity2idx and triple.t in self.entity2idx and triple.r in self.entity2idx:
-                            head_list[self.entity2idx[triple.h], ct] = 1
-                            head_idx.append(self.entity2idx[triple.h])
-                            rel_list[self.entity2idx[triple.r], ct]  = 1
-                            rel_idx.append(self.entity2idx[triple.r])
-                            tail_list[self.entity2idx[triple.t], ct] = 1
-                            tail_idx.append(self.entity2idx[triple.t])
+                            head_list.append(self.entity2idx[triple.h])
+                            rel_list.append(self.entity2idx[triple.r])
+                            tail_list.append(self.entity2idx[triple.t])
+
                             pos_triples[(self.entity2idx[triple.h],
                                            self.entity2idx[triple.r],
                                            self.entity2idx[triple.t])] = 1
-                            ct += 1
                         else:
-                            head_list_neg[self.entity2idx[triple.h], ct_neg] = 1
-                            rel_list_neg[self.entity2idx[triple.r], ct_neg] = 1
-                            tail_list_neg[self.entity2idx[triple.t], ct_neg] = 1
-                            neg_triples[(self.entity2idx[triple.h],
-                                           self.entity2idx[triple.r],
-                                           self.entity2idx[triple.t])] = 1
-                            ct_neg += 1
-                            # if triple.h in self.entity2idx:
-                            #     unseen_entities += [triple.h]
-                            # if triple.r in self.entity2idx:
-                            #     unseen_entities += [triple.r]
-                            # if triple.t in self.entity2idx:
-                            #     unseen_entities += [triple.t]
-                            # removed_triples += [line]
+                            if triple.h in self.entity2idx:
+                                unseen_entities += [triple.h]
+                            if triple.r in self.entity2idx:
+                                unseen_entities += [triple.r]
+                            if triple.t in self.entity2idx:
+                                unseen_entities += [triple.t]
+                            removed_triples += [line]
                         bar.update(i)
 
-                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_head_pos.pkl'% data):
+                    print("\npos_heads:",head_list[:5])
+                    print("pos_tails:",tail_list[:5])
+                    print("pos_rels:",rel_list[:5])
+
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_head_pos.npz'% data):
                         with open(self.config.dataset.prepared_data_path+'%s_head_pos.pkl'% data, 'wb') as g:
-                            pickle.dump(head_list.tocsr(), g)
+                            pickle.dump(head_list, g)
 
-                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_tail_pos.pkl'% data):
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_tail_pos.npz'% data):
                         with open(self.config.dataset.prepared_data_path+'%s_tail_pos.pkl'% data, 'wb') as g:
-                            pickle.dump(tail_list.tocsr(), g)
+                            pickle.dump(tail_list, g)
 
-                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_rel_pos.pkl' % data):
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_rel_pos.npz' % data):
                         with open(self.config.dataset.prepared_data_path+'%s_rel_pos.pkl' % data, 'wb') as g:
-                            pickle.dump(rel_list.tocsr(), g)
+                            pickle.dump(rel_list, g)
 
                 pos_triples_cnt+=len(pos_triples)
 
@@ -247,12 +225,12 @@ class DataPrep(object):
                         rand_num=randint(0,900)
                         if rand_num<300:
                             # Corrupt Tail
-                            idx = choice(tail_idx)
+                            idx = choice(tail_list)
                             break_cnt=0
                             flag=False
                             while ((triple[0], triple[1], idx) in pos_triples
                                    or (triple[0], triple[1], idx) in neg_triples):
-                                idx = choice(tail_idx)
+                                idx = choice(tail_list)
                                 break_cnt+=1
                                 if break_cnt>=100:
                                     flag=True
@@ -260,22 +238,21 @@ class DataPrep(object):
                             if flag:
                                 continue
 
-                            head_list_neg[triple[0], ct_neg] = 1
-                            rel_list_neg[triple[1], ct_neg]  = 1
-                            tail_list_neg[idx, ct_neg]       = 1
+                            head_list_neg.append(triple[0])
+                            rel_list_neg.append(triple[1])
+                            tail_list_neg.append(idx)
                             neg_triples[(triple[0],
                                            triple[1],
                                            idx)] = 1
-                            ct_neg += 1
 
                         elif 300<=rand_num<600:
                             #Corrupt Head
-                            idx = choice(head_idx)
+                            idx = choice(head_list)
                             break_cnt = 0
                             flag = False
                             while ((idx, triple[1], triple[2]) in pos_triples or
                             (idx, triple[1], triple[2]) in neg_triples):
-                                idx = choice(head_idx)
+                                idx = choice(head_list)
                                 break_cnt += 1
                                 if break_cnt >= 100:
                                     flag = True
@@ -283,21 +260,20 @@ class DataPrep(object):
                             if flag:
                                 continue
 
-                            head_list_neg[idx, ct_neg] = 1
-                            rel_list_neg[triple[1], ct_neg] = 1
-                            tail_list_neg[triple[2], ct_neg] = 1
+                            head_list_neg.append(idx)
+                            rel_list_neg.append(triple[1])
+                            tail_list_neg.append(triple[2])
                             neg_triples[(idx,
                                              triple[1],
                                              triple[2])] = 1
-                            ct_neg += 1
                         else:
                             #Corrupt relation
-                            idx = choice(rel_idx)
+                            idx = choice(rel_list)
                             break_cnt = 0
                             flag = False
                             while (triple[0], idx, triple[2]) in pos_triples or\
                                    (triple[0], idx, triple[2]) in neg_triples:
-                                idx = choice(rel_idx)
+                                idx = choice(rel_list)
                                 break_cnt += 1
                                 if break_cnt >= 100:
                                     flag = True
@@ -305,27 +281,30 @@ class DataPrep(object):
                             if flag:
                                 continue
 
-                            head_list_neg[triple[0], ct_neg] = 1
-                            rel_list_neg[idx, ct_neg] = 1
-                            tail_list_neg[triple[2], ct_neg] = 1
+                            head_list_neg.append(triple[0])
+                            rel_list_neg.append(idx)
+                            tail_list_neg.append(triple[2])
                             neg_triples[(triple[0],
                                              idx,
                                              triple[2])] = 1
-                            ct_neg += 1
 
                         bar.update(i)
 
-                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_head_neg.pkl' % data):
+                    print("\nneg_heads:", head_list_neg[:5])
+                    print("neg_tails:", tail_list_neg[:5])
+                    print("neg_rels:", rel_list_neg[:5])
+
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_head_neg.npz' % data):
                         with open(self.config.dataset.prepared_data_path+'%s_head_neg.pkl' % data, 'wb') as g:
-                            pickle.dump(head_list_neg.tocsr(), g)
+                            pickle.dump(head_list_neg, g)
 
-                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_tail_neg.pkl' % data):
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_tail_neg.npz' % data):
                         with open(self.config.dataset.prepared_data_path+'%s_tail_neg.pkl' % data, 'wb') as g:
-                            pickle.dump(tail_list_neg.tocsr(), g)
+                            pickle.dump(tail_list_neg, g)
 
-                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_rel_neg.pkl' % data):
+                    if not os.path.isfile(self.config.dataset.prepared_data_path+'%s_rel_neg.npz' % data):
                         with open(self.config.dataset.prepared_data_path+'%s_rel_neg.pkl' % data, 'wb') as g:
-                            pickle.dump(rel_list_neg.tocsr(), g)
+                            pickle.dump(rel_list_neg, g)
 
                     neg_triples_cnt+=len(neg_triples)
 
@@ -342,29 +321,53 @@ class DataPrep(object):
             self.prepare_data()
 
         with open(self.config.dataset.prepared_data_path+'%s_head_pos.pkl' % data, 'rb') as g:
-            head_list_pos = pickle.load(g)
+            head_list_pos = (pickle.load(g))
 
         with open(self.config.dataset.prepared_data_path+'%s_tail_pos.pkl' % data, 'rb') as g:
-            tail_list_pos = pickle.load(g)
+            tail_list_pos = (pickle.load(g))
 
         with open(self.config.dataset.prepared_data_path+'%s_rel_pos.pkl' % data, 'rb') as g:
-            rel_list_pos = pickle.load(g)
+            rel_list_pos = (pickle.load(g))
 
         with open(self.config.dataset.prepared_data_path+'%s_head_neg.pkl' % data, 'rb') as g:
-            head_list_neg = pickle.load(g)
+            head_list_neg = (pickle.load(g))
 
         with open(self.config.dataset.prepared_data_path+'%s_tail_neg.pkl' % data, 'rb') as g:
-            tail_list_neg = pickle.load(g)
+            tail_list_neg = (pickle.load(g))
 
         with open(self.config.dataset.prepared_data_path+'%s_rel_neg.pkl' % data, 'rb') as g:
-            rel_list_neg = pickle.load(g)
+            rel_list_neg = (pickle.load(g))
 
-        #TODO: Yield the batch size
-        pass
+        number_of_batches = (len(head_list_pos)) // self.config.batch
+        print("Number of bacthes:", number_of_batches)
+        counter = 0
+        while True:
+            ph = head_list_pos[self.config.batch*counter:self.config.batch*(counter + 1)]
+            pr = rel_list_pos[self.config.batch * counter:self.config.batch * (counter + 1)]
+            pt = tail_list_pos[self.config.batch * counter:self.config.batch * (counter + 1)]
+
+            nh = head_list_neg[self.config.batch * counter:self.config.batch * (counter + 1)]
+            nr = rel_list_neg[self.config.batch * counter:self.config.batch * (counter + 1)]
+            nt = tail_list_neg[self.config.batch * counter:self.config.batch * (counter + 1)]
+
+            counter += 1
+            yield ph, pr, pt, nh, nr, nt
+            if counter == number_of_batches:
+                counter = 0
+
 
 if __name__=='__main__':
     data_handler = DataPrep('Freebase')
     data_handler.prepare_data()
+    gen = data_handler.batch_generator()
+    for i in range(5):
+        ph, pr, pt, nh, nr, nt = list(next(gen))
+        print("\nph:", ph)
+        print("pr:", pr)
+        print("pt:", pt)
+        print("nh:", nh)
+        print("nr:", nr)
+        print("nt:", nt)
 
 
 
