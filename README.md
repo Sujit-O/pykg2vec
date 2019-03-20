@@ -147,8 +147,7 @@ Prepare your environment:
     
             triples = model.data_handler.validation_triples_ids[:model.config.disp_triple_num]
             model.display(triples, sess)
-    ```
- The red nodes represent head entity, green nodes represent the relations and the blue node represents the tail entities.  
+    ```  
   
 The output of the display will be as follows:
 
@@ -207,7 +206,7 @@ The output of the display will be as follows:
   <img width="420" height="300" src="figures/transe_test.png">
 </p> 
       
-
+The red nodes represent head entity, green nodes represent the relations and the blue node represents the tail entities.
 
 ## Cite
    
