@@ -126,7 +126,7 @@ class Visualization(object):
         if not os.path.exists('../figures'):
             os.mkdir('../figures')
 
-        plt.savefig('../figures/transe_test.pdf', bbox_inches='tight', dpi=300)
+        plt.savefig('../figures/transe_test.png', bbox_inches='tight', dpi=300)
         plt.show()
 
 

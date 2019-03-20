@@ -220,7 +220,7 @@ class  TransE(KGMeta):
 def main(_):
 	parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
 	parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
-	parser.add_argument('-l', '--epochs', default=2, type=int, help='Number of Epochs')
+	parser.add_argument('-l', '--epochs', default=10, type=int, help='Number of Epochs')
 	parser.add_argument('-tn', '--test_num', default=5, type=int, help='Number of test triples')
 	parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
 	parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
@@ -284,9 +284,9 @@ def main(_):
 				print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
 					n_iter, acc_loss, timeit.default_timer() - start_time))
 
-				# if n_iter % model.config.test_step == 0 or n_iter == 0 or n_iter == model.config.epochs - 1:
-				# 	evaluate.test(sess, n_iter)
-				# 	evaluate.print_test_summary(n_iter)
+				if n_iter % model.config.test_step == 0 or n_iter == 0 or n_iter == model.config.epochs - 1:
+					evaluate.test(sess, n_iter)
+					evaluate.print_test_summary(n_iter)
 
 		model.save_model(sess)
 		model.summary()
