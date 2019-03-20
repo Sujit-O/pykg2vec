@@ -13,28 +13,49 @@ class Freebase(object):
 		self.prepared_data_path = '../dataset/Freebase/FB15k/FB15k_'
 		self.entity2idx_path    = '../dataset/Freebase/FB15k/FB15k_entity2idx.pkl'
 		self.idx2entity_path    = '../dataset/Freebase/FB15k/FB15k_idx2entity.pkl'
+		self.relation2idx_path = '../dataset/Freebase/FB15k/FB15k_relation2idx.pkl'
+		self.idx2relation_path = '../dataset/Freebase/FB15k/FB15k_idx2relation.pkl'
 
 class GlobalConfig(object):
-	def __init__(self, dataset = 'Freebase'):
+	def __init__(self, dataset = 'Freebase', negative_sample = 'uniform'):
 		if dataset =='Freebase':
 			self.dataset = Freebase()
 		else:
-			print("Invalid Dataset!")
-			return
+			raise NotImplementedError("%s dataset config not found!" % dataset)
+
+		self.negative_sample = negative_sample
 
 
 class TransEConfig(object):
-	def __init__(self):
-		self.learning_rate = 0.001
-		self.testFlag      = False
-		self.loadFromData  = False
-		self.L1_flag       = True
-		self.hidden_size   = 100
-		self.batch_size    = 128
-		self.entity        = 0
-		self.relation      = 0
-		self.epochs        = 10000
-		self.margin        = 1.0
+	def __init__(self,
+				 learning_rate  = 0.001,
+				 test_flag      = False,
+				 l1_flag        = True,
+				 hidden_size    = 100,
+				 load_from_data = False,
+				 batch_size     = 128,
+				 epochs = 1000,
+				 margin = 1.0,
+				 data   = 'Freebase',
+				 optimizer  = 'gradient',
+				 test_step  = 100,
+				 test_num   = 300,
+				 triple_num = 5):
+
+		self.learning_rate = learning_rate
+		self.testFlag      = test_flag
+		self.L1_flag       = l1_flag
+		self.loadFromData  = load_from_data
+		self.hidden_size   = hidden_size
+		self.batch_size    = batch_size
+		self.epochs        = epochs
+		self.margin        = margin
+		self.data          = data
+		self.optimizer     = optimizer
+		self.test_step     = test_step
+		self.test_num 	   = test_num
+		self.disp_triple_num = triple_num
+
 
 
 

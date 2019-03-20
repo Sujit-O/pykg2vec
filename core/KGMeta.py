@@ -10,10 +10,6 @@ class KGMeta:
 		"""Initializing the class"""
 		pass
 
-	def readKGraph(self):
-		"""function to read Knowledge graph"""
-		pass
-
 	def train(self):
 		"""function to train the model"""
 		pass
@@ -30,14 +26,36 @@ class KGMeta:
 		"""function to display embedding"""
 		pass
 
-	def saveModel(self):
+	def save_model(self):
 		"""function to save the model"""
 		pass
 
-	def loadModel(self):
+	def load_model(self):
 		"""function to load the model"""
 		pass
 
 	def summary(self):
 		"""function to print the summary"""
+		pass
+
+
+class Evaluation:
+	__metaclass__ = ABCMeta
+
+	def __init__(self):
+		pass
+
+	def relation_prediction(self):
+		pass
+
+	def entity_classification(self):
+		pass
+
+	def relation_classification(self):
+		pass
+
+	def triple_classification(self):
+		pass
+
+	def entity_completion(self):
 		pass
