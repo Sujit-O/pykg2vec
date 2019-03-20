@@ -203,7 +203,7 @@ The output of the display will be as follows:
              drawing figure!
     ```
 <p align="center">
-  <img width="420" height="300" src="figures/transe_test.png">
+  <img width="620" height="500" src="figures/transe_test.png">
 </p> 
       
 The red nodes represent head entity, green nodes represent the relations and the blue node represents the tail entities.
