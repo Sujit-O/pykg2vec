@@ -7,8 +7,8 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='pyKG2Vec',
-    version="0.0.1",
-    author="Sujit Rokka Chhetri",
+    version="0.0.2",
+    author="Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Martinez Canedo, Arquimedes",
     author_email="sujitchhetri@gmail.com",
     description="A python library for Knowledge Graph Embedding",
     long_description=long_description,
