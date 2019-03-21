@@ -13,7 +13,7 @@ plus some vector that depends on the relationship 'l'.
 Both entities and relations are vectors in the same space. [1]
 
 ## Datasets
-We intend to provide the libraries to test the knowledge graph algorithms against all the well-known algorithms. So far the library is able to work with the following datasets:
+We intend to provide the libraries to test the knowledge graph algorithms against all the well-known datasets available online. So far the library is able to work with the following datasets:
 * [Freebase](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz): Freebase is a large collaborative knowledge base consisting of data composed mainly by its community members. It is an online collection of structured data harvested from many sources, including individual, user-submitted wiki contributions [2].
 
 ## Repository Structure
@@ -149,7 +149,7 @@ Prepare your environment:
             model.display(triples, sess)
     ```  
   
-The output of the display will be as follows:
+The output of code will be as follows:
 
     ```angular2
         Number of batches: 461
@@ -203,7 +203,7 @@ The output of the display will be as follows:
              drawing figure!
     ```
 <p align="center">
-  <img width="620" height="500" src="figures/transe_test.png">
+  <img width="620" height="500" src="./figures/transe_test.png">
 </p> 
       
 The red nodes represent head entity, green nodes represent the relations and the blue node represents the tail entities.
