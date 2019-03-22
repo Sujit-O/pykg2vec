@@ -31,12 +31,12 @@ Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/Tra
 """
 from KGMeta import KGMeta
 import tensorflow as tf
-from config.config import TransEConfig
-from utils.dataprep import DataPrep
+from pykg2vec.config.config import TransEConfig
+from pykg2vec.utils.dataprep import DataPrep
 import timeit
-from utils.evaluation import EvaluationTransE
+from pykg2vec.utils import EvaluationTransE
 from argparse import ArgumentParser
-from utils.visualization import Visualization
+from pykg2vec.utils import Visualization
 import os
 
 

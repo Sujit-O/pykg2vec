@@ -4,14 +4,12 @@
 This module is for preparing the data
 """
 import numpy as np
-from config.config import GlobalConfig
+from pykg2vec.config.config import GlobalConfig
 import pickle
 import os
-import progressbar
 import urllib.request
 import shutil
 import tarfile
-from random import randint, choice
 from collections import defaultdict
 
 
