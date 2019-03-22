@@ -73,7 +73,7 @@ Prepare your environment:
  Install pyKG2Vec:
    
     ```bash
-       (venv) $ pip install --upgrade tensorflow
+       (venv) $ pip install pykg2vec
     ``` 
  ## Usage Example
     ```python
