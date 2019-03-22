@@ -23,12 +23,14 @@ class Triple(object):
         self.r = relation
         self.t = tail
 
+
 def parse_line(line):
     h, r, t = line.split('\t')
     h = h.split(' ')[0]
     r = r.split(' ')[0]
     t = t.split(' ')[0]
     return Triple(h,r,t)
+
 
 def extract(tar_path, extract_path='.'):
     tar = tarfile.open(tar_path, 'r')
@@ -37,11 +39,13 @@ def extract(tar_path, extract_path='.'):
         if item.name.find(".tgz") != -1 or item.name.find(".tar") != -1:
             extract(item.name, "./" + item.name[:item.name.rfind('/')])
 
+
 class DataPrep(object):
     def __init__(self, dataset='Freebase'):
 
         self.config = GlobalConfig(dataset=dataset)
-
+        if not os.path.exists(self.config.dataset.dataset_home):
+            os.mkdir(self.config.dataset.dataset_home)
         if not os.path.exists(self.config.dataset.root_path):
             os.mkdir(self.config.dataset.root_path)
             print("\tDownloading %s dataset"%dataset)
@@ -347,10 +351,6 @@ if __name__=='__main__':
         print("nh:", nh)
         print("nr:", nr)
         print("nt:", nt)
-
-
-
-
 
 
 """

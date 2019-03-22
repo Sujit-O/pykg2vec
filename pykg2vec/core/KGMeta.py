@@ -18,7 +18,7 @@ class KGMeta:
 		"""function to test the model"""
 		pass
 
-	def embed(self):
+	def embed(self,h, r, t):
 		"""function to get the embedding value"""
 		pass
 
@@ -26,11 +26,11 @@ class KGMeta:
 		"""function to display embedding"""
 		pass
 
-	def save_model(self):
+	def save_model(self, sess):
 		"""function to save the model"""
 		pass
 
-	def load_model(self):
+	def load_model(self, sess):
 		"""function to load the model"""
 		pass
 
