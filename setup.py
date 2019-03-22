@@ -17,7 +17,6 @@ INSTALL_REQUIRES = (
             'scipy>=1.2.1',
             'seaborn>=0.9.0',
             'six>=1.11.0',
-            'tensorflow>=1.12.0',
             'urllib3>=1.24.1'
 )
 
