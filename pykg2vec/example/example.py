@@ -19,7 +19,7 @@ import os
 def main():
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
-    parser.add_argument('-t', '--tmp', default='/intermediate', type=str, help='Temporary folder')
+    parser.add_argument('-t', '--tmp', default='./intermediate', type=str, help='Temporary folder')
     parser.add_argument('-ds', '--dataset', default='Freebase', type=str, help='Dataset')
     parser.add_argument('-l', '--epochs', default=10, type=int, help='Number of Epochs')
     parser.add_argument('-tn', '--test_num', default=5, type=int, help='Number of test triples')
