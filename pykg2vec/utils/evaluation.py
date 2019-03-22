@@ -45,14 +45,12 @@ class EvaluationTransE(Evaluation):
         self.norm_filter_hit10_tail = {}
         self.epoch = []
 
-
         if test_data=='test':
             self.data = model.data_handler.test_triples_ids
         elif test_data == 'valid':
             self.data = model.data_handler.validation_triples_ids
         else:
             raise NotImplementedError('Invalid testing data: enter test or valid!')
-
 
         self.hr_t = model.data_handler.hr_t
         self.tr_h = model.data_handler.tr_t
@@ -173,6 +171,7 @@ class EvaluationTransE(Evaluation):
                                                    dtype=np.float32)) / self.model.config.test_num
         self.norm_filter_hit10_tail[epoch] = np.sum(np.asarray(np.asarray(self.norm_filter_rank_tail) < 10,
                                                    dtype=np.float32)) / self.model.config.test_num
+
     def print_test_summary(self, epoch=None):
         if epoch:
             print('iter:%d --mean rank: %.2f --hit@10: %.2f' % (
@@ -206,7 +205,8 @@ class EvaluationTransE(Evaluation):
                     (self.norm_filter_hit10_tail[epoch] + self.norm_filter_hit10_head[epoch]) / 2))
                 print("-----------------------------------------------------")
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     e = Evaluation()
 
 

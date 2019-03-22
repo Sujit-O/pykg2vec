@@ -3,7 +3,7 @@
 """
 We store the base configuration of the models here
 """
-
+import tensorflow as tf
 
 class Freebase(object):
 
@@ -47,7 +47,13 @@ class TransEConfig(object):
                  test_step=100,
                  test_num=300,
                  triple_num=5,
-                 tmp='./intermediate'):
+                 tmp='./intermediate',
+                 gpu_fraction=0.4,
+                 gpu_allow_growth=True,
+                 save_model=False,
+                 disp_summary=True,
+                 disp_result=True):
+
         self.learning_rate = learning_rate
         self.testFlag = test_flag
         self.L1_flag = l1_flag
@@ -62,3 +68,10 @@ class TransEConfig(object):
         self.test_num = test_num
         self.disp_triple_num = triple_num
         self.tmp = tmp
+        self.gpu_config = tf.ConfigProto()
+        self.gpu_config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
+        self.gpu_config.gpu_options.allow_growth = gpu_allow_growth
+        self.save_model = save_model
+        self.disp_summary = disp_summary
+        self.disp_result = disp_result
+

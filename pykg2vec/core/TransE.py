@@ -41,6 +41,7 @@ import timeit
 from pykg2vec.utils.evaluation import EvaluationTransE
 from argparse import ArgumentParser
 from pykg2vec.utils.visualization import Visualization
+from pykg2vec.utils.evaluation import EvaluationTransE
 import os
 
 
@@ -98,7 +99,7 @@ class TransE(KGMeta):
         self.__variables.append(self.ent_embeddings)
         self.__variables.append(self.rel_embeddings)
 
-    def train(self):
+    def train_model(self):
         """function to train the model"""
 
         self.norm_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
@@ -133,6 +134,66 @@ class TransE(KGMeta):
         grads = optimizer.compute_gradients(self.loss, self.variables)
         self.op_train = optimizer.apply_gradients(grads)
         return self.loss, self.op_train, self.loss_every, self.norm_entity
+
+    def train(self):
+        with tf.Session(config=self.config.gpu_config) as sess:
+            evaluate = EvaluationTransE(self, 'test')
+            loss, op_train, loss_every, norm_entity = self.train_model()
+            sess.run(tf.global_variables_initializer())
+
+            norm_rel = sess.run(tf.nn.l2_normalize(self.rel_embeddings, axis=1))
+            sess.run(tf.assign(self.rel_embeddings, norm_rel))
+
+            norm_ent = sess.run(tf.nn.l2_normalize(self.ent_embeddings, axis=1))
+            sess.run(tf.assign(self.ent_embeddings, norm_ent))
+
+            gen_train = self.data_handler.batch_generator_train(batch=self.config.batch_size)
+
+            if self.config.loadFromData:
+                saver = tf.train.Saver()
+                saver.restore(sess, self.config.tmp + '/TransEModel.vec')
+
+            for n_iter in range(self.config.epochs):
+                acc_loss = 0
+                batch = 0
+                num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size
+                start_time = timeit.default_timer()
+
+                for i in range(num_batch):
+                    ph, pt, pr, nh, nt, nr = list(next(gen_train))
+
+                    feed_dict = {
+                        self.pos_h: ph,
+                        self.pos_t: pt,
+                        self.pos_r: pr,
+                        self.neg_h: nh,
+                        self.neg_t: nt,
+                        self.neg_r: nr
+                    }
+
+                    l_val, _, l_every, n_entity = sess.run([loss, op_train, loss_every, norm_entity],
+                                                           feed_dict)
+
+                    acc_loss += l_val
+                    batch += 1
+                    print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
+                                                                batch,
+                                                                num_batch,
+                                                                l_val), end='\r')
+                print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
+                    n_iter, acc_loss, timeit.default_timer() - start_time))
+
+                if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
+                    evaluate.test(sess, n_iter)
+                    evaluate.print_test_summary(n_iter)
+
+            if self.config.save_model:
+                self.save_model(sess)
+            if self.config.disp_summary:
+                self.summary()
+            if self.config.disp_result:
+                triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
+                self.display(triples, sess)
 
     def test(self):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
@@ -223,75 +284,20 @@ def main(_):
     parser.add_argument('-tn', '--test_num', default=5, type=int, help='Number of test triples')
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
+    parser.add_argument('-gp', '--gpu_frac', default=0.4, type=float, help='GPU fraction to use')
 
     args = parser.parse_args()
+
     config = TransEConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,
                           epochs=args.epochs,
                           test_step=args.test_step,
-                          test_num=args.test_num)
+                          test_num=args.test_num,
+                          gpu_fraction=args.gpu_frac)
 
     model = TransE(config=config)
     model.summary()
-
-    evaluate = EvaluationTransE(model, 'test')
-    loss, op_train, loss_every, norm_entity = model.train()
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-
-        norm_rel = sess.run(tf.nn.l2_normalize(model.rel_embeddings, axis=1))
-        sess.run(tf.assign(model.rel_embeddings, norm_rel))
-
-        norm_ent = sess.run(tf.nn.l2_normalize(model.ent_embeddings, axis=1))
-        sess.run(tf.assign(model.ent_embeddings, norm_ent))
-
-        gen_train = model.data_handler.batch_generator_train(batch=model.config.batch_size)
-
-        if model.config.loadFromData:
-            saver = tf.train.Saver()
-            saver.restore(sess, '../intermediate/TransEModel.vec')
-
-        if not model.config.testFlag:
-
-            for n_iter in range(model.config.epochs):
-                acc_loss = 0
-                batch = 0
-                num_batch = len(model.data_handler.train_triples_ids) // model.config.batch_size
-                start_time = timeit.default_timer()
-
-                for i in range(num_batch):
-                    ph, pt, pr, nh, nt, nr = list(next(gen_train))
-
-                    feed_dict = {
-                        model.pos_h: ph,
-                        model.pos_t: pt,
-                        model.pos_r: pr,
-                        model.neg_h: nh,
-                        model.neg_t: nt,
-                        model.neg_r: nr
-                    }
-
-                    l_val, _, l_every, n_entity = sess.run([loss, op_train, loss_every, norm_entity],
-                                                           feed_dict)
-
-                    acc_loss += l_val
-                    batch += 1
-                    print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                                                                batch,
-                                                                num_batch,
-                                                                l_val), end='\r')
-                print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
-                    n_iter, acc_loss, timeit.default_timer() - start_time))
-
-                if n_iter % model.config.test_step == 0 or n_iter == 0 or n_iter == model.config.epochs - 1:
-                    evaluate.test(sess, n_iter)
-                    evaluate.print_test_summary(n_iter)
-
-        model.save_model(sess)
-        model.summary()
-
-        triples = model.data_handler.validation_triples_ids[:model.config.disp_triple_num]
-        model.display(triples, sess)
+    model.train()
 
 
 if __name__ == "__main__":
