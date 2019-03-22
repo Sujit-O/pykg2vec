@@ -52,7 +52,8 @@ class TransEConfig(object):
                  gpu_allow_growth=True,
                  save_model=False,
                  disp_summary=True,
-                 disp_result=True):
+                 disp_result=True,
+                 log_device_placement=True):
 
         self.learning_rate = learning_rate
         self.testFlag = test_flag
@@ -71,6 +72,7 @@ class TransEConfig(object):
         self.gpu_config = tf.ConfigProto()
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
         self.gpu_config.gpu_options.allow_growth = gpu_allow_growth
+        self.gpu_config.gpu_options.log_device_placement=log_device_placement
         self.save_model = save_model
         self.disp_summary = disp_summary
         self.disp_result = disp_result

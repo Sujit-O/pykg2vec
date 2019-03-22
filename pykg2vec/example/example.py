@@ -1,33 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-------------------Paper Title-----------------------------
-Translating Embeddings for Modeling Multi-relational Data
-------------------Paper Authors---------------------------
-Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran
-Universite de Technologie de Compiegne – CNRS
-Heudiasyc UMR 7253
-Compiegne, France
-{bordesan, nusunier, agarciad}@utc.fr
-Jason Weston, Oksana Yakhnenko
-Google
-111 8th avenue
-New York, NY, USA
-{jweston, oksana}@google.com
-------------------Summary---------------------------------
-TransE is an energy based model which represents the
-relationships as translations in the embedding space. Which
-means that if (h,l,t) holds then the embedding of the tail
-'t' should be close to the embedding of head entity 'h'
-plus some vector that depends on the relationship 'l'.
-Both entities and relations are vectors in the same space.
-|        ......>.
-|      .     .
-|    .    .
-|  .  .
-|_________________
-Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
- and https://github.com/wencolani/TransE.git
+Example code for using pykg2vec
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -42,7 +16,7 @@ from pykg2vec.core.TransE import TransE
 import os
 
 
-def main(_):
+def main():
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='/intermediate', type=str, help='Temporary folder')
@@ -73,5 +47,5 @@ def main(_):
 
 
 if __name__ == "__main__":
-    tf.app.run()
+    main()
 
