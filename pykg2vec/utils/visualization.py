@@ -3,6 +3,10 @@
 """
 This module is for visualizing the results
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 disp_avlbl = True
 from os import environ
 if 'DISPLAY' not in environ:
@@ -14,21 +18,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 import os
-from matplotlib import rc
 import seaborn
 
-# font = {'family': 'serif', 'serif': ['computer modern roman']}
-# rc('text', usetex=True)
-# rc('font', weight='bold')
-# rc('font', size=20)
-# rc('lines', markersize=10)
-# rc('xtick', labelsize=12)
-# rc('ytick', labelsize=12)
-# rc('axes', labelsize='x-large')
-# rc('axes', labelweight='bold')
-# rc('axes', titlesize='x-large')
-# rc('axes', linewidth=3)
-# plt.rc('font', **font)
+
 seaborn.set_style("darkgrid")
 
 class Visualization(object):

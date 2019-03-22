@@ -29,7 +29,11 @@ Both entities and relations are vectors in the same space.
 Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
  and https://github.com/wencolani/TransE.git
 """
-from KGMeta import KGMeta
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from pykg2vec.core.KGMeta import KGMeta
 import tensorflow as tf
 from pykg2vec.config.config import TransEConfig
 from pykg2vec.utils.dataprep import DataPrep

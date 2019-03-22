@@ -4,7 +4,9 @@
 We store the base configuration of the models here
 """
 
+
 class Freebase(object):
+
 	def __init__(self):
 		self.root_path = '../dataset/Freebase/'
 		self.tar  = '../dataset/Freebase/FB15k.tgz'
@@ -16,7 +18,9 @@ class Freebase(object):
 		self.relation2idx_path = '../dataset/Freebase/FB15k/FB15k_relation2idx.pkl'
 		self.idx2relation_path = '../dataset/Freebase/FB15k/FB15k_idx2relation.pkl'
 
+
 class GlobalConfig(object):
+
 	def __init__(self, dataset = 'Freebase', negative_sample = 'uniform'):
 		if dataset =='Freebase':
 			self.dataset = Freebase()
@@ -27,6 +31,7 @@ class GlobalConfig(object):
 
 
 class TransEConfig(object):
+
 	def __init__(self,
 				 learning_rate  = 0.001,
 				 test_flag      = False,
