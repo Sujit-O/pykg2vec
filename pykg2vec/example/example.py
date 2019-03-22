@@ -43,6 +43,7 @@ from argparse import ArgumentParser
 from pykg2vec.core.TransE import TransE
 import os
 
+
 def main(_):
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
