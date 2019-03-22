@@ -203,7 +203,7 @@ The output of code will be as follows:
              drawing figure!
     ```
 <p align="center">
-  <img width="620" height="500" src="./figures/transe_test.png">
+  <img width="620" height="500" src="./pykg2vec/figures/transe_test.png">
 </p> 
       
 The red nodes represent head entity, green nodes represent the relations and the blue node represents the tail entities.
