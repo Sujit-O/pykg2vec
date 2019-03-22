@@ -38,9 +38,9 @@ import tensorflow as tf
 from pykg2vec.config.config import TransEConfig
 from pykg2vec.utils.dataprep import DataPrep
 import timeit
-from pykg2vec.utils import EvaluationTransE
+from pykg2vec.utils.evaluation import EvaluationTransE
 from argparse import ArgumentParser
-from pykg2vec.utils import Visualization
+from pykg2vec.utils.visualization import Visualization
 import os
 
 

@@ -10,7 +10,9 @@ from __future__ import print_function
 from pykg2vec.core.KGMeta import Evaluation
 import numpy as np
 
+
 class EvaluationTransE(Evaluation):
+
     def __init__(self,  model=None, test_data = None):
         self.rank_head = []
         self.rank_tail = []
@@ -203,6 +205,7 @@ class EvaluationTransE(Evaluation):
                     epoch, (self.norm_filter_mean_rank_head[epoch] + self.norm_filter_mean_rank_tail[epoch]) / 2,
                     (self.norm_filter_hit10_tail[epoch] + self.norm_filter_hit10_head[epoch]) / 2))
                 print("-----------------------------------------------------")
+
 if __name__=='__main__':
     e = Evaluation()
 

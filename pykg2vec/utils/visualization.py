@@ -23,6 +23,7 @@ import seaborn
 
 seaborn.set_style("darkgrid")
 
+
 class Visualization(object):
     def __init__(self, triples= None, idx2entity = None, idx2relation= None):
         self.triples = triples

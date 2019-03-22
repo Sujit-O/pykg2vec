@@ -7,13 +7,18 @@ import glob
 DISTNAME = 'pykg2vec'
 
 INSTALL_REQUIRES = (
-            'numpy>=1.15.3',
-            'pandas>=0.23.4',
-            'scikit-learn>=0.20.0',
-            'scipy>=1.1.0',
+            'numpy>=1.16.2',
+            'h5py>=2.9.0',
+            'networkx>=2.2',
+            'matplotlib>=3.0.3',
+            'pandas>=0.24.2',
+            'progressbar2>=3.39.2',
+            'sklearn>=0.0',
+            'scipy>=1.2.1',
             'seaborn>=0.9.0',
             'six>=1.11.0',
-            'sklearn>=0.0'
+            'tensorflow>=1.12.0',
+            'urllib3>=1.24.1'
 )
 
 with open("README.md", "r") as fh:
