@@ -21,7 +21,7 @@ import urllib.request
 import shutil
 import tarfile
 from collections import defaultdict
-
+import pprint
 
 class Triple(object):
     def __init__(self, head=None,relation=None,tail=None):
@@ -99,6 +99,12 @@ class DataPrep(object):
         if self.config.negative_sample =='bern':
             self.negative_sampling()
 
+    def dumpdata(self):
+        pprint.pprint(self.relation2idx)
+        pprint.pprint(self.idx2relation)
+        # for key,val in self.__dict__.items():
+        #     pprint.pprint(key, val)
+
     def read_triple(self, datatype=None):
         if datatype is None:
             datatype = ['train']
@@ -159,8 +165,8 @@ class DataPrep(object):
             relations += [triple.r]
             self.tot_triple += 1
 
-        entities = np.sort(list(set(heads).union(set(tails))))
-        relations = np.sort(relations)
+        entities = np.sort(list(set(heads) | (set(tails))))
+        relations = np.sort(list(set(relations)))
 
         self.tot_entity = len(entities)
         self.tot_relation =  len(relations)
@@ -171,6 +177,7 @@ class DataPrep(object):
         self.relation2idx = {v: k for k, v in enumerate(relations)}
         self.idx2relation = {v: k for k, v in self.relation2idx.items()}
 
+        # pdb.set_trace()
         #save entity2idx
         if not os.path.isfile(self.config.dataset.entity2idx_path):
             with open(self.config.dataset.entity2idx_path, 'wb') as f:
@@ -198,11 +205,11 @@ class DataPrep(object):
 
     def convert2idx(self):
         for t in self.test_triples:
-            self.train_triples_ids.append(Triple(self.entity2idx[t.h],
+            self.test_triples_ids.append(Triple(self.entity2idx[t.h],
                                           self.relation2idx[t.r],
                                           self.entity2idx[t.t]))
         for t in self.train_triples:
-            self.test_triples_ids.append(Triple(self.entity2idx[t.h],
+            self.train_triples_ids.append(Triple(self.entity2idx[t.h],
                                           self.relation2idx[t.r],
                                           self.entity2idx[t.t]))
 
@@ -259,7 +266,7 @@ class DataPrep(object):
                 counter = 0
 
     def batch_generator_train(self, batch=128):
-        num_triples = len(self.train_triples_ids )
+        num_triples = len(self.train_triples_ids)
         pos_triples_hm = {}
         neg_triples_hm = {}
 
@@ -276,6 +283,7 @@ class DataPrep(object):
             pos_triples = np.asarray([[self.train_triples_ids[x].h,
                                        self.train_triples_ids[x].r,
                                        self.train_triples_ids[x].t] for x in rand_ids[batch*counter:batch*(counter + 1)]])
+            # print("triples:",pos_triples)
             ph = pos_triples[:, 0]
             pr = pos_triples[:, 1]
             pt = pos_triples[:, 2]
@@ -283,6 +291,7 @@ class DataPrep(object):
             nr = []
             nt = []
             for t in pos_triples:
+                # print("r:",t[1])
                 if self.config.negative_sample == 'uniform':
                     prob = 0.5
                 elif self.config.negative_sample == 'bern':
@@ -340,6 +349,9 @@ class DataPrep(object):
                     neg_triples_hm[(idx, t[1], t[2])] = 1
 
             counter += 1
+            l= len([v for v in nr if v>1345])
+            if l>0:
+                print("total false relations:",l)
             yield ph, pr, pt, nh, nr, nt
 
             if counter == number_of_batches:
@@ -348,15 +360,23 @@ class DataPrep(object):
 
 if __name__=='__main__':
     data_handler = DataPrep('Freebase')
-    gen = data_handler.batch_generator_train()
-    for i in range(5):
+    print("\n----------Train Triple Stats---------------")
+    print("Total Training Triples   :", len(data_handler.train_triples))
+    print("Total Testing Triples    :", len(data_handler.test_triples))
+    print("Total validation Triples :", len(data_handler.validation_triples))
+    print("Total Entities           :", data_handler.tot_entity)
+    print("Total Relations          :", data_handler.tot_relation)
+    print("---------------------------------------------")
+    data_handler.dumpdata()
+    gen = data_handler.batch_generator_train(batch=8)
+    for i in range(10):
         ph, pr, pt, nh, nr, nt = list(next(gen))
-        print("\nph:", ph)
-        print("pr:", pr)
-        print("pt:", pt)
-        print("nh:", nh)
-        print("nr:", nr)
-        print("nt:", nt)
+        # print("\nph:", ph)
+        # print("pr:", pr)
+        # print("pt:", pt)
+        # print("nh:", nh)
+        # print("nr:", nr)
+        # print("nt:", nt)
 
 
 """

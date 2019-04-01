@@ -54,7 +54,7 @@ class TransEConfig(object):
                  save_model=False,
                  disp_summary=True,
                  disp_result=True,
-                 log_device_placement=True):
+                 log_device_placement=False):
         self.learning_rate = learning_rate
         self.testFlag = test_flag
         self.L1_flag = l1_flag
