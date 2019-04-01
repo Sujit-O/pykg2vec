@@ -7,8 +7,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
+import sys
+sys.path.append("D:\dev\pykg2vec\pykg2vec")
+from config.config import GlobalConfig
+
+
 import numpy as np
-from pykg2vec.config.config import GlobalConfig
+# from pykg2vec.config.config import GlobalConfig
 import pickle
 import os
 import urllib.request

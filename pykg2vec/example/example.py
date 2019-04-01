@@ -9,12 +9,21 @@ from __future__ import print_function
 
 
 import tensorflow as tf
-from pykg2vec.config.config import TransEConfig
-from pykg2vec.utils.dataprep import DataPrep
+import sys
+sys.path.append("D:\dev\pykg2vec\pykg2vec")
+from config.config import TransEConfig
+from utils.dataprep import DataPrep
 from argparse import ArgumentParser
-from pykg2vec.core.TransE import TransE
+from core.TransE import TransE
 import os
 
+
+# import tensorflow as tf
+# from pykg2vec.config.config import TransEConfig
+# from pykg2vec.utils.dataprep import DataPrep
+# from argparse import ArgumentParser
+# from pykg2vec.core.TransE import TransE
+# import os
 
 def main():
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')

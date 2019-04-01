@@ -5,6 +5,7 @@ We store the base configuration of the models here
 """
 import tensorflow as tf
 
+
 class Freebase(object):
 
     def __init__(self):
@@ -54,7 +55,6 @@ class TransEConfig(object):
                  disp_summary=True,
                  disp_result=True,
                  log_device_placement=True):
-
         self.learning_rate = learning_rate
         self.testFlag = test_flag
         self.L1_flag = l1_flag
@@ -69,11 +69,9 @@ class TransEConfig(object):
         self.test_num = test_num
         self.disp_triple_num = triple_num
         self.tmp = tmp
-        self.gpu_config = tf.ConfigProto()
+        self.gpu_config = tf.ConfigProto(log_device_placement=log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
         self.gpu_config.gpu_options.allow_growth = gpu_allow_growth
-        self.gpu_config.gpu_options.log_device_placement=log_device_placement
         self.save_model = save_model
         self.disp_summary = disp_summary
         self.disp_result = disp_result
-

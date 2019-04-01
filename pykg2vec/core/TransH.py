@@ -2,30 +2,18 @@
 # -*- coding: utf-8 -*-
 """
 ------------------Paper Title-----------------------------
-Translating Embeddings for Modeling Multi-relational Data
+Knowledge Graph Embedding by Translating on Hyperplanes
 ------------------Paper Authors---------------------------
-Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran
-Universite de Technologie de Compiegne – CNRS
-Heudiasyc UMR 7253
-Compiegne, France
-{bordesan, nusunier, agarciad}@utc.fr
-Jason Weston, Oksana Yakhnenko
-Google
-111 8th avenue
-New York, NY, USA
-{jweston, oksana}@google.com
+Zhen Wang1,Jianwen Zhang2, Jianlin Feng1, Zheng Chen2
+1Department of Information Science and Technology, Sun Yat-sen University, Guangzhou, China
+2Microsoft Research, Beijing, China
+1{wangzh56@mail2, fengjlin@mail}.sysu.edu.cn
+2{jiazhan, zhengc}@microsoft.com
 ------------------Summary---------------------------------
-TransE is an energy based model which represents the
-relationships as translations in the embedding space. Which
-means that if (h,l,t) holds then the embedding of the tail
-'t' should be close to the embedding of head entity 'h'
-plus some vector that depends on the relationship 'l'.
-Both entities and relations are vectors in the same space.
-|        ......>.
-|      .     .
-|    .    .
-|  .  .
-|_________________
+TransH  models a relation as a hyperplane together with a translation operation on it.
+By doint this, it aims to preserve the mapping properties of relations such as reflexive,
+one-to-many, many-to-one, and many-to-many with almost the same model complexity of TransE.
+
 Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
  and https://github.com/wencolani/TransE.git
 """
@@ -33,40 +21,24 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-sys.path.append("D:\dev\pykg2vec\pykg2vec")
-from core.KGMeta import KGMeta
-from utils.visualization import Visualization
-from utils.evaluation import EvaluationTransE
-from utils.evaluation import EvaluationTransE
-from config.config import TransEConfig
-from utils.dataprep import DataPrep
-
-
-# from pykg2vec.core.KGMeta import KGMeta
-# from pykg2vec.utils.visualization import Visualization
-# from pykg2vec.utils.evaluation import EvaluationTransE
-# from pykg2vec.utils.evaluation import EvaluationTransE
-# from pykg2vec.config.config import TransEConfig
-# from pykg2vec.utils.dataprep import DataPrep
-
+from pykg2vec.core.KGMeta import KGMeta
 import tensorflow as tf
+from pykg2vec.config.config import TransEConfig
+from pykg2vec.utils.dataprep import DataPrep
 import timeit
+from pykg2vec.utils.evaluation import EvaluationTransE
 from argparse import ArgumentParser
+from pykg2vec.utils.visualization import Visualization
+from pykg2vec.utils.evaluation import EvaluationTransE
 import os
 
 
-class TransE(KGMeta):
+class TransH(KGMeta):
     @property
     def variables(self):
         return self.__variables
 
     def __init__(self, config=None, data_handler=None):
-
-        """ TransE Models
-		Args:
-		-----Inputs-------
-		"""
 
         if not config:
             self.config = TransEConfig()
