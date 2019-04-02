@@ -32,6 +32,11 @@ class GlobalConfig(object):
         self.negative_sample = negative_sample
 
 
+class TransRConfig(object):
+    def __init__(self):
+        pass
+
+
 class TransEConfig(object):
 
     def __init__(self,
