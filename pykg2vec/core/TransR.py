@@ -159,7 +159,7 @@ class TransR(KGMeta):
             for n_iter in range(self.config.epochs):
                 acc_loss = 0
                 batch = 0
-                num_batch = 2#len(self.data_handler.train_triples_ids) // self.config.batch_size
+                num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size
                 start_time = timeit.default_timer()
 
                 for i in range(num_batch):
@@ -351,8 +351,8 @@ def main():
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
     parser.add_argument('-ds', '--dataset', default='Freebase', type=str, help='Dataset')
-    parser.add_argument('-l', '--epochs', default=2, type=int, help='Number of Epochs')
-    parser.add_argument('-tn', '--test_num', default=5, type=int, help='Number of test triples')
+    parser.add_argument('-l', '--epochs', default=200, type=int, help='Number of Epochs')
+    parser.add_argument('-tn', '--test_num', default=100, type=int, help='Number of test triples')
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
     parser.add_argument('-gp', '--gpu_frac', default=0.4, type=float, help='GPU fraction to use')

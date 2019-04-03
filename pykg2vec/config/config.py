@@ -48,7 +48,7 @@ class TransRConfig(object):
                  optimizer='adam',
                  test_step=100,
                  test_num=300,
-                 triple_num=5,
+                 triple_num=20,
                  tmp='../intermediate',
                  gpu_fraction=0.4,
                  gpu_allow_growth=True,
