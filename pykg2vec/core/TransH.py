@@ -10,38 +10,37 @@ Zhen Wang1,Jianwen Zhang2, Jianlin Feng1, Zheng Chen2
 1{wangzh56@mail2, fengjlin@mail}.sysu.edu.cn
 2{jiazhan, zhengc}@microsoft.com
 ------------------Summary---------------------------------
-TransH  models a relation as a hyperplane together with a translation operation on it.
+TransH models a relation as a hyperplane together with a translation operation on it.
 By doint this, it aims to preserve the mapping properties of relations such as reflexive,
 one-to-many, many-to-one, and many-to-many with almost the same model complexity of TransE.
 
-Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
- and https://github.com/wencolani/TransE.git
+Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransH.py
+ and https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from pykg2vec.core.KGMeta import KGMeta
+import sys
+sys.path.append("D:\louis\Dropbox\louis_research\pyKG2Vec\pykg2vec")
+
+from core.KGMeta import KGMeta
 import tensorflow as tf
-from pykg2vec.config.config import TransEConfig
-from pykg2vec.utils.dataprep import DataPrep
+from config.config import TransHConfig
+from utils.dataprep import DataPrep
 import timeit
-from pykg2vec.utils.evaluation import EvaluationTransE
 from argparse import ArgumentParser
-from pykg2vec.utils.visualization import Visualization
-from pykg2vec.utils.evaluation import EvaluationTransE
+from utils.visualization import Visualization
+from utils.evaluation import EvaluationTransH
 import os
 
 
 class TransH(KGMeta):
-    @property
-    def variables(self):
-        return self.__variables
-
+    
     def __init__(self, config=None, data_handler=None):
 
         if not config:
-            self.config = TransEConfig()
+            self.config = TransHConfig()
         else:
             self.config = config
 
@@ -56,9 +55,9 @@ class TransH(KGMeta):
         self.neg_t = tf.placeholder(tf.int32, [None])
         self.neg_r = tf.placeholder(tf.int32, [None])
 
-        self.test_h = tf.placeholder(tf.int32, [1])
-        self.test_t = tf.placeholder(tf.int32, [1])
-        self.test_r = tf.placeholder(tf.int32, [1])
+        # self.test_h = tf.placeholder(tf.int32, [1])
+        # self.test_t = tf.placeholder(tf.int32, [1])
+        # self.test_r = tf.placeholder(tf.int32, [1])
 
         self.loss = None
         self.op_train = None
@@ -78,12 +77,12 @@ class TransH(KGMeta):
         self.rel_embeddings = tf.get_variable(name="rel_embedding",
                                               shape=[self.data_handler.tot_relation, self.config.hidden_size],
                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
+        
         self.__variables.append(self.ent_embeddings)
         self.__variables.append(self.rel_embeddings)
 
     def train_model(self):
-        """function to train the model"""
+        """function to define the model"""
 
         self.norm_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         self.norm_relation = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
@@ -96,6 +95,10 @@ class TransH(KGMeta):
         emb_nh = tf.nn.embedding_lookup(self.norm_entity, self.neg_h)
         emb_nt = tf.nn.embedding_lookup(self.norm_entity, self.neg_t)
         emb_nr = tf.nn.embedding_lookup(self.norm_relation, self.neg_r)
+        
+        # getting the required normal vectors of planes to transfer entity embedding 
+        # pos_norm = tf.nn.embedding_lookup(''' projection matrix''', self.pos_r)
+        # neg_norm = tf.nn.embedding_lookup(''' projection matrix''', self.neg_r)
 
         score_pos = tf.reduce_sum(tf.abs(emb_ph + emb_pr - emb_pt), axis=1)
         score_neg = tf.reduce_sum(tf.abs(emb_nh + emb_nr - emb_nt), axis=1)
@@ -119,8 +122,10 @@ class TransH(KGMeta):
         return self.loss, self.op_train, self.loss_every, self.norm_entity
 
     def train(self):
+        """function to train the model"""
+
         with tf.Session(config=self.config.gpu_config) as sess:
-            evaluate = EvaluationTransE(self, 'test')
+            evaluate = EvaluationTransH(self, 'test')
             loss, op_train, loss_every, norm_entity = self.train_model()
             sess.run(tf.global_variables_initializer())
 
@@ -258,11 +263,15 @@ class TransH(KGMeta):
     # TODO: Save summary
     # with open('../intermediate/TransEModel_summary.json', 'wb') as fp:
     # 	json.dump(self.config.__dict__, fp)
-
+    @property
+    def variables(self):
+        return self.__variables
 
 def main(_):
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
+    parser.add_argument('-t', '--tmp', default='./intermediate', type=str, help='Temporary folder')
+    parser.add_argument('-ds', '--dataset', default='Freebase', type=str, help='Dataset')
     parser.add_argument('-l', '--epochs', default=10, type=int, help='Number of Epochs')
     parser.add_argument('-tn', '--test_num', default=5, type=int, help='Number of test triples')
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
@@ -270,15 +279,20 @@ def main(_):
     parser.add_argument('-gp', '--gpu_frac', default=0.4, type=float, help='GPU fraction to use')
 
     args = parser.parse_args()
+    
+    if not os.path.exists(args.tmp):
+        os.mkdir(args.tmp)
 
-    config = TransEConfig(learning_rate=args.learn_rate,
+    data_handler = DataPrep(args.dataset)
+
+    config = TransHConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,
                           epochs=args.epochs,
                           test_step=args.test_step,
                           test_num=args.test_num,
                           gpu_fraction=args.gpu_frac)
 
-    model = TransE(config=config)
+    model = TransH(config=config, data_handler=data_handler)
     model.summary()
     model.train()
 
