@@ -35,10 +35,6 @@ from argparse import ArgumentParser
 import os
 import numpy as np
 from sklearn.manifold import TSNE
-import seaborn
-
-
-seaborn.set_style("darkgrid")
 
 
 class TransR(KGMeta):
@@ -55,7 +51,6 @@ class TransR(KGMeta):
 
         self.data_handler = data_handler
         self.model_name = 'TransR'
-        self.results =[]
         with tf.name_scope("read_inputs"):
             self.pos_h = tf.placeholder(tf.int32, [self.config.batch_size])
             self.pos_t = tf.placeholder(tf.int32, [self.config.batch_size])
@@ -142,7 +137,6 @@ class TransR(KGMeta):
             self.loss = tf.reduce_sum(tf.maximum(pos - neg + self.config.margin, 0))
 
     def train(self):
-
         with tf.Session(config=self.config.gpu_config) as sess:
             gen_train = self.data_handler.batch_generator_train(batch=self.config.batch_size)
             # if self.config.loadFromData:
@@ -165,7 +159,7 @@ class TransR(KGMeta):
             for n_iter in range(self.config.epochs):
                 acc_loss = 0
                 batch = 0
-                num_batch = 2#len(self.data_handler.train_triples_ids) // self.config.batch_size
+                num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size
                 start_time = timeit.default_timer()
 
                 for i in range(num_batch):
@@ -190,20 +184,13 @@ class TransR(KGMeta):
                                                                 loss), end='\r')
                 print('Epoch[%d] ---Train Loss: %.5f ---time: %.2f' % (
                     n_iter, acc_loss, timeit.default_timer() - start_time))
-                self.results.append([n_iter, acc_loss])
+
                 # if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
                 #     evaluate.test(sess, n_iter)
                 #     evaluate.print_test_summary(n_iter)
 
             if self.config.save_model:
                 self.save_model(sess)
-            if not os.path.exists('../results'):
-                os.mkdir('../results')
-            np.savetxt('../results/training_TransR.txt', self.results, delimiter=',')
-
-    def training_lineplot(self):
-        viz = Visualization()
-        viz.plot_train_result(self.results)
 
     def test(self):
         pass
@@ -246,11 +233,11 @@ class TransR(KGMeta):
                                              name="ent_embedding",
                                              dtype=np.float32)
                 rel_embeddings = tf.Variable(np.loadtxt('../intermediate/rel_embeddings.txt'),
-                                             name="rel_embedding",
-                                             dtype=np.float32)
+                                                  name="rel_embedding",
+                                                  dtype=np.float32)
                 rel_matrix = tf.Variable(np.loadtxt('../intermediate/rel_matrix.txt'),
-                                         name="rel_matrix",
-                                         dtype=np.float32)
+                                                  name="rel_matrix",
+                                                  dtype=np.float32)
             except FileNotFoundError:
                 print("The model was not saved! Set save_model=True!")
             sess.run(tf.global_variables_initializer())
@@ -289,9 +276,9 @@ class TransR(KGMeta):
         r_name = []
         t_name = []
         triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
-        pos_h = []
-        pos_r = []
-        pos_t = []
+        pos_h=[]
+        pos_r=[]
+        pos_t=[]
         for t in triples:
             h_name.append(self.data_handler.idx2entity[t.h])
             r_name.append(self.data_handler.idx2relation[t.r])
@@ -300,7 +287,7 @@ class TransR(KGMeta):
             pos_r.append(t.r)
             pos_t.append(t.t)
 
-        h_emb, r_emb, t_emb = self.predict_embed_in_rel_space(pos_h, pos_r, pos_t)
+        h_emb, r_emb, t_emb = self.predict_embed_in_rel_space(pos_h,pos_r,pos_t)
 
         h_emb = np.array(h_emb)
         r_emb = np.array(r_emb)
@@ -324,9 +311,9 @@ class TransR(KGMeta):
                            t_embs,
                            fig_name)
 
-    def save_model(self, sess):
+    def save_model(self,sess):
         """function to save the model"""
-        ee, er, rm = sess.run([self.ent_embeddings, self.rel_embeddings, self.rel_matrix])
+        ee,er,rm = sess.run([self.ent_embeddings,self.rel_embeddings,self.rel_matrix])
         if not os.path.exists(self.config.tmp):
             os.mkdir('../intermediate')
         np.savetxt('../intermediate/ent_embeddings.txt', ee)
@@ -363,8 +350,8 @@ def main():
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransR')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
-    parser.add_argument('-ds', '--dataset', default='Freebase', type=str, help='Dataset')
-    parser.add_argument('-l', '--epochs', default=2, type=int, help='Number of Epochs')
+    parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
+    parser.add_argument('-l', '--epochs', default=200, type=int, help='Number of Epochs')
     parser.add_argument('-tn', '--test_num', default=100, type=int, help='Number of test triples')
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
@@ -391,7 +378,6 @@ def main():
     if model.config.disp_summary:
         model.summary()
     if model.config.disp_result:
-        model.training_lineplot()
         model.display_in_rel_space(fig_name='TransR_Result')
 
 
