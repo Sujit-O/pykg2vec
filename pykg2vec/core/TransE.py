@@ -296,7 +296,7 @@ class TransE(KGMeta):
     # 	json.dump(self.config.__dict__, fp)
 
 
-def main(_):
+def main():
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='./intermediate', type=str, help='Temporary folder')
@@ -322,10 +322,10 @@ def main(_):
                           gpu_fraction=args.gpu_frac)
 
     model = TransE(config=config, data_handler=data_handler)
-    # model.data_handler.dumpdata()
     model.summary()
     model.train()
 
 
 if __name__ == "__main__":
-    tf.app.run()
+    main()
+

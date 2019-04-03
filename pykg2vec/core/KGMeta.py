@@ -7,7 +7,7 @@ class KGMeta:
 	__metaclass__ = ABCMeta
 
 	def __init__(self):
-		"""Initializing the and create the model"""		
+		"""Initializing and create the model to be trained and inferred"""
 		pass
 
 	def train(self):
