@@ -9,16 +9,16 @@ import tensorflow as tf
 class Freebase(object):
 
     def __init__(self):
-        self.dataset_home = './dataset'
-        self.root_path = './dataset/Freebase/'
-        self.tar = './dataset/Freebase/FB15k.tgz'
+        self.dataset_home = '../dataset'
+        self.root_path = '../dataset/Freebase/'
+        self.tar = '../dataset/Freebase/FB15k.tgz'
         self.url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
-        self.downloaded_path = './dataset/Freebase/FB15k/freebase_mtr100_mte100-'
-        self.prepared_data_path = './dataset/Freebase/FB15k/FB15k_'
-        self.entity2idx_path = './dataset/Freebase/FB15k/FB15k_entity2idx.pkl'
-        self.idx2entity_path = './dataset/Freebase/FB15k/FB15k_idx2entity.pkl'
-        self.relation2idx_path = './dataset/Freebase/FB15k/FB15k_relation2idx.pkl'
-        self.idx2relation_path = './dataset/Freebase/FB15k/FB15k_idx2relation.pkl'
+        self.downloaded_path = '../dataset/Freebase/FB15k/freebase_mtr100_mte100-'
+        self.prepared_data_path = '../dataset/Freebase/FB15k/FB15k_'
+        self.entity2idx_path = '../dataset/Freebase/FB15k/FB15k_entity2idx.pkl'
+        self.idx2entity_path = '../dataset/Freebase/FB15k/FB15k_idx2entity.pkl'
+        self.relation2idx_path = '../dataset/Freebase/FB15k/FB15k_relation2idx.pkl'
+        self.idx2relation_path = '../dataset/Freebase/FB15k/FB15k_idx2relation.pkl'
 
 
 class GlobalConfig(object):
@@ -34,6 +34,7 @@ class GlobalConfig(object):
 
 class TransRConfig(object):
     def __init__(self,
+                 model_name = 'TransR',
                  learning_rate=0.001,
                  test_flag=False,
                  l1_flag=True,
@@ -48,13 +49,14 @@ class TransRConfig(object):
                  test_step=100,
                  test_num=300,
                  triple_num=5,
-                 tmp='./intermediate',
+                 tmp='../intermediate',
                  gpu_fraction=0.4,
                  gpu_allow_growth=True,
-                 save_model=False,
+                 save_model=True,
                  disp_summary=True,
                  disp_result=True,
                  log_device_placement=False):
+        self.model_name = model_name
         self.learning_rate = learning_rate
         self.testFlag = test_flag
         self.L1_flag = l1_flag
@@ -94,10 +96,10 @@ class TransEConfig(object):
                  test_step=100,
                  test_num=300,
                  triple_num=5,
-                 tmp='./intermediate',
+                 tmp='../intermediate',
                  gpu_fraction=0.4,
                  gpu_allow_growth=True,
-                 save_model=False,
+                 save_model=True,
                  disp_summary=True,
                  disp_result=True,
                  log_device_placement=False):

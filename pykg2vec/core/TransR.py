@@ -44,7 +44,7 @@ class TransR(KGMeta):
 
     def __init__(self, config=None, data_handler=None, load_entity=None, load_rel=None):
 
-        if not config:
+        if config is None:
             self.config = TransRConfig()
         else:
             self.config = config
@@ -139,9 +139,9 @@ class TransR(KGMeta):
     def train(self):
         with tf.Session(config=self.config.gpu_config) as sess:
             gen_train = self.data_handler.batch_generator_train(batch=self.config.batch_size)
-            if self.config.loadFromData:
-                saver = tf.train.Saver()
-                saver.restore(sess, self.config.tmp + '/TransRModel.vec')
+            # if self.config.loadFromData:
+            #     saver = tf.train.Saver()
+            #     saver.restore(sess, self.config.tmp + '/TransRModel.vec')
             global_step = tf.Variable(0, name="global_step", trainable=False)
 
             if self.config.optimizer == 'gradient':
@@ -227,14 +227,28 @@ class TransR(KGMeta):
     def predict_embed_in_rel_space(self, h, r, t):
         """function to get the embedding value in numpy"""
         with tf.Session(config=self.config.gpu_config) as sess:
-            pos_h_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings, h),
+            # self.load_model(sess)
+            try:
+                ent_embeddings = tf.Variable(np.loadtxt("../intermediate/ent_embeddings.txt"),
+                                             name="ent_embedding",
+                                             dtype=np.float32)
+                rel_embeddings = tf.Variable(np.loadtxt('../intermediate/rel_embeddings.txt'),
+                                                  name="rel_embedding",
+                                                  dtype=np.float32)
+                rel_matrix = tf.Variable(np.loadtxt('../intermediate/rel_matrix.txt'),
+                                                  name="rel_embedding",
+                                                  dtype=np.float32)
+            except FileNotFoundError:
+                print("The model was not saved! Set save_model=True!")
+
+            pos_h_e = tf.reshape(tf.nn.embedding_lookup(ent_embeddings, h),
                                  [-1, self.config.ent_hidden_size, 1])
-            pos_r_e = tf.reshape(tf.nn.embedding_lookup(self.rel_embeddings, r),
+            pos_r_e = tf.reshape(tf.nn.embedding_lookup(rel_embeddings, r),
                                  [-1, self.config.rel_hidden_size])
-            pos_t_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings, t),
+            pos_t_e = tf.reshape(tf.nn.embedding_lookup(ent_embeddings, t),
                                  [-1, self.config.ent_hidden_size, 1])
 
-            pos_matrix = tf.reshape(tf.nn.embedding_lookup(self.rel_matrix, r),
+            pos_matrix = tf.reshape(tf.nn.embedding_lookup(rel_matrix, r),
                                     [-1, self.config.rel_hidden_size, self.config.ent_hidden_size])
 
             pos_h_e = tf.nn.l2_normalize(tf.reshape(tf.matmul(pos_matrix, pos_h_e),
@@ -296,12 +310,17 @@ class TransR(KGMeta):
                            t_embs,
                            fig_name)
 
-    def save_model(self, sess):
+    def save_model(self,sess):
         """function to save the model"""
+        ee,er,rm = sess.run([self.ent_embeddings,self.rel_embeddings,self.rel_matrix])
         if not os.path.exists(self.config.tmp):
             os.mkdir('../intermediate')
-        saver = tf.train.Saver()
-        saver.save(sess, '../intermediate/TransRModel.vec')
+        np.savetxt('../intermediate/ent_embeddings.txt', ee)
+        np.savetxt('../intermediate/rel_embeddings.txt', er)
+        np.savetxt('../intermediate/rel_matrix.txt', rm)
+
+        # saver = tf.train.Saver()
+        # saver.save(sess, '../intermediate/TransRModel.vec')
 
     def load_model(self, sess):
         """function to load the model"""
@@ -329,9 +348,9 @@ class TransR(KGMeta):
 def main():
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransR')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
-    parser.add_argument('-t', '--tmp', default='./intermediate', type=str, help='Temporary folder')
+    parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
     parser.add_argument('-ds', '--dataset', default='Freebase', type=str, help='Dataset')
-    parser.add_argument('-l', '--epochs', default=10, type=int, help='Number of Epochs')
+    parser.add_argument('-l', '--epochs', default=2, type=int, help='Number of Epochs')
     parser.add_argument('-tn', '--test_num', default=5, type=int, help='Number of test triples')
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
