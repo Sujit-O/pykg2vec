@@ -81,6 +81,54 @@ class Visualization(object):
         # print(self.t_embs)
 
 
+    def draw_figure_v2(self,
+                       triples,
+                       h_name,
+                       r_name,
+                       t_name,
+                       h_embs,
+                       r_embs,
+                       t_embs,
+                       fig_name='test_figure'):
+        print("\t drawing figure!")
+        pos = {}
+        node_color_mp = {}
+
+        for i in range(len(triples)):
+            self.G.add_edge(h_name[i], r_name[i])
+
+            self.G.add_edge(r_name[i], t_name[i])
+
+            node_color_mp[h_name[i]] = 'r'
+            node_color_mp[r_name[i]] = 'g'
+            node_color_mp[t_name[i]] = 'b'
+
+            pos[h_name[i]] = h_embs[i]
+            pos[r_name[i]] = r_embs[i]
+            pos[t_name[i]] = t_embs[i]
+
+        colors=[]
+        for n in list(self.G.nodes):
+            colors.append(node_color_mp[n])
+
+        plt.figure()
+        nodes_draw = nx.draw_networkx_nodes(self.G,
+                                            pos,
+                                            node_color=colors,
+                                            node_size=50,
+                                            with_labels=True)
+        nodes_draw.set_edgecolor('w')
+        nx.draw_networkx_labels(self.G, pos, font_size=8)
+        nx.draw_networkx_edges(self.G, pos, arrows=True, width=0.5, alpha=0.5)
+        # print(list(self.G.nodes))
+        # print(pos)
+
+        if not os.path.exists('../figures'):
+            os.mkdir('../figures')
+
+        plt.savefig('../figures/'+fig_name+'.png', bbox_inches='tight', dpi=300)
+        plt.show()
+
     def draw_figure(self):
         print("\t drawing figure!")
         pos = {}
