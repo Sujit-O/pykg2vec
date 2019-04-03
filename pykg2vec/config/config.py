@@ -5,33 +5,6 @@ We store the base configuration of the models here
 """
 import tensorflow as tf
 
-
-class Freebase(object):
-
-    def __init__(self):
-        self.dataset_home = '../dataset'
-        self.root_path = '../dataset/Freebase/'
-        self.tar = '../dataset/Freebase/FB15k.tgz'
-        self.url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
-        self.downloaded_path = '../dataset/Freebase/FB15k/freebase_mtr100_mte100-'
-        self.prepared_data_path = '../dataset/Freebase/FB15k/FB15k_'
-        self.entity2idx_path = '../dataset/Freebase/FB15k/FB15k_entity2idx.pkl'
-        self.idx2entity_path = '../dataset/Freebase/FB15k/FB15k_idx2entity.pkl'
-        self.relation2idx_path = '../dataset/Freebase/FB15k/FB15k_relation2idx.pkl'
-        self.idx2relation_path = '../dataset/Freebase/FB15k/FB15k_idx2relation.pkl'
-
-
-class GlobalConfig(object):
-
-    def __init__(self, dataset='Freebase', negative_sample='uniform'):
-        if dataset == 'Freebase':
-            self.dataset = Freebase()
-        else:
-            raise NotImplementedError("%s dataset config not found!" % dataset)
-
-        self.negative_sample = negative_sample
-
-
 class TransRConfig(object):
     def __init__(self,
                  model_name = 'TransR',
@@ -168,5 +141,3 @@ class TransHConfig(object):
         self.save_model = save_model
         self.disp_summary = disp_summary
         self.disp_result = disp_result
-
-

@@ -349,7 +349,7 @@ def main():
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransR')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
-    parser.add_argument('-ds', '--dataset', default='Freebase', type=str, help='Dataset')
+    parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
     parser.add_argument('-l', '--epochs', default=2, type=int, help='Number of Epochs')
     parser.add_argument('-tn', '--test_num', default=5, type=int, help='Number of test triples')
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')

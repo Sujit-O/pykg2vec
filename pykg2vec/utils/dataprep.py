@@ -9,17 +9,13 @@ from __future__ import print_function
 
 
 import sys
-sys.path.append("D:\dev\pykg2vec\pykg2vec")
-from config.config import GlobalConfig
-
+sys.path.append("D:\louis\Dropbox\louis_research\pyKG2Vec\pykg2vec")
+from config.global_config import GlobalConfig
 
 import numpy as np
 # from pykg2vec.config.config import GlobalConfig
 import pickle
 import os
-import urllib.request
-import shutil
-import tarfile
 from collections import defaultdict
 import pprint
 
@@ -37,33 +33,13 @@ def parse_line(line):
     t = t.split(' ')[0]
     return Triple(h,r,t)
 
-
-def extract(tar_path, extract_path='.'):
-    tar = tarfile.open(tar_path, 'r')
-    for item in tar:
-        tar.extract(item, extract_path)
-        if item.name.find(".tgz") != -1 or item.name.find(".tar") != -1:
-            extract(item.name, "./" + item.name[:item.name.rfind('/')])
-
-
 class DataPrep(object):
-    def __init__(self, dataset='Freebase'):
+    
+    def __init__(self, name_dataset='Freebase15k'):
 
-        self.config = GlobalConfig(dataset=dataset)
-        if not os.path.exists(self.config.dataset.dataset_home):
-            os.mkdir(self.config.dataset.dataset_home)
-        if not os.path.exists(self.config.dataset.root_path):
-            os.mkdir(self.config.dataset.root_path)
-            print("\tDownloading %s dataset"%dataset)
-            with urllib.request.urlopen(self.config.dataset.url)\
-                    as response, open(self.config.dataset.tar, 'wb') as out_file:
-                shutil.copyfileobj(response, out_file)
-            try:
-                extract(self.config.dataset.tar,self.config.dataset.root_path)
-            except Exception as e:
-                print("Could not extract the tgz file!")
-                print(type(e),e.args)
-
+        '''store the information of database'''
+        self.config = GlobalConfig(dataset=name_dataset)
+        
         self.train_triples      = []
         self.test_triples       = []
         self.validation_triples = []
@@ -99,6 +75,7 @@ class DataPrep(object):
         if self.config.negative_sample =='bern':
             self.negative_sampling()
 
+    
     def dumpdata(self):
         pprint.pprint(self.relation2idx)
         pprint.pprint(self.idx2relation)
@@ -109,7 +86,7 @@ class DataPrep(object):
         if datatype is None:
             datatype = ['train']
         for data in datatype:
-            with open(self.config.dataset.downloaded_path +data+'.txt','r') as f:
+            with open( str(self.config.dataset.downloaded_path) +data+'.txt','r') as f:
                 lines=f.readlines()
                 for l in lines:
                     triple=parse_line(l)
@@ -359,7 +336,7 @@ class DataPrep(object):
 
 
 if __name__=='__main__':
-    data_handler = DataPrep('Freebase')
+    data_handler = DataPrep('Freebase15k')
     print("\n----------Train Triple Stats---------------")
     print("Total Training Triples   :", len(data_handler.train_triples))
     print("Total Testing Triples    :", len(data_handler.test_triples))
