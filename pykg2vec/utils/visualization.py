@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import os
 import seaborn
-
+import pandas as pd
 
 seaborn.set_style("darkgrid")
 
@@ -83,6 +83,15 @@ class Visualization(object):
         # print(self.r_embs)
         # print(self.t_embs)
 
+    def plot_train_result(self, result=None):
+        if result is None:
+            result = np.loadtxt("../results/training_TransR.txt")
+
+        df = pd.DataFrame(result, columns=['Epochs', 'Loss'])
+        ax = seaborn.lineplot(x="Epochs", y="Loss",
+                              markers=True, dashes=False, data=df)
+        plt.savefig('../figures/training_TransR.pdf', bbox_inches='tight', dpi=300)
+        plt.show()
 
     def draw_figure_v2(self,
                        triples,
