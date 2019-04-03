@@ -55,9 +55,9 @@ class TransH(KGMeta):
         self.neg_t = tf.placeholder(tf.int32, [None])
         self.neg_r = tf.placeholder(tf.int32, [None])
 
-        # self.test_h = tf.placeholder(tf.int32, [1])
-        # self.test_t = tf.placeholder(tf.int32, [1])
-        # self.test_r = tf.placeholder(tf.int32, [1])
+        self.test_h = tf.placeholder(tf.int32, [1])
+        self.test_t = tf.placeholder(tf.int32, [1])
+        self.test_r = tf.placeholder(tf.int32, [1])
 
         self.loss = None
         self.op_train = None
@@ -78,8 +78,13 @@ class TransH(KGMeta):
                                               shape=[self.data_handler.tot_relation, self.config.hidden_size],
                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         
+        self.wr = tf.get_variable(name="wr",
+                                  shape=[self.data_handler.tot_relation, self.config.hidden_size],
+                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        
         self.__variables.append(self.ent_embeddings)
         self.__variables.append(self.rel_embeddings)
+        self.__variables.append(self.wr)
 
     def train_model(self):
         """function to define the model"""
@@ -97,9 +102,15 @@ class TransH(KGMeta):
         emb_nr = tf.nn.embedding_lookup(self.norm_relation, self.neg_r)
         
         # getting the required normal vectors of planes to transfer entity embedding 
-        # pos_norm = tf.nn.embedding_lookup(''' projection matrix''', self.pos_r)
-        # neg_norm = tf.nn.embedding_lookup(''' projection matrix''', self.neg_r)
+        pos_norm = tf.nn.embedding_lookup(self.wr, self.pos_r)
+        neg_norm = tf.nn.embedding_lookup(self.wr, self.neg_r)
 
+        emb_ph = emb_ph - tf.reduce_sum(emb_ph * pos_norm, 1, keep_dims = True) * pos_norm
+        emb_pt = emb_pt - tf.reduce_sum(emb_pt * pos_norm, 1, keep_dims = True) * pos_norm
+
+        emb_nh = emb_nh - tf.reduce_sum(emb_nh * neg_norm, 1, keep_dims = True) * neg_norm
+        emb_nt = emb_nt - tf.reduce_sum(emb_nt * neg_norm, 1, keep_dims = True) * neg_norm
+        
         score_pos = tf.reduce_sum(tf.abs(emb_ph + emb_pr - emb_pt), axis=1)
         score_neg = tf.reduce_sum(tf.abs(emb_nh + emb_nr - emb_nt), axis=1)
 
@@ -134,6 +145,9 @@ class TransH(KGMeta):
 
             norm_ent = sess.run(tf.nn.l2_normalize(self.ent_embeddings, axis=1))
             sess.run(tf.assign(self.ent_embeddings, norm_ent))
+
+            norm_wr = sess.run(tf.nn.l2_normalize(self.wr, axis=1))
+            sess.run(tf.assign(self.wr, norm_wr))
 
             gen_train = self.data_handler.batch_generator_train(batch=self.config.batch_size)
 
