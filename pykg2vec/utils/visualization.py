@@ -27,7 +27,10 @@ seaborn.set_style("darkgrid")
 class Visualization(object):
     def __init__(self, triples= None, idx2entity = None, idx2relation= None):
         self.triples = triples
-        self.tot_triples = len(triples)
+        if triples:
+            self.tot_triples = len(triples)
+        else:
+            self.tot_triples = None
         self.h_emb = []
         self.t_emb = []
         self.r_emb = []

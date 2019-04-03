@@ -159,7 +159,7 @@ class TransR(KGMeta):
             for n_iter in range(self.config.epochs):
                 acc_loss = 0
                 batch = 0
-                num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size
+                num_batch = 2#len(self.data_handler.train_triples_ids) // self.config.batch_size
                 start_time = timeit.default_timer()
 
                 for i in range(num_batch):
@@ -236,11 +236,11 @@ class TransR(KGMeta):
                                                   name="rel_embedding",
                                                   dtype=np.float32)
                 rel_matrix = tf.Variable(np.loadtxt('../intermediate/rel_matrix.txt'),
-                                                  name="rel_embedding",
+                                                  name="rel_matrix",
                                                   dtype=np.float32)
             except FileNotFoundError:
                 print("The model was not saved! Set save_model=True!")
-
+            sess.run(tf.global_variables_initializer())
             pos_h_e = tf.reshape(tf.nn.embedding_lookup(ent_embeddings, h),
                                  [-1, self.config.ent_hidden_size, 1])
             pos_r_e = tf.reshape(tf.nn.embedding_lookup(rel_embeddings, r),
@@ -271,22 +271,23 @@ class TransR(KGMeta):
 
     def display_in_rel_space(self, fig_name=None):
         """function to display embedding"""
-        h_emb = []
-        t_emb = []
-        r_emb = []
+
         h_name = []
         r_name = []
         t_name = []
         triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
+        pos_h=[]
+        pos_r=[]
+        pos_t=[]
         for t in triples:
             h_name.append(self.data_handler.idx2entity[t.h])
             r_name.append(self.data_handler.idx2relation[t.r])
             t_name.append(self.data_handler.idx2entity[t.t])
-            emb_h, emb_r, emb_t = self.predict_embed_in_rel_space(t.h, t.r, t.t)
+            pos_h.append(t.h)
+            pos_r.append(t.r)
+            pos_t.append(t.t)
 
-            h_emb.append(emb_h)
-            r_emb.append(emb_r)
-            t_emb.append(emb_t)
+        h_emb, r_emb, t_emb = self.predict_embed_in_rel_space(pos_h,pos_r,pos_t)
 
         h_emb = np.array(h_emb)
         r_emb = np.array(r_emb)
