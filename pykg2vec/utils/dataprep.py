@@ -25,14 +25,6 @@ class Triple(object):
         self.r = relation
         self.t = tail
 
-
-def parse_line(line):
-    h, r, t = line.split('\t')
-    h = h.split(' ')[0]
-    r = r.split(' ')[0]
-    t = t.split(' ')[0]
-    return Triple(h,r,t)
-
 class DataPrep(object):
     
     def __init__(self, name_dataset='Freebase15k'):
@@ -43,6 +35,11 @@ class DataPrep(object):
         self.train_triples      = []
         self.test_triples       = []
         self.validation_triples = []
+        
+        self.tot_relation = 0
+        self.tot_triple   = 0
+        self.tot_entity   = 0
+
         self.train_triples_ids  = []
         self.test_triples_ids   = []
         self.validation_triples_ids = []
@@ -55,41 +52,33 @@ class DataPrep(object):
 
         self.hr_t = defaultdict(set)
         self.tr_t = defaultdict(set)
-
-        self.tot_relation = 0
-        self.tot_triple   = 0
-        self.tot_entity   = 0
-
+        
         self.relation_property_head = None
         self.relation_property_tail = None
         self.relation_property = None
 
-        #read the train, test and valid triples
-        print("\tReading Triples")
-        self.read_triple(['train','test','valid'])
-        #TODO: save the triples to prevent parsing everytime
-        print("\tConverting triple to idx")
-        self.get_idx()
-        self.convert2idx()
+        self.read_triple(['train','test','valid']) #TODO: save the triples to prevent parsing everytime
+        self.calculate_mapping() # from entity and relation to indexes.
+
+        self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.test_triples]
+        self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.train_triples]
+        self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.validation_triples]
 
         if self.config.negative_sample =='bern':
             self.negative_sampling()
 
-    
-    def dumpdata(self):
-        pprint.pprint(self.relation2idx)
-        pprint.pprint(self.idx2relation)
-        # for key,val in self.__dict__.items():
-        #     pprint.pprint(key, val)
-
     def read_triple(self, datatype=None):
-        if datatype is None:
-            datatype = ['train']
+        print("Reading Triples",datatype)
+
         for data in datatype:
-            with open( str(self.config.dataset.downloaded_path) +data+'.txt','r') as f:
+            with open( str(self.config.dataset.downloaded_path)+data+'.txt','r') as f:
                 lines=f.readlines()
                 for l in lines:
-                    triple=parse_line(l)
+                    h, r, t = l.split('\t')
+                    h = h.split(' ')[0].strip()
+                    r = r.split(' ')[0].strip()
+                    t = t.split(' ')[0].strip()
+                    triple = Triple(h,r,t)
                     if data == 'train':
                         self.train_triples.append(triple)
                     elif data =='test':
@@ -99,8 +88,10 @@ class DataPrep(object):
                     else:
                         continue
 
-    def get_idx(self):
-        if  os.path.isfile(self.config.dataset.entity2idx_path):
+    def calculate_mapping(self):
+        print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
+
+        if self.config.dataset.entity2idx_path.is_file():
             with open(self.config.dataset.entity2idx_path, 'rb') as f:
                 self.entity2idx = pickle.load(f)
 
@@ -172,37 +163,6 @@ class DataPrep(object):
             with open(self.config.dataset.idx2relation_path, 'wb') as f:
                 pickle.dump(self.idx2relation, f)
 
-        print("\n----------Train Triple Stats---------------")
-        print("Total Training Triples   :", len(self.train_triples))
-        print("Total Testing Triples    :", len(self.test_triples))
-        print("Total validation Triples :", len(self.validation_triples))
-        print("Total Entities           :", self.tot_entity)
-        print("Total Relations          :", self.tot_relation)
-        print("---------------------------------------------")
-
-    def convert2idx(self):
-        for t in self.test_triples:
-            self.test_triples_ids.append(Triple(self.entity2idx[t.h],
-                                          self.relation2idx[t.r],
-                                          self.entity2idx[t.t]))
-        for t in self.train_triples:
-            self.train_triples_ids.append(Triple(self.entity2idx[t.h],
-                                          self.relation2idx[t.r],
-                                          self.entity2idx[t.t]))
-
-        for t in self.validation_triples:
-            self.validation_triples_ids.append(Triple(self.entity2idx[t.h],
-                                          self.relation2idx[t.r],
-                                          self.entity2idx[t.t]))
-
-    def print_triple(self):
-        for triple in self.train_triples:
-            print(triple.h,triple.r,triple.t)
-        for triple in self.test_triples:
-            print(triple.h,triple.r,triple.t)
-        for triple in self.validation_triples:
-            print(triple.h,triple.r,triple.t)
-
     def negative_sampling(self):
         self.relation_property_head = {x: [] for x in
                                          range(self.tot_relation)}
@@ -216,42 +176,15 @@ class DataPrep(object):
                                     for x in
                                     self.relation_property_head.keys()}
 
-    def batch_generator(self, batch=128, data='test'):
-
-        if data=='test':
-            triples = self.test_triples_ids
-        elif data =='valid':
-            triples = self.validation_triples_ids
-        else:
-            raise NotImplementedError("%s data not present" % data)
-        num_triples = len(triples)
-
-        rand_ids = np.random.permutation(num_triples)
-        number_of_batches = num_triples // batch
-        print("Number of batches:", number_of_batches)
-
-        counter = 0
-        while True:
-            pos_triples = np.asarray([[triples[x].h,triples[x].r,triples[x].t] for x in rand_ids[batch*counter:batch*(counter + 1)]])
-            ph = pos_triples[:,0]
-            pr = pos_triples[:,1]
-            pt = pos_triples[:,2]
-
-            counter += 1
-            yield ph, pr, pt
-            if counter == number_of_batches:
-                counter = 0
-
     def batch_generator_train(self, batch=128):
-        num_triples = len(self.train_triples_ids)
         pos_triples_hm = {}
         neg_triples_hm = {}
 
         for t in self.train_triples_ids:
             pos_triples_hm[(t.h,t.r,t.t)] = 1
 
-        rand_ids = np.random.permutation(num_triples)
-        number_of_batches = num_triples // batch
+        rand_ids = np.random.permutation(self.tot_triple)
+        number_of_batches = self.tot_triple // batch
         print("Number of batches:", number_of_batches)
 
         counter = 0
@@ -333,27 +266,58 @@ class DataPrep(object):
 
             if counter == number_of_batches:
                 counter = 0
+    
+    def dump(self):
+        ''' dump key information'''
+        print("\n----------Relation to Indexes---------------")
+        pprint.pprint(self.relation2idx)
+        print("---------------------------------------------")
+        
+        print("\n----------Relation to Indexes---------------")
+        pprint.pprint(self.idx2relation)
+        print("---------------------------------------------")
 
+        print("\n----------Train Triple Stats---------------")
+        print("Total Training Triples   :", len(self.train_triples))
+        print("Total Testing Triples    :", len(self.test_triples))
+        print("Total validation Triples :", len(self.validation_triples))
+        print("Total Training Triples   :", len(self.train_triples_ids), "(from train_triples_ids)")
+        print("Total Testing Triples    :", len(self.test_triples_ids), "(from test_triples_ids)")
+        print("Total validation Triples :", len(self.validation_triples_ids), "(from validation_triples_ids)")
+        print("Total Entities           :", self.tot_entity)
+        print("Total Relations          :", self.tot_relation)
+        print("---------------------------------------------")
 
-if __name__=='__main__':
+    def dump_triples(self):
+        '''dump all the triples'''
+        for idx, triple in enumerate(self.train_triples):
+            print(idx, triple.h,triple.r,triple.t)
+        for idx, triple in enumerate(self.test_triples):
+            print(idx, triple.h,triple.r,triple.t)
+        for idx, triple in enumerate(self.validation_triples):
+            print(idx, triple.h,triple.r,triple.t)
+
+def test_data_prep():
     data_handler = DataPrep('Freebase15k')
-    print("\n----------Train Triple Stats---------------")
-    print("Total Training Triples   :", len(data_handler.train_triples))
-    print("Total Testing Triples    :", len(data_handler.test_triples))
-    print("Total validation Triples :", len(data_handler.validation_triples))
-    print("Total Entities           :", data_handler.tot_entity)
-    print("Total Relations          :", data_handler.tot_relation)
-    print("---------------------------------------------")
-    data_handler.dumpdata()
+    data_handler.dump()
+
+def test_data_prep_generator():
+    data_handler = DataPrep('Freebase15k')
     gen = data_handler.batch_generator_train(batch=8)
     for i in range(10):
         ph, pr, pt, nh, nr, nt = list(next(gen))
-        # print("\nph:", ph)
-        # print("pr:", pr)
-        # print("pt:", pt)
-        # print("nh:", nh)
-        # print("nr:", nr)
-        # print("nt:", nt)
+        print("")
+        print("ph:", ph)
+        print("pr:", pr)
+        print("pt:", pt)
+        print("nh:", nh)
+        print("nr:", nr)
+        print("nt:", nt)
+
+if __name__=='__main__':
+    # test_data_prep()
+    test_data_prep_generator()
+    
 
 
 """
