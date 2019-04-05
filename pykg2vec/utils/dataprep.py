@@ -40,10 +40,6 @@ class DataPrep(object):
         self.tot_triple   = 0
         self.tot_entity   = 0
 
-        self.train_triples_ids  = []
-        self.test_triples_ids   = []
-        self.validation_triples_ids = []
-
         self.entity2idx   = {}
         self.idx2entity   = {}
 
@@ -171,6 +167,7 @@ class DataPrep(object):
         for t in self.train_triples:
             self.relation_property_head[t[1]].append(t[0])
             self.relation_property_tail[t[1]].append(t[2])
+        
         self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
                     len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
                                     for x in
@@ -183,8 +180,8 @@ class DataPrep(object):
         for t in self.train_triples_ids:
             pos_triples_hm[(t.h,t.r,t.t)] = 1
 
-        rand_ids = np.random.permutation(self.tot_triple)
-        number_of_batches = self.tot_triple // batch
+        rand_ids = np.random.permutation(len(self.train_triples_ids))
+        number_of_batches = len(self.train_triples_ids) // batch
         print("Number of batches:", number_of_batches)
 
         counter = 0
@@ -215,6 +212,7 @@ class DataPrep(object):
                     idx = np.random.randint(self.tot_entity)
                     break_cnt = 0
                     flag = False
+
                     while ((t[0], t[1], idx) in pos_triples_hm
                            or (t[0], t[1], idx) in neg_triples_hm):
                         idx = np.random.randint(self.tot_entity)
@@ -226,14 +224,14 @@ class DataPrep(object):
                         nh.append(last_h)
                         nr.append(last_r)
                         nt.append(last_t)
-                        continue
-                    nh.append(t[0])
-                    nr.append(t[1])
-                    nt.append(idx)
-                    last_h=t[0]
-                    last_r=t[1]
-                    last_t=idx
-                    neg_triples_hm[(t[0],t[1],idx)] = 1
+                    else:
+                        nh.append(t[0])
+                        nr.append(t[1])
+                        nt.append(idx)
+                        last_h=t[0]
+                        last_r=t[1]
+                        last_t=idx
+                        neg_triples_hm[(t[0],t[1],idx)] = 1
                 else:
                     idx = np.random.randint(self.tot_entity)
                     break_cnt = 0
@@ -249,19 +247,17 @@ class DataPrep(object):
                         nh.append(last_h)
                         nr.append(last_r)
                         nt.append(last_t)
-                        continue
-                    nh.append(idx)
-                    nr.append(t[1])
-                    nt.append(t[2])
-                    last_h = idx
-                    last_r = t[1]
-                    last_t = t[2]
-                    neg_triples_hm[(idx, t[1], t[2])] = 1
+                    else:
+                        nh.append(idx)
+                        nr.append(t[1])
+                        nt.append(t[2])
+                        last_h = idx
+                        last_r = t[1]
+                        last_t = t[2]
+                        neg_triples_hm[(idx, t[1], t[2])] = 1
 
             counter += 1
-            l= len([v for v in nr if v>1345])
-            if l>0:
-                print("total false relations:",l)
+          
             yield ph, pr, pt, nh, nr, nt
 
             if counter == number_of_batches:
@@ -303,6 +299,7 @@ def test_data_prep():
 
 def test_data_prep_generator():
     data_handler = DataPrep('Freebase15k')
+    data_handler.dump()
     gen = data_handler.batch_generator_train(batch=8)
     for i in range(10):
         ph, pr, pt, nh, nr, nt = list(next(gen))
