@@ -55,11 +55,7 @@ class DataPrep(object):
         self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.train_triples]
         self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.validation_triples]
 
-        if self.config.negative_sample =='bern':
-            self.relation_property_head = None
-            self.relation_property_tail = None
-            self.relation_property = None
-            
+        if self.config.negative_sample =='bern':          
             self.relation_property_head = {x: [] for x in
                                          range(self.tot_relation)}
             self.relation_property_tail = {x: [] for x in
@@ -165,29 +161,40 @@ class DataPrep(object):
             with open(self.config.dataset.idx2relation_path, 'wb') as f:
                 pickle.dump(self.idx2relation, f)
 
-    def batch_generator_train(self, batch_size=128):
-        #TODO: add parameter for specifying the source of triple
+    def batch_generator_train(self, src_triples=None, batch_size=128):
 
-        pos_triples_hm = {(t.h, t.r, t.t): 1 for t in self.train_triples_ids}
-        neg_triples_hm = {}
-        array_rand_ids = np.random.permutation(len(self.train_triples_ids))
-        number_of_batches = len(self.train_triples_ids) // batch_size
+        if src_triples == None:
+            #TODO: add parameter for specifying the source of triple
+            src_triples = self.train_triples_ids
+
+        observed_triples = {(t.h, t.r, t.t): 1 for t in src_triples} 
+        # 1 as positive, 0 as negative
+
+        array_rand_ids = np.random.permutation(len(src_triples))
+        number_of_batches = len(src_triples) // batch_size
 
         print("Number of batches:", number_of_batches)
 
         batch_idx = 0
+        last_h=0
+        last_r=0
+        last_t=0
 
         while True:
-            pos_triples = np.asarray([[self.train_triples_ids[x].h,
-                                       self.train_triples_ids[x].r,
-                                       self.train_triples_ids[x].t] for x in array_rand_ids[batch_size*batch_idx:batch_size*(batch_idx + 1)]])
-            # print("triples:",pos_triples)
+            
+            pos_triples = np.asarray([[src_triples[x].h,
+                                       src_triples[x].r,
+                                       src_triples[x].t] for x in array_rand_ids[batch_size*batch_idx:batch_size*(batch_idx+1)]])
+            
+            # print("triples:", pos_triples)
+            
             ph = pos_triples[:, 0]
             pr = pos_triples[:, 1]
             pt = pos_triples[:, 2]
             nh = []
             nr = []
             nt = []
+            
             for t in pos_triples:
                 # print("r:",t[1])
                 if self.config.negative_sample == 'uniform':
@@ -195,57 +202,54 @@ class DataPrep(object):
                 elif self.config.negative_sample == 'bern':
                     prob = self.relation_property[t[1]]
                 else:
-                    raise NotImplementedError("%s sampling not supported!" % self.config.negative_sample)
-                last_h=0
-                last_r=0
-                last_t=0
-                if np.random.random()>prob:
-                    idx = np.random.randint(self.tot_entity)
-                    break_cnt = 0
-                    flag = False
+                    raise NotImplementedError("%s sampling not supported!" % self.config.negative_sample)              
 
-                    while ((t[0], t[1], idx) in pos_triples_hm
-                           or (t[0], t[1], idx) in neg_triples_hm):
-                        idx = np.random.randint(self.tot_entity)
+                if np.random.random()>prob:
+                    idx_replace_tail = np.random.randint(self.tot_entity)
+                    break_cnt = 0
+                    while ((t[0], t[1], idx_replace_tail) in observed_triples
+                           or (t[0], t[1], idx_replace_tail) in observed_triples):
+                        idx_replace_tail = np.random.randint(self.tot_entity)
                         break_cnt += 1
                         if break_cnt >= 100:
-                            flag =True
                             break
-                    if flag:
+
+                    if break_cnt >= 100: # can not find new negative triple.
                         nh.append(last_h)
                         nr.append(last_r)
                         nt.append(last_t)
                     else:
                         nh.append(t[0])
                         nr.append(t[1])
-                        nt.append(idx)
+                        nt.append(idx_replace_tail)
                         last_h=t[0]
                         last_r=t[1]
-                        last_t=idx
-                        neg_triples_hm[(t[0],t[1],idx)] = 1
+                        last_t=idx_replace_tail
+
+                        observed_triples[(t[0],t[1],idx_replace_tail)] = 0
                 else:
-                    idx = np.random.randint(self.tot_entity)
+                    idx_replace_head = np.random.randint(self.tot_entity)
                     break_cnt = 0
-                    flag = False
-                    while ((idx, t[1], t[2]) in pos_triples_hm
-                           or (idx, t[1], t[2]) in neg_triples_hm):
-                        idx = np.random.randint(self.tot_entity)
+                    while ((idx_replace_head, t[1], t[2]) in observed_triples
+                           or (idx_replace_head, t[1], t[2]) in observed_triples):
+                        idx_replace_head = np.random.randint(self.tot_entity)
                         break_cnt += 1
                         if break_cnt >= 100:
-                            flag = True
                             break
-                    if flag:
+
+                    if break_cnt >= 100: # can not find new negative triple.
                         nh.append(last_h)
                         nr.append(last_r)
                         nt.append(last_t)
                     else:
-                        nh.append(idx)
+                        nh.append(idx_replace_head)
                         nr.append(t[1])
                         nt.append(t[2])
-                        last_h = idx
+                        last_h = idx_replace_head
                         last_r = t[1]
                         last_t = t[2]
-                        neg_triples_hm[(idx, t[1], t[2])] = 1
+                        
+                        observed_triples[(idx_replace_head, t[1], t[2])] = 0
 
             batch_idx += 1
           
