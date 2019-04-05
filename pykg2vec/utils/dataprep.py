@@ -28,8 +28,8 @@ class Triple(object):
 class DataPrep(object):
     
     def __init__(self, name_dataset='Freebase15k'):
-
         '''store the information of database'''
+
         self.config = GlobalConfig(dataset=name_dataset)
         
         self.train_triples      = []
@@ -42,16 +42,11 @@ class DataPrep(object):
 
         self.entity2idx   = {}
         self.idx2entity   = {}
-
         self.relation2idx = {}
         self.idx2relation = {}
 
         self.hr_t = defaultdict(set)
-        self.tr_t = defaultdict(set)
-        
-        self.relation_property_head = None
-        self.relation_property_tail = None
-        self.relation_property = None
+        self.tr_t = defaultdict(set)      
 
         self.read_triple(['train','test','valid']) #TODO: save the triples to prevent parsing everytime
         self.calculate_mapping() # from entity and relation to indexes.
@@ -61,20 +56,31 @@ class DataPrep(object):
         self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.validation_triples]
 
         if self.config.negative_sample =='bern':
-            self.negative_sampling()
+            self.relation_property_head = None
+            self.relation_property_tail = None
+            self.relation_property = None
+            
+            self.relation_property_head = {x: [] for x in
+                                         range(self.tot_relation)}
+            self.relation_property_tail = {x: [] for x in
+                                             range(self.tot_relation)}
+            for t in self.train_triples:
+                self.relation_property_head[t[1]].append(t[0])
+                self.relation_property_tail[t[1]].append(t[2])
+            
+            self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
+                        len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
+                                        for x in
+                                        self.relation_property_head.keys()}
 
     def read_triple(self, datatype=None):
         print("Reading Triples",datatype)
 
         for data in datatype:
-            with open( str(self.config.dataset.downloaded_path)+data+'.txt','r') as f:
-                lines=f.readlines()
-                for l in lines:
+            with open(str(self.config.dataset.downloaded_path)+data+'.txt','r') as f:
+                for l in f.readlines():
                     h, r, t = l.split('\t')
-                    h = h.split(' ')[0].strip()
-                    r = r.split(' ')[0].strip()
-                    t = t.split(' ')[0].strip()
-                    triple = Triple(h,r,t)
+                    triple = Triple(h.strip(),r.strip(),t.strip())
                     if data == 'train':
                         self.train_triples.append(triple)
                     elif data =='test':
@@ -159,37 +165,22 @@ class DataPrep(object):
             with open(self.config.dataset.idx2relation_path, 'wb') as f:
                 pickle.dump(self.idx2relation, f)
 
-    def negative_sampling(self):
-        self.relation_property_head = {x: [] for x in
-                                         range(self.tot_relation)}
-        self.relation_property_tail = {x: [] for x in
-                                         range(self.tot_relation)}
-        for t in self.train_triples:
-            self.relation_property_head[t[1]].append(t[0])
-            self.relation_property_tail[t[1]].append(t[2])
-        
-        self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
-                    len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
-                                    for x in
-                                    self.relation_property_head.keys()}
+    def batch_generator_train(self, batch_size=128):
+        #TODO: add parameter for specifying the source of triple
 
-    def batch_generator_train(self, batch=128):
-        pos_triples_hm = {}
+        pos_triples_hm = {(t.h, t.r, t.t): 1 for t in self.train_triples_ids}
         neg_triples_hm = {}
+        array_rand_ids = np.random.permutation(len(self.train_triples_ids))
+        number_of_batches = len(self.train_triples_ids) // batch_size
 
-        for t in self.train_triples_ids:
-            pos_triples_hm[(t.h,t.r,t.t)] = 1
-
-        rand_ids = np.random.permutation(len(self.train_triples_ids))
-        number_of_batches = len(self.train_triples_ids) // batch
         print("Number of batches:", number_of_batches)
 
-        counter = 0
+        batch_idx = 0
 
         while True:
             pos_triples = np.asarray([[self.train_triples_ids[x].h,
                                        self.train_triples_ids[x].r,
-                                       self.train_triples_ids[x].t] for x in rand_ids[batch*counter:batch*(counter + 1)]])
+                                       self.train_triples_ids[x].t] for x in array_rand_ids[batch_size*batch_idx:batch_size*(batch_idx + 1)]])
             # print("triples:",pos_triples)
             ph = pos_triples[:, 0]
             pr = pos_triples[:, 1]
@@ -256,12 +247,12 @@ class DataPrep(object):
                         last_t = t[2]
                         neg_triples_hm[(idx, t[1], t[2])] = 1
 
-            counter += 1
+            batch_idx += 1
           
             yield ph, pr, pt, nh, nr, nt
 
-            if counter == number_of_batches:
-                counter = 0
+            if batch_idx == number_of_batches:
+                batch_idx = 0
     
     def dump(self):
         ''' dump key information'''
@@ -300,7 +291,7 @@ def test_data_prep():
 def test_data_prep_generator():
     data_handler = DataPrep('Freebase15k')
     data_handler.dump()
-    gen = data_handler.batch_generator_train(batch=8)
+    gen = data_handler.batch_generator_train(batch_size=8)
     for i in range(10):
         ph, pr, pt, nh, nr, nt = list(next(gen))
         print("")

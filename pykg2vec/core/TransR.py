@@ -138,7 +138,7 @@ class TransR(KGMeta):
 
     def train(self):
         with tf.Session(config=self.config.gpu_config) as sess:
-            gen_train = self.data_handler.batch_generator_train(batch=self.config.batch_size)
+            gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
             # if self.config.loadFromData:
             #     saver = tf.train.Saver()
             #     saver.restore(sess, self.config.tmp + '/TransRModel.vec')

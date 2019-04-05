@@ -149,7 +149,7 @@ class TransH(KGMeta):
             norm_wr = sess.run(tf.nn.l2_normalize(self.wr, axis=1))
             sess.run(tf.assign(self.wr, norm_wr))
 
-            gen_train = self.data_handler.batch_generator_train(batch=self.config.batch_size)
+            gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
 
             if self.config.loadFromData:
                 saver = tf.train.Saver()

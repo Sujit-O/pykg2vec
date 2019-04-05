@@ -161,7 +161,7 @@ class TransE(KGMeta):
             norm_ent = sess.run(tf.nn.l2_normalize(self.ent_embeddings, axis=1))
             sess.run(tf.assign(self.ent_embeddings, norm_ent))
 
-            gen_train = self.data_handler.batch_generator_train(batch=self.config.batch_size)
+            gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
 
             if self.config.loadFromData:
                 saver = tf.train.Saver()
