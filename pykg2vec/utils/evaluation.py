@@ -19,15 +19,6 @@ import numpy as np
 class EvaluationTransE(Evaluation):
 
     def __init__(self, model=None, test_data=None):
-        self.rank_head = []
-        self.rank_tail = []
-        self.filter_rank_head = []
-        self.filter_rank_tail = []
-
-        self.norm_rank_head = []
-        self.norm_rank_tail = []
-        self.norm_filter_rank_head = []
-        self.norm_filter_rank_tail = []
 
         self.mean_rank_head = {}
         self.mean_rank_tail = {}
@@ -67,12 +58,23 @@ class EvaluationTransE(Evaluation):
         self.epoch.append(epoch)
         if not sess:
             raise NotImplementedError('No session found for evaluation!')
+        rank_head = []
+        rank_tail = []
+        filter_rank_head = []
+        filter_rank_tail = []
+
+        norm_rank_head = []
+        norm_rank_tail = []
+        norm_filter_rank_head = []
+        norm_filter_rank_tail = []
         for i in range(self.model.config.test_num):
+            
+
             t = self.data[i]
             feed_dict = {
                 self.model.test_h: np.reshape(t.h, [1, ]),
                 self.model.test_r: np.reshape(t.r, [1, ]),
-                self.model.test_t: np.reshape(t.r, [1, ])
+                self.model.test_t: np.reshape(t.t, [1, ])
             }
             (id_replace_head,
              id_replace_tail,
@@ -129,67 +131,67 @@ class EvaluationTransE(Evaluation):
                     if val in self.hr_t[(t.h, t.r)]:
                         norm_ftrank -= 1
 
-            self.rank_head.append(hrank)
-            self.rank_tail.append(trank)
-            self.filter_rank_head.append(fhrank)
-            self.filter_rank_tail.append(ftrank)
+            rank_head.append(hrank)
+            rank_tail.append(trank)
+            filter_rank_head.append(fhrank)
+            filter_rank_tail.append(ftrank)
 
-            self.norm_rank_head.append(norm_hrank)
-            self.norm_rank_tail.append(norm_trank)
-            self.norm_filter_rank_head.append(norm_fhrank)
-            self.norm_filter_rank_tail.append(norm_ftrank)
+            norm_rank_head.append(norm_hrank)
+            norm_rank_tail.append(norm_trank)
+            norm_filter_rank_head.append(norm_fhrank)
+            norm_filter_rank_tail.append(norm_ftrank)
 
-        self.mean_rank_head[epoch] = np.sum(self.rank_head, dtype=np.float32) / self.model.config.test_num
-        self.mean_rank_tail[epoch] = np.sum(self.rank_tail, dtype=np.float32) / self.model.config.test_num
+        self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / self.model.config.test_num
+        self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / self.model.config.test_num
 
-        self.filter_mean_rank_head[epoch] = np.sum(self.filter_rank_head,
+        self.filter_mean_rank_head[epoch] = np.sum(filter_rank_head,
                                                    dtype=np.float32) / self.model.config.test_num
-        self.filter_mean_rank_tail[epoch] = np.sum(self.filter_rank_tail,
+        self.filter_mean_rank_tail[epoch] = np.sum(filter_rank_tail,
                                                    dtype=np.float32) / self.model.config.test_num
 
-        self.norm_mean_rank_head[epoch] = np.sum(self.norm_rank_head,
+        self.norm_mean_rank_head[epoch] = np.sum(norm_rank_head,
                                                  dtype=np.float32) / self.model.config.test_num
-        self.norm_mean_rank_tail[epoch] = np.sum(self.norm_rank_tail,
+        self.norm_mean_rank_tail[epoch] = np.sum(norm_rank_tail,
                                                  dtype=np.float32) / self.model.config.test_num
 
-        self.norm_filter_mean_rank_head[epoch] = np.sum(self.norm_filter_rank_head,
+        self.norm_filter_mean_rank_head[epoch] = np.sum(norm_filter_rank_head,
                                                         dtype=np.float32) / self.model.config.test_num
-        self.norm_filter_mean_rank_tail[epoch] = np.sum(self.norm_filter_rank_tail,
+        self.norm_filter_mean_rank_tail[epoch] = np.sum(norm_filter_rank_tail,
                                                         dtype=np.float32) / self.model.config.test_num
 
-        self.hit10_head[epoch] = np.sum(np.asarray(np.asarray(self.rank_head) < 10,
+        self.hit10_head[epoch] = np.sum(np.asarray(np.asarray(rank_head) < 10,
                                                    dtype=np.float32)) / self.model.config.test_num
-        self.hit10_tail[epoch] = np.sum(np.asarray(np.asarray(self.rank_tail) < 10,
+        self.hit10_tail[epoch] = np.sum(np.asarray(np.asarray(rank_tail) < 10,
                                                    dtype=np.float32)) / self.model.config.test_num
 
-        self.filter_hit10_head[epoch] = np.sum(np.asarray(np.asarray(self.filter_rank_head) < 10,
+        self.filter_hit10_head[epoch] = np.sum(np.asarray(np.asarray(filter_rank_head) < 10,
                                                           dtype=np.float32)) / self.model.config.test_num
-        self.filter_hit10_tail[epoch] = np.sum(np.asarray(np.asarray(self.filter_rank_tail) < 10,
+        self.filter_hit10_tail[epoch] = np.sum(np.asarray(np.asarray(filter_rank_tail) < 10,
                                                           dtype=np.float32)) / self.model.config.test_num
 
-        self.norm_hit10_head[epoch] = np.sum(np.asarray(np.asarray(self.norm_rank_head) < 10,
+        self.norm_hit10_head[epoch] = np.sum(np.asarray(np.asarray(norm_rank_head) < 10,
                                                         dtype=np.float32)) / self.model.config.test_num
-        self.norm_hit10_tail[epoch] = np.sum(np.asarray(np.asarray(self.norm_rank_tail) < 10,
+        self.norm_hit10_tail[epoch] = np.sum(np.asarray(np.asarray(norm_rank_tail) < 10,
                                                         dtype=np.float32)) / self.model.config.test_num
 
-        self.norm_filter_hit10_head[epoch] = np.sum(np.asarray(np.asarray(self.norm_filter_rank_head) < 10,
+        self.norm_filter_hit10_head[epoch] = np.sum(np.asarray(np.asarray(norm_filter_rank_head) < 10,
                                                                dtype=np.float32)) / self.model.config.test_num
-        self.norm_filter_hit10_tail[epoch] = np.sum(np.asarray(np.asarray(self.norm_filter_rank_tail) < 10,
+        self.norm_filter_hit10_tail[epoch] = np.sum(np.asarray(np.asarray(norm_filter_rank_tail) < 10,
                                                                dtype=np.float32)) / self.model.config.test_num
 
     def print_test_summary(self, epoch=None):
         if epoch:
-            print('iter:%d --mean rank: %.2f --hit@10: %.2f' % (
+            print('iter:%d --mean rank: %.2f --hit@10: %.4f' % (
                 epoch, (self.mean_rank_head[epoch] + self.mean_rank_tail[epoch]) / 2,
                 (self.hit10_tail[epoch] + self.hit10_head[epoch]) / 2))
-            print('iter:%d --filter mean rank: %.2f --filter hit@10: %.2f' % (
+            print('iter:%d --filter mean rank: %.2f --filter hit@10: %.4f' % (
                 epoch, (self.filter_mean_rank_head[epoch] + self.filter_mean_rank_tail[epoch]) / 2,
                 (self.filter_hit10_tail[epoch] + self.filter_hit10_head[epoch]) / 2))
 
-            print('iter:%d --norm mean rank: %.2f --norm hit@10: %.2f' % (
+            print('iter:%d --norm mean rank: %.2f --norm hit@10: %.4f' % (
                 epoch, (self.norm_mean_rank_head[epoch] + self.norm_mean_rank_tail[epoch]) / 2,
                 (self.norm_hit10_tail[epoch] + self.norm_hit10_head[epoch]) / 2))
-            print('iter:%d --norm filter mean rank: %.2f --norm filter hit@10: %.2f' % (
+            print('iter:%d --norm filter mean rank: %.2f --norm filter hit@10: %.4f' % (
                 epoch, (self.norm_filter_mean_rank_head[epoch] + self.norm_filter_mean_rank_tail[epoch]) / 2,
                 (self.norm_filter_hit10_tail[epoch] + self.norm_filter_hit10_head[epoch]) / 2))
         else:
