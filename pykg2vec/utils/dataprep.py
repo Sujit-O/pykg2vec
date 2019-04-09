@@ -200,7 +200,7 @@ class DataPrep(object):
             print(triple.h, triple.r, triple.t)
 
 
-   def batch_generator_train(self, src_triples=None, batch_size=128):
+    def batch_generator_train(self, src_triples=None, batch_size=128):
 
         if src_triples == None:
             #TODO: add parameter for specifying the source of triple
