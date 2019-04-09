@@ -53,11 +53,18 @@ class DataPrep(object):
         self.test_triples_ids = []
         self.train_triples_ids = []
         self.validation_triples_ids = []
+<<<<<<< Updated upstream
 
         self.read_triple(['train','test','valid']) #TODO: save the triples to prevent parsing everytime
         self.calculate_mapping() # from entity and relation to indexes.
         self.convert2idx()
 
+=======
+        
+        self.read_triple(['train','test','valid']) #TODO: save the triples to prevent parsing everytime
+        self.calculate_mapping() # from entity and relation to indexes.
+        self.convert2idx()
+>>>>>>> Stashed changes
         # self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.test_triples]
         # self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.train_triples]
         # self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.validation_triples]
@@ -93,6 +100,26 @@ class DataPrep(object):
                         self.validation_triples.append(triple)
                     else:
                         continue
+    def convert2idx(self):
+        for t in self.test_triples:
+            self.test_triples_ids.append(Triple(self.entity2idx[t.h],
+                                                self.relation2idx[t.r],
+                                                self.entity2idx[t.t]))
+            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+        for t in self.train_triples:
+            self.train_triples_ids.append(Triple(self.entity2idx[t.h],
+                                                 self.relation2idx[t.r],
+                                                 self.entity2idx[t.t]))
+            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+
+        for t in self.validation_triples:
+            self.validation_triples_ids.append(Triple(self.entity2idx[t.h],
+                                                      self.relation2idx[t.r],
+                                                      self.entity2idx[t.t]))
+            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
