@@ -39,7 +39,7 @@ class KGMeta:
 		pass
 
 
-class Evaluation:
+class EvaluationMeta:
 	__metaclass__ = ABCMeta
 
 	def __init__(self):

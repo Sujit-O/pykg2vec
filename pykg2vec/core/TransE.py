@@ -37,8 +37,7 @@ import sys
 sys.path.append("D:\dev\pykg2vec\pykg2vec")
 from core.KGMeta import KGMeta
 from utils.visualization import Visualization
-from utils.evaluation import EvaluationTransE
-from utils.evaluation import EvaluationTransE
+from utils.evaluation import Evaluation
 from config.config import TransEConfig
 from utils.dataprep import DataPrep
 import pdb
@@ -52,6 +51,7 @@ from tensorflow.python import debug as tf_debug
 # from pykg2vec.config.config import TransEConfig
 # from pykg2vec.utils.dataprep import DataPrep
 
+import pandas as pd
 import tensorflow as tf
 import timeit
 from argparse import ArgumentParser
@@ -69,7 +69,7 @@ class TransE(KGMeta):
 		Args:
 		-----Inputs-------
 		"""
-
+        self.model_name = 'TransE'
         if not config:
             self.config = TransEConfig()
         else:
@@ -96,6 +96,7 @@ class TransE(KGMeta):
         self.norm_entity = None
         self.head_rank = None
         self.tail_rank = None
+        self.training_results = []
         self.__variables = []
 
         self.norm_head_rank = None
@@ -111,9 +112,6 @@ class TransE(KGMeta):
 
         self.__variables.append(self.ent_embeddings)
         self.__variables.append(self.rel_embeddings)
-
-    def train_model(self):
-        """function to train the model"""
 
         self.norm_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         self.norm_relation = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
@@ -146,13 +144,11 @@ class TransE(KGMeta):
 
         grads = optimizer.compute_gradients(self.loss, self.variables)
         self.op_train = optimizer.apply_gradients(grads)
-        return self.loss, self.op_train, self.loss_every, self.norm_entity
 
     def train(self):
         with tf.Session(config=self.config.gpu_config) as sess:
             # sess=tf_debug.LocalCLIDebugWrapperSession(sess)
-            evaluate = EvaluationTransE(self, 'test')
-            loss, op_train, loss_every, norm_entity = self.train_model()
+            evaluate = Evaluation(model=self, test_data='test')
             sess.run(tf.global_variables_initializer())
 
             norm_rel = sess.run(tf.nn.l2_normalize(self.rel_embeddings, axis=1))
@@ -170,17 +166,12 @@ class TransE(KGMeta):
             for n_iter in range(self.config.epochs):
                 acc_loss = 0
                 batch = 0
-                num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size
+                num_batch = 5#len(self.data_handler.train_triples_ids) // self.config.batch_size
                 start_time = timeit.default_timer()
 
                 for i in range(num_batch):
-                    ph, pr, pt, nh, nr, nt= list(next(gen_train))
-                    # print("\nph:", ph)
-                    # print("pr:", pr)
-                    # print("pt:", pt)
-                    # print("nh:", nh)
-                    # print("nr:", nr)
-                    # print("nt:", nt)
+                    ph, pr, pt, nh, nr, nt = list(next(gen_train))
+
                     feed_dict = {
                         self.pos_h: ph,
                         self.pos_t: pt,
@@ -190,18 +181,21 @@ class TransE(KGMeta):
                         self.neg_r: nr
                     }
 
-                    l_val, _, l_every, n_entity = sess.run([loss, op_train, loss_every, norm_entity],
+                    l_val, _, l_every, n_entity = sess.run([self.loss,
+                                                            self.op_train,
+                                                            self.loss_every,
+                                                            self.norm_entity],
                                                            feed_dict)
 
                     acc_loss += l_val
                     batch += 1
-                    print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                                                                batch,
-                                                                num_batch,
-                                                                l_val), end='\r')
+                    # print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
+                    #                                             batch,
+                    #                                             num_batch,
+                    #                                             l_val), end='\r')
                 print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
                     n_iter, acc_loss, timeit.default_timer() - start_time))
-
+                self.training_results.append([n_iter, acc_loss])
                 if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
                     evaluate.test(sess, n_iter)
                     evaluate.print_test_summary(n_iter)
@@ -213,6 +207,18 @@ class TransE(KGMeta):
             if self.config.disp_result:
                 triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
                 self.display(triples, sess)
+            evaluate.save_test_summary()
+            self.save_training_result()
+
+    def save_training_result(self):
+        if not os.path.exists(self.config.result):
+            os.mkdir(self.config.result)
+
+        files = os.listdir(self.config.result)
+        l = len([f for f in files if 'TransE' in f if 'Training' in f])
+        df = pd.DataFrame(self.training_results, columns=['Epochs','Loss'])
+        with open(self.config.result + '/' + self.model_name + '_Training_results_' + str(l) + '.csv', 'w') as fh:
+            df.to_csv(fh)
 
     def test(self):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
@@ -282,15 +288,17 @@ class TransE(KGMeta):
 
     def summary(self):
         """function to print the summary"""
-        print("\n----------SUMMARY----------")
+        print("\n----------------SUMMARY----------------")
         # Acquire the max length and add four more spaces
-        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 4
+        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 15
         for key, val in self.config.__dict__.items():
+            if 'gpu' in key:
+                continue
             if len(key) < maxspace:
                 for i in range(maxspace - len(key)):
                     key = ' ' + key
             print(key, ":", val)
-        print("---------------------------")
+        print("-----------------------------------------")
     # TODO: Save summary
     # with open('../intermediate/TransEModel_summary.json', 'wb') as fp:
     # 	json.dump(self.config.__dict__, fp)
@@ -299,10 +307,10 @@ class TransE(KGMeta):
 def main():
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
-    parser.add_argument('-t', '--tmp', default='./intermediate', type=str, help='Temporary folder')
+    parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
     parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
     parser.add_argument('-l', '--epochs', default=10, type=int, help='Number of Epochs')
-    parser.add_argument('-tn', '--test_num', default=5, type=int, help='Number of test triples')
+    parser.add_argument('-tn', '--test_num', default=10, type=int, help='Number of test triples')
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
     parser.add_argument('-gp', '--gpu_frac', default=0.4, type=float, help='GPU fraction to use')
@@ -313,7 +321,7 @@ def main():
         os.mkdir(args.tmp)
 
     data_handler = DataPrep(args.dataset)
-
+    args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
     config = TransEConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,
                           epochs=args.epochs,
