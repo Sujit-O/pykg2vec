@@ -53,7 +53,7 @@ class DataPrep(object):
         self.test_triples_ids = []
         self.train_triples_ids = []
         self.validation_triples_ids = []
-        
+
         self.read_triple(['train','test','valid']) #TODO: save the triples to prevent parsing everytime
         self.calculate_mapping() # from entity and relation to indexes.
         self.convert2idx()

@@ -74,7 +74,7 @@ class TransEConfig(object):
                  gpu_fraction=0.4,
                  hits=None,
                  gpu_allow_growth=True,
-                 save_model=True,
+                 save_model=False,
                  disp_summary=True,
                  disp_result=True,
                  log_device_placement=False):
