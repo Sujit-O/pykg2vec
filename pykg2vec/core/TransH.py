@@ -22,7 +22,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-sys.path.append("D:\louis\Dropbox\louis_research\pyKG2Vec\pykg2vec")
+sys.path.append("../")
 
 from core.KGMeta import KGMeta
 import tensorflow as tf
@@ -31,7 +31,7 @@ from utils.dataprep import DataPrep
 import timeit
 from argparse import ArgumentParser
 from utils.visualization import Visualization
-from utils.evaluation import EvaluationTransH
+from utils.evaluation import Evaluation
 import os
 
 
@@ -105,11 +105,11 @@ class TransH(KGMeta):
         pos_norm = tf.nn.embedding_lookup(self.wr, self.pos_r)
         neg_norm = tf.nn.embedding_lookup(self.wr, self.neg_r)
 
-        emb_ph = emb_ph - tf.reduce_sum(emb_ph * pos_norm, 1, keep_dims = True) * pos_norm
-        emb_pt = emb_pt - tf.reduce_sum(emb_pt * pos_norm, 1, keep_dims = True) * pos_norm
+        emb_ph = emb_ph - tf.reduce_sum(emb_ph * pos_norm, 1, keepdims = True) * pos_norm
+        emb_pt = emb_pt - tf.reduce_sum(emb_pt * pos_norm, 1, keepdims = True) * pos_norm
 
-        emb_nh = emb_nh - tf.reduce_sum(emb_nh * neg_norm, 1, keep_dims = True) * neg_norm
-        emb_nt = emb_nt - tf.reduce_sum(emb_nt * neg_norm, 1, keep_dims = True) * neg_norm
+        emb_nh = emb_nh - tf.reduce_sum(emb_nh * neg_norm, 1, keepdims = True) * neg_norm
+        emb_nt = emb_nt - tf.reduce_sum(emb_nt * neg_norm, 1, keepdims = True) * neg_norm
         
         score_pos = tf.reduce_sum(tf.abs(emb_ph + emb_pr - emb_pt), axis=1)
         score_neg = tf.reduce_sum(tf.abs(emb_nh + emb_nr - emb_nt), axis=1)
@@ -136,7 +136,7 @@ class TransH(KGMeta):
         """function to train the model"""
 
         with tf.Session(config=self.config.gpu_config) as sess:
-            evaluate = EvaluationTransH(self, 'test')
+            evaluate = Evaluation(model=self, test_data='test')
             loss, op_train, loss_every, norm_entity = self.train_model()
             sess.run(tf.global_variables_initializer())
 

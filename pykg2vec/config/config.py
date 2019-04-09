@@ -122,6 +122,7 @@ class TransHConfig(object):
                  triple_num=5,
                  tmp='./intermediate',
                  gpu_fraction=0.4,
+                 hits=None,
                  gpu_allow_growth=True,
                  save_model=False,
                  disp_summary=True,
@@ -141,6 +142,9 @@ class TransHConfig(object):
         self.test_num = test_num
         self.disp_triple_num = triple_num
         self.tmp = tmp
+        if hits is None:
+            hits = [10,5]
+        self.hits= hits
         self.gpu_config = tf.ConfigProto(log_device_placement=log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
         self.gpu_config.gpu_options.allow_growth = gpu_allow_growth
