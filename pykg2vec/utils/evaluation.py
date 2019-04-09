@@ -170,7 +170,6 @@ class Evaluation(EvaluationMeta):
         self.norm_filter_mean_rank_tail[epoch] = np.sum(norm_filter_rank_tail,
                                                         dtype=np.float32) / self.model.config.test_num
 
-<<<<<<< Updated upstream
         for hit in self.hits:
             self.hit_head[(epoch, hit)] = np.sum(np.asarray(rank_head) < hit,
 
@@ -267,61 +266,6 @@ class Evaluation(EvaluationMeta):
         else:
             for epoch in self.epoch:
                 self.display_summary(epoch)
-
-=======
-        self.hit10_head[epoch] = np.sum(np.asarray(np.asarray(rank_head) < 10,
-                                                   dtype=np.float32)) / self.model.config.test_num
-        self.hit10_tail[epoch] = np.sum(np.asarray(np.asarray(rank_tail) < 10,
-                                                   dtype=np.float32)) / self.model.config.test_num
-
-        self.filter_hit10_head[epoch] = np.sum(np.asarray(np.asarray(filter_rank_head) < 10,
-                                                          dtype=np.float32)) / self.model.config.test_num
-        self.filter_hit10_tail[epoch] = np.sum(np.asarray(np.asarray(filter_rank_tail) < 10,
-                                                          dtype=np.float32)) / self.model.config.test_num
-
-        self.norm_hit10_head[epoch] = np.sum(np.asarray(np.asarray(norm_rank_head) < 10,
-                                                        dtype=np.float32)) / self.model.config.test_num
-        self.norm_hit10_tail[epoch] = np.sum(np.asarray(np.asarray(norm_rank_tail) < 10,
-                                                        dtype=np.float32)) / self.model.config.test_num
-
-        self.norm_filter_hit10_head[epoch] = np.sum(np.asarray(np.asarray(norm_filter_rank_head) < 10,
-                                                               dtype=np.float32)) / self.model.config.test_num
-        self.norm_filter_hit10_tail[epoch] = np.sum(np.asarray(np.asarray(norm_filter_rank_tail) < 10,
-                                                               dtype=np.float32)) / self.model.config.test_num
-
-    def print_test_summary(self, epoch=None):
-        if epoch:
-            print('iter:%d --mean rank: %.2f --hit@10: %.4f' % (
-                epoch, (self.mean_rank_head[epoch] + self.mean_rank_tail[epoch]) / 2,
-                (self.hit10_tail[epoch] + self.hit10_head[epoch]) / 2))
-            print('iter:%d --filter mean rank: %.2f --filter hit@10: %.4f' % (
-                epoch, (self.filter_mean_rank_head[epoch] + self.filter_mean_rank_tail[epoch]) / 2,
-                (self.filter_hit10_tail[epoch] + self.filter_hit10_head[epoch]) / 2))
-
-            print('iter:%d --norm mean rank: %.2f --norm hit@10: %.4f' % (
-                epoch, (self.norm_mean_rank_head[epoch] + self.norm_mean_rank_tail[epoch]) / 2,
-                (self.norm_hit10_tail[epoch] + self.norm_hit10_head[epoch]) / 2))
-            print('iter:%d --norm filter mean rank: %.2f --norm filter hit@10: %.4f' % (
-                epoch, (self.norm_filter_mean_rank_head[epoch] + self.norm_filter_mean_rank_tail[epoch]) / 2,
-                (self.norm_filter_hit10_tail[epoch] + self.norm_filter_hit10_head[epoch]) / 2))
-        else:
-            for epoch in self.epoch:
-                print("---------------Test Results: iter%d------------------" % epoch)
-                print('iter:%d --mean rank: %.2f --hit@10: %.2f' % (
-                    epoch, (self.mean_rank_head[epoch] + self.mean_rank_tail[epoch]) / 2,
-                    (self.hit10_tail[epoch] + self.hit10_head[epoch]) / 2))
-                print('iter:%d --filter mean rank: %.2f --filter hit@10: %.2f' % (
-                    epoch, (self.filter_mean_rank_head[epoch] + self.filter_mean_rank_tail[epoch]) / 2,
-                    (self.filter_hit10_tail[epoch] + self.filter_hit10_head[epoch]) / 2))
-
-                print('iter:%d --norm mean rank: %.2f --norm hit@10: %.2f' % (
-                    epoch, (self.norm_mean_rank_head[epoch] + self.norm_mean_rank_tail[epoch]) / 2,
-                    (self.norm_hit10_tail[epoch] + self.norm_hit10_head[epoch]) / 2))
-                print('iter:%d --norm filter mean rank: %.2f --norm filter hit@10: %.2f' % (
-                    epoch, (self.norm_filter_mean_rank_head[epoch] + self.norm_filter_mean_rank_tail[epoch]) / 2,
-                    (self.norm_filter_hit10_tail[epoch] + self.norm_filter_hit10_head[epoch]) / 2))
-                print("-----------------------------------------------------")
->>>>>>> Stashed changes
 
 if __name__ == '__main__':
     e = Evaluation()
