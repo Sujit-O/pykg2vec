@@ -53,7 +53,7 @@ class DataPrep(object):
         self.test_triples_ids = []
         self.train_triples_ids = []
         self.validation_triples_ids = []
-        
+
         self.read_triple(['train','test','valid']) #TODO: save the triples to prevent parsing everytime
         self.calculate_mapping() # from entity and relation to indexes.
         self.convert2idx()
@@ -200,7 +200,7 @@ class DataPrep(object):
             print(triple.h, triple.r, triple.t)
 
 
-   def batch_generator_train(self, src_triples=None, batch_size=128):
+    def batch_generator_train(self, src_triples=None, batch_size=128):
 
         if src_triples == None:
             #TODO: add parameter for specifying the source of triple

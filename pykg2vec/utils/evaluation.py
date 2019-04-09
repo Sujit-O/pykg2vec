@@ -12,7 +12,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.append("D:\dev\pykg2vec\pykg2vec")
+sys.path.append("../")
 from core.KGMeta import EvaluationMeta
 import tensorflow as tf
 
@@ -236,7 +236,7 @@ class Evaluation(EvaluationMeta):
             results.append(res_tmp)
 
         df = pd.DataFrame(results, columns=columns)
-        with open(self.model.config.result + '/' + self.model.model_name + '_results_' + str(l) + '.csv', 'w') as fh:
+        with open(self.model.config.result + '/' + self.model.model_name + '_Testing_results_' + str(l) + '.csv', 'w') as fh:
             df.to_csv(fh)
 
     def display_summary(self, epoch):
