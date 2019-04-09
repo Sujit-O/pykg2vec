@@ -8,8 +8,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-
-sys.path.append("D:\louis\Dropbox\louis_research\pyKG2Vec\pykg2vec")
+sys.path.append("../")
 from config.global_config import GlobalConfig
 
 import numpy as np
@@ -30,7 +29,6 @@ class DataPrep(object):
 
     def __init__(self, name_dataset='Freebase15k'):
         '''store the information of database'''
-
         self.config = GlobalConfig(dataset=name_dataset)
 
         self.train_triples = []
@@ -50,17 +48,22 @@ class DataPrep(object):
         self.hr_t = defaultdict(set)
         self.tr_t = defaultdict(set)      
 
-        self.test_triples_ids = []
-        self.train_triples_ids = []
-        self.validation_triples_ids = []
-
         self.read_triple(['train','test','valid']) #TODO: save the triples to prevent parsing everytime
         self.calculate_mapping() # from entity and relation to indexes.
-        self.convert2idx()
 
-        # self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.test_triples]
-        # self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.train_triples]
-        # self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.validation_triples]
+        self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.test_triples]
+        self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.train_triples]
+        self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.validation_triples]
+
+        for t in self.test_triples:
+            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+        for t in self.train_triples:
+            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+        for t in self.validation_triples:
+            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
         if self.config.negative_sample =='bern':          
             self.relation_property_head = {x: [] for x in
@@ -75,44 +78,6 @@ class DataPrep(object):
                         len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
                                         for x in
                                         self.relation_property_head.keys()}
-
-    def read_triple(self, datatype=None):
-        print("Reading Triples",datatype)
-
-        for data in datatype:
-            with open(str(self.config.dataset.downloaded_path)+data+'.txt','r') as f:
-                for l in f.readlines():
-                    h, r, t = l.split('\t')
-                    triple = Triple(h.strip(),r.strip(),t.strip())
-
-                    if data == 'train':
-                        self.train_triples.append(triple)
-                    elif data == 'test':
-                        self.test_triples.append(triple)
-                    elif data == 'valid':
-                        self.validation_triples.append(triple)
-                    else:
-                        continue
-    def convert2idx(self):
-        for t in self.test_triples:
-            self.test_triples_ids.append(Triple(self.entity2idx[t.h],
-                                                self.relation2idx[t.r],
-                                                self.entity2idx[t.t]))
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
-        for t in self.train_triples:
-            self.train_triples_ids.append(Triple(self.entity2idx[t.h],
-                                                 self.relation2idx[t.r],
-                                                 self.entity2idx[t.t]))
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
-
-        for t in self.validation_triples:
-            self.validation_triples_ids.append(Triple(self.entity2idx[t.h],
-                                                      self.relation2idx[t.r],
-                                                      self.entity2idx[t.t]))
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
@@ -172,8 +137,6 @@ class DataPrep(object):
         self.relation2idx = {v: k for k, v in enumerate(relations)}
         self.idx2relation = {v: k for k, v in self.relation2idx.items()}
 
-        # pdb.set_trace()
-        # save entity2idx
         if not os.path.isfile(self.config.dataset.entity2idx_path):
             with open(self.config.dataset.entity2idx_path, 'wb') as f:
                 pickle.dump(self.entity2idx, f)
@@ -189,36 +152,6 @@ class DataPrep(object):
         if not os.path.isfile(self.config.dataset.idx2relation_path):
             with open(self.config.dataset.idx2relation_path, 'wb') as f:
                 pickle.dump(self.idx2relation, f)
-
-    def convert2idx(self):
-        for t in self.test_triples:
-            self.test_triples_ids.append(Triple(self.entity2idx[t.h],
-                                                self.relation2idx[t.r],
-                                                self.entity2idx[t.t]))
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
-        for t in self.train_triples:
-            self.train_triples_ids.append(Triple(self.entity2idx[t.h],
-                                                 self.relation2idx[t.r],
-                                                 self.entity2idx[t.t]))
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
-
-        for t in self.validation_triples:
-            self.validation_triples_ids.append(Triple(self.entity2idx[t.h],
-                                                      self.relation2idx[t.r],
-                                                      self.entity2idx[t.t]))
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
-
-    def print_triple(self):
-        for triple in self.train_triples:
-            print(triple.h, triple.r, triple.t)
-        for triple in self.test_triples:
-            print(triple.h, triple.r, triple.t)
-        for triple in self.validation_triples:
-            print(triple.h, triple.r, triple.t)
-
 
     def batch_generator_train(self, src_triples=None, batch_size=128):
 
@@ -316,7 +249,25 @@ class DataPrep(object):
             if batch_idx == number_of_batches:
                 batch_idx = 0
     
-    def dump(self):
+    def read_triple(self, datatype=None):
+        print("Reading Triples",datatype)
+
+        for data in datatype:
+            with open(str(self.config.dataset.downloaded_path)+data+'.txt','r') as f:
+                for l in f.readlines():
+                    h, r, t = l.split('\t')
+                    triple = Triple(h.strip(),r.strip(),t.strip())
+
+                    if data == 'train':
+                        self.train_triples.append(triple)
+                    elif data == 'test':
+                        self.test_triples.append(triple)
+                    elif data == 'valid':
+                        self.validation_triples.append(triple)
+                    else:
+                        continue
+
+    def dump(self, debug=False):
         ''' dump key information'''
         print("\n----------Relation to Indexes---------------")
         pprint.pprint(self.relation2idx)
@@ -330,9 +281,10 @@ class DataPrep(object):
         print("Total Training Triples   :", len(self.train_triples))
         print("Total Testing Triples    :", len(self.test_triples))
         print("Total validation Triples :", len(self.validation_triples))
-        print("Total Training Triples   :", len(self.train_triples_ids), "(from train_triples_ids)")
-        print("Total Testing Triples    :", len(self.test_triples_ids), "(from test_triples_ids)")
-        print("Total validation Triples :", len(self.validation_triples_ids), "(from validation_triples_ids)")
+        if debug:
+            print("Total Training Triples   :", len(self.train_triples_ids), "(from train_triples_ids)")
+            print("Total Testing Triples    :", len(self.test_triples_ids), "(from test_triples_ids)")
+            print("Total validation Triples :", len(self.validation_triples_ids), "(from validation_triples_ids)")
         print("Total Entities           :", self.tot_entity)
         print("Total Relations          :", self.tot_relation)
         print("---------------------------------------------")
