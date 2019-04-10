@@ -23,7 +23,7 @@ from __future__ import print_function
 
 import sys
 
-sys.path.append("D:\dev\pykg2vec\pykg2vec")
+sys.path.append("../")
 from core.KGMeta import KGMeta
 from utils.visualization import Visualization
 from config.config import TransRConfig

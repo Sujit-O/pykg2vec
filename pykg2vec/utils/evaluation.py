@@ -189,6 +189,15 @@ class Evaluation(EvaluationMeta):
                                                              dtype=np.float32) / self.model.config.test_num
             self.norm_filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(norm_filter_rank_tail) < hit,
                                                              dtype=np.float32) / self.model.config.test_num
+    def save_training_result(self, losses):
+        if not os.path.exists(self.model.config.result):
+            os.mkdir(self.model.config.result)
+
+        files = os.listdir(self.model.config.result)
+        l = len([f for f in files if 'TransE' in f if 'Training' in f])
+        df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
+        with open(self.model.config.result + '/' + self.model.model_name + '_Training_results_' + str(l) + '.csv', 'w') as fh:
+            df.to_csv(fh)
 
     def save_test_summary(self, algo=None):
         if not os.path.exists(self.model.config.result):

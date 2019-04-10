@@ -25,6 +25,11 @@ class FreebaseFB15k(object):
         self.relation2idx_path = self.root_path/'FB15k'/'FB15k_relation2idx.pkl'
         self.idx2relation_path = self.root_path/'FB15k'/'FB15k_idx2relation.pkl'
 
+        # # convert all relative paths into absolute paths.
+        # for key, value in self.__dict__.items():           
+        #     if issubclass(type(value), Path):
+        #         self.__dict__.update([(key, value.resolve())])
+
         self.dataset_home_path.mkdir(parents=True, exist_ok=True)
 
         if not self.root_path.exists():

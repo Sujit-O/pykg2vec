@@ -40,13 +40,28 @@ class TransH(KGMeta):
     
     def __init__(self, config=None, data_handler=None):
 
+        """ TransH Models
+        Args:
+        -----Inputs-------
+        """
+
         if not config:
             self.config = TransHConfig()
         else:
             self.config = config
 
         self.data_handler = data_handler
+        self.model_name = 'TransH'
+        
+        self.def_inputs()
+        self.def_parameters()
+        self.def_loss()
+        self.build_model()
+        
+        self.training_results = []
 
+        
+    def def_inputs(self):
         with tf.name_scope("read_inputs"):
             self.pos_h = tf.placeholder(tf.int32, [None])
             self.pos_t = tf.placeholder(tf.int32, [None])
@@ -57,21 +72,26 @@ class TransH(KGMeta):
             self.test_h = tf.placeholder(tf.int32, [1])
             self.test_t = tf.placeholder(tf.int32, [1])
             self.test_r = tf.placeholder(tf.int32, [1])
+    
+    def def_parameters(self):
+        num_total_ent = self.data_handler.tot_entity
+        num_total_rel = self.data_handler.tot_relation
+        k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
             self.ent_embeddings = tf.get_variable(name="ent_embedding",
-                                                  shape=[self.data_handler.tot_entity, self.config.hidden_size],
+                                                  shape=[num_total_ent, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             
             self.rel_embeddings = tf.get_variable(name="rel_embedding",
-                                                  shape=[self.data_handler.tot_relation, self.config.hidden_size],
+                                                  shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             
             # the Wr mentioned in the paper. 
             self.w = tf.get_variable(name="w",
-                                     shape=[self.data_handler.tot_relation, self.config.hidden_size],
+                                     shape=[num_total_rel, k],
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            
+    def def_loss(self):
         emb_ph, emb_pr, emb_pt = self.embed(self.pos_h, self.pos_r, self.pos_t)
         emb_nh, emb_nr, emb_nt = self.embed(self.neg_h, self.neg_r, self.neg_t)
         
@@ -108,81 +128,79 @@ class TransH(KGMeta):
         
 
         self.loss = tf.reduce_sum(tf.maximum(0., score_pos + self.config.margin - score_neg))
-        
-       
+
+    def build_model(self):
+        self.sess = tf.Session(config=self.config.gpu_config)
+        self.global_step = tf.Variable(0, name="global_step", trainable=False)
+        if self.config.optimizer == 'gradient':
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
+        elif self.config.optimizer == 'rms':
+            optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
+        elif self.config.optimizer == 'adam':
+            optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
+        else:
+            raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
+        grads = optimizer.compute_gradients(self.loss)
+        self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
+        self.sess.run(tf.global_variables_initializer())
+
     def train(self):
         """function to train the model"""
 
-        with tf.Session(config=self.config.gpu_config) as sess:
-            # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
-            evaluate = Evaluation(model=self, test_data='test')
-            
-            global_step = tf.Variable(0, name="global_step", trainable=False)
+        if self.config.loadFromData:
+            self.load_model()
 
-            if self.config.optimizer == 'gradient':
-                optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
-            elif self.config.optimizer == 'rms':
-                optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
-            elif self.config.optimizer == 'adam':
-                optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
-            else:
-                raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
+        evaluate = Evaluation(model=self, test_data='test')
+                      
+        for n_iter in range(self.config.epochs):
             
-            grads = optimizer.compute_gradients(self.loss)
-            self.op_train = optimizer.apply_gradients(grads, global_step=global_step)
-
-            sess.run(tf.global_variables_initializer())
+            acc_loss = 0
+            batch = 0
+            num_batch = 5 # len(self.data_handler.train_triples_ids) // self.config.batch_size
+            start_time = timeit.default_timer()
 
             gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
 
-            if self.config.loadFromData:
-                saver = tf.train.Saver()
-                saver.restore(sess, self.config.tmp + '/TransHModel.vec')
+            for i in range(num_batch):
+                ph, pr, pt, nh, nr, nt = list(next(gen_train))
 
-            for n_iter in range(self.config.epochs):
-                acc_loss = 0
-                batch = 0
-                num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size
-                start_time = timeit.default_timer()
+                feed_dict = {
+                    self.pos_h: ph,
+                    self.pos_t: pt,
+                    self.pos_r: pr,
+                    self.neg_h: nh,
+                    self.neg_t: nt,
+                    self.neg_r: nr
+                }
 
-                for i in range(num_batch):
-                    ph, pr, pt, nh, nr, nt = list(next(gen_train))
+                _, step, loss = self.sess.run([self.op_train, self.global_step, self.loss], feed_dict)
 
-                    feed_dict = {
-                        self.pos_h: ph,
-                        self.pos_t: pt,
-                        self.pos_r: pr,
-                        self.neg_h: nh,
-                        self.neg_t: nt,
-                        self.neg_r: nr
-                    }
+                acc_loss += loss
+                batch += 1
+                print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
+                                                            batch,
+                                                            num_batch,
+                                                            loss), end='\r')
 
-                    _, step, loss = sess.run([self.op_train, global_step, self.loss], feed_dict)
+            print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
+                n_iter, acc_loss, timeit.default_timer() - start_time))
+            
+            self.training_results.append([n_iter, acc_loss])
+            if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
+                evaluate.test(self.sess, n_iter)
+                evaluate.print_test_summary(n_iter)
 
-                    acc_loss += loss
-                    batch += 1
-                    print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                                                                batch,
-                                                                num_batch,
-                                                                loss), end='\r')
+        evaluate.save_test_summary(algo=self.model_name)
+        evaluate.save_training_result(self.training_results)
 
-                print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
-                    n_iter, acc_loss, timeit.default_timer() - start_time))
-                
-                self.training_results.append([n_iter, acc_loss])
-                if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
-                    evaluate.test(sess, n_iter)
-                    evaluate.print_test_summary(n_iter)
+        if self.config.save_model:
+            self.save_model(self.sess)
 
-            if self.config.save_model:
-                self.save_model(sess)
+        if self.config.disp_result:
+            self.display(self.sess)
 
-            if self.config.disp_summary:
-                self.summary()
-
-            if self.config.disp_result:
-                triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
-                self.display(triples, sess)
+        if self.config.disp_summary:
+            self.summary()
 
     def test(self):
 
@@ -257,15 +275,31 @@ class TransH(KGMeta):
     def projection(self, entity, wr):
         return entity - tf.reduce_sum(entity * wr, 1, keep_dims = True) * wr
 
-    def display(self, triples=None, sess=None):
+    def display(self, sess=None):
         """function to display embedding"""
-        viz = Visualization(triples=triples,
-                            idx2entity=self.data_handler.idx2entity,
-                            idx2relation=self.data_handler.idx2relation)
+        if self.config.plot_embedding:
+            triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
+            viz = Visualization(triples=triples,
+                                idx2entity=self.data_handler.idx2entity,
+                                idx2relation=self.data_handler.idx2relation)
 
-        viz.get_idx_n_emb(model=self, sess=sess)
-        viz.reduce_dim()
-        viz.draw_figure()
+            viz.get_idx_n_emb(model=self, sess=sess)
+            viz.reduce_dim()
+            viz.plot_embedding(resultpath=self.config.figures, algos=self.model_name)
+
+        if self.config.plot_training_result:
+            viz = Visualization()
+            viz.plot_train_result(path=self.config.result,
+                                  result=self.config.figures,
+                                  algo=['TransE', 'TransR', 'TransH'],
+                                  data=['Freebase15k'])
+
+        if self.config.plot_testing_result:
+            viz = Visualization()
+            viz.plot_test_result(path=self.config.result,
+                                 result=self.config.figures,
+                                 algo=['TransE', 'TransR', 'TransH'],
+                                 data=['Freebase15k'], paramlist=None, hits=self.config.hits)
 
     def save_model(self, sess):
         """function to save the model"""

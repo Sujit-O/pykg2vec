@@ -57,7 +57,6 @@ import timeit
 from argparse import ArgumentParser
 import os
 
-
 class TransE(KGMeta):
 
     def __init__(self, config=None, data_handler=None):
@@ -66,14 +65,24 @@ class TransE(KGMeta):
 		Args:
 		-----Inputs-------
 		"""
-        self.model_name = 'TransE'
+        
+
         if not config:
             self.config = TransEConfig()
         else:
             self.config = config
 
         self.data_handler = data_handler
+        self.model_name = 'TransE'
 
+        self.def_inputs()
+        self.def_parameters()
+        self.def_loss()
+        self.build_model()
+
+        self.training_results = []
+        
+    def def_inputs(self):
         with tf.name_scope("read_inputs"):
             self.pos_h = tf.placeholder(tf.int32, [None])
             self.pos_t = tf.placeholder(tf.int32, [None])
@@ -85,16 +94,21 @@ class TransE(KGMeta):
             self.test_t = tf.placeholder(tf.int32, [1])
             self.test_r = tf.placeholder(tf.int32, [1])
 
+    def def_parameters(self):
+        num_total_ent = self.data_handler.tot_entity
+        num_total_rel = self.data_handler.tot_relation
+        k = self.config.hidden_size
+
         with tf.name_scope("embedding"):
             self.ent_embeddings = tf.get_variable(name="ent_embedding",
-                                                  shape=[self.data_handler.tot_entity, self.config.hidden_size],
+                                                  shape=[num_total_ent, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
             self.rel_embeddings = tf.get_variable(name="rel_embedding",
-                                                  shape=[self.data_handler.tot_relation, self.config.hidden_size],
+                                                  shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        self.training_results = []
 
+    def def_loss(self):
         with tf.name_scope('normalization'):
             self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
             self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
@@ -112,90 +126,79 @@ class TransE(KGMeta):
 
         self.loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
 
+    def build_model(self):
+
+        self.sess = tf.Session(config=self.config.gpu_config)
+        self.global_step = tf.Variable(0, name="global_step", trainable=False)
+        if self.config.optimizer == 'gradient':
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
+        elif self.config.optimizer == 'rms':
+            optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
+        elif self.config.optimizer == 'adam':
+            optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
+        else:
+            raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
+        grads = optimizer.compute_gradients(self.loss)
+        self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
+        self.sess.run(tf.global_variables_initializer())
+
     def train(self):
-        
-        with tf.Session(config=self.config.gpu_config) as sess:
-            evaluate = Evaluation(model=self, test_data='test')
+        """function to train the model"""
+
+        if self.config.loadFromData:
+            self.load_model()
+
+        evaluate = Evaluation(model=self, test_data='test')
+
+        for n_iter in range(self.config.epochs):
+
+            acc_loss = 0
+            batch = 0
+            num_batch = 5  # len(self.data_handler.train_triples_ids) // self.config.batch_size
+            start_time = timeit.default_timer()
             
-            global_step = tf.Variable(0, name="global_step", trainable=False)
-
-            if self.config.optimizer == 'gradient':
-                optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
-            elif self.config.optimizer == 'rms':
-                optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
-            elif self.config.optimizer == 'adam':
-                optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
-            else:
-                raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
-
-            grads = optimizer.compute_gradients(self.loss)
-            self.op_train = optimizer.apply_gradients(grads,  global_step=global_step)
-
-            sess.run(tf.global_variables_initializer())
-
             gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
 
-            if self.config.loadFromData:
-                saver = tf.train.Saver()
-                saver.restore(sess, self.config.tmp + '/TransEModel.vec')
+            for i in range(num_batch):
+                ph, pr, pt, nh, nr, nt = list(next(gen_train))
 
-            for n_iter in range(self.config.epochs):
-                acc_loss = 0
-                batch = 0
-                num_batch = 5  # len(self.data_handler.train_triples_ids) // self.config.batch_size
-                start_time = timeit.default_timer()
+                feed_dict = {
+                    self.pos_h: ph,
+                    self.pos_t: pt,
+                    self.pos_r: pr,
+                    self.neg_h: nh,
+                    self.neg_t: nt,
+                    self.neg_r: nr
+                }
 
-                for i in range(num_batch):
-                    ph, pr, pt, nh, nr, nt = list(next(gen_train))
+                _, step, loss = self.sess.run([self.op_train, self.global_step, self.loss], feed_dict)
 
-                    feed_dict = {
-                        self.pos_h: ph,
-                        self.pos_t: pt,
-                        self.pos_r: pr,
-                        self.neg_h: nh,
-                        self.neg_t: nt,
-                        self.neg_r: nr
-                    }
+                acc_loss += loss
+                batch += 1
+                print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
+                                                            batch,
+                                                            num_batch,
+                                                            loss), end='\r')
 
-                    _, step, loss = sess.run([self.op_train, global_step, self.loss], feed_dict)
-
-                    acc_loss += loss
-                    batch += 1
-                    print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                                                                batch,
-                                                                num_batch,
-                                                                loss), end='\r')
-
-                print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
-                    n_iter, acc_loss, timeit.default_timer() - start_time))
-                
-                self.training_results.append([n_iter, acc_loss])
-                if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
-                    evaluate.test(sess, n_iter)
-                    evaluate.print_test_summary(n_iter)
-
-            evaluate.save_test_summary(algo=self.model_name)
-            self.save_training_result()
-
-            if self.config.save_model:
-                self.save_model(sess)
+            print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
+                n_iter, acc_loss, timeit.default_timer() - start_time))
             
-            if self.config.disp_summary:
-                self.summary()
-            
-            if self.config.disp_result:
-                self.display(sess)
+            self.training_results.append([n_iter, acc_loss])
+            if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
+                evaluate.test(self.sess, n_iter)
+                evaluate.print_test_summary(n_iter)
 
+        evaluate.save_test_summary(algo=self.model_name)
+        evaluate.save_training_result(self.training_results)
 
-    def save_training_result(self):
-        if not os.path.exists(self.config.result):
-            os.mkdir(self.config.result)
+        if self.config.save_model:
+            self.save_model(self.sess)
+               
+        if self.config.disp_result:
+            self.display(self.sess)
 
-        files = os.listdir(self.config.result)
-        l = len([f for f in files if 'TransE' in f if 'Training' in f])
-        df = pd.DataFrame(self.training_results, columns=['Epochs', 'Loss'])
-        with open(self.config.result + '/' + self.model_name + '_Training_results_' + str(l) + '.csv', 'w') as fh:
-            df.to_csv(fh)
+        if self.config.disp_summary:
+            self.summary()
 
     def test(self):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
@@ -241,6 +244,34 @@ class TransE(KGMeta):
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
+    def save_model(self, sess):
+        """function to save the model"""
+        if not os.path.exists(self.config.tmp):
+            os.mkdir('../intermediate')
+        saver = tf.train.Saver()
+        saver.save(self.sess, self.config.tmp + '/TransEModel.vec')
+
+    def load_model(self, sess):
+        """function to load the model"""
+        if not os.path.exists(self.config.tmp):
+            os.mkdir('../intermediate')
+        saver = tf.train.Saver()
+        saver.restore(self.sess, self.config.tmp + '/TransEModel.vec')
+
+    def summary(self):
+        """function to print the summary"""
+        print("\n----------------SUMMARY----------------")
+        # Acquire the max length and add four more spaces
+        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 15
+        for key, val in self.config.__dict__.items():
+            if 'gpu' in key:
+                continue
+            if len(key) < maxspace:
+                for i in range(maxspace - len(key)):
+                    key = ' ' + key
+            print(key, ":", val)
+        print("-----------------------------------------")
+
     def display(self, sess=None):
         """function to display embedding"""
         if self.config.plot_embedding:
@@ -267,37 +298,7 @@ class TransE(KGMeta):
                                  algo=['TransE', 'TransR', 'TransH'],
                                  data=['Freebase15k'], paramlist=None, hits=self.config.hits)
 
-    def save_model(self, sess):
-        """function to save the model"""
-        if not os.path.exists(self.config.tmp):
-            os.mkdir('../intermediate')
-        saver = tf.train.Saver()
-        saver.save(sess, '../intermediate/TransEModel.vec')
-
-    def load_model(self, sess):
-        """function to load the model"""
-        saver = tf.train.Saver()
-        saver.restore(sess, self.config.tmp + '/TransEModel.vec')
-
-    def summary(self):
-        """function to print the summary"""
-        print("\n----------------SUMMARY----------------")
-        # Acquire the max length and add four more spaces
-        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 15
-        for key, val in self.config.__dict__.items():
-            if 'gpu' in key:
-                continue
-            if len(key) < maxspace:
-                for i in range(maxspace - len(key)):
-                    key = ' ' + key
-            print(key, ":", val)
-        print("-----------------------------------------")
-    # TODO: Save summary
-    # with open('../intermediate/TransEModel_summary.json', 'wb') as fp:
-    # 	json.dump(self.config.__dict__, fp)
-
-
-def main():
+def main(_):
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
@@ -325,9 +326,7 @@ def main():
                           hidden_size=args.embed )
 
     model = TransE(config=config, data_handler=data_handler)
-    model.summary()
     model.train()
 
 if __name__ == "__main__":
-    main()
-
+    tf.app.run()
