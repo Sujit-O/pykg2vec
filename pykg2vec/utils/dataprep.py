@@ -84,16 +84,16 @@ class DataPrep(object):
 
         if self.config.dataset.entity2idx_path.is_file():
 
-            with open(self.config.dataset.entity2idx_path, 'rb') as f:
+            with open(str(self.config.dataset.entity2idx_path), 'rb') as f:
                 self.entity2idx = pickle.load(f)
 
-            with open(self.config.dataset.idx2entity_path, 'rb') as f:
+            with open(str(self.config.dataset.idx2entity_path), 'rb') as f:
                 self.idx2entity = pickle.load(f)
 
-            with open(self.config.dataset.relation2idx_path, 'rb') as f:
+            with open(str(self.config.dataset.relation2idx_path), 'rb') as f:
                 self.relation2idx = pickle.load(f)
 
-            with open(self.config.dataset.idx2relation_path, 'rb') as f:
+            with open(str(self.config.dataset.idx2relation_path), 'rb') as f:
                 self.idx2relation = pickle.load(f)
 
             self.tot_entity = len(self.entity2idx)
@@ -137,20 +137,20 @@ class DataPrep(object):
         self.relation2idx = {v: k for k, v in enumerate(relations)}
         self.idx2relation = {v: k for k, v in self.relation2idx.items()}
 
-        if not os.path.isfile(self.config.dataset.entity2idx_path):
-            with open(self.config.dataset.entity2idx_path, 'wb') as f:
+        if not os.path.isfile(str(self.config.dataset.entity2idx_path)):
+            with open(str(self.config.dataset.entity2idx_path), 'wb') as f:
                 pickle.dump(self.entity2idx, f)
         # save idx2entity
-        if not os.path.isfile(self.config.dataset.idx2entity_path):
-            with open(self.config.dataset.idx2entity_path, 'wb') as f:
+        if not os.path.isfile(str(self.config.dataset.idx2entity_path)):
+            with open(str(self.config.dataset.idx2entity_path), 'wb') as f:
                 pickle.dump(self.idx2entity, f)
         # save relation2idx
-        if not os.path.isfile(self.config.dataset.relation2idx_path):
-            with open(self.config.dataset.relation2idx_path, 'wb') as f:
+        if not os.path.isfile(str(self.config.dataset.relation2idx_path)):
+            with open(str(self.config.dataset.relation2idx_path), 'wb') as f:
                 pickle.dump(self.relation2idx, f)
         # save idx2relation
-        if not os.path.isfile(self.config.dataset.idx2relation_path):
-            with open(self.config.dataset.idx2relation_path, 'wb') as f:
+        if not os.path.isfile(str(self.config.dataset.idx2relation_path)):
+            with open(str(self.config.dataset.idx2relation_path), 'wb') as f:
                 pickle.dump(self.idx2relation, f)
 
     def batch_generator_train(self, src_triples=None, batch_size=128):

@@ -25,23 +25,23 @@ class FreebaseFB15k(object):
         self.relation2idx_path = self.root_path/'FB15k'/'FB15k_relation2idx.pkl'
         self.idx2relation_path = self.root_path/'FB15k'/'FB15k_idx2relation.pkl'
 
-        # convert all relative paths into absolute paths.
-        for key, value in self.__dict__.items():           
-            if issubclass(type(value), Path):
-                self.__dict__.update([(key, value.resolve())])
-
         self.dataset_home_path.mkdir(parents=True, exist_ok=True)
 
         if not self.root_path.exists():
             self.download()
             self.extract()
+        
+	# convert all relative paths into absolute paths.
+        # for key, value in self.__dict__.items():           
+        #     if issubclass(type(value), Path):
+        #         self.__dict__.update([(key, value.resolve())])
 
     def download(self):
         ''' download Freebase 15k dataset from url'''
         print("Downloading the dataset %s"%self.name)
 
         self.root_path.mkdir()
-        with urllib.request.urlopen(self.url) as response, open(self.tar, 'wb') as out_file:
+        with urllib.request.urlopen(self.url) as response, open(str(self.tar), 'wb') as out_file:
             shutil.copyfileobj(response, out_file)
     
     def extract(self):
