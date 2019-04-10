@@ -73,7 +73,6 @@ class TransE(KGMeta):
             self.config = config
 
         self.data_handler = data_handler
-        self.loss_regularize = None
 
         with tf.name_scope("read_inputs"):
             self.pos_h = tf.placeholder(tf.int32, [None])
@@ -94,28 +93,15 @@ class TransE(KGMeta):
             self.rel_embeddings = tf.get_variable(name="rel_embedding",
                                                   shape=[self.data_handler.tot_relation, self.config.hidden_size],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        self.loss = None
-        self.op_train = None
-        self.norm_entity = None
-        self.head_rank = None
-        self.tail_rank = None
-
         self.training_results = []
-        self.__variables = []
 
-        self.norm_head_rank = None
-        self.norm_tail_rank = None
-
-        self.norm_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        self.norm_relation = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-        
+        with tf.name_scope('normalization'):
+            self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+            self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+            
         with tf.name_scope('lookup_embeddings'):
-            pos_h_e = tf.nn.embedding_lookup(self.norm_entity, self.pos_h)
-            pos_t_e = tf.nn.embedding_lookup(self.norm_entity, self.pos_t)
-            pos_r_e = tf.nn.embedding_lookup(self.norm_relation, self.pos_r)
-            neg_h_e = tf.nn.embedding_lookup(self.norm_entity, self.neg_h)
-            neg_t_e = tf.nn.embedding_lookup(self.norm_entity, self.neg_t)
-            neg_r_e = tf.nn.embedding_lookup(self.norm_relation, self.neg_r)
+            pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
+            neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
 
         if self.config.L1_flag:
             score_pos = tf.reduce_sum(tf.abs(pos_h_e + pos_r_e - pos_t_e), axis=1, keepdims=True)
@@ -129,8 +115,6 @@ class TransE(KGMeta):
     def train(self):
         
         with tf.Session(config=self.config.gpu_config) as sess:
-            # sess=tf_debug.LocalCLIDebugWrapperSession(sess)
-
             evaluate = Evaluation(model=self, test_data='test')
             
             global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -149,12 +133,6 @@ class TransE(KGMeta):
 
             sess.run(tf.global_variables_initializer())
 
-            norm_rel = sess.run(tf.nn.l2_normalize(self.rel_embeddings, axis=1))
-            sess.run(tf.assign(self.rel_embeddings, norm_rel))
-
-            norm_ent = sess.run(tf.nn.l2_normalize(self.ent_embeddings, axis=1))
-            sess.run(tf.assign(self.ent_embeddings, norm_ent))
-
             gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
 
             if self.config.loadFromData:
@@ -164,7 +142,7 @@ class TransE(KGMeta):
             for n_iter in range(self.config.epochs):
                 acc_loss = 0
                 batch = 0
-                num_batch = 5#len(self.data_handler.train_triples_ids) // self.config.batch_size
+                num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size
                 start_time = timeit.default_timer()
 
                 for i in range(num_batch):
@@ -183,11 +161,6 @@ class TransE(KGMeta):
 
                     acc_loss += loss
                     batch += 1
-
-                    # print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                    #                                             batch,
-                    #                                             num_batch,
-                    #                                             l_val), end='\r')
                     print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
                                                                 batch,
                                                                 num_batch,
@@ -195,6 +168,7 @@ class TransE(KGMeta):
 
                 print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
                     n_iter, acc_loss, timeit.default_timer() - start_time))
+                
                 self.training_results.append([n_iter, acc_loss])
                 if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
                     evaluate.test(sess, n_iter)
@@ -202,11 +176,14 @@ class TransE(KGMeta):
 
             if self.config.save_model:
                 self.save_model(sess)
+            
             if self.config.disp_summary:
                 self.summary()
+            
             if self.config.disp_result:
                 triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
                 self.display(triples, sess)
+
             evaluate.save_test_summary()
             self.save_training_result()
 
@@ -223,19 +200,7 @@ class TransE(KGMeta):
     def test(self):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
 
-        norm_embedding_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        norm_embedding_relation = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        norm_head_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_h)
-        norm_rel_vec = tf.nn.embedding_lookup(norm_embedding_relation, self.test_r)
-        norm_tail_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_t)
-
-        # head_prediction = tf.reduce_sum(tf.abs(self.ent_embeddings + rel_vec - tail_vec), axis=1)
-        # tail_prediction = tf.reduce_sum(tf.abs(head_vec + rel_vec - self.ent_embeddings), axis=1)
-        # norm_head_prediction = tf.reduce_sum(tf.abs(norm_embedding_entity + norm_rel_vec - norm_tail_vec), axis=1)
-        # norm_tail_prediction = tf.reduce_sum(tf.abs(norm_head_vec + norm_rel_vec - norm_embedding_entity), axis=1)
         
-        # return head_prediction, tail_prediction, norm_head_prediction, norm_tail_prediction
 
         _, self.head_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(self.ent_embeddings
                                                              + rel_vec - tail_vec),
@@ -245,6 +210,12 @@ class TransE(KGMeta):
                                                              + rel_vec - self.ent_embeddings),
                                                       axis=1),
                                         k=self.data_handler.tot_entity)
+        norm_embedding_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_embedding_relation = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        norm_head_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_h)
+        norm_rel_vec = tf.nn.embedding_lookup(norm_embedding_relation, self.test_r)
+        norm_tail_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_t)
 
         _, self.norm_head_rank = tf.nn.top_k(
             tf.reduce_sum(tf.abs(norm_embedding_entity + norm_rel_vec - norm_tail_vec),
@@ -252,6 +223,7 @@ class TransE(KGMeta):
         _, self.norm_tail_rank = tf.nn.top_k(
             tf.reduce_sum(tf.abs(norm_head_vec + norm_rel_vec - norm_embedding_entity),
                           axis=1), k=self.data_handler.tot_entity)
+
         return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
 
     def embed(self, h, r, t):
@@ -265,9 +237,7 @@ class TransE(KGMeta):
         """function to get the embedding value in numpy"""
         if not sess:
             raise NotImplementedError('No session found for predicting embedding!')
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
+        emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
@@ -311,7 +281,7 @@ class TransE(KGMeta):
     # 	json.dump(self.config.__dict__, fp)
 
 
-def main():
+def main(_):
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
@@ -329,6 +299,7 @@ def main():
 
     data_handler = DataPrep(args.dataset)
     args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
+    
     config = TransEConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,
                           epochs=args.epochs,
@@ -341,7 +312,6 @@ def main():
     model.summary()
     model.train()
 
-
 if __name__ == "__main__":
-    main()
+    tf.app.run()
 

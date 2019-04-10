@@ -46,32 +46,23 @@ class TransH(KGMeta):
             self.config = config
 
         self.data_handler = data_handler
-        self.loss_regularize = None
 
         with tf.name_scope("read_inputs"):
-            # positive triples 
             self.pos_h = tf.placeholder(tf.int32, [None])
             self.pos_t = tf.placeholder(tf.int32, [None])
             self.pos_r = tf.placeholder(tf.int32, [None])
-
-            # negative triples 
             self.neg_h = tf.placeholder(tf.int32, [None])
             self.neg_t = tf.placeholder(tf.int32, [None])
             self.neg_r = tf.placeholder(tf.int32, [None])
-
-            # testing triples
             self.test_h = tf.placeholder(tf.int32, [1])
             self.test_t = tf.placeholder(tf.int32, [1])
             self.test_r = tf.placeholder(tf.int32, [1])
 
         with tf.name_scope("embedding"):
-            
-            # entity embeddings. 
             self.ent_embeddings = tf.get_variable(name="ent_embedding",
                                                   shape=[self.data_handler.tot_entity, self.config.hidden_size],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-            # relation embeddings. 
+            
             self.rel_embeddings = tf.get_variable(name="rel_embedding",
                                                   shape=[self.data_handler.tot_relation, self.config.hidden_size],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
@@ -81,20 +72,8 @@ class TransH(KGMeta):
                                      shape=[self.data_handler.tot_relation, self.config.hidden_size],
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             
-
-        self.loss = None
-        self.op_train = None
-        self.head_rank = None
-        self.tail_rank = None
-
-        self.norm_head_rank = None
-        self.norm_tail_rank = None
-
         emb_ph, emb_pr, emb_pt = self.embed(self.pos_h, self.pos_r, self.pos_t)
         emb_nh, emb_nr, emb_nt = self.embed(self.neg_h, self.neg_r, self.neg_t)
-
-        # emb_ph, emb_pt, emb_pr = self.embed(self.pos_h, self.pos_t, self.pos_r)
-        # emb_nh, emb_nt, emb_nr = self.embed(self.neg_h, self.neg_t, self.neg_r)
         
         # getting the required normal vectors of planes to transfer entity embedding 
         pos_norm = tf.nn.embedding_lookup(self.w, self.pos_r)
@@ -158,7 +137,7 @@ class TransH(KGMeta):
 
             if self.config.loadFromData:
                 saver = tf.train.Saver()
-                saver.restore(sess, self.config.tmp + '/TransEModel.vec')
+                saver.restore(sess, self.config.tmp + '/TransHModel.vec')
 
             for n_iter in range(self.config.epochs):
                 acc_loss = 0
@@ -189,15 +168,18 @@ class TransH(KGMeta):
 
                 print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
                     n_iter, acc_loss, timeit.default_timer() - start_time))
-
+                
+                self.training_results.append([n_iter, acc_loss])
                 if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
                     evaluate.test(sess, n_iter)
                     evaluate.print_test_summary(n_iter)
 
             if self.config.save_model:
                 self.save_model(sess)
+
             if self.config.disp_summary:
                 self.summary()
+
             if self.config.disp_result:
                 triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
                 self.display(triples, sess)
@@ -219,9 +201,6 @@ class TransH(KGMeta):
         # project the head and tail on the relation space. 
         head_vec = self.projection(head_vec, pos_norm) 
         tail_vec = self.projection(tail_vec, pos_norm)
-
-        # project all the entity embeddings on the relation space.
-        
 
         # normalized version
         norm_embedding_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
@@ -293,12 +272,12 @@ class TransH(KGMeta):
         if not os.path.exists(self.config.tmp):
             os.mkdir('../intermediate')
         saver = tf.train.Saver()
-        saver.save(sess, '../intermediate/TransEModel.vec')
+        saver.save(sess, '../intermediate/TransHModel.vec')
 
     def load_model(self, sess):
         """function to load the model"""
         saver = tf.train.Saver()
-        saver.restore(sess, self.config.tmp + '/TransEModel.vec')
+        saver.restore(sess, self.config.tmp + '/TransHModel.vec')
 
     def summary(self):
         """function to print the summary"""
@@ -323,14 +302,13 @@ def main(_):
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
     parser.add_argument('-gp', '--gpu_frac', default=0.4, type=float, help='GPU fraction to use')
     parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
-
-
     args = parser.parse_args()
     
     if not os.path.exists(args.tmp):
         os.mkdir(args.tmp)
 
     data_handler = DataPrep(args.dataset)
+    args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
 
     config = TransHConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,
@@ -343,7 +321,6 @@ def main(_):
     model = TransH(config=config, data_handler=data_handler)
     model.summary()
     model.train()
-
 
 if __name__ == "__main__":
     tf.app.run()

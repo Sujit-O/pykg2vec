@@ -127,7 +127,7 @@ class Evaluation(EvaluationMeta):
                 else:
                     trank += 1
                     ftrank += 1
-                    if val in self.hr_t[(t.h, t.t)]:
+                    if val in self.hr_t[(t.h, t.r)]:
                         ftrank -= 1
 
             norm_trank = 0
