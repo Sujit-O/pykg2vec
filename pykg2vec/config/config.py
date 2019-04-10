@@ -59,7 +59,7 @@ class TransEConfig(object):
                  learning_rate=0.001,
                  test_flag=False,
                  l1_flag=True,
-                 hidden_size=100,
+                 hidden_size=50,
                  load_from_data=False,
                  batch_size=128,
                  epochs=1000,
@@ -124,12 +124,13 @@ class TransHConfig(object):
                  epochs=1000,
                  margin=1.0,
                  data='Freebase',
-                 optimizer='gradient',
+                 optimizer='adam',
                  test_step=100,
                  test_num=300,
                  triple_num=5,
                  tmp='./intermediate',
                  gpu_fraction=0.4,
+                 hits=None,
                  gpu_allow_growth=True,
                  save_model=False,
                  disp_summary=True,
@@ -149,6 +150,9 @@ class TransHConfig(object):
         self.test_num = test_num
         self.disp_triple_num = triple_num
         self.tmp = tmp
+        if hits is None:
+            hits = [10,5]
+        self.hits= hits
         self.gpu_config = tf.ConfigProto(log_device_placement=log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
         self.gpu_config.gpu_options.allow_growth = gpu_allow_growth

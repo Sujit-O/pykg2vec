@@ -96,8 +96,8 @@ class Evaluation(EvaluationMeta):
                                                norm_tail_rank], feed_dict)
             hrank = 0
             fhrank = 0
-            for i in range(len(id_replace_head)):
-                val = id_replace_head[-i - 1]
+            for j in range(len(id_replace_head)):
+                val = id_replace_head[-j - 1]
                 if val == t.h:
                     break
                 else:
@@ -108,8 +108,8 @@ class Evaluation(EvaluationMeta):
 
             norm_hrank = 0
             norm_fhrank = 0
-            for i in range(len(norm_id_replace_head)):
-                val = norm_id_replace_head[-i - 1]
+            for j in range(len(norm_id_replace_head)):
+                val = norm_id_replace_head[-j - 1]
                 if val == t.h:
                     break
                 else:
@@ -120,20 +120,20 @@ class Evaluation(EvaluationMeta):
 
             trank = 0
             ftrank = 0
-            for i in range(len(id_replace_tail)):
-                val = id_replace_tail[-i - 1]
+            for j in range(len(id_replace_tail)):
+                val = id_replace_tail[-j - 1]
                 if val == t.t:
                     break
                 else:
                     trank += 1
                     ftrank += 1
-                    if val in self.hr_t[(t.h, t.t)]:
+                    if val in self.hr_t[(t.h, t.r)]:
                         ftrank -= 1
 
             norm_trank = 0
             norm_ftrank = 0
-            for i in range(len(norm_id_replace_tail)):
-                val = norm_id_replace_tail[-i - 1]
+            for j in range(len(norm_id_replace_tail)):
+                val = norm_id_replace_tail[-j - 1]
                 if val == t.t:
                     break
                 else:
@@ -266,7 +266,6 @@ class Evaluation(EvaluationMeta):
         else:
             for epoch in self.epoch:
                 self.display_summary(epoch)
-
 
 if __name__ == '__main__':
     e = Evaluation()
