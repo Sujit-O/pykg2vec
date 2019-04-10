@@ -34,6 +34,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+
 sys.path.append("../")
 from core.KGMeta import KGMeta
 from utils.visualization import Visualization
@@ -42,7 +43,6 @@ from config.config import TransEConfig
 from utils.dataprep import DataPrep
 import pdb
 from tensorflow.python import debug as tf_debug
-
 
 # from pykg2vec.core.KGMeta import KGMeta
 # from pykg2vec.utils.visualization import Visualization
@@ -142,7 +142,7 @@ class TransE(KGMeta):
             for n_iter in range(self.config.epochs):
                 acc_loss = 0
                 batch = 0
-                num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size
+                num_batch = 5  # len(self.data_handler.train_triples_ids) // self.config.batch_size
                 start_time = timeit.default_timer()
 
                 for i in range(num_batch):
@@ -174,6 +174,9 @@ class TransE(KGMeta):
                     evaluate.test(sess, n_iter)
                     evaluate.print_test_summary(n_iter)
 
+            evaluate.save_test_summary(algo=self.model_name)
+            self.save_training_result()
+
             if self.config.save_model:
                 self.save_model(sess)
             
@@ -181,11 +184,8 @@ class TransE(KGMeta):
                 self.summary()
             
             if self.config.disp_result:
-                triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
-                self.display(triples, sess)
+                self.display(sess)
 
-            evaluate.save_test_summary()
-            self.save_training_result()
 
     def save_training_result(self):
         if not os.path.exists(self.config.result):
@@ -193,7 +193,7 @@ class TransE(KGMeta):
 
         files = os.listdir(self.config.result)
         l = len([f for f in files if 'TransE' in f if 'Training' in f])
-        df = pd.DataFrame(self.training_results, columns=['Epochs','Loss'])
+        df = pd.DataFrame(self.training_results, columns=['Epochs', 'Loss'])
         with open(self.config.result + '/' + self.model_name + '_Training_results_' + str(l) + '.csv', 'w') as fh:
             df.to_csv(fh)
 
@@ -241,15 +241,31 @@ class TransE(KGMeta):
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
-    def display(self, triples=None, sess=None):
+    def display(self, sess=None):
         """function to display embedding"""
-        viz = Visualization(triples=triples,
-                            idx2entity=self.data_handler.idx2entity,
-                            idx2relation=self.data_handler.idx2relation)
+        if self.config.plot_embedding:
+            triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
+            viz = Visualization(triples=triples,
+                                idx2entity=self.data_handler.idx2entity,
+                                idx2relation=self.data_handler.idx2relation)
 
-        viz.get_idx_n_emb(model=self, sess=sess)
-        viz.reduce_dim()
-        viz.draw_figure()
+            viz.get_idx_n_emb(model=self, sess=sess)
+            viz.reduce_dim()
+            viz.plot_embedding(resultpath=self.config.figures, algos=self.model_name)
+
+        if self.config.plot_training_result:
+            viz = Visualization()
+            viz.plot_train_result(path=self.config.result,
+                                  result=self.config.figures,
+                                  algo=['TransE', 'TransR', 'TransH'],
+                                  data=['Freebase15k'])
+
+        if self.config.plot_testing_result:
+            viz = Visualization()
+            viz.plot_test_result(path=self.config.result,
+                                 result=self.config.figures,
+                                 algo=['TransE', 'TransR', 'TransH'],
+                                 data=['Freebase15k'], paramlist=None, hits=self.config.hits)
 
     def save_model(self, sess):
         """function to save the model"""
@@ -281,13 +297,13 @@ class TransE(KGMeta):
     # 	json.dump(self.config.__dict__, fp)
 
 
-def main(_):
+def main():
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
     parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
-    parser.add_argument('-l', '--epochs', default=100, type=int, help='Number of Epochs')
-    parser.add_argument('-tn', '--test_num', default=10, type=int, help='Number of test triples')
+    parser.add_argument('-l', '--epochs', default=10, type=int, help='Number of Epochs')
+    parser.add_argument('-tn', '--test_num', default=100, type=int, help='Number of test triples')
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
     parser.add_argument('-gp', '--gpu_frac', default=0.4, type=float, help='GPU fraction to use')
@@ -313,5 +329,5 @@ def main(_):
     model.train()
 
 if __name__ == "__main__":
-    tf.app.run()
+    main()
 
