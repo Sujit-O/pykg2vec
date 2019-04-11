@@ -213,10 +213,7 @@ class TransR(ModelMeta):
         norm_head_vec = tf.nn.l2_normalize(tf.reshape(norm_head_vec, [-1, self.config.rel_hidden_size]), 1)
         norm_rel_vec = tf.nn.l2_normalize(tf.reshape(norm_rel_vec, [-1, self.config.rel_hidden_size]), 1)
         norm_tail_vec = tf.nn.l2_normalize(tf.reshape(norm_tail_vec, [-1, self.config.rel_hidden_size]), 1)
-
-        # norm_project_ent_embedding = norm_embedding_entity - tf.reduce_sum(norm_embedding_entity * norm_pos_norm, 1, keepdims = True) * norm_pos_norm
-
-        
+      
         _, self.norm_head_rank = tf.nn.top_k(
             tf.reduce_sum(tf.abs(project_ent_embedding + norm_rel_vec - norm_tail_vec),
                           axis=1), k=self.data_handler.tot_entity)
@@ -253,94 +250,7 @@ class TransR(ModelMeta):
                              [-1, self.config.ent_hidden_size, 1])
         h, r, t = sess.run([pos_h_e, pos_r_e, pos_t_e])
         return h, r, t
-
-    def predict_embed_in_rel_space(self, h, r, t):
-        """function to get the embedding value in numpy"""
-        with tf.Session(config=self.config.gpu_config) as sess:
-            # self.load_model(sess)
-            try:
-                ent_embeddings = tf.Variable(np.loadtxt("../intermediate/ent_embeddings.txt"),
-                                             name="ent_embedding",
-                                             dtype=np.float32)
-                rel_embeddings = tf.Variable(np.loadtxt('../intermediate/rel_embeddings.txt'),
-                                                  name="rel_embedding",
-                                                  dtype=np.float32)
-                rel_matrix = tf.Variable(np.loadtxt('../intermediate/rel_matrix.txt'),
-                                                  name="rel_matrix",
-                                                  dtype=np.float32)
-            except FileNotFoundError:
-                print("The model was not saved! Set save_model=True!")
-            sess.run(tf.global_variables_initializer())
-            pos_h_e = tf.reshape(tf.nn.embedding_lookup(ent_embeddings, h),
-                                 [-1, self.config.ent_hidden_size, 1])
-            pos_r_e = tf.reshape(tf.nn.embedding_lookup(rel_embeddings, r),
-                                 [-1, self.config.rel_hidden_size])
-            pos_t_e = tf.reshape(tf.nn.embedding_lookup(ent_embeddings, t),
-                                 [-1, self.config.ent_hidden_size, 1])
-
-            pos_matrix = tf.reshape(tf.nn.embedding_lookup(rel_matrix, r),
-                                    [-1, self.config.rel_hidden_size, self.config.ent_hidden_size])
-
-            pos_h_e = tf.nn.l2_normalize(tf.reshape(tf.matmul(pos_matrix, pos_h_e),
-                                                    [-1, self.config.rel_hidden_size]), 1)
-            pos_t_e = tf.nn.l2_normalize(tf.reshape(tf.matmul(pos_matrix, pos_t_e),
-                                                    [-1, self.config.rel_hidden_size]), 1)
-
-            hr, rr, tr = sess.run([pos_h_e, pos_r_e, pos_t_e])
-        return hr, rr, tr
-
-    def display_entity_space(self, triples=None, sess=None):
-        """function to display embedding"""
-        viz = Visualization(triples=triples,
-                            idx2entity=self.data_handler.idx2entity,
-                            idx2relation=self.data_handler.idx2relation)
-
-        viz.get_idx_n_emb(model=self, sess=sess)
-        viz.reduce_dim()
-        viz.draw_figure()
-
-    def display_in_rel_space(self, fig_name=None):
-        """function to display embedding"""
-
-        h_name = []
-        r_name = []
-        t_name = []
-        triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
-        pos_h=[]
-        pos_r=[]
-        pos_t=[]
-        for t in triples:
-            h_name.append(self.data_handler.idx2entity[t.h])
-            r_name.append(self.data_handler.idx2relation[t.r])
-            t_name.append(self.data_handler.idx2entity[t.t])
-            pos_h.append(t.h)
-            pos_r.append(t.r)
-            pos_t.append(t.t)
-
-        h_emb, r_emb, t_emb = self.predict_embed_in_rel_space(pos_h,pos_r,pos_t)
-
-        h_emb = np.array(h_emb)
-        r_emb = np.array(r_emb)
-        t_emb = np.array(t_emb)
-
-        length = len(h_emb)
-        x = np.concatenate((h_emb, r_emb, t_emb), axis=0)
-        x_reduced = TSNE(n_components=2).fit_transform(x)
-
-        h_embs = x_reduced[:length, :]
-        r_embs = x_reduced[length:2 * length, :]
-        t_embs = x_reduced[2 * length:3 * length, :]
-
-        viz = Visualization()
-        viz.draw_figure_v2(triples,
-                           h_name,
-                           r_name,
-                           t_name,
-                           h_embs,
-                           r_embs,
-                           t_embs,
-                           fig_name)
-
+    
     def summary(self):
         """function to print the summary"""
         print("\n----------------SUMMARY----------------")
@@ -354,6 +264,32 @@ class TransR(ModelMeta):
                     key = ' ' + key
             print(key, ":", val)
         print("-----------------------------------------")
+
+    def display(self, sess=None):
+        """function to display embedding"""
+        if self.config.plot_embedding:
+            triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
+            viz = Visualization(triples=triples,
+                                idx2entity=self.data_handler.idx2entity,
+                                idx2relation=self.data_handler.idx2relation)
+
+            viz.get_idx_n_emb(model=self, sess=sess)
+            viz.reduce_dim()
+            viz.plot_embedding(resultpath=self.config.figures, algos=self.model_name)
+
+        if self.config.plot_training_result:
+            viz = Visualization()
+            viz.plot_train_result(path=self.config.result,
+                                  result=self.config.figures,
+                                  algo=['TransE', 'TransR', 'TransH'],
+                                  data=['Freebase15k'])
+
+        if self.config.plot_testing_result:
+            viz = Visualization()
+            viz.plot_test_result(path=self.config.result,
+                                 result=self.config.figures,
+                                 algo=['TransE', 'TransR', 'TransH'],
+                                 data=['Freebase15k'], paramlist=None, hits=self.config.hits)
 
 
 def main(_):

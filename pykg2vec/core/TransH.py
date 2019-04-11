@@ -103,8 +103,7 @@ class TransH(ModelMeta):
         emb_nh = tf.nn.l2_normalize(emb_nh, axis=1)
         emb_nt = tf.nn.l2_normalize(emb_nt, axis=1)
         emb_nr = tf.nn.l2_normalize(emb_nr, axis=1)
-        
-        # getting the required normal vectors of planes to transfer entity embedding 
+ # getting the required normal vectors of planes to transfer entity embedding
         pos_norm = tf.nn.l2_normalize(pos_norm, axis=1)
         neg_norm = tf.nn.l2_normalize(neg_norm, axis=1)
 
