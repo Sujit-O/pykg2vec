@@ -131,9 +131,13 @@ class TransR(ModelMeta):
             transform_neg_h_e = self.transform(neg_matrix, neg_h_e)
             transform_neg_t_e = self.transform(neg_matrix, neg_t_e)
 
+            # [batch_size, rel_hidden_size, 1]
             pos_h_e = tf.nn.l2_normalize(tf.reshape(transform_pos_h_e, [-1, self.config.rel_hidden_size]), 1)
+            pos_r_e = tf.nn.l2_normalize(tf.reshape(pos_r_e, [-1, self.config.rel_hidden_size]), 1)
             pos_t_e = tf.nn.l2_normalize(tf.reshape(transform_pos_t_e, [-1, self.config.rel_hidden_size]), 1)
+            
             neg_h_e = tf.nn.l2_normalize(tf.reshape(transform_neg_h_e, [-1, self.config.rel_hidden_size]), 1)
+            neg_r_e = tf.nn.l2_normalize(tf.reshape(neg_r_e, [-1, self.config.rel_hidden_size]), 1)
             neg_t_e = tf.nn.l2_normalize(tf.reshape(transform_neg_t_e, [-1, self.config.rel_hidden_size]), 1)
 
         if self.config.L1_flag:
@@ -158,10 +162,10 @@ class TransR(ModelMeta):
         rel_vec = tf.nn.embedding_lookup(self.rel_embeddings, self.test_r)
         tail_vec = tf.nn.embedding_lookup(self.ent_embeddings, self.test_t)
 
-        head_vec = tf.nn.l2_normalize(head_vec, axis=1)
-        tail_vec = tf.nn.l2_normalize(tail_vec, axis=1)
-        rel_vec = tf.nn.l2_normalize(rel_vec, axis=1)
-
+        # head_vec = tf.nn.l2_normalize(head_vec, axis=1)
+        # rel_vec = tf.nn.l2_normalize(rel_vec, axis=1)
+        # tail_vec = tf.nn.l2_normalize(tail_vec, axis=1)
+        
         # [1, 64, 1], [1, 32, 1], [1, 64, 1]
         head_vec = tf.reshape(head_vec, [-1, self.config.ent_hidden_size, 1])
         rel_vec = tf.reshape(rel_vec, [-1, self.config.rel_hidden_size, 1])
@@ -177,7 +181,11 @@ class TransR(ModelMeta):
         # [1, 32, 1] 
         head_vec = self.transform(pos_matrix, head_vec) 
         tail_vec = self.transform(pos_matrix, tail_vec) 
-       
+        
+        head_vec = tf.nn.l2_normalize(tf.reshape(head_vec, [-1, self.config.rel_hidden_size]), 1)
+        rel_vec = tf.nn.l2_normalize(tf.reshape(rel_vec, [-1, self.config.rel_hidden_size]), 1)
+        tail_vec = tf.nn.l2_normalize(tf.reshape(tail_vec, [-1, self.config.rel_hidden_size]), 1)
+
         # normalized version
         norm_embedding_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         norm_embedding_relation = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
@@ -194,15 +202,12 @@ class TransR(ModelMeta):
 
         # norm_project_ent_embedding = norm_embedding_entity - tf.reduce_sum(norm_embedding_entity * norm_pos_norm, 1, keepdims = True) * norm_pos_norm
 
-        _, self.head_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(project_ent_embedding
-                                                             + tf.squeeze(rel_vec, [2]) - tf.squeeze(tail_vec, [2])),
+        _, self.head_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(project_ent_embedding + rel_vec - tail_vec),
                                                       axis=1),
                                         k=self.data_handler.tot_entity)
-        _, self.tail_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(tf.squeeze(head_vec, [2])
-                                                             + tf.squeeze(rel_vec, [2]) - project_ent_embedding),
+        _, self.tail_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(head_vec + rel_vec - project_ent_embedding),
                                                       axis=1),
                                         k=self.data_handler.tot_entity)
-
         _, self.norm_head_rank = tf.nn.top_k(
             tf.reduce_sum(tf.abs(project_ent_embedding + norm_rel_vec - norm_tail_vec),
                           axis=1), k=self.data_handler.tot_entity)
