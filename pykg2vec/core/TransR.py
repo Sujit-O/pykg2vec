@@ -186,12 +186,22 @@ class TransR(ModelMeta):
         rel_vec = tf.nn.l2_normalize(tf.reshape(rel_vec, [-1, self.config.rel_hidden_size]), 1)
         tail_vec = tf.nn.l2_normalize(tf.reshape(tail_vec, [-1, self.config.rel_hidden_size]), 1)
 
+        
+        # [14951, 64] * [64, 32]
+        project_ent_embedding = self.transform(self.ent_embeddings, tf.transpose(tf.squeeze(pos_matrix, [0])))
+
+        project_ent_embedding = tf.nn.l2_normalize(project_ent_embedding, axis=1)
+        
+        _, self.head_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(project_ent_embedding + rel_vec - tail_vec),
+                                                      axis=1),
+                                        k=self.data_handler.tot_entity)
+        _, self.tail_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(head_vec + rel_vec - project_ent_embedding),
+                                                      axis=1),
+                                        k=self.data_handler.tot_entity)
+
         # normalized version
         norm_embedding_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         norm_embedding_relation = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        # [14951, 64] * [64, 32]
-        project_ent_embedding = self.transform(norm_embedding_entity, tf.transpose(tf.squeeze(pos_matrix, [0])))
 
         norm_head_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_h)
         norm_rel_vec = tf.nn.embedding_lookup(norm_embedding_relation, self.test_r)
@@ -202,12 +212,7 @@ class TransR(ModelMeta):
 
         # norm_project_ent_embedding = norm_embedding_entity - tf.reduce_sum(norm_embedding_entity * norm_pos_norm, 1, keepdims = True) * norm_pos_norm
 
-        _, self.head_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(project_ent_embedding + rel_vec - tail_vec),
-                                                      axis=1),
-                                        k=self.data_handler.tot_entity)
-        _, self.tail_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(head_vec + rel_vec - project_ent_embedding),
-                                                      axis=1),
-                                        k=self.data_handler.tot_entity)
+        
         _, self.norm_head_rank = tf.nn.top_k(
             tf.reduce_sum(tf.abs(project_ent_embedding + norm_rel_vec - norm_tail_vec),
                           axis=1), k=self.data_handler.tot_entity)
