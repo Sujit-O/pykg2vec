@@ -210,6 +210,10 @@ class TransR(ModelMeta):
         norm_head_vec = tf.matmul(norm_head_vec, tf.transpose(tf.squeeze(pos_matrix, [0])))
         norm_tail_vec = tf.matmul(norm_tail_vec, tf.transpose(tf.squeeze(pos_matrix, [0])))
 
+        norm_head_vec = tf.nn.l2_normalize(tf.reshape(norm_head_vec, [-1, self.config.rel_hidden_size]), 1)
+        norm_rel_vec = tf.nn.l2_normalize(tf.reshape(norm_rel_vec, [-1, self.config.rel_hidden_size]), 1)
+        norm_tail_vec = tf.nn.l2_normalize(tf.reshape(norm_tail_vec, [-1, self.config.rel_hidden_size]), 1)
+
         # norm_project_ent_embedding = norm_embedding_entity - tf.reduce_sum(norm_embedding_entity * norm_pos_norm, 1, keepdims = True) * norm_pos_norm
 
         
