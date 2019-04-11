@@ -22,7 +22,19 @@ import tensorflow as tf
 
 class Evaluation(EvaluationMeta):
 
-    def __init__(self, hits=None, model=None, test_data=None):
+    def __init__(self, model=None, test_data=None):
+        self.model = model
+        if test_data == 'test':
+            self.triples = model.data_handler.test_triples_ids
+        elif test_data == 'valid':
+            self.triples = model.data_handler.validation_triples_ids
+        else:
+            raise NotImplementedError('Invalid testing data: enter test or valid!')
+
+        self.hr_t = model.data_handler.hr_t
+        self.tr_h = model.data_handler.tr_t
+        self.n_test = model.config.test_num
+        self.hits = model.config.hits
 
         self.mean_rank_head = {}
         self.mean_rank_tail = {}
@@ -45,25 +57,8 @@ class Evaluation(EvaluationMeta):
         self.norm_filter_hit_tail = {}
         self.epoch = []
 
-        if test_data == 'test':
-            self.data = model.data_handler.test_triples_ids
-        elif test_data == 'valid':
-            self.data = model.data_handler.validation_triples_ids
-        else:
-            raise NotImplementedError('Invalid testing data: enter test or valid!')
-
-        self.hr_t = model.data_handler.hr_t
-        self.tr_h = model.data_handler.tr_t
-        self.n_test = model.config.test_num
-        self.model = model
-
-        if hits is None:
-            self.hits = model.config.hits
-        else:
-            self.hits = hits
-
     def test(self, sess=None, epoch=None):
-        head_rank, tail_rank, norm_head_rank, norm_tail_rank = self.model.test()
+        head_rank, tail_rank, norm_head_rank, norm_tail_rank = self.model.test_step()
         self.epoch.append(epoch)
         if not sess:
             raise NotImplementedError('No session found for evaluation!')
@@ -81,12 +76,13 @@ class Evaluation(EvaluationMeta):
         for i in range(self.model.config.test_num):
             
 
-            t = self.data[i]
+            t = self.triples[i]
             feed_dict = {
                 self.model.test_h: np.reshape(t.h, [1, ]),
                 self.model.test_r: np.reshape(t.r, [1, ]),
                 self.model.test_t: np.reshape(t.t, [1, ])
             }
+            
             (id_replace_head,
              id_replace_tail,
              norm_id_replace_head,

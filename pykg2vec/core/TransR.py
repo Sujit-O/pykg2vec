@@ -24,7 +24,9 @@ from __future__ import print_function
 import sys
 
 sys.path.append("../")
-from core.KGMeta import KGMeta
+from core.KGMeta import ModelMeta, TrainerMeta
+import tensorflow as tf
+from utils.trainer import Trainer
 from utils.visualization import Visualization
 from config.config import TransRConfig
 from utils.dataprep import DataPrep
@@ -37,7 +39,7 @@ import numpy as np
 from sklearn.manifold import TSNE
 
 
-class TransR(KGMeta):
+class TransR(ModelMeta):
     @property
     def variables(self):
         return self.__variables
@@ -51,6 +53,13 @@ class TransR(KGMeta):
 
         self.data_handler = data_handler
         self.model_name = 'TransR'
+        
+
+        self.def_inputs()
+        self.def_parameters()
+        self.def_loss()
+        
+    def def_inputs(self):
         with tf.name_scope("read_inputs"):
             self.pos_h = tf.placeholder(tf.int32, [self.config.batch_size])
             self.pos_t = tf.placeholder(tf.int32, [self.config.batch_size])
@@ -58,26 +67,20 @@ class TransR(KGMeta):
             self.neg_h = tf.placeholder(tf.int32, [self.config.batch_size])
             self.neg_t = tf.placeholder(tf.int32, [self.config.batch_size])
             self.neg_r = tf.placeholder(tf.int32, [self.config.batch_size])
+            self.test_h = tf.placeholder(tf.int32, [1])
+            self.test_t = tf.placeholder(tf.int32, [1])
+            self.test_r = tf.placeholder(tf.int32, [1])
 
+    def def_parameters(self):
         with tf.name_scope("embedding"):
-            if load_entity is not None:
-                self.ent_embeddings = tf.Variable(np.loadtxt(load_entity),
-                                                  name="ent_embedding",
-                                                  dtype=np.float32)
-            else:
-                self.ent_embeddings = tf.get_variable(name="ent_embedding",
-                                                      shape=[self.data_handler.tot_entity,
-                                                             self.config.ent_hidden_size],
-                                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            if load_rel is not None:
-                self.rel_embeddings = tf.Variable(np.loadtxt(load_rel),
-                                                  name="rel_embedding",
-                                                  dtype=np.float32)
-            else:
-                self.rel_embeddings = tf.get_variable(name="rel_embedding",
-                                                      shape=[self.data_handler.tot_relation,
-                                                             self.config.rel_hidden_size],
-                                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.ent_embeddings = tf.get_variable(name="ent_embedding",
+                                                  shape=[self.data_handler.tot_entity,
+                                                         self.config.ent_hidden_size],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.rel_embeddings = tf.get_variable(name="rel_embedding",
+                                                  shape=[self.data_handler.tot_relation,
+                                                         self.config.rel_hidden_size],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
             rel_matrix = np.zeros([self.data_handler.tot_relation,
                                    self.config.rel_hidden_size * self.config.ent_hidden_size],
@@ -89,6 +92,7 @@ class TransR(KGMeta):
                             rel_matrix[i][j * self.config.ent_hidden_size + k] = 1.0
             self.rel_matrix = tf.Variable(rel_matrix, name="rel_matrix")
 
+    def def_loss(self):
         with tf.name_scope('lookup_embeddings'):
             pos_h_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings,
                                                         self.pos_h),
@@ -115,13 +119,13 @@ class TransR(KGMeta):
                                                            self.neg_r),
                                     [-1, self.config.rel_hidden_size, self.config.ent_hidden_size])
 
-            pos_h_e = tf.nn.l2_normalize(tf.reshape(tf.matmul(pos_matrix, pos_h_e),
+            pos_h_e = tf.nn.l2_normalize(tf.reshape(self.transform(pos_matrix, pos_h_e),
                                                     [-1, self.config.rel_hidden_size]), 1)
-            pos_t_e = tf.nn.l2_normalize(tf.reshape(tf.matmul(pos_matrix, pos_t_e),
+            pos_t_e = tf.nn.l2_normalize(tf.reshape(self.transform(pos_matrix, pos_t_e),
                                                     [-1, self.config.rel_hidden_size]), 1)
-            neg_h_e = tf.nn.l2_normalize(tf.reshape(tf.matmul(neg_matrix, neg_h_e),
+            neg_h_e = tf.nn.l2_normalize(tf.reshape(self.transform(neg_matrix, neg_h_e),
                                                     [-1, self.config.rel_hidden_size]), 1)
-            neg_t_e = tf.nn.l2_normalize(tf.reshape(tf.matmul(neg_matrix, neg_t_e),
+            neg_t_e = tf.nn.l2_normalize(tf.reshape(self.transform(neg_matrix, neg_t_e),
                                                     [-1, self.config.rel_hidden_size]), 1)
 
         if self.config.L1_flag:
@@ -133,67 +137,65 @@ class TransR(KGMeta):
             neg = tf.reduce_sum((neg_h_e + neg_r_e - neg_t_e) ** 2, 1, keepdims=True)
             self.predict = pos
 
-        with tf.name_scope("output"):
-            self.loss = tf.reduce_sum(tf.maximum(pos - neg + self.config.margin, 0))
+        self.loss = tf.reduce_sum(tf.maximum(pos - neg + self.config.margin, 0))
+    
+    def transform(self, matrix, embeddings):
+        return tf.matmul(matrix, embeddings)
 
-    def train(self):
-        with tf.Session(config=self.config.gpu_config) as sess:
-            gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
-            # if self.config.loadFromData:
-            #     saver = tf.train.Saver()
-            #     saver.restore(sess, self.config.tmp + '/TransRModel.vec')
-            global_step = tf.Variable(0, name="global_step", trainable=False)
+    def test_step(self):
+        # embedding triples h r t
+        head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
+        head_vec = tf.reshape(head_vec, [-1, self.config.ent_hidden_size, 1])
+        rel_vec = tf.reshape(rel_vec, [-1, self.config.rel_hidden_size, 1])
+        tail_vec = tf.reshape(tail_vec, [-1, self.config.ent_hidden_size, 1])
 
-            if self.config.optimizer == 'gradient':
-                optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
-            elif self.config.optimizer == 'rms':
-                optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
-            elif self.config.optimizer == 'adam':
-                optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
-            else:
-                raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
-            grads_and_vars = optimizer.compute_gradients(self.loss)
-            train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
-            sess.run(tf.global_variables_initializer())
+        # get the projection matrix for the given relations. 
+        pos_matrix = tf.reshape(tf.nn.embedding_lookup(self.rel_matrix, self.test_r),
+                                    [-1, self.config.rel_hidden_size, self.config.ent_hidden_size])
+        
+        # normalize embeddings and projection matrix.
+        head_vec = tf.nn.l2_normalize(head_vec, axis=1)
+        tail_vec = tf.nn.l2_normalize(tail_vec, axis=1)
+        rel_vec = tf.nn.l2_normalize(rel_vec, axis=1)
 
-            for n_iter in range(self.config.epochs):
-                acc_loss = 0
-                batch = 0
-                num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size
-                start_time = timeit.default_timer()
+        # project the head and tail on the relation space. 
+        # [1, 32, 64] * [1, 32, 1]
+        head_vec = self.transform(pos_matrix, head_vec) 
+        tail_vec = self.transform(pos_matrix, tail_vec)
+        
+       
+        # normalized version
+        norm_embedding_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_embedding_relation = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-                for i in range(num_batch):
-                    ph, pr, pt, nh, nr, nt = list(next(gen_train))
-                    feed_dict = {
-                        self.pos_h: ph,
-                        self.pos_t: pt,
-                        self.pos_r: pr,
-                        self.neg_h: nh,
-                        self.neg_t: nt,
-                        self.neg_r: nr
-                    }
+        project_ent_embedding = tf.matmul(norm_embedding_entity, tf.transpose(tf.squeeze(pos_matrix, [0])))
 
-                    _, step, loss = sess.run(
-                        [train_op, global_step, self.loss], feed_dict)
+        print(project_ent_embedding.shape)
+        norm_head_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_h)
+        norm_rel_vec = tf.nn.embedding_lookup(norm_embedding_relation, self.test_r)
+        norm_tail_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_t)
 
-                    acc_loss += loss
-                    batch += 1
-                    print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                                                                batch,
-                                                                num_batch,
-                                                                loss), end='\r')
-                print('Epoch[%d] ---Train Loss: %.5f ---time: %.2f' % (
-                    n_iter, acc_loss, timeit.default_timer() - start_time))
+        norm_head_vec = tf.matmul(norm_head_vec, tf.transpose(tf.squeeze(pos_matrix, [0])))
+        norm_tail_vec = tf.matmul(norm_tail_vec, tf.transpose(tf.squeeze(pos_matrix, [0])))
 
-                # if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
-                #     evaluate.test(sess, n_iter)
-                #     evaluate.print_test_summary(n_iter)
+        # norm_project_ent_embedding = norm_embedding_entity - tf.reduce_sum(norm_embedding_entity * norm_pos_norm, 1, keepdims = True) * norm_pos_norm
 
-            if self.config.save_model:
-                self.save_model(sess)
+        _, self.head_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(project_ent_embedding
+                                                             + tf.squeeze(rel_vec, [2]) - tf.squeeze(tail_vec, [2])),
+                                                      axis=1),
+                                        k=self.data_handler.tot_entity)
+        _, self.tail_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(tf.squeeze(head_vec, [2])
+                                                             + tf.squeeze(rel_vec, [2]) - project_ent_embedding),
+                                                      axis=1),
+                                        k=self.data_handler.tot_entity)
 
-    def test(self):
-        pass
+        _, self.norm_head_rank = tf.nn.top_k(
+            tf.reduce_sum(tf.abs(project_ent_embedding + norm_rel_vec - norm_tail_vec),
+                          axis=1), k=self.data_handler.tot_entity)
+        _, self.norm_tail_rank = tf.nn.top_k(
+            tf.reduce_sum(tf.abs(norm_head_vec + norm_rel_vec - project_ent_embedding),
+                          axis=1), k=self.data_handler.tot_entity)
+        return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
@@ -311,23 +313,6 @@ class TransR(KGMeta):
                            t_embs,
                            fig_name)
 
-    def save_model(self,sess):
-        """function to save the model"""
-        ee,er,rm = sess.run([self.ent_embeddings,self.rel_embeddings,self.rel_matrix])
-        if not os.path.exists(self.config.tmp):
-            os.mkdir('../intermediate')
-        np.savetxt('../intermediate/ent_embeddings.txt', ee)
-        np.savetxt('../intermediate/rel_embeddings.txt', er)
-        np.savetxt('../intermediate/rel_matrix.txt', rm)
-
-        # saver = tf.train.Saver()
-        # saver.save(sess, '../intermediate/TransRModel.vec')
-
-    def load_model(self, sess):
-        """function to load the model"""
-        saver = tf.train.Saver()
-        saver.restore(sess, self.config.tmp + '/TransRModel.vec')
-
     def summary(self):
         """function to print the summary"""
         print("\n----------------SUMMARY----------------")
@@ -341,12 +326,9 @@ class TransR(KGMeta):
                     key = ' ' + key
             print(key, ":", val)
         print("-----------------------------------------")
-    # TODO: Save summary
-    # with open('../intermediate/TransRModel_summary.json', 'wb') as fp:
-    # 	json.dump(self.config.__dict__, fp)
 
 
-def main():
+def main(_):
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransR')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
@@ -356,6 +338,7 @@ def main():
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
     parser.add_argument('-gp', '--gpu_frac', default=0.4, type=float, help='GPU fraction to use')
+    parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
 
     args = parser.parse_args()
 
@@ -363,6 +346,7 @@ def main():
         os.mkdir(args.tmp)
 
     data_handler = DataPrep(args.dataset)
+    args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
 
     config = TransRConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,
@@ -372,14 +356,10 @@ def main():
                           gpu_fraction=args.gpu_frac)
 
     model = TransR(config=config, data_handler=data_handler)
-    model.summary()
-    model.train()
-
-    if model.config.disp_summary:
-        model.summary()
-    if model.config.disp_result:
-        model.display_in_rel_space(fig_name='TransR_Result')
-
+    
+    trainer = Trainer(model=model)
+    trainer.build_model()
+    trainer.train_model()
 
 if __name__ == "__main__":
-    main()
+    tf.app.run()

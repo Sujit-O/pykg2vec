@@ -23,12 +23,25 @@ class TransRConfig(object):
                  test_num=300,
                  triple_num=20,
                  tmp='../intermediate',
+                 result='../results',
+                 figures= '../figures',
                  gpu_fraction=0.4,
+                 hits=None,
                  gpu_allow_growth=True,
-                 save_model=True,
+                 save_model=False,
                  disp_summary=True,
                  disp_result=True,
-                 log_device_placement=False):
+                 plot_embedding=True,
+                 log_device_placement=False,
+                 plot_training_result = True,
+                 plot_testing_result = True):
+        self.plot_testing_result = plot_testing_result
+        self.plot_embedding = plot_embedding
+        self.figures = figures
+        self.plot_training_result = plot_training_result
+        self.result = result
+        if hits is None:
+            hits = [10,5]
         self.model_name = model_name
         self.learning_rate = learning_rate
         self.testFlag = test_flag
@@ -45,6 +58,7 @@ class TransRConfig(object):
         self.test_num = test_num
         self.disp_triple_num = triple_num
         self.tmp = tmp
+        self.hits = hits
         self.gpu_config = tf.ConfigProto(log_device_placement=log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
         self.gpu_config.gpu_options.allow_growth = gpu_allow_growth

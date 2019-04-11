@@ -24,8 +24,10 @@ from __future__ import print_function
 import sys
 sys.path.append("../")
 
-from core.KGMeta import KGMeta
+from core.KGMeta import ModelMeta, TrainerMeta
 import tensorflow as tf
+from utils.trainer import Trainer
+
 from config.config import TransHConfig
 from utils.dataprep import DataPrep
 import timeit
@@ -36,7 +38,7 @@ import os
 
 from tensorflow.python import debug as tf_debug
 
-class TransH(KGMeta):
+class TransH(ModelMeta):
     
     def __init__(self, config=None, data_handler=None):
 
@@ -56,10 +58,6 @@ class TransH(KGMeta):
         self.def_inputs()
         self.def_parameters()
         self.def_loss()
-        self.build_model()
-        
-        self.training_results = []
-
         
     def def_inputs(self):
         with tf.name_scope("read_inputs"):
@@ -129,80 +127,7 @@ class TransH(KGMeta):
 
         self.loss = tf.reduce_sum(tf.maximum(0., score_pos + self.config.margin - score_neg))
 
-    def build_model(self):
-        self.sess = tf.Session(config=self.config.gpu_config)
-        self.global_step = tf.Variable(0, name="global_step", trainable=False)
-        if self.config.optimizer == 'gradient':
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
-        elif self.config.optimizer == 'rms':
-            optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
-        elif self.config.optimizer == 'adam':
-            optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
-        else:
-            raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
-        grads = optimizer.compute_gradients(self.loss)
-        self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
-        self.sess.run(tf.global_variables_initializer())
-
-    def train(self):
-        """function to train the model"""
-
-        if self.config.loadFromData:
-            self.load_model()
-
-        evaluate = Evaluation(model=self, test_data='test')
-                      
-        for n_iter in range(self.config.epochs):
-            
-            acc_loss = 0
-            batch = 0
-            num_batch = 5 # len(self.data_handler.train_triples_ids) // self.config.batch_size
-            start_time = timeit.default_timer()
-
-            gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
-
-            for i in range(num_batch):
-                ph, pr, pt, nh, nr, nt = list(next(gen_train))
-
-                feed_dict = {
-                    self.pos_h: ph,
-                    self.pos_t: pt,
-                    self.pos_r: pr,
-                    self.neg_h: nh,
-                    self.neg_t: nt,
-                    self.neg_r: nr
-                }
-
-                _, step, loss = self.sess.run([self.op_train, self.global_step, self.loss], feed_dict)
-
-                acc_loss += loss
-                batch += 1
-                print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                                                            batch,
-                                                            num_batch,
-                                                            loss), end='\r')
-
-            print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
-                n_iter, acc_loss, timeit.default_timer() - start_time))
-            
-            self.training_results.append([n_iter, acc_loss])
-            if n_iter % self.config.test_step == 0 or n_iter == 0 or n_iter == self.config.epochs - 1:
-                evaluate.test(self.sess, n_iter)
-                evaluate.print_test_summary(n_iter)
-
-        evaluate.save_test_summary(algo=self.model_name)
-        evaluate.save_training_result(self.training_results)
-
-        if self.config.save_model:
-            self.save_model(self.sess)
-
-        if self.config.disp_result:
-            self.display(self.sess)
-
-        if self.config.disp_summary:
-            self.summary()
-
-    def test(self):
+    def test_step(self):
 
         # embedding triples h r t
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
@@ -273,7 +198,19 @@ class TransH(KGMeta):
         return h, r, t
 
     def projection(self, entity, wr):
-        return entity - tf.reduce_sum(entity * wr, 1, keep_dims = True) * wr
+        return entity - tf.reduce_sum(entity * wr, 1, keepdims = True) * wr
+
+    def summary(self):
+        """function to print the summary"""
+        print("\n----------SUMMARY----------")
+        # Acquire the max length and add four more spaces
+        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 4
+        for key, val in self.config.__dict__.items():
+            if len(key) < maxspace:
+                for i in range(maxspace - len(key)):
+                    key = ' ' + key
+            print(key, ":", val)
+        print("---------------------------")
 
     def display(self, sess=None):
         """function to display embedding"""
@@ -300,30 +237,6 @@ class TransH(KGMeta):
                                  result=self.config.figures,
                                  algo=['TransE', 'TransR', 'TransH'],
                                  data=['Freebase15k'], paramlist=None, hits=self.config.hits)
-
-    def save_model(self, sess):
-        """function to save the model"""
-        if not os.path.exists(self.config.tmp):
-            os.mkdir('../intermediate')
-        saver = tf.train.Saver()
-        saver.save(sess, '../intermediate/TransHModel.vec')
-
-    def load_model(self, sess):
-        """function to load the model"""
-        saver = tf.train.Saver()
-        saver.restore(sess, self.config.tmp + '/TransHModel.vec')
-
-    def summary(self):
-        """function to print the summary"""
-        print("\n----------SUMMARY----------")
-        # Acquire the max length and add four more spaces
-        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 4
-        for key, val in self.config.__dict__.items():
-            if len(key) < maxspace:
-                for i in range(maxspace - len(key)):
-                    key = ' ' + key
-            print(key, ":", val)
-        print("---------------------------")
 
 def main(_):
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
@@ -353,8 +266,9 @@ def main(_):
                           hidden_size=args.embed)
 
     model = TransH(config=config, data_handler=data_handler)
-    model.summary()
-    model.train()
+    trainer = Trainer(model=model)
+    trainer.build_model()
+    trainer.train_model()
 
 if __name__ == "__main__":
     tf.app.run()
