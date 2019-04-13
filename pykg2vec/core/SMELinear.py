@@ -41,7 +41,7 @@ from utils.visualization import Visualization
 from utils.evaluation import Evaluation
 
 from utils.trainer import Trainer
-from config.config import RescalConfig
+from config.config import SMEConfig
 from utils.dataprep import DataPrep
 from tensorflow.python import debug as tf_debug
 
@@ -58,21 +58,16 @@ import timeit
 from argparse import ArgumentParser
 import os
 
-class Rescal(ModelMeta):
+class SMELinear(ModelMeta):
 
     def __init__(self, config=None, data_handler=None):
-
-        """ TransE Models
-		Args:
-		-----Inputs-------
-		"""
         if not config:
-            self.config = RescalConfig()
+            self.config = SMEConfig()
         else:
             self.config = config
 
         self.data_handler = data_handler
-        self.model_name = 'Rescal'
+        self.model_name = 'SMELinear'
 
         self.def_inputs()
         self.def_parameters()
@@ -96,87 +91,94 @@ class Rescal(ModelMeta):
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
-            # A: per each entity, store its embedding representation.
             self.ent_embeddings = tf.get_variable(name="ent_embedding",
                                                   shape=[num_total_ent, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-            # M: per each relation, store a matrix that models the interactions between entity embeddings.
-            self.rel_matrices   = tf.get_variable(name="rel_matrices",
-                                                  shape=[num_total_rel, k*k],
+            self.rel_embeddings = tf.get_variable(name="rel_embedding",
+                                                  shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    def cal_truth_val(self, h, r, t):
-        # dim of h: [m, k, 1]
-        #        r: [m, k, k]
-        #        t: [m, k, 1]
-        return tf.reduce_sum(h*tf.matmul(r,t), [1,2])
+        with tf.name_scope("weights_and_parameters"):
+
+            self.mu1 = tf.get_variable(name="mu1", shape=[k, k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.mu2 = tf.get_variable(name="mu2", shape=[k, k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.bu  = tf.get_variable(name="bu",  shape=[k, 1],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.mv1 = tf.get_variable(name="mv1", shape=[k, k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.mv2 = tf.get_variable(name="mv2", shape=[k, k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.bv  = tf.get_variable(name="bv",  shape=[k, 1],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
     def def_loss(self):
-        k = self.config.hidden_size
 
         with tf.name_scope('normalization'):
             self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-            self.rel_matrices = tf.nn.l2_normalize(self.rel_matrices, axis=1)
+            self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
         
         with tf.name_scope('lookup_embeddings'):
             pos_h_e = tf.nn.embedding_lookup(self.ent_embeddings, self.pos_h)
-            pos_r_e = tf.nn.embedding_lookup(self.rel_matrices, self.pos_r)
+            pos_r_e = tf.nn.embedding_lookup(self.rel_embeddings, self.pos_r)
             pos_t_e = tf.nn.embedding_lookup(self.ent_embeddings, self.pos_t)
             neg_h_e = tf.nn.embedding_lookup(self.ent_embeddings, self.neg_h)
-            neg_r_e = tf.nn.embedding_lookup(self.rel_matrices, self.neg_r)
+            neg_r_e = tf.nn.embedding_lookup(self.rel_embeddings, self.neg_r)
             neg_t_e = tf.nn.embedding_lookup(self.ent_embeddings, self.neg_t)
 
-        with tf.name_scope('reshaping'):
-            pos_h_e = tf.reshape(pos_h_e, [-1, k, 1])
-            pos_r_e = tf.reshape(pos_r_e, [-1, k, k])
-            pos_t_e = tf.reshape(pos_t_e, [-1, k, 1])
-            neg_h_e = tf.reshape(neg_h_e, [-1, k, 1])
-            neg_r_e = tf.reshape(neg_r_e, [-1, k, k])
-            neg_t_e = tf.reshape(neg_t_e, [-1, k, 1])
-        
-        pos_score = self.cal_truth_val(pos_h_e, pos_r_e, pos_t_e)
-        neg_score = self.cal_truth_val(neg_h_e, neg_r_e, neg_t_e)
+        energy_pos_l = self.gu(pos_h_e, pos_r_e) 
+        energy_pos_r = self.gv(pos_r_e, pos_t_e)
+        energy_pos   = tf.reduce_sum(tf.multiply(energy_pos_l, energy_pos_r), 1)
 
-        self.loss = tf.reduce_sum(tf.maximum(neg_score + self.config.margin - pos_score, 0))
+        energy_neg_l = self.gu(neg_h_e, neg_r_e) 
+        energy_neg_r = self.gv(neg_r_e, neg_t_e)
+        energy_neg   = tf.reduce_sum(tf.multiply(energy_neg_l, energy_neg_r), 1)
+
+        self.loss = tf.reduce_sum(tf.maximum(energy_neg + self.config.margin - energy_pos, 0))
+
+    def gu(self, h, r):
+        return tf.transpose(tf.matmul(self.mu1, tf.transpose(h)) + tf.matmul(self.mu2, tf.transpose(r)) + self.bu)
+
+    def gv(self, r, t):
+        return tf.transpose(tf.matmul(self.mv1, tf.transpose(r)) + tf.matmul(self.mv2, tf.transpose(t)) + self.bv)
 
     def test_step(self):
-        k = self.config.hidden_size
         num_entity = self.data_handler.tot_entity
 
         with tf.name_scope('lookup_embeddings'):
             h_vec = tf.nn.embedding_lookup(self.ent_embeddings, self.test_h)
-            r_vec = tf.nn.embedding_lookup(self.rel_matrices, self.test_r)
+            r_vec = tf.nn.embedding_lookup(self.rel_embeddings, self.test_r)
             t_vec = tf.nn.embedding_lookup(self.ent_embeddings, self.test_t)
  
-        with tf.name_scope('reshaping'):
-            h_vec = tf.reshape(h_vec, [k, 1])
-            r_vec = tf.reshape(r_vec, [k, k])
-            t_vec = tf.reshape(t_vec, [k, 1])
-       
-        h_sim = tf.matmul(self.ent_embeddings, tf.matmul(r_vec, t_vec))
-        t_sim = tf.transpose(tf.matmul(tf.matmul(tf.transpose(h_vec), r_vec), tf.transpose(self.ent_embeddings)))
+        energy_h_l = self.gu(self.ent_embeddings, r_vec)
+        energy_h_r = self.gv(r_vec, t_vec)
+        energy_h   = tf.multiply(energy_h_l, energy_h_r)
+
+        energy_t_l = self.gu(h_vec, r_vec)
+        energy_t_r = self.gv(r_vec, self.ent_embeddings)
+        energy_t   = tf.multiply(energy_t_l, energy_t_r)
 
         with tf.name_scope('normalization'):
             self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-            self.rel_matrices = tf.nn.l2_normalize(self.rel_matrices, axis=1)
+            self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
         with tf.name_scope('lookup_embeddings'):
             norm_h_vec = tf.nn.embedding_lookup(self.ent_embeddings, self.test_h)
-            norm_r_vec = tf.nn.embedding_lookup(self.rel_matrices, self.test_r)
+            norm_r_vec = tf.nn.embedding_lookup(self.rel_embeddings, self.test_r)
             norm_t_vec = tf.nn.embedding_lookup(self.ent_embeddings, self.test_t)
 
-        with tf.name_scope('reshaping'):        
-            norm_h_vec = tf.reshape(norm_h_vec, [k, 1])
-            norm_r_vec = tf.reshape(norm_r_vec, [k, k])
-            norm_t_vec = tf.reshape(norm_t_vec, [k, 1])
+        norm_energy_h_l = self.gu(self.ent_embeddings, norm_r_vec)
+        norm_energy_h_r = self.gv(norm_r_vec, norm_t_vec)
+        norm_energy_h   = tf.multiply(norm_energy_h_l, norm_energy_h_r)
 
-        norm_h_sim = tf.matmul(self.ent_embeddings, tf.matmul(norm_r_vec, norm_t_vec))
-        norm_t_sim = tf.transpose(tf.matmul(tf.matmul(tf.transpose(norm_h_vec), norm_r_vec), tf.transpose(self.ent_embeddings)))
+        norm_energy_t_l = self.gu(norm_h_vec, norm_r_vec)
+        norm_energy_t_r = self.gv(norm_r_vec, self.ent_embeddings)
+        norm_energy_t   = tf.multiply(norm_energy_t_l, norm_energy_t_r)
 
-        _, self.head_rank      = tf.nn.top_k(tf.reduce_sum(tf.negative(h_sim), 1), k=num_entity)
-        _, self.tail_rank      = tf.nn.top_k(tf.reduce_sum(tf.negative(t_sim), 1), k=num_entity)
-        _, self.norm_head_rank = tf.nn.top_k(tf.reduce_sum(tf.negative(norm_h_sim), 1), k=num_entity)
-        _, self.norm_tail_rank = tf.nn.top_k(tf.reduce_sum(tf.negative(norm_t_sim), 1), k=num_entity)
+        _, self.head_rank      = tf.nn.top_k(tf.reduce_sum(tf.negative(energy_h), 1), k=num_entity)
+        _, self.tail_rank      = tf.nn.top_k(tf.reduce_sum(tf.negative(energy_t), 1), k=num_entity)
+        _, self.norm_head_rank = tf.nn.top_k(tf.reduce_sum(tf.negative(norm_energy_h), 1), k=num_entity)
+        _, self.norm_tail_rank = tf.nn.top_k(tf.reduce_sum(tf.negative(norm_energy_t), 1), k=num_entity)
 
         return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
 
@@ -236,7 +238,7 @@ class Rescal(ModelMeta):
                                  data=['Freebase15k'], paramlist=None, hits=self.config.hits)
 
 def main(_):
-    parser = ArgumentParser(description='Knowledge Graph Embedding with Rescal')
+    parser = ArgumentParser(description='Knowledge Graph Embedding with SME linear')
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
     parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
@@ -254,15 +256,15 @@ def main(_):
     data_handler = DataPrep(args.dataset)
     args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
     
-    config = RescalConfig(learning_rate=args.learn_rate,
-                          batch_size=args.batch,
-                          epochs=args.epochs,
-                          test_step=args.test_step,
-                          test_num=args.test_num,
-                          gpu_fraction=args.gpu_frac,
-                          hidden_size=args.embed)
+    config = SMEConfig(learning_rate=args.learn_rate,
+                       batch_size=args.batch,
+                       epochs=args.epochs,
+                       test_step=args.test_step,
+                       test_num=args.test_num,
+                       gpu_fraction=args.gpu_frac,
+                       hidden_size=args.embed)
 
-    model = Rescal(config=config, data_handler=data_handler)
+    model = SMELinear(config=config, data_handler=data_handler)
     
     trainer = Trainer(model=model)
     trainer.build_model()

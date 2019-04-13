@@ -241,3 +241,62 @@ class RescalConfig(object):
         self.save_model = save_model
         self.disp_summary = disp_summary
         self.disp_result = disp_result
+
+
+class SMEConfig(object):
+
+    def __init__(self,
+                 learning_rate=0.001,
+                 test_flag=False,
+                 l1_flag=True,
+                 hidden_size=50,
+                 load_from_data=False,
+                 batch_size=128,
+                 epochs=1000,
+                 margin=1.0,
+                 data='Freebase',
+                 optimizer='adam',
+                 test_step=100,
+                 test_num=1000,
+                 triple_num=5,
+                 tmp='../intermediate',
+                 result='../results',
+                 figures= '../figures',
+                 gpu_fraction=0.4,
+                 hits=None,
+                 gpu_allow_growth=True,
+                 save_model=False,
+                 disp_summary=True,
+                 disp_result=True,
+                 plot_embedding=True,
+                 log_device_placement=False,
+                 plot_training_result = True,
+                 plot_testing_result = True):
+        self.plot_testing_result = plot_testing_result
+        self.plot_embedding = plot_embedding
+        self.figures = figures
+        self.plot_training_result = plot_training_result
+        self.result = result
+        if hits is None:
+            hits = [10,5]
+        self.learning_rate = learning_rate
+        self.testFlag = test_flag
+        self.L1_flag = l1_flag
+        self.loadFromData = load_from_data
+        self.hidden_size = hidden_size
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.margin = margin
+        self.data = data
+        self.optimizer = optimizer
+        self.test_step = test_step
+        self.test_num = test_num
+        self.disp_triple_num = triple_num
+        self.tmp = tmp
+        self.hits = hits
+        self.gpu_config = tf.ConfigProto(log_device_placement=log_device_placement)
+        self.gpu_config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
+        self.gpu_config.gpu_options.allow_growth = gpu_allow_growth
+        self.save_model = save_model
+        self.disp_summary = disp_summary
+        self.disp_result = disp_result

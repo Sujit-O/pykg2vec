@@ -165,7 +165,7 @@ class DataPrep(object):
         array_rand_ids = np.random.permutation(len(src_triples))
         number_of_batches = len(src_triples) // batch_size
 
-        print("Number of batches:", number_of_batches)
+        # print("Number of batches:", number_of_batches)
 
         batch_idx = 0
         last_h=0
