@@ -4,7 +4,7 @@
 We store the base configuration of the models here
 """
 import tensorflow as tf
-
+import os
 class BasicConfig:
     def __init__(self, 
                  test_step=100,
@@ -28,9 +28,16 @@ class BasicConfig:
         self.test_step = 100
         self.test_num  = test_num
         self.disp_triple_num = triple_num
+        
         self.tmp = tmp
         self.result = result
         self.figures = figures
+        if not os.path.exists(tmp):
+            os.mkdir(tmp)
+        if not os.path.exists(result):
+            os.mkdir(result)
+        if not os.path.exists(figures):
+            os.mkdir(figures)
         
         if hits is None:
             hits = [10,5]

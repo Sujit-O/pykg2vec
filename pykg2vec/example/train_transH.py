@@ -22,9 +22,6 @@ def main(_):
     parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
     args = parser.parse_args()
 
-    if not os.path.exists(args.tmp):
-        os.mkdir(args.tmp)
-
     data_handler = DataPrep(args.dataset)
     args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
     
