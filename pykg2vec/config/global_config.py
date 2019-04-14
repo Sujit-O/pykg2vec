@@ -16,6 +16,8 @@ class FreebaseFB15k(object):
         self.name="FB15k"
         self.url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
         self.dataset_home_path = Path('..')/'dataset'
+        self.dataset_home_path.mkdir(parents=True, exist_ok=True)
+        self.dataset_home_path = self.dataset_home_path.resolve()
         self.root_path = self.dataset_home_path/'Freebase'
         self.tar = self.root_path/'FB15k.tgz'
         self.downloaded_path = self.root_path/'FB15k'/'freebase_mtr100_mte100-'
@@ -24,22 +26,10 @@ class FreebaseFB15k(object):
         self.idx2entity_path = self.root_path/'FB15k'/'FB15k_idx2entity.pkl'
         self.relation2idx_path = self.root_path/'FB15k'/'FB15k_relation2idx.pkl'
         self.idx2relation_path = self.root_path/'FB15k'/'FB15k_idx2relation.pkl'
-
-        # # convert all relative paths into absolute paths.
-        # for key, value in self.__dict__.items():           
-        #     if issubclass(type(value), Path):
-        #         self.__dict__.update([(key, value.resolve())])
-
-        self.dataset_home_path.mkdir(parents=True, exist_ok=True)
-
+        
         if not self.root_path.exists():
             self.download()
             self.extract()
-        
-	# convert all relative paths into absolute paths.
-        # for key, value in self.__dict__.items():           
-        #     if issubclass(type(value), Path):
-        #         self.__dict__.update([(key, value.resolve())])
 
     def download(self):
         ''' download Freebase 15k dataset from url'''
@@ -79,7 +69,7 @@ class GlobalConfig(object):
 
 def test_init_database():
     global_config = GlobalConfig('Freebase15k')
-    global_config = GlobalConfig('Freebase100k')
+    # global_config = GlobalConfig('Freebase100k')
 
 if __name__ == "__main__":
     test_init_database()
