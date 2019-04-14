@@ -40,18 +40,8 @@ from tensorflow.python import debug as tf_debug
 
 class TransH(ModelMeta):
     
-    def __init__(self, config=None, data_handler=None):
-
-        """ TransH Models
-        Args:
-        -----Inputs-------
-        """
-
-        if not config:
-            self.config = TransHConfig()
-        else:
-            self.config = config
-
+    def __init__(self, config, data_handler):
+        self.config = config
         self.data_handler = data_handler
         self.model_name = 'TransH'
         
@@ -89,6 +79,9 @@ class TransH(ModelMeta):
             self.w = tf.get_variable(name="w",
                                      shape=[num_total_rel, k],
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+
+            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.w]
+            
     def def_loss(self):
         emb_ph, emb_pr, emb_pt = self.embed(self.pos_h, self.pos_r, self.pos_t)
         emb_nh, emb_nr, emb_nt = self.embed(self.neg_h, self.neg_r, self.neg_t)
@@ -264,7 +257,7 @@ def main(_):
                           gpu_fraction=args.gpu_frac,
                           hidden_size=args.embed)
 
-    model = TransH(config=config, data_handler=data_handler)
+    model = TransH(config, data_handler)
     trainer = Trainer(model=model)
     trainer.build_model()
     trainer.train_model()

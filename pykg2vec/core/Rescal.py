@@ -34,8 +34,8 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-
 sys.path.append("../")
+
 from core.KGMeta import ModelMeta, TrainerMeta
 from utils.visualization import Visualization
 from utils.evaluation import Evaluation
@@ -60,17 +60,8 @@ import os
 
 class Rescal(ModelMeta):
 
-    def __init__(self, config=None, data_handler=None):
-
-        """ TransE Models
-		Args:
-		-----Inputs-------
-		"""
-        if not config:
-            self.config = RescalConfig()
-        else:
-            self.config = config
-
+    def __init__(self, config, data_handler):
+        self.config = config
         self.data_handler = data_handler
         self.model_name = 'Rescal'
 
@@ -105,6 +96,9 @@ class Rescal(ModelMeta):
             self.rel_matrices   = tf.get_variable(name="rel_matrices",
                                                   shape=[num_total_rel, k*k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+
+            self.parameter_list = [self.ent_embeddings, self.rel_matrices]
+
     def cal_truth_val(self, h, r, t):
         # dim of h: [m, k, 1]
         #        r: [m, k, k]
@@ -240,7 +234,7 @@ def main(_):
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
     parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
-    parser.add_argument('-l', '--epochs', default=100, type=int, help='Number of Epochs')
+    parser.add_argument('-l', '--epochs', default=1, type=int, help='Number of Epochs')
     parser.add_argument('-tn', '--test_num', default=100, type=int, help='Number of test triples')
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.1, type=float, help='learning rate')
@@ -262,7 +256,7 @@ def main(_):
                           gpu_fraction=args.gpu_frac,
                           hidden_size=args.embed)
 
-    model = Rescal(config=config, data_handler=data_handler)
+    model = Rescal(config, data_handler)
     
     trainer = Trainer(model=model)
     trainer.build_model()

@@ -61,11 +61,7 @@ import os
 class SMELinear(ModelMeta):
 
     def __init__(self, config=None, data_handler=None):
-        if not config:
-            self.config = SMEConfig()
-        else:
-            self.config = config
-
+        self.config = config
         self.data_handler = data_handler
         self.model_name = 'SMELinear'
 
@@ -112,6 +108,9 @@ class SMELinear(ModelMeta):
             self.bv  = tf.get_variable(name="bv",  shape=[k, 1],
                                        initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, \
+                               self.mu1, self.mu2, self.bu, \
+                               self.mv1, self.mv2, self.bv]
     def def_loss(self):
 
         with tf.name_scope('normalization'):
@@ -264,7 +263,7 @@ def main(_):
                        gpu_fraction=args.gpu_frac,
                        hidden_size=args.embed)
 
-    model = SMELinear(config=config, data_handler=data_handler)
+    model = SMELinear(config, data_handler)
     
     trainer = Trainer(model=model)
     trainer.build_model()

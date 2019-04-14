@@ -61,11 +61,7 @@ import os
 class SMEBilinear(ModelMeta):
 
     def __init__(self, config=None, data_handler=None):
-        if not config:
-            self.config = RescalConfig()
-        else:
-            self.config = config
-
+        self.config = config
         self.data_handler = data_handler
         self.model_name = 'SMELinear'
 
@@ -111,6 +107,10 @@ class SMEBilinear(ModelMeta):
                                        initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.bv  = tf.get_variable(name="bv",  shape=[k, 1],
                                        initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, \
+                               self.mu1, self.mu2, self.bu, \
+                               self.mv1, self.mv2, self.bv]
 
     def def_loss(self):
 
@@ -264,7 +264,7 @@ def main(_):
                        gpu_fraction=args.gpu_frac,
                        hidden_size=args.embed)
 
-    model = SMEBilinear(config=config, data_handler=data_handler)
+    model = SMEBilinear(config, data_handler)
     
     trainer = Trainer(model=model)
     trainer.build_model()

@@ -44,16 +44,11 @@ class TransR(ModelMeta):
     def variables(self):
         return self.__variables
 
-    def __init__(self, config=None, data_handler=None, load_entity=None, load_rel=None):
-
-        if config is None:
-            self.config = TransRConfig()
-        else:
-            self.config = config
-
+    def __init__(self, config, data_handler, load_entity=None, load_rel=None):
+        self.config = config
         self.data_handler = data_handler
         self.model_name = 'TransR'
-        
+
         self.def_inputs()
         self.def_parameters()
         self.def_loss()
@@ -93,6 +88,8 @@ class TransR(ModelMeta):
 
             self.rel_matrix = tf.Variable(rel_matrix, name="rel_matrix")
 
+            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
+            
     def def_loss(self):
         with tf.name_scope('lookup_embeddings'):
             # h and t should be [batch_size, ent_hidden_size, 1]
@@ -319,7 +316,7 @@ def main(_):
                           test_num=args.test_num,
                           gpu_fraction=args.gpu_frac)
 
-    model = TransR(config=config, data_handler=data_handler)
+    model = TransR(config, data_handler)
     
     trainer = Trainer(model=model)
     trainer.build_model()

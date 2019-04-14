@@ -62,16 +62,7 @@ import os
 class TransE(ModelMeta):
 
     def __init__(self, config=None, data_handler=None):
-
-        """ TransE Models
-		Args:
-		-----Inputs-------
-		"""
-        if not config:
-            self.config = TransEConfig()
-        else:
-            self.config = config
-
+        self.config = config
         self.data_handler = data_handler
         self.model_name = 'TransE'
 
@@ -105,6 +96,8 @@ class TransE(ModelMeta):
                                                   shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
+            self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
+            
     def def_loss(self):
         with tf.name_scope('normalization'):
             self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
@@ -235,7 +228,7 @@ def main(_):
                           gpu_fraction=args.gpu_frac,
                           hidden_size=args.embed)
 
-    model = TransE(config=config, data_handler=data_handler)
+    model = TransE(config, data_handler)
     
     trainer = Trainer(model=model)
     trainer.build_model()

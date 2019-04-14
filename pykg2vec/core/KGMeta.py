@@ -10,14 +10,18 @@ class ModelMeta:
 		"""Initializing and create the model to be trained and inferred"""
 		pass
 
-	def train(self):
-		"""function to train the model"""
+	def def_inputs(self):
+		"""function to define the inputs for the model"""
 		pass
 
-	def test(self):
-		"""function to test the model"""
+	def def_parameters(self):
+		"""function to define the parameters for the model"""
 		pass
 
+	def def_loss(self):
+		"""function to define how loss is calculated in the model"""
+		pass
+		
 	def embed(self,h, r, t):
 		"""function to get the embedding value"""
 		pass
@@ -30,9 +34,11 @@ class TrainerMeta:
 		pass
 
 	def build_model(self):
+		"""function to compile the model"""
 		pass
 
 	def train_model(self):
+		"""function to train the model"""
 		pass
 
 	def save_model(self, sess):
