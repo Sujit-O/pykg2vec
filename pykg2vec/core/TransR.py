@@ -26,7 +26,7 @@ import tensorflow as tf
 import numpy as np
 sys.path.append("../")
 
-from core.KGMeta import ModelMeta, TrainerMeta
+from core.KGMeta import ModelMeta
 from utils.visualization import Visualization
 
 class TransR(ModelMeta):
@@ -49,85 +49,75 @@ class TransR(ModelMeta):
             self.test_r = tf.placeholder(tf.int32, [1])
 
     def def_parameters(self):
+        num_total_ent = self.data_handler.tot_entity
+        num_total_rel = self.data_handler.tot_relation
+        k1 = self.config.ent_hidden_size
+        k2 = self.config.rel_hidden_size
+
         with tf.name_scope("embedding"):
+
             self.ent_embeddings = tf.get_variable(name="ent_embedding",
-                                                  shape=[self.data_handler.tot_entity,
-                                                         self.config.ent_hidden_size],
+                                                  shape=[num_total_ent, k1],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.rel_embeddings = tf.get_variable(name="rel_embedding",
-                                                  shape=[self.data_handler.tot_relation,
-                                                         self.config.rel_hidden_size],
+                                                  shape=[num_total_rel, k2],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            rel_matrix = np.zeros([self.data_handler.tot_relation,
-                                   self.config.rel_hidden_size * self.config.ent_hidden_size],
-                                  dtype=np.float32)
+            rel_matrix = np.zeros([num_total_rel, k1*k2], dtype=np.float32)
             
-            for i in range(self.data_handler.tot_relation):
-                for j in range(self.config.rel_hidden_size):
-                    for k in range(self.config.ent_hidden_size):
+            for i in range(num_total_rel):
+                for j in range(k2):
+                    for k in range(k1):
                         if j == k:
-                            rel_matrix[i][j * self.config.ent_hidden_size + k] = 1.0
+                            rel_matrix[i][j * k1 + k] = 1.0
 
             self.rel_matrix = tf.Variable(rel_matrix, name="rel_matrix")
 
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
 
     def def_loss(self):
-        with tf.name_scope('lookup_embeddings'):
-            # h and t should be [batch_size, ent_hidden_size, 1]
-            # r should be [batch_size, rel_hidden_size, 1]
-            pos_h_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings,
-                                                        self.pos_h),
-                                 [-1, self.config.ent_hidden_size, 1])
-            pos_t_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings,
-                                                        self.pos_t),
-                                 [-1, self.config.ent_hidden_size, 1])
-            pos_r_e = tf.reshape(tf.nn.embedding_lookup(self.rel_embeddings,
-                                                        self.pos_r),
-                                 [-1, self.config.rel_hidden_size])
-            neg_h_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings,
-                                                        self.neg_h),
-                                 [-1, self.config.ent_hidden_size, 1])
-            neg_t_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings,
-                                                        self.neg_t),
-                                 [-1, self.config.ent_hidden_size, 1])
-            neg_r_e = tf.reshape(tf.nn.embedding_lookup(self.rel_embeddings,
-                                                        self.neg_r),
-                                 [-1, self.config.rel_hidden_size])
-            
-            # matrix should be [batch_size, rel_hidden_size, ent_hidden_size]
-            pos_matrix = tf.reshape(tf.nn.embedding_lookup(self.rel_matrix,
-                                                           self.pos_r),
-                                    [-1, self.config.rel_hidden_size, self.config.ent_hidden_size])
-            neg_matrix = tf.reshape(tf.nn.embedding_lookup(self.rel_matrix,
-                                                           self.neg_r),
-                                    [-1, self.config.rel_hidden_size, self.config.ent_hidden_size])
+        k1 = self.config.ent_hidden_size
+        k2 = self.config.rel_hidden_size
 
-            # [batch_size, rel_hidden_size, ent_hidden_size] * 
-            # h and t should be [batch_size, ent_hidden_size, 1]
+        with tf.name_scope('lookup_embeddings'):
+            pos_h_e = tf.nn.embedding_lookup(self.ent_embeddings, self.pos_h)
+            pos_t_e = tf.nn.embedding_lookup(self.ent_embeddings, self.pos_t)
+            pos_r_e = tf.nn.embedding_lookup(self.rel_embeddings, self.pos_r)
+            neg_h_e = tf.nn.embedding_lookup(self.ent_embeddings, self.neg_h)
+            neg_t_e = tf.nn.embedding_lookup(self.ent_embeddings, self.neg_t)
+            neg_r_e = tf.nn.embedding_lookup(self.rel_embeddings, self.neg_r)
+            pos_matrix = tf.nn.embedding_lookup(self.rel_matrix, self.pos_r)
+            neg_matrix = tf.nn.embedding_lookup(self.rel_matrix, self.neg_r)
+
+        with tf.name_scope('reshaping'):
+            pos_h_e = tf.reshape(pos_h_e, [-1, k1, 1])
+            pos_r_e = tf.reshape(pos_r_e, [-1, k2])
+            pos_t_e = tf.reshape(pos_t_e, [-1, k1, 1])
+            neg_h_e = tf.reshape(neg_h_e, [-1, k1, 1])
+            neg_r_e = tf.reshape(neg_r_e, [-1, k2])
+            neg_t_e = tf.reshape(neg_t_e, [-1, k1, 1])            
+            pos_matrix = tf.reshape(pos_matrix, [-1, k2, k1])
+            neg_matrix = tf.reshape(neg_matrix, [-1, k2, k1])
+
+        with tf.name_scope('transformation'):
             transform_pos_h_e = self.transform(pos_matrix, pos_h_e)
             transform_pos_t_e = self.transform(pos_matrix, pos_t_e)
             transform_neg_h_e = self.transform(neg_matrix, neg_h_e)
             transform_neg_t_e = self.transform(neg_matrix, neg_t_e)
 
-            # [batch_size, rel_hidden_size, 1]
-            pos_h_e = tf.nn.l2_normalize(tf.reshape(transform_pos_h_e, [-1, self.config.rel_hidden_size]), 1)
-            pos_r_e = tf.nn.l2_normalize(tf.reshape(pos_r_e, [-1, self.config.rel_hidden_size]), 1)
-            pos_t_e = tf.nn.l2_normalize(tf.reshape(transform_pos_t_e, [-1, self.config.rel_hidden_size]), 1)
-            
-            neg_h_e = tf.nn.l2_normalize(tf.reshape(transform_neg_h_e, [-1, self.config.rel_hidden_size]), 1)
-            neg_r_e = tf.nn.l2_normalize(tf.reshape(neg_r_e, [-1, self.config.rel_hidden_size]), 1)
-            neg_t_e = tf.nn.l2_normalize(tf.reshape(transform_neg_t_e, [-1, self.config.rel_hidden_size]), 1)
+            pos_h_e = tf.nn.l2_normalize(tf.reshape(transform_pos_h_e, [-1, k2]), 1)
+            pos_r_e = tf.nn.l2_normalize(tf.reshape(pos_r_e, [-1, k2]), 1)
+            pos_t_e = tf.nn.l2_normalize(tf.reshape(transform_pos_t_e, [-1, k2]), 1)           
+            neg_h_e = tf.nn.l2_normalize(tf.reshape(transform_neg_h_e, [-1, k2]), 1)
+            neg_r_e = tf.nn.l2_normalize(tf.reshape(neg_r_e, [-1, k2]), 1)
+            neg_t_e = tf.nn.l2_normalize(tf.reshape(transform_neg_t_e, [-1, k2]), 1)
 
         if self.config.L1_flag:
             pos = tf.reduce_sum(abs(pos_h_e + pos_r_e - pos_t_e), 1, keepdims=True)
             neg = tf.reduce_sum(abs(neg_h_e + neg_r_e - neg_t_e), 1, keepdims=True)
-            self.predict = pos
         else:
             pos = tf.reduce_sum((pos_h_e + pos_r_e - pos_t_e) ** 2, 1, keepdims=True)
             neg = tf.reduce_sum((neg_h_e + neg_r_e - neg_t_e) ** 2, 1, keepdims=True)
-            self.predict = pos
 
         self.loss = tf.reduce_sum(tf.maximum(pos - neg + self.config.margin, 0))
     
@@ -135,71 +125,56 @@ class TransR(ModelMeta):
         return tf.matmul(matrix, embeddings)
 
     def test_step(self):
-        # embedding triples h r t
-        # [1, 64], [1, 32], [1, 64]
-        # head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
+        k1 = self.config.ent_hidden_size
+        k2 = self.config.rel_hidden_size
+        num_total_ent = self.data_handler.tot_entity
+        num_total_rel = self.data_handler.tot_relation
+
         head_vec = tf.nn.embedding_lookup(self.ent_embeddings, self.test_h)
-        rel_vec = tf.nn.embedding_lookup(self.rel_embeddings, self.test_r)
+        rel_vec  = tf.nn.embedding_lookup(self.rel_embeddings, self.test_r)
         tail_vec = tf.nn.embedding_lookup(self.ent_embeddings, self.test_t)
+        pos_matrix = tf.nn.embedding_lookup(self.rel_matrix, self.test_r)
 
-        # head_vec = tf.nn.l2_normalize(head_vec, axis=1)
-        # rel_vec = tf.nn.l2_normalize(rel_vec, axis=1)
-        # tail_vec = tf.nn.l2_normalize(tail_vec, axis=1)
-        
-        # [1, 64, 1], [1, 32, 1], [1, 64, 1]
-        head_vec = tf.reshape(head_vec, [-1, self.config.ent_hidden_size, 1])
-        rel_vec = tf.reshape(rel_vec, [-1, self.config.rel_hidden_size, 1])
-        tail_vec = tf.reshape(tail_vec, [-1, self.config.ent_hidden_size, 1])
-
-        # get the projection matrix for the given relations.
-        # [1, 32, 64] 
-        pos_matrix = tf.reshape(tf.nn.embedding_lookup(self.rel_matrix, self.test_r),
-                                    [-1, self.config.rel_hidden_size, self.config.ent_hidden_size])
-               
-
-        # project the head and tail on the relation space.
-        # [1, 32, 1] 
+        head_vec = tf.reshape(head_vec, [-1, k1, 1])
+        rel_vec  = tf.reshape(rel_vec,  [-1, k2, 1])
+        tail_vec = tf.reshape(tail_vec, [-1, k1, 1])
+        pos_matrix = tf.reshape(pos_matrix, [-1, k2, k1])
+ 
         head_vec = self.transform(pos_matrix, head_vec) 
         tail_vec = self.transform(pos_matrix, tail_vec) 
         
-        head_vec = tf.nn.l2_normalize(tf.reshape(head_vec, [-1, self.config.rel_hidden_size]), 1)
-        rel_vec = tf.nn.l2_normalize(tf.reshape(rel_vec, [-1, self.config.rel_hidden_size]), 1)
-        tail_vec = tf.nn.l2_normalize(tf.reshape(tail_vec, [-1, self.config.rel_hidden_size]), 1)
+        head_vec = tf.nn.l2_normalize(tf.reshape(head_vec, [-1, k2]), 1)
+        rel_vec  = tf.nn.l2_normalize(tf.reshape(rel_vec,  [-1, k2]), 1)
+        tail_vec = tf.nn.l2_normalize(tf.reshape(tail_vec, [-1, k2]), 1)
 
-        
-        # [14951, 64] * [64, 32]
         project_ent_embedding = self.transform(self.ent_embeddings, tf.transpose(tf.squeeze(pos_matrix, [0])))
-
         project_ent_embedding = tf.nn.l2_normalize(project_ent_embedding, axis=1)
         
-        _, self.head_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(project_ent_embedding + rel_vec - tail_vec),
-                                                      axis=1),
-                                        k=self.data_handler.tot_entity)
-        _, self.tail_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(head_vec + rel_vec - project_ent_embedding),
-                                                      axis=1),
-                                        k=self.data_handler.tot_entity)
-
-        # normalized version
+        head_score = tf.reduce_sum(tf.abs(project_ent_embedding + rel_vec - tail_vec), axis=1)
+        tail_score = tf.reduce_sum(tf.abs(head_vec + rel_vec - project_ent_embedding), axis=1)
+        
         norm_embedding_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         norm_embedding_relation = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
         norm_head_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_h)
-        norm_rel_vec = tf.nn.embedding_lookup(norm_embedding_relation, self.test_r)
+        norm_rel_vec  = tf.nn.embedding_lookup(norm_embedding_relation, self.test_r)
         norm_tail_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_t)
 
         norm_head_vec = tf.matmul(norm_head_vec, tf.transpose(tf.squeeze(pos_matrix, [0])))
         norm_tail_vec = tf.matmul(norm_tail_vec, tf.transpose(tf.squeeze(pos_matrix, [0])))
 
-        norm_head_vec = tf.nn.l2_normalize(tf.reshape(norm_head_vec, [-1, self.config.rel_hidden_size]), 1)
-        norm_rel_vec = tf.nn.l2_normalize(tf.reshape(norm_rel_vec, [-1, self.config.rel_hidden_size]), 1)
-        norm_tail_vec = tf.nn.l2_normalize(tf.reshape(norm_tail_vec, [-1, self.config.rel_hidden_size]), 1)
-      
-        _, self.norm_head_rank = tf.nn.top_k(
-            tf.reduce_sum(tf.abs(project_ent_embedding + norm_rel_vec - norm_tail_vec),
-                          axis=1), k=self.data_handler.tot_entity)
-        _, self.norm_tail_rank = tf.nn.top_k(
-            tf.reduce_sum(tf.abs(norm_head_vec + norm_rel_vec - project_ent_embedding),
-                          axis=1), k=self.data_handler.tot_entity)
+        norm_head_vec = tf.nn.l2_normalize(tf.reshape(norm_head_vec, [-1, k2]), 1)
+        norm_rel_vec =  tf.nn.l2_normalize(tf.reshape(norm_rel_vec,  [-1, k2]), 1)
+        norm_tail_vec = tf.nn.l2_normalize(tf.reshape(norm_tail_vec, [-1, k2]), 1)
+        
+        norm_head_score = tf.reduce_sum(tf.abs(project_ent_embedding + norm_rel_vec - norm_tail_vec), axis=1)
+        norm_tail_score = tf.reduce_sum(tf.abs(norm_head_vec + norm_rel_vec - project_ent_embedding), axis=1)
+
+        _, self.head_rank = tf.nn.top_k(head_score, k=num_total_ent)
+        _, self.tail_rank = tf.nn.top_k(tail_score, k=num_total_ent)
+        _, self.norm_head_rank = tf.nn.top_k(norm_head_score, k=num_total_ent)
+        _, self.norm_tail_rank = tf.nn.top_k(norm_tail_score, k=num_total_ent)
+        
         return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
 
     def embed(self, h, r, t):
