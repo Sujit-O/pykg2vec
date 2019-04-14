@@ -2,13 +2,14 @@ import sys
 sys.path.append("../")
 
 import tensorflow as tf
-from dataprep import DataPrep
 
 from core.TransE import TransE
 from core.TransH import TransH
 from core.TransR import TransR
 from core.Rescal import Rescal
 from config.config import TransEConfig, TransHConfig, TransRConfig, RescalConfig
+
+from utils.dataprep import DataPrep
 from utils.trainer import Trainer
 
 def experiment():
