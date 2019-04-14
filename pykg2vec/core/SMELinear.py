@@ -258,10 +258,11 @@ def main(_):
     config = SMEConfig(learning_rate=args.learn_rate,
                        batch_size=args.batch,
                        epochs=args.epochs,
-                       test_step=args.test_step,
-                       test_num=args.test_num,
-                       gpu_fraction=args.gpu_frac,
                        hidden_size=args.embed)
+
+    config.test_step = args.test_step
+    config.test_num  = args.test_num
+    config.gpu_fraction = args.gpu_frac
 
     model = SMELinear(config, data_handler)
     

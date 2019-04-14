@@ -248,12 +248,14 @@ def main(_):
     config = TransHConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,
                           epochs=args.epochs,
-                          test_step=args.test_step,
-                          test_num=args.test_num,
-                          gpu_fraction=args.gpu_frac,
                           hidden_size=args.embed)
+    
+    config.test_step = args.test_step
+    config.test_num  = args.test_num
+    config.gpu_fraction = args.gpu_frac
 
     model = TransH(config, data_handler)
+    
     trainer = Trainer(model=model)
     trainer.build_model()
     trainer.train_model()

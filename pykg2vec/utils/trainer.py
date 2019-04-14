@@ -116,8 +116,8 @@ class Trainer(TrainerMeta):
     ''' Procedural functions:'''
     def save_model(self):
         """function to save the model"""
-        # if not os.path.exists(self.config.tmp):
-            # os.mkdir('../intermediate')
+        if not os.path.exists(self.config.tmp):
+            os.mkdir('../intermediate')
         saver = tf.train.Saver(self.model.parameter_list)
         saver.save(self.sess, self.config.tmp + '/%s.vec' % self.model.model_name)
 

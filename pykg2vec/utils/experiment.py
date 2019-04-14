@@ -16,56 +16,38 @@ def experiment():
     # preparing dataset. 
     knowledge_graph = DataPrep('Freebase15k')
     
-    # preparing models. 
-    models = [] 
-    test_num = 100
-    test_step = 0
-    epochs = 1000
+    # preparing settings. 
+    epochs = 1
     batch_size = 128
     learning_rate = 0.01
     hidden_size = 50
-    gpu_fraction = 0.4
-    save_model = True
 
     transEconfig = TransEConfig(learning_rate=learning_rate,
                                 batch_size=batch_size,
-                                epochs=epochs,
-                                test_step=test_step,
-                                test_num=test_num,
-                                gpu_fraction=gpu_fraction,
-                                hidden_size=hidden_size, 
-                                save_model = save_model,
-                                disp_result=False)
+                                epochs=epochs, hidden_size=hidden_size)
     
     transHconfig = TransHConfig(learning_rate=learning_rate,
                                 batch_size=batch_size,
-                                epochs=epochs,
-                                test_step=test_step,
-                                test_num=test_num,
-                                gpu_fraction=gpu_fraction,
-                                hidden_size=hidden_size, 
-                                save_model = save_model,
-                                disp_result=False)
+                                epochs=epochs, hidden_size=hidden_size)
 
     transRconfig = TransRConfig(learning_rate=learning_rate,
-                                batch_size=batch_size,
-                                epochs=epochs,
-                                test_step=test_step,
-                                test_num=test_num,
-                                gpu_fraction=gpu_fraction, 
-                                save_model = save_model,
-                                disp_result=False)
+                                batch_size=batch_size, 
+                                epochs=epochs)
 
     rescalconfig = RescalConfig(learning_rate=learning_rate,
                                 batch_size=batch_size,
-                                epochs=epochs,
-                                test_step=test_step,
-                                test_num=test_num,
-                                gpu_fraction=gpu_fraction,
-                                hidden_size=hidden_size, 
-                                save_model = save_model,
-                                disp_result=False)
+                                epochs=epochs, hidden_size=hidden_size)
 
+    configs = [transEconfig, transHconfig, transRconfig, rescalconfig]
+    
+    for config in configs:
+        config.test_step  = 0
+        config.test_num   = 100
+        config.save_model = True
+        config.disp_result= False
+
+    # preparing models. 
+    models = [] 
     models.append(TransE(transEconfig, knowledge_graph))
     models.append(TransH(transHconfig, knowledge_graph))
     models.append(TransR(transRconfig, knowledge_graph))
@@ -81,15 +63,11 @@ def experiment():
 
         tf.reset_default_graph()
 
-    # Visualization
-    transEconfig.save_model = False
-    transEconfig.loadFromData = True
-    transHconfig.save_model = False
-    transHconfig.loadFromData = True
-    transRconfig.save_model = False
-    transRconfig.loadFromData = True
-    rescalconfig.save_model = False
-    rescalconfig.loadFromData = True
+    # Visualization: adjust settings. 
+    for config in configs:
+        config.save_model = False
+        config.loadFromData = True
+        # config.disp_result= False
 
     # visualize the models.
     for model in models:
