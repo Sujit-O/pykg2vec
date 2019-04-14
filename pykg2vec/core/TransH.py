@@ -45,10 +45,6 @@ class TransH(ModelMeta):
         self.data_handler = data_handler
         self.model_name = 'TransH'
         
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
-        
     def def_inputs(self):
         with tf.name_scope("read_inputs"):
             self.pos_h = tf.placeholder(tf.int32, [None])

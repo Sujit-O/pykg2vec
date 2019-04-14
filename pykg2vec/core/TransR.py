@@ -48,10 +48,6 @@ class TransR(ModelMeta):
         self.config = config
         self.data_handler = data_handler
         self.model_name = 'TransR'
-
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
         
     def def_inputs(self):
         with tf.name_scope("read_inputs"):
@@ -89,7 +85,7 @@ class TransR(ModelMeta):
             self.rel_matrix = tf.Variable(rel_matrix, name="rel_matrix")
 
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
-            
+
     def def_loss(self):
         with tf.name_scope('lookup_embeddings'):
             # h and t should be [batch_size, ent_hidden_size, 1]

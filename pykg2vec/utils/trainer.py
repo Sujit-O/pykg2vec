@@ -20,6 +20,11 @@ class Trainer(TrainerMeta):
         self.training_results = []
     
     def build_model(self):
+        
+        self.model.def_inputs()
+        self.model.def_parameters()
+        self.model.def_loss()
+
         """function to build the model"""
         self.sess = tf.Session(config=self.config.gpu_config)
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -37,6 +42,7 @@ class Trainer(TrainerMeta):
         self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
         self.sess.run(tf.global_variables_initializer())
     
+    ''' Training related functions:'''
     def train_model(self):
         """function to train the model"""
         if self.config.loadFromData:
@@ -91,7 +97,11 @@ class Trainer(TrainerMeta):
 
         self.training_results.append([epoch_idx, acc_loss])
 
+    ''' Testing related functions:'''
     def tiny_test(self, curr_epoch):
+        if self.config.test_step == 0:
+            return 
+            
         if curr_epoch % self.config.test_step == 0 or \
            curr_epoch == 0 or \
            curr_epoch == self.config.epochs - 1:
@@ -103,10 +113,11 @@ class Trainer(TrainerMeta):
         self.evaluator.test(self.sess, self.config.epochs)
         self.evaluator.print_test_summary(self.config.epochs)
 
+    ''' Procedural functions:'''
     def save_model(self):
         """function to save the model"""
-        if not os.path.exists(self.config.tmp):
-            os.mkdir('../intermediate')
+        # if not os.path.exists(self.config.tmp):
+            # os.mkdir('../intermediate')
         saver = tf.train.Saver(self.model.parameter_list)
         saver.save(self.sess, self.config.tmp + '/%s.vec' % self.model.model_name)
 
