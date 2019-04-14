@@ -34,29 +34,11 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+import tensorflow as tf
 sys.path.append("../")
 
 from core.KGMeta import ModelMeta, TrainerMeta
 from utils.visualization import Visualization
-from utils.evaluation import Evaluation
-
-from utils.trainer import Trainer
-from config.config import RescalConfig
-from utils.dataprep import DataPrep
-from tensorflow.python import debug as tf_debug
-
-# from pykg2vec.core.KGMeta import KGMeta
-# from pykg2vec.utils.visualization import Visualization
-# from pykg2vec.utils.evaluation import EvaluationTransE
-# from pykg2vec.utils.evaluation import EvaluationTransE
-# from pykg2vec.config.config import TransEConfig
-# from pykg2vec.utils.dataprep import DataPrep
-
-import pandas as pd
-import tensorflow as tf
-import timeit
-from argparse import ArgumentParser
-import os
 
 class Rescal(ModelMeta):
 

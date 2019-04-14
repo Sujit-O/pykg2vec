@@ -34,30 +34,11 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-
-sys.path.append("../")
-from core.KGMeta import ModelMeta, TrainerMeta
-from utils.visualization import Visualization
-from utils.evaluation import Evaluation
-
-from utils.trainer import Trainer
-from config.config import TransEConfig
-from utils.dataprep import DataPrep
-import pdb
-from tensorflow.python import debug as tf_debug
-
-# from pykg2vec.core.KGMeta import KGMeta
-# from pykg2vec.utils.visualization import Visualization
-# from pykg2vec.utils.evaluation import EvaluationTransE
-# from pykg2vec.utils.evaluation import EvaluationTransE
-# from pykg2vec.config.config import TransEConfig
-# from pykg2vec.utils.dataprep import DataPrep
-
-import pandas as pd
 import tensorflow as tf
-import timeit
-from argparse import ArgumentParser
-import os
+sys.path.append("../")
+
+from core.KGMeta import ModelMeta
+from utils.visualization import Visualization
 
 class TransE(ModelMeta):
 
@@ -65,7 +46,7 @@ class TransE(ModelMeta):
         self.config = config
         self.data_handler = data_handler
         self.model_name = 'TransE'
-       
+
     def def_inputs(self):
         with tf.name_scope("read_inputs"):
             self.pos_h = tf.placeholder(tf.int32, [None])
@@ -196,40 +177,3 @@ class TransE(ModelMeta):
                                  result=self.config.figures,
                                  algo=['TransE', 'TransR', 'TransH'],
                                  data=['Freebase15k'], paramlist=None, hits=self.config.hits)
-
-def main(_):
-    parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
-    parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
-    parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
-    parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
-    parser.add_argument('-l', '--epochs', default=10, type=int, help='Number of Epochs')
-    parser.add_argument('-tn', '--test_num', default=100, type=int, help='Number of test triples')
-    parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
-    parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
-    parser.add_argument('-gp', '--gpu_frac', default=0.4, type=float, help='GPU fraction to use')
-    parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
-    args = parser.parse_args()
-
-    if not os.path.exists(args.tmp):
-        os.mkdir(args.tmp)
-
-    data_handler = DataPrep(args.dataset)
-    args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
-    
-    config = TransEConfig(learning_rate=args.learn_rate,
-                          batch_size=args.batch,
-                          epochs=args.epochs,
-                          hidden_size=args.embed)
-
-    config.test_step = args.test_step
-    config.test_num  = args.test_num
-    config.gpu_fraction = args.gpu_frac
-
-    model = TransE(config, data_handler)
-    
-    trainer = Trainer(model=model)
-    trainer.build_model()
-    trainer.train_model()
-
-if __name__ == "__main__":
-    tf.app.run()

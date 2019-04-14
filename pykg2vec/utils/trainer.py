@@ -8,7 +8,6 @@ from argparse import ArgumentParser
 import os
 from utils.evaluation import Evaluation
 
-
 class Trainer(TrainerMeta):
 
     def __init__(self, model):
@@ -20,12 +19,12 @@ class Trainer(TrainerMeta):
         self.training_results = []
     
     def build_model(self):
-        
+        """function to build the model"""
+
         self.model.def_inputs()
         self.model.def_parameters()
         self.model.def_loss()
-
-        """function to build the model"""
+        
         self.sess = tf.Session(config=self.config.gpu_config)
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
         
@@ -46,8 +45,7 @@ class Trainer(TrainerMeta):
     def train_model(self):
         """function to train the model"""
         if self.config.loadFromData:
-            self.load_model()
-            self.tiny_test(0) # test the saved model 
+            self.load_model() 
         else:
             for n_iter in range(self.config.epochs):
                 self.train_model_epoch(n_iter)                
