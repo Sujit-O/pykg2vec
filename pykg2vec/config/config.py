@@ -8,7 +8,7 @@ import tensorflow as tf
 class TransRConfig(object):
     def __init__(self,
                  model_name = 'TransR',
-                 learning_rate=0.001,
+                 learning_rate=0.01,
                  test_flag=False,
                  l1_flag=True,
                  ent_hidden_size=64,

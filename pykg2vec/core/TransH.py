@@ -240,7 +240,7 @@ def main(_):
     parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
     parser.add_argument('-gp', '--gpu_frac', default=0.4, type=float, help='GPU fraction to use')
-    parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
+    parser.add_argument('-k', '--embed', default=100, type=int, help='Hidden embedding size')
     args = parser.parse_args()
     
     if not os.path.exists(args.tmp):
