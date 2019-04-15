@@ -108,7 +108,9 @@ def draw_embedding_rel_space(h_emb,
 
     G = nx.DiGraph()
     idx = 0
-    colors = []
+    head_colors = []
+    rel_colors = []
+    tail_colors = []
     head_nodes = []
     tail_nodes = []
     rel_nodes = []
@@ -121,9 +123,9 @@ def draw_embedding_rel_space(h_emb,
         rel_nodes.append(idx + 1)
         tail_nodes.append(idx + 2)
 
-        colors.append(node_color_mp_ent[h_name[i]])
-        colors.append(node_color_mp_rel[r_name[i]])
-        colors.append(node_color_mp_ent[t_name[i]])
+        head_colors.append(node_color_mp_ent[h_name[i]])
+        rel_colors.append(node_color_mp_rel[r_name[i]])
+        tail_colors.append(node_color_mp_ent[t_name[i]])
 
         pos[idx] = h_emb[i]
         pos[idx + 1] = r_emb[i]
@@ -134,7 +136,7 @@ def draw_embedding_rel_space(h_emb,
     nodes_draw = nx.draw_networkx_nodes(G,
                                         pos,
                                         nodelist=head_nodes,
-                                        node_color=colors,
+                                        node_color=head_colors,
                                         node_shape='o',
                                         node_size=50)
     nodes_draw.set_edgecolor('k')
@@ -142,7 +144,7 @@ def draw_embedding_rel_space(h_emb,
     nodes_draw = nx.draw_networkx_nodes(G,
                                         pos,
                                         nodelist=rel_nodes,
-                                        node_color=colors,
+                                        node_color=rel_colors,
                                         node_size=50,
                                         node_shape='D',
                                         with_labels=show_label)
@@ -151,7 +153,7 @@ def draw_embedding_rel_space(h_emb,
     nodes_draw = nx.draw_networkx_nodes(G,
                                         pos,
                                         nodelist=tail_nodes,
-                                        node_color=colors,
+                                        node_color=tail_colors,
                                         node_shape='*',
                                         node_size=50)
     nodes_draw.set_edgecolor('k')
