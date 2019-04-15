@@ -26,6 +26,14 @@ class ModelMeta:
 		"""function to get the embedding value"""
 		pass
 
+	def get_embed(self,h, r, t):
+		"""function to get the embedding value in numpy"""
+		pass
+
+	def get_proj_embed(self,h, r, t):
+		"""function to get the projected embedding value"""
+		pass
+
 class TrainerMeta:
 	__metaclass__ = ABCMeta
 

@@ -165,7 +165,7 @@ class TransH(ModelMeta):
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
-    def predict_embed(self, h, r, t, sess=None):
+    def get_embed(self, h, r, t, sess=None):
         """function to get the embedding value in numpy"""
         if not sess:
             raise NotImplementedError('No session found for predicting embedding!')
@@ -174,6 +174,10 @@ class TransH(ModelMeta):
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
+
+    def get_proj_embed(self, h, r, t, sess=None):
+        """function to get the projectd embedding value in numpy"""
+        pass
 
     def projection(self, entity, wr):
         return entity - tf.reduce_sum(entity * wr, 1, keepdims = True) * wr

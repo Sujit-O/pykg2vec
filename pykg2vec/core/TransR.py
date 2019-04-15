@@ -190,7 +190,7 @@ class TransR(ModelMeta):
                              [-1, self.config.ent_hidden_size, 1])
         return pos_h_e, pos_r_e, pos_t_e
 
-    def predict_embed(self, h, r, t, sess=None):
+    def get_embed(self, h, r, t, sess=None):
         """function to get the embedding value in numpy"""
         if not sess:
             raise NotImplementedError('No session found for predicting embedding!')
@@ -205,7 +205,11 @@ class TransR(ModelMeta):
                              [-1, self.config.ent_hidden_size, 1])
         h, r, t = sess.run([pos_h_e, pos_r_e, pos_t_e])
         return h, r, t
-    
+
+    def get_proj_embed(self, h, r, t, sess=None):
+        """function to get the projectd embedding value in numpy"""
+        pass
+
     def summary(self):
         """function to print the summary"""
         print("\n----------------SUMMARY----------------")
