@@ -53,6 +53,8 @@ The goal of this library is to minimize the dependency on other libraries as far
 ## Install
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms.
 
+Please install [tensorflow](https://www.tensorflow.org/install) cpu or gpu version before performing pip install of pykg2vec!
+
 Prepare your environment:
  
     ```bash
@@ -84,45 +86,81 @@ Prepare your environment:
  ## Usage Example
     ```python
         import tensorflow as tf
-        from pykg2vec.config.config import TransEConfig
-        from pykg2vec.utils.dataprep import DataPrep
-        from argparse import ArgumentParser
+      
         from pykg2vec.core.TransE import TransE
-        import os
-        
-        
-        def main(_):
-            parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')
-            parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
-            parser.add_argument('-t', '--tmp', default='./intermediate', type=str, help='Temporary folder')
-            parser.add_argument('-ds', '--dataset', default='Freebase', type=str, help='Dataset')
-            parser.add_argument('-l', '--epochs', default=10, type=int, help='Number of Epochs')
-            parser.add_argument('-tn', '--test_num', default=5, type=int, help='Number of test triples')
-            parser.add_argument('-ts', '--test_step', default=5, type=int, help='Test every _ epochs')
-            parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
-            parser.add_argument('-gp', '--gpu_frac', default=0.4, type=float, help='GPU fraction to use')
-        
-            args = parser.parse_args()
-        
-            if not os.path.exists(args.tmp):
-                os.mkdir(args.tmp)
-        
-            data_handler = DataPrep(args.dataset)
-        
-            config = TransEConfig(learning_rate=args.learn_rate,
-                                  batch_size=args.batch,
-                                  epochs=args.epochs,
-                                  test_step=args.test_step,
-                                  test_num=args.test_num,
-                                  gpu_fraction=args.gpu_frac)
-        
-            model = TransE(config=config,data_handler=data_handler)
-            model.summary()
-            model.train()
-        
-        
-        if __name__ == "__main__":
-            tf.app.run()
+        from pykg2vec.core.TransH import TransH
+        from pykg2vec.core.TransR import TransR
+        from pykg2vec.core.Rescal import Rescal
+        from pykg2vec.core.SMEBilinear import SMEBilinear
+        from pykg2vec.core.SMELinear import SMELinear
+        from pykg2vec.config.config import TransEConfig, TransHConfig, TransRConfig, RescalConfig, SMEConfig
+
+        from pykg2vec.utils.dataprep import DataPrep
+        from pykg2vec.utils.trainer import Trainer
+
+        def experiment():
+    
+       # preparing dataset. 
+       knowledge_graph = DataPrep('Freebase15k')
+
+       # preparing settings. 
+       epochs = 5
+       batch_size = 128
+       learning_rate = 0.01
+       hidden_size = 50
+
+       transEconfig = TransEConfig(learning_rate=learning_rate,
+                                   batch_size=batch_size,
+                                   epochs=epochs, hidden_size=hidden_size)
+
+       transHconfig = TransHConfig(learning_rate=learning_rate,
+                                   batch_size=batch_size,
+                                   epochs=epochs, hidden_size=hidden_size)
+
+       transRconfig = TransRConfig(learning_rate=learning_rate,
+                                   batch_size=batch_size, 
+                                   ent_hidden_size=64,
+                                   rel_hidden_size=32,
+                                   epochs=epochs)
+
+       rescalconfig = RescalConfig(learning_rate=0.1,
+                                   batch_size=batch_size,
+                                   epochs=epochs, hidden_size=hidden_size)
+
+       smeconfig    = SMEConfig(learning_rate=learning_rate,
+                                batch_size=batch_size,
+                                epochs=epochs, hidden_size=hidden_size)
+
+       configs = [transEconfig, transHconfig, transRconfig, rescalconfig, smeconfig]
+
+       for config in configs:
+           config.test_step  = 2
+           config.test_num   = 100
+           config.save_model = True
+           config.disp_result= False
+
+       # preparing models. 
+       models = [] 
+       models.append(TransE(transEconfig, knowledge_graph))
+       models.append(TransH(transHconfig, knowledge_graph))
+       models.append(TransR(transRconfig, knowledge_graph))
+       models.append(Rescal(rescalconfig, knowledge_graph))
+       models.append(SMEBilinear(smeconfig, knowledge_graph))
+       models.append(SMELinear(smeconfig, knowledge_graph))
+
+       # train models.
+       for model in models:
+           print("training model %s"%model.model_name)
+           trainer = Trainer(model=model)
+
+           trainer.build_model()
+           trainer.train_model()
+           trainer.full_test()
+
+           tf.reset_default_graph()
+
+       if __name__ == "__main__":
+           experiment()
     ```  
   
 The output of code will be as follows:
