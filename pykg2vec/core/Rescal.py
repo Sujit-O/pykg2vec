@@ -1,34 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-------------------Paper Title-----------------------------
-Translating Embeddings for Modeling Multi-relational Data
-------------------Paper Authors---------------------------
-Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran
-Universite de Technologie de Compiegne – CNRS
-Heudiasyc UMR 7253
-Compiegne, France
-{bordesan, nusunier, agarciad}@utc.fr
-Jason Weston, Oksana Yakhnenko
-Google
-111 8th avenue
-New York, NY, USA
-{jweston, oksana}@google.com
-------------------Summary---------------------------------
-TransE is an energy based model which represents the
-relationships as translations in the embedding space. Which
-means that if (h,l,t) holds then the embedding of the tail
-'t' should be close to the embedding of head entity 'h'
-plus some vector that depends on the relationship 'l'.
-Both entities and relations are vectors in the same space.
-|        ......>.
-|      .     .
-|    .    .
-|  .  .
-|_________________
-Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
- and https://github.com/wencolani/TransE.git
-"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -41,7 +13,21 @@ from core.KGMeta import ModelMeta, TrainerMeta
 from utils.visualization import Visualization
 
 class Rescal(ModelMeta):
-
+    """
+    ------------------Paper Title-----------------------------
+    A Three-Way Model for Collective Learning on Multi-Relational Data
+    ------------------Paper Authors---------------------------
+    Maximilian Nickel, Volker Tresp, Hans-Peter Kriegel
+    Ludwig-Maximilians-Universitat, Munich, Germany 
+    Siemens AG, Corporate Technology, Munich, Germany
+    {NICKEL@CIP.IFI.LMU.DE, VOLKER.TRESP@SIEMENS.COM, KRIEGEL@DBS.IFI.LMU.DE}
+    ------------------Summary---------------------------------
+    RESCAL is a tensor factorization approach to knowledge representation learning, 
+    which is able to perform collective learning via the latent components of the factorization.
+    
+    Portion of Code Based on https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
+     and https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
+    """
     def __init__(self, config, data_handler):
         self.config = config
         self.data_handler = data_handler

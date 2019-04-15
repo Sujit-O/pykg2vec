@@ -1,22 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-------------------Paper Title-----------------------------
-Learning Entity and Relation Embeddings for Knowledge Graph Completion
-------------------Paper Authors---------------------------
-Yankai Lin1, Zhiyuan Liu1∗, Maosong Sun 1,2, Yang Liu3, Xuan Zhu 3
-1 Department of Computer Science and Technology, State Key Lab on Intelligent Technology and Systems,
-National Lab for Information Science and Technology, Tsinghua University, Beijing, China
-2 Jiangsu Collaborative Innovation Center for Language Competence, Jiangsu, China
-3 Samsung R&D Institute of China, Beijing, China
-------------------Summary---------------------------------
-TranR is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
-builds entity and relation embeddings by regarding a relation as translation from head entity to tail
-entity. However, compared to them, it builds the entity and relation embeddings in a separate entity
-and relation spaces.
-
-Portion of Code Based on https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -30,6 +13,23 @@ from core.KGMeta import ModelMeta
 from utils.visualization import Visualization
 
 class TransR(ModelMeta):
+    """
+    ------------------Paper Title-----------------------------
+    Learning Entity and Relation Embeddings for Knowledge Graph Completion
+    ------------------Paper Authors---------------------------
+    Yankai Lin1, Zhiyuan Liu1∗, Maosong Sun 1,2, Yang Liu3, Xuan Zhu 3
+    1 Department of Computer Science and Technology, State Key Lab on Intelligent Technology and Systems,
+    National Lab for Information Science and Technology, Tsinghua University, Beijing, China
+    2 Jiangsu Collaborative Innovation Center for Language Competence, Jiangsu, China
+    3 Samsung R&D Institute of China, Beijing, China
+    ------------------Summary---------------------------------
+    TranR is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
+    builds entity and relation embeddings by regarding a relation as translation from head entity to tail
+    entity. However, compared to them, it builds the entity and relation embeddings in a separate entity
+    and relation spaces.
+
+    Portion of Code Based on https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
+    """
 
     def __init__(self, config, data_handler, load_entity=None, load_rel=None):
         self.config = config
@@ -51,33 +51,33 @@ class TransR(ModelMeta):
     def def_parameters(self):
         num_total_ent = self.data_handler.tot_entity
         num_total_rel = self.data_handler.tot_relation
-        k1 = self.config.ent_hidden_size
-        k2 = self.config.rel_hidden_size
+        d = self.config.ent_hidden_size
+        k = self.config.rel_hidden_size
 
         with tf.name_scope("embedding"):
 
             self.ent_embeddings = tf.get_variable(name="ent_embedding",
-                                                  shape=[num_total_ent, k1],
+                                                  shape=[num_total_ent, d],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.rel_embeddings = tf.get_variable(name="rel_embedding",
-                                                  shape=[num_total_rel, k2],
+                                                  shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            rel_matrix = np.zeros([num_total_rel, k1*k2], dtype=np.float32)
+            rel_matrix = np.zeros([num_total_rel, d*k], dtype=np.float32)
             
             for i in range(num_total_rel):
-                for j in range(k2):
-                    for k in range(k1):
-                        if j == k:
-                            rel_matrix[i][j * k1 + k] = 1.0
+                for j in range(k):
+                    for z in range(d):
+                        if j == z:
+                            rel_matrix[i][j * d + z] = 1.0
 
             self.rel_matrix = tf.Variable(rel_matrix, name="rel_matrix")
 
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
 
     def def_loss(self):
-        k1 = self.config.ent_hidden_size
-        k2 = self.config.rel_hidden_size
+        d = self.config.ent_hidden_size
+        k = self.config.rel_hidden_size
 
         with tf.name_scope('lookup_embeddings'):
             pos_h_e = tf.nn.embedding_lookup(self.ent_embeddings, self.pos_h)
@@ -90,14 +90,14 @@ class TransR(ModelMeta):
             neg_matrix = tf.nn.embedding_lookup(self.rel_matrix, self.neg_r)
 
         with tf.name_scope('reshaping'):
-            pos_h_e = tf.reshape(pos_h_e, [-1, k1, 1])
-            pos_r_e = tf.reshape(pos_r_e, [-1, k2])
-            pos_t_e = tf.reshape(pos_t_e, [-1, k1, 1])
-            neg_h_e = tf.reshape(neg_h_e, [-1, k1, 1])
-            neg_r_e = tf.reshape(neg_r_e, [-1, k2])
-            neg_t_e = tf.reshape(neg_t_e, [-1, k1, 1])            
-            pos_matrix = tf.reshape(pos_matrix, [-1, k2, k1])
-            neg_matrix = tf.reshape(neg_matrix, [-1, k2, k1])
+            pos_h_e = tf.reshape(pos_h_e, [-1, d, 1])
+            pos_r_e = tf.reshape(pos_r_e, [-1, k])
+            pos_t_e = tf.reshape(pos_t_e, [-1, d, 1])
+            neg_h_e = tf.reshape(neg_h_e, [-1, d, 1])
+            neg_r_e = tf.reshape(neg_r_e, [-1, k])
+            neg_t_e = tf.reshape(neg_t_e, [-1, d, 1])            
+            pos_matrix = tf.reshape(pos_matrix, [-1, k, d])
+            neg_matrix = tf.reshape(neg_matrix, [-1, k, d])
 
         with tf.name_scope('transformation'):
             transform_pos_h_e = self.transform(pos_matrix, pos_h_e)
@@ -105,12 +105,12 @@ class TransR(ModelMeta):
             transform_neg_h_e = self.transform(neg_matrix, neg_h_e)
             transform_neg_t_e = self.transform(neg_matrix, neg_t_e)
 
-            pos_h_e = tf.nn.l2_normalize(tf.reshape(transform_pos_h_e, [-1, k2]), 1)
-            pos_r_e = tf.nn.l2_normalize(tf.reshape(pos_r_e, [-1, k2]), 1)
-            pos_t_e = tf.nn.l2_normalize(tf.reshape(transform_pos_t_e, [-1, k2]), 1)           
-            neg_h_e = tf.nn.l2_normalize(tf.reshape(transform_neg_h_e, [-1, k2]), 1)
-            neg_r_e = tf.nn.l2_normalize(tf.reshape(neg_r_e, [-1, k2]), 1)
-            neg_t_e = tf.nn.l2_normalize(tf.reshape(transform_neg_t_e, [-1, k2]), 1)
+            pos_h_e = tf.nn.l2_normalize(tf.reshape(transform_pos_h_e, [-1, k]), 1)
+            pos_r_e = tf.nn.l2_normalize(tf.reshape(pos_r_e, [-1, k]), 1)
+            pos_t_e = tf.nn.l2_normalize(tf.reshape(transform_pos_t_e, [-1, k]), 1)           
+            neg_h_e = tf.nn.l2_normalize(tf.reshape(transform_neg_h_e, [-1, k]), 1)
+            neg_r_e = tf.nn.l2_normalize(tf.reshape(neg_r_e, [-1, k]), 1)
+            neg_t_e = tf.nn.l2_normalize(tf.reshape(transform_neg_t_e, [-1, k]), 1)
 
         if self.config.L1_flag:
             pos = tf.reduce_sum(abs(pos_h_e + pos_r_e - pos_t_e), 1, keepdims=True)
@@ -125,8 +125,8 @@ class TransR(ModelMeta):
         return tf.matmul(matrix, embeddings)
 
     def test_step(self):
-        k1 = self.config.ent_hidden_size
-        k2 = self.config.rel_hidden_size
+        d = self.config.ent_hidden_size
+        k = self.config.rel_hidden_size
         num_total_ent = self.data_handler.tot_entity
         num_total_rel = self.data_handler.tot_relation
 
@@ -135,17 +135,17 @@ class TransR(ModelMeta):
         tail_vec = tf.nn.embedding_lookup(self.ent_embeddings, self.test_t)
         pos_matrix = tf.nn.embedding_lookup(self.rel_matrix, self.test_r)
 
-        head_vec = tf.reshape(head_vec, [-1, k1, 1])
-        rel_vec  = tf.reshape(rel_vec,  [-1, k2, 1])
-        tail_vec = tf.reshape(tail_vec, [-1, k1, 1])
-        pos_matrix = tf.reshape(pos_matrix, [-1, k2, k1])
+        head_vec = tf.reshape(head_vec, [-1, d, 1])
+        rel_vec  = tf.reshape(rel_vec,  [-1, k, 1])
+        tail_vec = tf.reshape(tail_vec, [-1, d, 1])
+        pos_matrix = tf.reshape(pos_matrix, [-1, k, d])
  
         head_vec = self.transform(pos_matrix, head_vec) 
         tail_vec = self.transform(pos_matrix, tail_vec) 
         
-        head_vec = tf.nn.l2_normalize(tf.reshape(head_vec, [-1, k2]), 1)
-        rel_vec  = tf.nn.l2_normalize(tf.reshape(rel_vec,  [-1, k2]), 1)
-        tail_vec = tf.nn.l2_normalize(tf.reshape(tail_vec, [-1, k2]), 1)
+        head_vec = tf.nn.l2_normalize(tf.reshape(head_vec, [-1, k]), 1)
+        rel_vec  = tf.nn.l2_normalize(tf.reshape(rel_vec,  [-1, k]), 1)
+        tail_vec = tf.nn.l2_normalize(tf.reshape(tail_vec, [-1, k]), 1)
 
         project_ent_embedding = self.transform(self.ent_embeddings, tf.transpose(tf.squeeze(pos_matrix, [0])))
         project_ent_embedding = tf.nn.l2_normalize(project_ent_embedding, axis=1)
@@ -163,9 +163,9 @@ class TransR(ModelMeta):
         norm_head_vec = tf.matmul(norm_head_vec, tf.transpose(tf.squeeze(pos_matrix, [0])))
         norm_tail_vec = tf.matmul(norm_tail_vec, tf.transpose(tf.squeeze(pos_matrix, [0])))
 
-        norm_head_vec = tf.nn.l2_normalize(tf.reshape(norm_head_vec, [-1, k2]), 1)
-        norm_rel_vec =  tf.nn.l2_normalize(tf.reshape(norm_rel_vec,  [-1, k2]), 1)
-        norm_tail_vec = tf.nn.l2_normalize(tf.reshape(norm_tail_vec, [-1, k2]), 1)
+        norm_head_vec = tf.nn.l2_normalize(tf.reshape(norm_head_vec, [-1, k]), 1)
+        norm_rel_vec =  tf.nn.l2_normalize(tf.reshape(norm_rel_vec,  [-1, k]), 1)
+        norm_tail_vec = tf.nn.l2_normalize(tf.reshape(norm_tail_vec, [-1, k]), 1)
         
         norm_head_score = tf.reduce_sum(tf.abs(project_ent_embedding + norm_rel_vec - norm_tail_vec), axis=1)
         norm_tail_score = tf.reduce_sum(tf.abs(norm_head_vec + norm_rel_vec - project_ent_embedding), axis=1)
@@ -174,7 +174,7 @@ class TransR(ModelMeta):
         _, self.tail_rank = tf.nn.top_k(tail_score, k=num_total_ent)
         _, self.norm_head_rank = tf.nn.top_k(norm_head_score, k=num_total_ent)
         _, self.norm_tail_rank = tf.nn.top_k(norm_tail_score, k=num_total_ent)
-        
+
         return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
 
     def embed(self, h, r, t):

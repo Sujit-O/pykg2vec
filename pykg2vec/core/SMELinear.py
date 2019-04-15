@@ -1,34 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-------------------Paper Title-----------------------------
-Translating Embeddings for Modeling Multi-relational Data
-------------------Paper Authors---------------------------
-Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran
-Universite de Technologie de Compiegne – CNRS
-Heudiasyc UMR 7253
-Compiegne, France
-{bordesan, nusunier, agarciad}@utc.fr
-Jason Weston, Oksana Yakhnenko
-Google
-111 8th avenue
-New York, NY, USA
-{jweston, oksana}@google.com
-------------------Summary---------------------------------
-TransE is an energy based model which represents the
-relationships as translations in the embedding space. Which
-means that if (h,l,t) holds then the embedding of the tail
-'t' should be close to the embedding of head entity 'h'
-plus some vector that depends on the relationship 'l'.
-Both entities and relations are vectors in the same space.
-|        ......>.
-|      .     .
-|    .    .
-|  .  .
-|_________________
-Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
- and https://github.com/wencolani/TransE.git
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -41,7 +12,34 @@ from core.KGMeta import ModelMeta
 from utils.visualization import Visualization
 
 class SMELinear(ModelMeta):
+    """
+    ------------------Paper Title-----------------------------
+    A Semantic Matching Energy Function for Learning with Multi-relational Data
+    ------------------Paper Authors---------------------------
+    Antoine Bordes
+    Universite de Technologie de Compiegne – CNRS
+    Heudiasyc UMR 7253
+    Compiegne, France
+    antoine.bordes@utc.fr
+    Jason Weston
+    Google
+    111 8th avenue
+    New York, NY, USA
+    jweston@google.com
+    Xaiver Glorot, Joshua Bengio
+    Universite de Montreal
+    Monteal, QC, Canada
+    {glorotxa, bengioy}@iro.umontreal.ca
+    ------------------Summary---------------------------------
+    Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces. 
+    SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects 
+    entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
+    to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
 
+    There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
+
+    Portion of Code Based on https://github.com/glorotxa/SME/blob/master/model.py
+    """
     def __init__(self, config=None, data_handler=None):
         self.config = config
         self.data_handler = data_handler

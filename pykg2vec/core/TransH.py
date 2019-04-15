@@ -1,22 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-------------------Paper Title-----------------------------
-Knowledge Graph Embedding by Translating on Hyperplanes
-------------------Paper Authors---------------------------
-Zhen Wang1,Jianwen Zhang2, Jianlin Feng1, Zheng Chen2
-1Department of Information Science and Technology, Sun Yat-sen University, Guangzhou, China
-2Microsoft Research, Beijing, China
-1{wangzh56@mail2, fengjlin@mail}.sysu.edu.cn
-2{jiazhan, zhengc}@microsoft.com
-------------------Summary---------------------------------
-TransH models a relation as a hyperplane together with a translation operation on it.
-By doint this, it aims to preserve the mapping properties of relations such as reflexive,
-one-to-many, many-to-one, and many-to-many with almost the same model complexity of TransE.
 
-Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransH.py
- and https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -29,7 +13,23 @@ from core.KGMeta import ModelMeta
 from utils.visualization import Visualization
 
 class TransH(ModelMeta):
-    
+    """
+    ------------------Paper Title-----------------------------
+    Knowledge Graph Embedding by Translating on Hyperplanes
+    ------------------Paper Authors---------------------------
+    Zhen Wang1,Jianwen Zhang2, Jianlin Feng1, Zheng Chen2
+    1Department of Information Science and Technology, Sun Yat-sen University, Guangzhou, China
+    2Microsoft Research, Beijing, China
+    1{wangzh56@mail2, fengjlin@mail}.sysu.edu.cn
+    2{jiazhan, zhengc}@microsoft.com
+    ------------------Summary---------------------------------
+    TransH models a relation as a hyperplane together with a translation operation on it.
+    By doint this, it aims to preserve the mapping properties of relations such as reflexive,
+    one-to-many, many-to-one, and many-to-many with almost the same model complexity of TransE.
+
+    Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransH.py
+     and https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
+    """
     def __init__(self, config, data_handler):
         self.config = config
         self.data_handler = data_handler
