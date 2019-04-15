@@ -23,9 +23,12 @@ Both entities and relations are vectors in the same space[1].
 
 * [TransR](http://nlp.csai.tsinghua.edu.cn/~lyk/publications/aaai2015_transr.pdf): TransR is pretty similar to TransH, the only difference being that rather than having one relation hyperplane, it introduces relation-specific hyperplanes. The entities are vecotr in entity space and each relation is a vector in relation specific space. For calculating the loss, the entities are projected to relation specific space using the projection matrix. 
 
-###  Semantic Matching Models
+####  Semantic Matching Models
+Semantic matching models are latent feature models which represents triples by using a pairwise interactions of latent features. 
 
-* [RESCAL](http://www.icml-2011.org/papers/438_icmlpaper.pdf): TransR is pretty similar to TransH, the only difference being that rather than having one relation hyperplane, it introduces relation-specific hyperplanes. The entities are vecotr in entity space and each relation is a vector in relation specific space. For calculating the loss, the entities are projected to relation specific space using the projection matrix. 
+* [RESCAL](http://www.icml-2011.org/papers/438_icmlpaper.pdf): Rescal is a latent feature model where each relation is represented as a matrix modeling the iteraction between latent factors. It utilizes a weight matrix which specify how much the latent features of head and tail entities interact in the relation.  
+
+* [Semantic Matching Energy (SME)](http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf): SME utilizes a neural network architecture to perform the semantic matching. The energy of the triples are computed by a parameterized function which relies on matching criterion computed between both sides of the triples. The semantic energy function learns to distinguish plausible combinations of entities from implausible ones. It consists of two variation SMElinear and SMEbilinear.
 
 ## Datasets
 We intend to provide the libraries to test the knowledge graph algorithms against all the well-known datasets available online. So far the library is able to work with the following datasets:
@@ -180,17 +183,20 @@ The output of code will be as follows:
 </p> 
       
 The red nodes represent head entity, green nodes represent the relations and the blue node represents the tail entities.
+## Learn More
+Here are some links to get you started with knowledge graph embedding methodologies.
 
+ * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
+ * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
+ 
 ## Cite
-   
-   [1] Bordes, A., Usunier, N., Garcia-Duran, A., Weston, J., & Yakhnenko, O. (2013). Translating embeddings for modeling multi-relational data. In Advances in neural information processing systems.
+  Please kindly cite us if you found the library helpful. 
    ```
-   @inproceedings{bordes2013translating,
-  title={Translating embeddings for modeling multi-relational data},
-  author={Bordes, Antoine and Usunier, Nicolas and Garcia-Duran, Alberto and Weston, Jason and Yakhnenko, Oksana},
-  booktitle={Advances in neural information processing systems},
-  pages={2787--2795},
-  year={2013}
+   @online{pykg2vec,
+  author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo Arquimedes, Martinez},
+  title = {{pykg2vec: Python Knowledge Graph Embedding Library},
+  year = 2019,
+  url = {https://pypi.org/project/pykg2vec/}
   }
     
    ```
