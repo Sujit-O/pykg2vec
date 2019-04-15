@@ -47,6 +47,7 @@ The goal of this library is to minimize the dependency on other libraries as far
 * numpy==1.16.2
 * seaborn==0.9.0
 * scikit_learn==0.20.3
+* tensorflow==`<version suitable for your workspace>`
 
 ## Install
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms.
