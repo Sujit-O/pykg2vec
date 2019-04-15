@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -46,18 +45,23 @@ class TransE(ModelMeta):
         self.config = config
         self.data_handler = data_handler
         self.model_name = 'TransE'
+    
+    def distance(self, h, r, t):
+        if self.config.L1_flag: 
+            return tf.reduce_sum(tf.abs(h+r-t), axis=1, keepdims=True) # L1 norm 
+        else:
+            return tf.reduce_sum((h+r-t)**2, axis=1, keepdims=True) # L2 norm
 
     def def_inputs(self):
-        with tf.name_scope("read_inputs"):
-            self.pos_h = tf.placeholder(tf.int32, [None])
-            self.pos_t = tf.placeholder(tf.int32, [None])
-            self.pos_r = tf.placeholder(tf.int32, [None])
-            self.neg_h = tf.placeholder(tf.int32, [None])
-            self.neg_t = tf.placeholder(tf.int32, [None])
-            self.neg_r = tf.placeholder(tf.int32, [None])
-            self.test_h = tf.placeholder(tf.int32, [1])
-            self.test_t = tf.placeholder(tf.int32, [1])
-            self.test_r = tf.placeholder(tf.int32, [1])
+        self.pos_h = tf.placeholder(tf.int32, [None])
+        self.pos_t = tf.placeholder(tf.int32, [None])
+        self.pos_r = tf.placeholder(tf.int32, [None])
+        self.neg_h = tf.placeholder(tf.int32, [None])
+        self.neg_t = tf.placeholder(tf.int32, [None])
+        self.neg_r = tf.placeholder(tf.int32, [None])
+        self.test_h = tf.placeholder(tf.int32, [1])
+        self.test_t = tf.placeholder(tf.int32, [1])
+        self.test_r = tf.placeholder(tf.int32, [1])
 
     def def_parameters(self):
         num_total_ent = self.data_handler.tot_entity
@@ -65,61 +69,43 @@ class TransE(ModelMeta):
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="ent_embedding",
-                                                  shape=[num_total_ent, k],
+            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            self.rel_embeddings = tf.get_variable(name="rel_embedding",
-                                                  shape=[num_total_rel, k],
+            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
-            
+            self.parameter_list = [self.ent_embeddings, self.rel_embeddings]    
+    
     def def_loss(self):
-        with tf.name_scope('normalization'):
-            self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-            self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-            
-        with tf.name_scope('lookup_embeddings'):
-            pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
-            neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
+        self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        if self.config.L1_flag:
-            score_pos = tf.reduce_sum(tf.abs(pos_h_e + pos_r_e - pos_t_e), axis=1, keepdims=True)
-            score_neg = tf.reduce_sum(tf.abs(neg_h_e + neg_r_e - neg_t_e), axis=1, keepdims=True)
-        else:
-            score_pos = tf.reduce_sum((pos_h_e + pos_r_e - pos_t_e)**2, axis=1, keepdims=True)
-            score_neg = tf.reduce_sum((neg_h_e + neg_r_e - neg_t_e)**2, axis=1, keepdims=True)
+        pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
+        neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
+
+        score_pos = self.distance(pos_h_e, pos_r_e, pos_t_e)
+        score_neg = self.distance(neg_h_e, neg_r_e, neg_t_e)
 
         self.loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
 
-
     def test_step(self):
-        head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
-
+        num_entity = self.data_handler.tot_entity
         
+        head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)     
+        score_head = self.distance(self.ent_embeddings, rel_vec, tail_vec)
+        score_tail = self.distance(head_vec, rel_vec, self.ent_embeddings)    
 
-        _, self.head_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(self.ent_embeddings
-                                                             + rel_vec - tail_vec),
-                                                      axis=1),
-                                        k=self.data_handler.tot_entity)
-        _, self.tail_rank = tf.nn.top_k(tf.reduce_sum(tf.abs(head_vec
-                                                             + rel_vec - self.ent_embeddings),
-                                                      axis=1),
-                                        k=self.data_handler.tot_entity)
-        norm_embedding_entity = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        norm_embedding_relation = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+        self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        norm_head_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_h)
-        norm_rel_vec = tf.nn.embedding_lookup(norm_embedding_relation, self.test_r)
-        norm_tail_vec = tf.nn.embedding_lookup(norm_embedding_entity, self.test_t)
+        norm_head_vec, norm_rel_vec, norm_tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
+        norm_score_head = self.distance(self.ent_embeddings, norm_rel_vec, norm_tail_vec)
+        norm_score_tail = self.distance(norm_head_vec, norm_rel_vec, self.ent_embeddings)
 
-        _, self.norm_head_rank = tf.nn.top_k(
-            tf.reduce_sum(tf.abs(norm_embedding_entity + norm_rel_vec - norm_tail_vec),
-                          axis=1), k=self.data_handler.tot_entity)
-        _, self.norm_tail_rank = tf.nn.top_k(
-            tf.reduce_sum(tf.abs(norm_head_vec + norm_rel_vec - norm_embedding_entity),
-                          axis=1), k=self.data_handler.tot_entity)
+        _, self.head_rank      = tf.nn.top_k(score_head, k=num_entity)
+        _, self.tail_rank      = tf.nn.top_k(score_tail, k=num_entity)
+        _, self.norm_head_rank = tf.nn.top_k(norm_score_head, k=self.data_handler.tot_entity)
+        _, self.norm_tail_rank = tf.nn.top_k(norm_score_tail, k=self.data_handler.tot_entity)
 
         return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
 
@@ -130,7 +116,7 @@ class TransE(ModelMeta):
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
-        def get_embed(self, h, r, t, sess=None):
+    def get_embed(self, h, r, t, sess=None):
         """function to get the embedding value in numpy"""
         if not sess:
             raise NotImplementedError('No session found for predicting embedding!')
