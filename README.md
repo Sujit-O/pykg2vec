@@ -183,7 +183,12 @@ The output of code will be as follows:
 </p> 
       
 The red nodes represent head entity, green nodes represent the relations and the blue node represents the tail entities.
+## Learn More
+Here are some links to get you started with knowledge graph embedding methodologies.
 
+ * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
+ * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
+ 
 ## Cite
    
    [1] Bordes, A., Usunier, N., Garcia-Duran, A., Weston, J., & Yakhnenko, O. (2013). Translating embeddings for modeling multi-relational data. In Advances in neural information processing systems.
