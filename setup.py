@@ -8,16 +8,13 @@ DISTNAME = 'pykg2vec'
 
 INSTALL_REQUIRES = (
             'numpy>=1.16.2',
-            'h5py>=2.9.0',
-            'networkx>=2.2',
-            'matplotlib>=3.0.3',
-            'pandas>=0.24.2',
-            'progressbar2>=3.39.2',
-            'sklearn>=0.0',
-            'scipy>=1.2.1',
-            'seaborn>=0.9.0',
-            'six>=1.11.0',
-            'urllib3>=1.24.1'
+            'networkx==2.2',
+            'setuptools==40.8.0',
+            'tensorflow==1.13.1',
+            'matplotlib==3.0.3',
+            'numpy==1.16.2',
+            'seaborn==0.9.0',
+            'scikit_learn==0.20.3'
 )
 
 with open("README.md", "r") as fh:
@@ -26,7 +23,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='pykg2vec',
-    version="0.0.35",
+    version="0.0.36",
     author="Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Martinez Canedo, Arquimedes",
     author_email="sujitchhetri@gmail.com",
     description="A python library for Knowledge Graph Embedding",
@@ -37,7 +34,7 @@ setuptools.setup(
     package_dir={DISTNAME: 'pykg2vec'},
     install_requires=INSTALL_REQUIRES,
     classifiers=[
-        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],

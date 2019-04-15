@@ -5,12 +5,30 @@ one single python library.
 
 ## Implemented Methods
 We aim to implement all the latest state-of-the-art knowledge graph embedding library. So far these are the implemented algorithms:
+
+### Latent Feature Models
+These modles utilize a latent feature of either entities or relations to explain the triples of the Knowledge graph. The features are called latent as they are not directly observed. The interaction of the entities and the relations are captured through their latent space representation. 
+
+#### Latent Distance Models
+These models utilized the distance-based scoring functions to embed the knowledge graph triples. 
+
 * [TransE](http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-rela): TransE is an energy based model which represents the
 relationships as translations in the embedding space. Which
 means that if (h,l,t) holds then the embedding of the tail
 't' should be close to the embedding of head entity 'h'
 plus some vector that depends on the relationship 'l'.
-Both entities and relations are vectors in the same space. [1]
+Both entities and relations are vectors in the same space[1]. 
+
+* [TransH](https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf): TransH follows the general principle of the TransE. However, compared to it, it introduces relation-specific hyperplanes. The entities are represented as vecotrs just like in TransE, however, the relation is modeled as a vector on its own hyperplane with a normal vector. The entities are then projected to the relation hyperplane to calculate the loss. 
+
+* [TransR](http://nlp.csai.tsinghua.edu.cn/~lyk/publications/aaai2015_transr.pdf): TransR is pretty similar to TransH, the only difference being that rather than having one relation hyperplane, it introduces relation-specific hyperplanes. The entities are vecotr in entity space and each relation is a vector in relation specific space. For calculating the loss, the entities are projected to relation specific space using the projection matrix. 
+
+####  Semantic Matching Models
+Semantic matching models are latent feature models which represents triples by using a pairwise interactions of latent features. 
+
+* [RESCAL](http://www.icml-2011.org/papers/438_icmlpaper.pdf): Rescal is a latent feature model where each relation is represented as a matrix modeling the iteraction between latent factors. It utilizes a weight matrix which specify how much the latent features of head and tail entities interact in the relation.  
+
+* [Semantic Matching Energy (SME)](http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf): SME utilizes a neural network architecture to perform the semantic matching. The energy of the triples are computed by a parameterized function which relies on matching criterion computed between both sides of the triples. The semantic energy function learns to distinguish plausible combinations of entities from implausible ones. It consists of two variation SMElinear and SMEbilinear.
 
 ## Datasets
 We intend to provide the libraries to test the knowledge graph algorithms against all the well-known datasets available online. So far the library is able to work with the following datasets:
@@ -22,27 +40,15 @@ We intend to provide the libraries to test the knowledge graph algorithms agains
 * **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms.
 
 ## Dependencies
-The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. 
-* h5py==2.9.0
-* Keras-Applications==1.0.7
-* Keras-Preprocessing==1.0.9
-* matplotlib==3.0.3
+The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
+
 * networkx==2.2
+* setuptools==40.8.0
+* tensorflow==1.13.1
+* matplotlib==3.0.3
 * numpy==1.16.2
-* pandas==0.24.2
-* progressbar2==3.39.2
-* protobuf==3.7.0
-* requests==2.21.0
-* requests-toolbelt==0.9.1
-* scikit-learn==0.20.3
-* scipy==1.2.1
 * seaborn==0.9.0
-* six==1.12.0
-* sklearn==0.0
-* tensorboard==1.12.2
-* tensorflow-gpu==1.12.0
-* tqdm==4.31.1
-* urllib3==1.24.1
+* scikit_learn==0.20.3
 
 ## Install
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms.
@@ -177,17 +183,20 @@ The output of code will be as follows:
 </p> 
       
 The red nodes represent head entity, green nodes represent the relations and the blue node represents the tail entities.
+## Learn More
+Here are some links to get you started with knowledge graph embedding methodologies.
 
+ * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
+ * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
+ 
 ## Cite
-   
-   [1] Bordes, A., Usunier, N., Garcia-Duran, A., Weston, J., & Yakhnenko, O. (2013). Translating embeddings for modeling multi-relational data. In Advances in neural information processing systems.
+  Please kindly cite us if you found the library helpful. 
    ```
-   @inproceedings{bordes2013translating,
-  title={Translating embeddings for modeling multi-relational data},
-  author={Bordes, Antoine and Usunier, Nicolas and Garcia-Duran, Alberto and Weston, Jason and Yakhnenko, Oksana},
-  booktitle={Advances in neural information processing systems},
-  pages={2787--2795},
-  year={2013}
+   @online{pykg2vec,
+  author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo Arquimedes, Martinez},
+  title = {{pykg2vec: Python Knowledge Graph Embedding Library},
+  year = 2019,
+  url = {https://pypi.org/project/pykg2vec/}
   }
     
    ```

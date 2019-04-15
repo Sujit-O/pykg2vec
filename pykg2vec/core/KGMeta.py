@@ -3,27 +3,52 @@
 """Abstract class for the Knowledge graph models"""
 from abc import ABCMeta
 
-class KGMeta:
+
+class ModelMeta:
 	__metaclass__ = ABCMeta
 
 	def __init__(self):
-		"""Initializing the class"""
+		"""Initializing and create the model to be trained and inferred"""
 		pass
 
-	def train(self):
-		"""function to train the model"""
+	def def_inputs(self):
+		"""function to define the inputs for the model"""
 		pass
 
-	def test(self):
-		"""function to test the model"""
+	def def_parameters(self):
+		"""function to define the parameters for the model"""
 		pass
 
+	def def_loss(self):
+		"""function to define how loss is calculated in the model"""
+		pass
+		
 	def embed(self,h, r, t):
 		"""function to get the embedding value"""
 		pass
 
-	def display(self):
-		"""function to display embedding"""
+	def get_embed(self,h, r, t):
+		"""function to get the embedding value in numpy"""
+		pass
+
+	def get_proj_embed(self,h, r, t):
+		"""function to get the projected embedding value"""
+		pass
+
+
+class TrainerMeta:
+	__metaclass__ = ABCMeta
+
+	def __init__(self):
+		"""Initializing and create the model to be trained and inferred"""
+		pass
+
+	def build_model(self):
+		"""function to compile the model"""
+		pass
+
+	def train_model(self):
+		"""function to train the model"""
 		pass
 
 	def save_model(self, sess):
@@ -34,12 +59,24 @@ class KGMeta:
 		"""function to load the model"""
 		pass
 
+
+class VisualizationMeta:
+	__metaclass__ = ABCMeta
+	
+	def __init__(self):
+		"""Initializing and create the model to be trained and inferred"""
+		pass
+		
+	def display(self):
+		"""function to display embedding"""
+		pass
+
 	def summary(self):
 		"""function to print the summary"""
 		pass
 
 
-class Evaluation:
+class EvaluationMeta:
 	__metaclass__ = ABCMeta
 
 	def __init__(self):
