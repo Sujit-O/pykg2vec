@@ -64,7 +64,7 @@ class Trainer(TrainerMeta):
         if self.config.disp_summary:
             self.summary()
 
-    def train_model_epoch(self, epoch_idx, debug=True):
+    def train_model_epoch(self, epoch_idx, debug=False):
         acc_loss = 0
         num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size if not debug else 5
 

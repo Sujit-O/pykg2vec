@@ -45,12 +45,6 @@ class TransE(ModelMeta):
         self.config = config
         self.data_handler = data_handler
         self.model_name = 'TransE'
-    
-    def distance(self, h, r, t):
-        if self.config.L1_flag: 
-            return tf.reduce_sum(tf.abs(h+r-t), axis=1) # L1 norm 
-        else:
-            return tf.reduce_sum((h+r-t)**2, axis=1) # L2 norm
 
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
@@ -109,6 +103,12 @@ class TransE(ModelMeta):
 
         return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
 
+    def distance(self, h, r, t):
+        if self.config.L1_flag: 
+            return tf.reduce_sum(tf.abs(h+r-t), axis=1) # L1 norm 
+        else:
+            return tf.reduce_sum((h+r-t)**2, axis=1) # L2 norm
+            
     def embed(self, h, r, t):
         """function to get the embedding value"""
         emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
@@ -116,10 +116,8 @@ class TransE(ModelMeta):
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
-    def get_embed(self, h, r, t, sess=None):
+    def get_embed(self, h, r, t, sess):
         """function to get the embedding value in numpy"""
-        if not sess:
-            raise NotImplementedError('No session found for predicting embedding!')
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t

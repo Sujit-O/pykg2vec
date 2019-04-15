@@ -207,5 +207,5 @@ class TransR(ModelMeta):
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess=None):
-        """function to get the projectd embedding value in numpy"""
+        """function to get the projected embedding value in numpy"""
         pass 
