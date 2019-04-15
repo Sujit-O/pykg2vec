@@ -125,12 +125,8 @@ class TransE(ModelMeta):
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess=None):
-        """function to get the embedding value in numpy"""
-        if not sess:
-            raise NotImplementedError('No session found for predicting embedding!')
-        emb_h, emb_r, emb_t = self.embed(h, r, t)
-        h, r, t = sess.run([emb_h, emb_r, emb_t])
-        return h, r, t   
+        """function to get the projected embedding value in numpy"""
+        return sel.get_embed(h, r, t, sess)   
 
     def summary(self):
         """function to print the summary"""
