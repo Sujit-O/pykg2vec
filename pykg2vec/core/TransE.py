@@ -126,7 +126,7 @@ class TransE(ModelMeta):
 
     def get_proj_embed(self, h, r, t, sess=None):
         """function to get the projected embedding value in numpy"""
-        return sel.get_embed(h, r, t, sess)   
+        return self.get_embed(h, r, t, sess)
 
     def summary(self):
         """function to print the summary"""
