@@ -51,7 +51,7 @@ The goal of this library is to minimize the dependency on other libraries as far
 ## Install
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms.
 
-Please install [tensorflow](https://www.tensorflow.org/install) cpu or gpu version before performing pip install of pykg2vec!
+**Please install [tensorflow](https://www.tensorflow.org/install) cpu or gpu version before performing pip install of pykg2vec!**
 
 Prepare your environment:
 ```bash
