@@ -190,15 +190,13 @@ Here are some links to get you started with knowledge graph embedding methodolog
  * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
  
 ## Cite
-   
-   [1] Bordes, A., Usunier, N., Garcia-Duran, A., Weston, J., & Yakhnenko, O. (2013). Translating embeddings for modeling multi-relational data. In Advances in neural information processing systems.
+  Please kindly cite us if you found the library helpful. 
    ```
-   @inproceedings{bordes2013translating,
-  title={Translating embeddings for modeling multi-relational data},
-  author={Bordes, Antoine and Usunier, Nicolas and Garcia-Duran, Alberto and Weston, Jason and Yakhnenko, Oksana},
-  booktitle={Advances in neural information processing systems},
-  pages={2787--2795},
-  year={2013}
+   @online{pykg2vec,
+  author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo Arquimedes, Martinez},
+  title = {{Python Knowledge Graph Embedding Library},
+  year = 2019,
+  url = {https://pypi.org/project/pykg2vec/}
   }
     
    ```
