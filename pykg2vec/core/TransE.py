@@ -130,7 +130,15 @@ class TransE(ModelMeta):
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
-    def predict_embed(self, h, r, t, sess=None):
+        def get_embed(self, h, r, t, sess=None):
+        """function to get the embedding value in numpy"""
+        if not sess:
+            raise NotImplementedError('No session found for predicting embedding!')
+        emb_h, emb_r, emb_t = self.embed(h, r, t)
+        h, r, t = sess.run([emb_h, emb_r, emb_t])
+        return h, r, t
+
+    def get_proj_embed(self, h, r, t, sess=None):
         """function to get the embedding value in numpy"""
         if not sess:
             raise NotImplementedError('No session found for predicting embedding!')
@@ -155,14 +163,13 @@ class TransE(ModelMeta):
     def display(self, sess=None):
         """function to display embedding"""
         if self.config.plot_embedding:
-            triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
-            viz = Visualization(triples=triples,
-                                idx2entity=self.data_handler.idx2entity,
-                                idx2relation=self.data_handler.idx2relation)
+            viz = Visualization(model=self,
+                                ent_only_plot=True,
+                                rel_only_plot=True,
+                                ent_and_rel_plot=True)
 
-            viz.get_idx_n_emb(model=self, sess=sess)
-            viz.reduce_dim()
-            viz.plot_embedding(resultpath=self.config.figures, algos=self.model_name)
+            viz.plot_embedding(sess=sess, resultpath=self.config.figures, algos=self.model_name,
+                               show_label=False)
 
         if self.config.plot_training_result:
             viz = Visualization()
