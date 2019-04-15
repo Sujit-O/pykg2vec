@@ -194,7 +194,7 @@ Here are some links to get you started with knowledge graph embedding methodolog
    ```
    @online{pykg2vec,
   author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo Arquimedes, Martinez},
-  title = {{Python Knowledge Graph Embedding Library},
+  title = {{pykg2vec: Python Knowledge Graph Embedding Library},
   year = 2019,
   url = {https://pypi.org/project/pykg2vec/}
   }
