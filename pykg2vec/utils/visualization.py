@@ -22,68 +22,252 @@ import networkx as nx
 import os
 import seaborn
 import pandas as pd
-
+from matplotlib import colors as mcolors
+import random
 seaborn.set_style("darkgrid")
 
 
+def draw_embedding(embs, names, resultpath, algos, show_label):
+    print("\t drawing figure!")
+
+    pos = {}
+    node_color_mp = {}
+    unique_ent = set(names)
+    colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).keys())
+
+    tot_col = len(colors)
+    j = 0
+    for i, e in enumerate(unique_ent):
+        node_color_mp[e] = colors[j]
+        j += 1
+        if j >= tot_col:
+            j = 0
+
+    G = nx.Graph()
+    hm_ent = {}
+    for i, ent in enumerate(names):
+        hm_ent[i] = ent
+        G.add_node(i)
+        pos[i] = embs[i]
+
+    colors = []
+    for n in list(G.nodes):
+        colors.append(node_color_mp[hm_ent[n]])
+
+    plt.figure()
+    nodes_draw = nx.draw_networkx_nodes(G,
+                                        pos,
+                                        node_color=colors,
+                                        node_size=50)
+    nodes_draw.set_edgecolor('k')
+    if show_label:
+        nx.draw_networkx_labels(G, pos, font_size=8)
+
+    if not os.path.exists(resultpath):
+        os.mkdir(resultpath)
+
+    files = os.listdir(resultpath)
+    file_no = len(
+        [c for c in files if algos + '_embedding_plot' in c])
+    plt.savefig(resultpath + '/' + algos + '_embedding_plot_' + str(file_no) + '.png', bbox_inches='tight', dpi=300)
+    plt.show()
+
+
+def draw_embedding_rel_space(h_emb,
+                             r_emb,
+                             t_emb,
+                             h_name,
+                             r_name,
+                             t_name,
+                             resultpath,
+                             algos,
+                             show_label):
+    print("\t drawing figure!")
+    pos = {}
+    node_color_mp_ent = {}
+    node_color_mp_rel = {}
+    unique_ent = set(h_name) | set(t_name)
+    unique_rel = set(r_name)
+    colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).keys())
+
+    tot_col = len(colors)
+    j = 0
+    for i, e in enumerate(unique_ent):
+        node_color_mp_ent[e] = colors[j]
+        j += 1
+        if j >= tot_col:
+            j = 0
+
+    tot_col = len(colors)
+    j = 0
+    for i, r in enumerate(unique_rel):
+        node_color_mp_rel[r] = colors[j]
+        j += 1
+        if j >= tot_col:
+            j = 0
+
+    G = nx.DiGraph()
+    idx = 0
+    colors = []
+    head_nodes = []
+    tail_nodes = []
+    rel_nodes = []
+
+    for i in range(len(h_name)):
+        G.add_edge(idx, idx + 1)
+        G.add_edge(idx + 1, idx + 2)
+
+        head_nodes.append(idx)
+        rel_nodes.append(idx + 1)
+        tail_nodes.append(idx + 2)
+
+        colors.append(node_color_mp_ent[h_name[i]])
+        colors.append(node_color_mp_rel[r_name[i]])
+        colors.append(node_color_mp_ent[t_name[i]])
+
+        pos[idx] = h_emb[i]
+        pos[idx + 1] = r_emb[i]
+        pos[idx + 2] = t_emb[i]
+        idx += 3
+
+    plt.figure()
+    nodes_draw = nx.draw_networkx_nodes(G,
+                                        pos,
+                                        nodelist=head_nodes,
+                                        node_color=colors,
+                                        node_shape='o',
+                                        node_size=50)
+    nodes_draw.set_edgecolor('k')
+
+    nodes_draw = nx.draw_networkx_nodes(G,
+                                        pos,
+                                        nodelist=rel_nodes,
+                                        node_color=colors,
+                                        node_size=50,
+                                        node_shape='D',
+                                        with_labels=show_label)
+    nodes_draw.set_edgecolor('k')
+
+    nodes_draw = nx.draw_networkx_nodes(G,
+                                        pos,
+                                        nodelist=tail_nodes,
+                                        node_color=colors,
+                                        node_shape='*',
+                                        node_size=50)
+    nodes_draw.set_edgecolor('k')
+
+    if show_label:
+        nx.draw_networkx_labels(G, pos, font_size=8)
+    nx.draw_networkx_edges(G, pos, arrows=True, width=0.5, alpha=0.5)
+
+    if not os.path.exists(resultpath):
+        os.mkdir(resultpath)
+
+    files = os.listdir(resultpath)
+    file_no = len(
+        [c for c in files if algos + '_embedding_plot' in c])
+    plt.savefig(resultpath + '/' + algos + '_embedding_plot_' + str(file_no) + '.png', bbox_inches='tight', dpi=300)
+    plt.show()
+
+
 class Visualization(object):
-    def __init__(self, triples=None, idx2entity=None, idx2relation=None):
-        self.triples = triples
-        if triples:
-            self.tot_triples = len(triples)
-        else:
-            self.tot_triples = None
-        self.h_emb = []
-        self.t_emb = []
-        self.r_emb = []
+    def __init__(self,
+                 model=None,
+                 ent_only_plot=False,
+                 rel_only_plot=False,
+                 ent_and_rel_plot=False):
+
+        self.ent_only_plot = ent_only_plot
+        self.rel_only_plot = rel_only_plot
+        self.ent_and_rel_plot = ent_and_rel_plot
+        self.model = model
+
         self.h_name = []
         self.r_name = []
         self.t_name = []
-        self.idx2entity = idx2entity
-        self.idx2relation = idx2relation
-        self.G = nx.DiGraph()
-        self.h_embs = None
-        self.r_embs = None
-        self.t_embs = None
 
-    def get_idx_n_emb(self, model=None, sess=None):
+        self.h_emb = []
+        self.r_emb = []
+        self.t_emb = []
 
-        for t in self.triples:
-            self.h_name.append(self.idx2entity[t.h])
-            self.r_name.append(self.idx2relation[t.r])
-            self.t_name.append(self.idx2entity[t.t])
-            emb_h, emb_r, emb_t = model.predict_embed(t.h, t.r, t.t, sess)
+        self.h_proj_emb = []
+        self.r_proj_emb = []
+        self.t_proj_emb = []
 
-            # print("\nembs", emb_h)
+    def get_idx_n_emb(self, sess=None):
+        if not sess:
+            raise NotImplementedError('No tf Session found!')
+        idx = np.random.choice(len(self.model.data_handler.validation_triples_ids), self.model.config.disp_triple_num)
+        triples = []
+        for i in range(len(idx)):
+            triples.append(self.model.data_handler.validation_triples_ids[idx[i]])
+
+        idx2entity = self.model.data_handler.idx2entity
+        idx2relation = self.model.data_handler.idx2relation
+
+        for t in triples:
+            self.h_name.append(idx2entity[t.h])
+            self.r_name.append(idx2relation[t.r])
+            self.t_name.append(idx2entity[t.t])
+
+            emb_h, emb_r, emb_t = self.model.get_embed(t.h, t.r, t.t, sess)
+
             self.h_emb.append(emb_h)
             self.r_emb.append(emb_r)
             self.t_emb.append(emb_t)
 
-    def reduce_dim(self):
-        print("\t reducing dimension to 2 using TSNE!")
-        self.h_emb = np.array(self.h_emb)
-        self.r_emb = np.array(self.r_emb)
-        self.t_emb = np.array(self.t_emb)
+            if self.ent_and_rel_plot:
+                try:
+                    emb_h, emb_r, emb_t = self.model.get_proj_embed(t.h, t.r, t.t, sess)
+                    self.h_proj_emb.append(emb_h)
+                    self.r_proj_emb.append(emb_r)
+                    self.t_proj_emb.append(emb_t)
+                except Exception as e:
+                    print(e.args)
 
-        print("dimension self.h_emb", np.shape(self.h_emb))
-        print("dimension self.r_emb", np.shape(self.r_emb))
-        print("dimension self.t_emb", np.shape(self.t_emb))
+    def plot_embedding(self,
+                       sess=None,
+                       resultpath=None,
+                       algos=None,
+                       show_label=False,
+                       disp_num_r_n_e = 20):
+        if not self.model:
+            raise NotImplementedError('Please provide a model!')
+        self.get_idx_n_emb(sess=sess)
 
-        length = len(self.h_emb)
-        x = np.concatenate((self.h_emb, self.r_emb, self.t_emb), axis=0)
-        x_reduced = TSNE(n_components=2).fit_transform(x)
+        if self.ent_only_plot:
+            x = np.concatenate((self.h_emb, self.t_emb), axis=0)
+            ent_names = np.concatenate((self.h_name, self.t_name), axis=0)
+            print("\t Reducing dimension using TSNE to 2!")
+            x = TSNE(n_components=2).fit_transform(x)
+            x = np.asarray(x)
+            ent_names = np.asarray(ent_names)
 
-        self.h_embs = x_reduced[:length, :]
-        self.r_embs = x_reduced[length:2 * length, :]
-        self.t_embs = x_reduced[2 * length:3 * length, :]
+            draw_embedding(x, ent_names, resultpath, algos + '_entity_plot', show_label)
 
-        print("dimension self.h_emb", np.shape(self.h_embs))
-        print("dimension self.r_emb", np.shape(self.r_embs))
-        print("dimension self.t_emb", np.shape(self.t_embs))
+        if self.rel_only_plot:
+            x = self.r_emb
+            print("\t Reducing dimension using TSNE to 2!")
+            x = TSNE(n_components=2).fit_transform(x)
+            draw_embedding(x, self.r_name, resultpath, algos + '_rel_plot', show_label)
 
-        # print(self.h_embs)
-        # print(self.r_embs)
-        # print(self.t_embs)
+        if self.ent_and_rel_plot:
+            length = len(self.h_proj_emb)
+            x = np.concatenate((self.h_proj_emb, self.r_proj_emb, self.t_proj_emb), axis=0)
+            print("\t Reducing dimension using TSNE to 2!")
+            x = TSNE(n_components=2).fit_transform(x)
+
+            h_embs = x[:length, :]
+            r_embs = x[length:2 * length, :]
+            t_embs = x[2 * length:3 * length, :]
+
+            draw_embedding_rel_space(h_embs[:disp_num_r_n_e],
+                                     r_embs[:disp_num_r_n_e],
+                                     t_embs[:disp_num_r_n_e],
+                                     self.h_name[:disp_num_r_n_e],
+                                     self.r_name[:disp_num_r_n_e],
+                                     self.t_name[:disp_num_r_n_e],
+                                     resultpath, algos + '_ent_n_rel_plot', show_label)
 
     def plot_train_result(self, path=None, result=None, algo=None, data=None):
         if not os.path.exists(result):
@@ -174,99 +358,59 @@ class Visualization(object):
 
             file_no = len(
                 [c for c in files if d.lower() in c.lower() if 'testing' in c.lower() if 'latex' in c.lower()])
-            with open(result + '/' + d + '_testing_latex_table_' + str(file_no+1) + '.txt', 'w') as fh:
+            with open(result + '/' + d + '_testing_latex_table_' + str(file_no + 1) + '.txt', 'w') as fh:
                 fh.write(df_4.to_latex(index=False))
 
             file_no = len(
                 [c for c in files if d.lower() in c.lower() if 'testing' in c.lower() if 'table' in c.lower() if
                  'csv' in c.lower()])
-            with open(result + '/' + d + '_testing_table_' + str(file_no+1) + '.csv', 'w') as fh:
+            with open(result + '/' + d + '_testing_table_' + str(file_no + 1) + '.csv', 'w') as fh:
                 df_4.to_csv(fh, index=False)
 
-            df_5 = pd.DataFrame(columns=['Metrics','Algorithm','Score'])
+            df_5 = pd.DataFrame(columns=['Metrics', 'Algorithm', 'Score'])
             metrics = [f for f in df_4.columns if f != 'Algorithm']
             for i in range(len(df_4)):
                 # import pdb
                 # pdb.set_trace()
                 if df_5.empty:
-                    df_5['Algorithm']= [df_4.iloc[i]['Algorithm']]*len(metrics)
+                    df_5['Algorithm'] = [df_4.iloc[i]['Algorithm']] * len(metrics)
                     df_5['Metrics'] = metrics
                     df_5['Score'] = df_4.iloc[i][metrics].values
                 else:
-                    df_t=pd.DataFrame()
+                    df_t = pd.DataFrame()
                     df_t['Algorithm'] = [df_4.iloc[i]['Algorithm']] * len(metrics)
                     df_t['Metrics'] = metrics
                     df_t['Score'] = df_4.iloc[i][metrics].values
-                    frame= [df_5,df_t]
-                    df_5=pd.concat(frame)
+                    frame = [df_5, df_t]
+                    df_5 = pd.concat(frame)
 
-            df_6= df_5[df_5['Metrics'].str.contains('Hits') == False]
+            df_6 = df_5[df_5['Metrics'].str.contains('Hits') == False]
             plt.figure()
             flatui = ["#d46a7e", "#d5b60a", "#9b59b6", "#3498db", "#95a5a6", "#34495e", "#2ecc71", "#e74c3c"]
-            g=seaborn.barplot(x="Metrics", y='Score', hue="Algorithm", palette=flatui, data=df_6)
-            g.legend(loc='upper center',bbox_to_anchor=(0.5, 1.14),ncol=6)
+            g = seaborn.barplot(x="Metrics", y='Score', hue="Algorithm", palette=flatui, data=df_6)
+            g.legend(loc='upper center', bbox_to_anchor=(0.5, 1.14), ncol=6)
             g.tick_params(labelsize=6)
             # ax = seaborn.lineplot(x="Metrics", y='Score', hue="Algorithm",
             #                       markers=True, dashes=False, data=df_5)
 
             files_lwcase = [f.lower() for f in files]
             file_no = len([c for c in files_lwcase if d.lower() in c if 'testing' in c if 'rank_plot' in c])
-            plt.savefig(result + '/' + d + '_testing_rank_plot_' + str(file_no+1) + '.pdf', bbox_inches='tight', dpi=300)
+            plt.savefig(result + '/' + d + '_testing_rank_plot_' + str(file_no + 1) + '.pdf', bbox_inches='tight',
+                        dpi=300)
             plt.show()
 
             df_6 = df_5[df_5['Metrics'].str.contains('Hits') == True]
             plt.figure()
-            flatui = [ "#3498db", "#95a5a6", "#34495e", "#2ecc71", "#e74c3c","#d46a7e", "#d5b60a", "#9b59b6"]
+            flatui = ["#3498db", "#95a5a6", "#34495e", "#2ecc71", "#e74c3c", "#d46a7e", "#d5b60a", "#9b59b6"]
             g = seaborn.barplot(x="Metrics", y='Score', hue="Algorithm", palette=flatui, data=df_6)
             g.legend(loc='upper center', bbox_to_anchor=(0.5, 1.14), ncol=6)
             g.tick_params(labelsize=6)
 
             files_lwcase = [f.lower() for f in files]
             file_no = len([c for c in files_lwcase if d.lower() in c if 'testing' in c if 'hits_plot' in c])
-            plt.savefig(result + '/' + d + '_testing_hits_plot_' + str(file_no + 1) + '.pdf', bbox_inches='tight', dpi=300)
+            plt.savefig(result + '/' + d + '_testing_hits_plot_' + str(file_no + 1) + '.pdf', bbox_inches='tight',
+                        dpi=300)
             plt.show()
-
-    def plot_embedding(self, resultpath=None, algos=None):
-        print("\t drawing figure!")
-        pos = {}
-        node_color_mp = {}
-        for i in range(self.tot_triples):
-            self.G.add_edge(self.h_name[i], self.r_name[i])
-
-            self.G.add_edge(self.r_name[i], self.t_name[i])
-
-            node_color_mp[self.h_name[i]] = 'r'
-            node_color_mp[self.r_name[i]] = 'g'
-            node_color_mp[self.t_name[i]] = 'b'
-
-            pos[self.h_name[i]] = self.h_embs[i]
-            pos[self.r_name[i]] = self.r_embs[i]
-            pos[self.t_name[i]] = self.t_embs[i]
-            # print(self.h_name[i], self.h_embs[i])
-            # print(self.r_name[i], self.r_embs[i])
-            # print(self.t_name[i], self.t_embs[i])
-        colors = []
-        for n in list(self.G.nodes):
-            colors.append(node_color_mp[n])
-
-        plt.figure()
-        nodes_draw = nx.draw_networkx_nodes(self.G,
-                                            pos,
-                                            node_color=colors,
-                                            node_size=50,
-                                            with_labels=True)
-        nodes_draw.set_edgecolor('w')
-        nx.draw_networkx_labels(self.G, pos, font_size=8)
-        nx.draw_networkx_edges(self.G, pos, arrows=True, width=0.5, alpha=0.5)
-        # print(list(self.G.nodes))
-        # print(pos)
-
-        if not os.path.exists(resultpath):
-            os.mkdir(resultpath)
-
-        plt.savefig(resultpath + '/' + algos + '_embedding_plot.png', bbox_inches='tight', dpi=300)
-        plt.show()
-
 
 if __name__ == '__main__':
     v = Visualization()
