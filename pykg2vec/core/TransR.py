@@ -149,10 +149,7 @@ class TransR(ModelMeta):
     def get_embed(self, h, r, t, sess):
         """function to get the embedding value in numpy"""
         pos_h_e, pos_r_e, pos_t_e = self.embed(h, r, t)
-        # import pdb
-        # pdb.set_trace()
-        # if tf.rank(pos_h_e) == 1:
-            # pos_h_e, pos_r_e, pos_t_e = tf.squeeze(pos_h_e, 0), tf.squeeze(pos_r_e, 0), tf.squeeze(pos_t_e, 0)
+        # temp
         pos_h_e, pos_r_e, pos_t_e = tf.squeeze(pos_h_e, 0), tf.squeeze(pos_r_e, 0), tf.squeeze(pos_t_e, 0)
         h, r, t = sess.run([pos_h_e, pos_r_e, pos_t_e])
         return h, r, t

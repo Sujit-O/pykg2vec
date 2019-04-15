@@ -23,7 +23,8 @@ class BasicConfig:
                  plot_embedding=True,
                  log_device_placement=False,
                  plot_training_result=True,
-                 plot_testing_result=True):
+                 plot_testing_result=True,
+                 plot_entity_only=False):
         
         self.test_step = 100
         self.test_num  = test_num

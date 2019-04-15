@@ -141,18 +141,16 @@ class Rescal(ModelMeta):
     def embed(self, h, r, t):
         """function to get the embedding value"""
         emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        emb_r = tf.nn.embedding_lookup(self.rel_matrices, r)
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
-    def get_embed(self, h, r, t, sess=None):
+    def get_embed(self, h, r, t, sess):
         """function to get the embedding value in numpy"""
-        if not sess:
-            raise NotImplementedError('No session found for predicting embedding!')
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t   
 
-    def get_proj_embed(self, h, r, t, sess=None):
+    def get_proj_embed(self, h, r, t, sess):
         """function to get the projectd embedding value in numpy"""
-        pass
+        return self.get_embed(h, r, t, sess)

@@ -131,10 +131,16 @@ class Trainer(TrainerMeta):
     def display(self):
         """function to display embedding"""
         if self.config.plot_embedding:
-            viz = Visualization(model=self.model,
-                                ent_only_plot=True,
-                                rel_only_plot=True,
-                                ent_and_rel_plot=True)
+            if self.config.plot_entity_only:
+                viz = Visualization(model=self.model,
+                                    ent_only_plot=True,
+                                    rel_only_plot=False,
+                                    ent_and_rel_plot=False)
+            else:
+                viz = Visualization(model=self.model,
+                                    ent_only_plot=True,
+                                    rel_only_plot=True,
+                                    ent_and_rel_plot=True)
 
             viz.plot_embedding(sess=self.sess, resultpath=self.config.figures, algos=self.model.model_name,
                                show_label=False)
