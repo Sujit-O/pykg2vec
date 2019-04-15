@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -10,7 +9,6 @@ import tensorflow as tf
 sys.path.append("../")
 
 from core.KGMeta import ModelMeta
-from utils.visualization import Visualization
 
 class TransH(ModelMeta):
     """
@@ -82,7 +80,7 @@ class TransH(ModelMeta):
         emb_nh = tf.nn.l2_normalize(emb_nh, axis=1)
         emb_nt = tf.nn.l2_normalize(emb_nt, axis=1)
         emb_nr = tf.nn.l2_normalize(emb_nr, axis=1)
- # getting the required normal vectors of planes to transfer entity embedding
+        # getting the required normal vectors of planes to transfer entity embedding
         pos_norm = tf.nn.l2_normalize(pos_norm, axis=1)
         neg_norm = tf.nn.l2_normalize(neg_norm, axis=1)
 
@@ -169,53 +167,20 @@ class TransH(ModelMeta):
         """function to get the embedding value in numpy"""
         if not sess:
             raise NotImplementedError('No session found for predicting embedding!')
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
+        emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess=None):
         """function to get the projectd embedding value in numpy"""
-        pass
+        if not sess:
+            raise NotImplementedError('No session found for predicting embedding!')
+        emb_h, emb_r, emb_t = self.embed(h, r, t)
+        wr = tf.nn.embedding_lookup(self.w, r)
+        emb_h = tf.squeeze(self.projection(tf.expand_dims(emb_h, 0), tf.expand_dims(wr, 0)), 0) 
+        emb_t = tf.squeeze(self.projection(tf.expand_dims(emb_t, 0), tf.expand_dims(wr, 0)), 0)
+        h, r, t = sess.run([emb_h, emb_r, emb_t])
+        return h, r, t
 
     def projection(self, entity, wr):
         return entity - tf.reduce_sum(entity * wr, 1, keepdims = True) * wr
-
-    def summary(self):
-        """function to print the summary"""
-        print("\n----------SUMMARY----------")
-        # Acquire the max length and add four more spaces
-        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 4
-        for key, val in self.config.__dict__.items():
-            if len(key) < maxspace:
-                for i in range(maxspace - len(key)):
-                    key = ' ' + key
-            print(key, ":", val)
-        print("---------------------------")
-
-    def display(self, sess=None):
-        """function to display embedding"""
-        if self.config.plot_embedding:
-            triples = self.data_handler.validation_triples_ids[:self.config.disp_triple_num]
-            viz = Visualization(triples=triples,
-                                idx2entity=self.data_handler.idx2entity,
-                                idx2relation=self.data_handler.idx2relation)
-
-            viz.get_idx_n_emb(model=self, sess=sess)
-            viz.reduce_dim()
-            viz.plot_embedding(resultpath=self.config.figures, algos=self.model_name)
-
-        if self.config.plot_training_result:
-            viz = Visualization()
-            viz.plot_train_result(path=self.config.result,
-                                  result=self.config.figures,
-                                  algo=['TransE', 'TransR', 'TransH'],
-                                  data=['Freebase15k'])
-
-        if self.config.plot_testing_result:
-            viz = Visualization()
-            viz.plot_test_result(path=self.config.result,
-                                 result=self.config.figures,
-                                 algo=['TransE', 'TransR', 'TransH'],
-                                 data=['Freebase15k'], paramlist=None, hits=self.config.hits)

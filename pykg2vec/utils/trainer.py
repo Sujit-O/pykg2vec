@@ -7,6 +7,7 @@ import timeit
 from argparse import ArgumentParser
 import os
 from utils.evaluation import Evaluation
+from utils.visualization import Visualization
 
 class Trainer(TrainerMeta):
 
@@ -58,14 +59,15 @@ class Trainer(TrainerMeta):
                 self.save_model()
                    
         if self.config.disp_result:
-            self.model.display(self.sess)
+            self.display()
 
         if self.config.disp_summary:
-            self.model.summary()
+            self.summary()
 
-    def train_model_epoch(self, epoch_idx):
+    def train_model_epoch(self, epoch_idx, debug=True):
         acc_loss = 0
-        num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size
+        num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size if not debug else 5
+
         start_time = timeit.default_timer()
         
         gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
@@ -125,3 +127,39 @@ class Trainer(TrainerMeta):
             os.mkdir('../intermediate')
         saver = tf.train.Saver(self.model.parameter_list)
         saver.restore(self.sess, self.config.tmp + '/%s.vec' % self.model.model_name)
+
+    def display(self):
+        """function to display embedding"""
+        if self.config.plot_embedding:
+            viz = Visualization(model=self.model,
+                                ent_only_plot=True,
+                                rel_only_plot=True,
+                                ent_and_rel_plot=True)
+
+            viz.plot_embedding(sess=self.sess, resultpath=self.config.figures, algos=self.model.model_name,
+                               show_label=False)
+
+        if self.config.plot_training_result:
+            viz = Visualization()
+            viz.plot_train_result(path=self.config.result,
+                                  result=self.config.figures,
+                                  algo=['TransE', 'TransR', 'TransH'],
+                                  data=['Freebase15k'])
+
+        if self.config.plot_testing_result:
+            viz = Visualization()
+            viz.plot_test_result(path=self.config.result,
+                                 result=self.config.figures,
+                                 algo=['TransE', 'TransR', 'TransH'],
+                                 data=['Freebase15k'], paramlist=None, hits=self.config.hits)
+    def summary(self):
+        """function to print the summary"""
+        print("\n----------SUMMARY----------")
+        # Acquire the max length and add four more spaces
+        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 4
+        for key, val in self.config.__dict__.items():
+            if len(key) < maxspace:
+                for i in range(maxspace - len(key)):
+                    key = ' ' + key
+            print(key, ":", val)
+        print("---------------------------")
