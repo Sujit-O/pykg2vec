@@ -48,9 +48,9 @@ class TransE(ModelMeta):
     
     def distance(self, h, r, t):
         if self.config.L1_flag: 
-            return tf.reduce_sum(tf.abs(h+r-t), axis=1, keepdims=True) # L1 norm 
+            return tf.reduce_sum(tf.abs(h+r-t), axis=1) # L1 norm 
         else:
-            return tf.reduce_sum((h+r-t)**2, axis=1, keepdims=True) # L2 norm
+            return tf.reduce_sum((h+r-t)**2, axis=1) # L2 norm
 
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
