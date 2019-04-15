@@ -112,6 +112,7 @@ class Trainer(TrainerMeta):
     def full_test(self):
         self.evaluator.test(self.sess, self.config.epochs)
         self.evaluator.print_test_summary(self.config.epochs)
+        self.evaluator.save_test_summary(algo=self.model.model_name)
 
     ''' Procedural functions:'''
     def save_model(self):
