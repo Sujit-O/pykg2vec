@@ -82,105 +82,105 @@ Prepare your environment:
        (venv) $ pip install pykg2vec
     ``` 
  ## Usage Example
-    ```python
-        import tensorflow as tf
-        
-        #import the models from the packages
-        from pykg2vec.core.TransE import TransE
-        from pykg2vec.core.TransH import TransH
-        from pykg2vec.core.TransR import TransR
-        from pykg2vec.core.Rescal import Rescal
-        from pykg2vec.core.SMEBilinear import SMEBilinear
-        from pykg2vec.core.SMELinear import SMELinear
-        
-        #import the model configurations from the package
-        from pykg2vec.config.config import TransEConfig, TransHConfig, TransRConfig, RescalConfig, SMEConfig
-        
-        #import package to import and process knowledge graph data
-        from pykg2vec.utils.dataprep import DataPrep
-        
-        #import the module to train all the models
-        from pykg2vec.utils.trainer import Trainer
-        
-        #we are creating an experiment function to train all the models
-        def experiment():
-    
-            # preparing dataset. 
-            knowledge_graph = DataPrep('Freebase15k')
+```python
+import tensorflow as tf
 
-            # preparing settings. 
-            epochs = 200
-            batch_size = 128
-            learning_rate = 0.01
-            #If entity and relation embedding vector is same, we use hidden_size
-            hidden_size = 50
-            
-            #variable for specific entity and relation embedding sizes
-            ent_hidden_size = 64
-            rel_hidden_size = 32
-            
-            #for each model we define configuration parameters
-            transEconfig = TransEConfig(learning_rate=learning_rate,
-                                        batch_size=batch_size,
-                                        epochs=epochs, hidden_size=hidden_size)
+#import the models from the packages
+from pykg2vec.core.TransE import TransE
+from pykg2vec.core.TransH import TransH
+from pykg2vec.core.TransR import TransR
+from pykg2vec.core.Rescal import Rescal
+from pykg2vec.core.SMEBilinear import SMEBilinear
+from pykg2vec.core.SMELinear import SMELinear
 
-            transHconfig = TransHConfig(learning_rate=learning_rate,
-                                        batch_size=batch_size,
-                                        epochs=epochs, hidden_size=hidden_size)
+#import the model configurations from the package
+from pykg2vec.config.config import TransEConfig, TransHConfig, TransRConfig, RescalConfig, SMEConfig
 
-            transRconfig = TransRConfig(learning_rate=learning_rate,
-                                        batch_size=batch_size, 
-                                        ent_hidden_size=ent_hidden_size,
-                                        rel_hidden_size=rel_hidden_size,
-                                        epochs=epochs)
+#import package to import and process knowledge graph data
+from pykg2vec.utils.dataprep import DataPrep
 
-            rescalconfig = RescalConfig(learning_rate=0.1,
-                                        batch_size=batch_size,
-                                        epochs=epochs, hidden_size=hidden_size)
+#import the module to train all the models
+from pykg2vec.utils.trainer import Trainer
 
-            smeconfig    = SMEConfig(learning_rate=learning_rate,
-                                     batch_size=batch_size,
-                                     epochs=epochs, hidden_size=hidden_size)
+#we are creating an experiment function to train all the models
+def experiment():
 
-            configs = [transEconfig, transHconfig, transRconfig, rescalconfig, smeconfig]
-            
-            #we modify some common procedurial configuration
-            for config in configs:
-                #Perform test every 10 epochs
-                config.test_step  = 10
-                #perform test on 1000 triples
-                config.test_num   = 1000
-                #save the learned model parameters
-                config.save_model = True
-                #display the result of training and testing the model
-                config.disp_result= True
+    # preparing dataset. 
+    knowledge_graph = DataPrep('Freebase15k')
 
-            # preparing models. 
-            models = [] 
-            models.append(TransE(transEconfig, knowledge_graph))
-            models.append(TransH(transHconfig, knowledge_graph))
-            models.append(TransR(transRconfig, knowledge_graph))
-            models.append(Rescal(rescalconfig, knowledge_graph))
-            models.append(SMEBilinear(smeconfig, knowledge_graph))
-            models.append(SMELinear(smeconfig, knowledge_graph))
+    # preparing settings. 
+    epochs = 200
+    batch_size = 128
+    learning_rate = 0.01
+    #If entity and relation embedding vector is same, we use hidden_size
+    hidden_size = 50
 
-            # train models.
-            for model in models:
-                print("training model %s"%model.model_name)
-                trainer = Trainer(model=model)
-                
-                #first build and initialize the model
-                trainer.build_model()
-                #train the model
-                trainer.train_model()
-                #perform test with all the test triples
-                trainer.full_test()
+    #variable for specific entity and relation embedding sizes
+    ent_hidden_size = 64
+    rel_hidden_size = 32
 
-                tf.reset_default_graph()
+    #for each model we define configuration parameters
+    transEconfig = TransEConfig(learning_rate=learning_rate,
+                                batch_size=batch_size,
+                                epochs=epochs, hidden_size=hidden_size)
 
-       if __name__ == "__main__":
-           experiment()
-    ```  
+    transHconfig = TransHConfig(learning_rate=learning_rate,
+                                batch_size=batch_size,
+                                epochs=epochs, hidden_size=hidden_size)
+
+    transRconfig = TransRConfig(learning_rate=learning_rate,
+                                batch_size=batch_size, 
+                                ent_hidden_size=ent_hidden_size,
+                                rel_hidden_size=rel_hidden_size,
+                                epochs=epochs)
+
+    rescalconfig = RescalConfig(learning_rate=0.1,
+                                batch_size=batch_size,
+                                epochs=epochs, hidden_size=hidden_size)
+
+    smeconfig    = SMEConfig(learning_rate=learning_rate,
+                             batch_size=batch_size,
+                             epochs=epochs, hidden_size=hidden_size)
+
+    configs = [transEconfig, transHconfig, transRconfig, rescalconfig, smeconfig]
+
+    #we modify some common procedurial configuration
+    for config in configs:
+        #Perform test every 10 epochs
+        config.test_step  = 10
+        #perform test on 1000 triples
+        config.test_num   = 1000
+        #save the learned model parameters
+        config.save_model = True
+        #display the result of training and testing the model
+        config.disp_result= True
+
+    # preparing models. 
+    models = [] 
+    models.append(TransE(transEconfig, knowledge_graph))
+    models.append(TransH(transHconfig, knowledge_graph))
+    models.append(TransR(transRconfig, knowledge_graph))
+    models.append(Rescal(rescalconfig, knowledge_graph))
+    models.append(SMEBilinear(smeconfig, knowledge_graph))
+    models.append(SMELinear(smeconfig, knowledge_graph))
+
+    # train models.
+    for model in models:
+        print("training model %s"%model.model_name)
+        trainer = Trainer(model=model)
+
+        #first build and initialize the model
+        trainer.build_model()
+        #train the model
+        trainer.train_model()
+        #perform test with all the test triples
+        trainer.full_test()
+
+        tf.reset_default_graph()
+
+if __name__ == "__main__":
+   experiment()
+```  
   
 The output of code will be as follows:
 
