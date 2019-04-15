@@ -6,7 +6,12 @@ one single python library.
 ## Implemented Methods
 We aim to implement all the latest state-of-the-art knowledge graph embedding library. So far these are the implemented algorithms:
 
-### Translational Distance Models
+### Latent Feature Models
+These modles utilize a latent feature of either entities or relations to explain the triples of the Knowledge graph. The features are called latent as they are not directly observed. The interaction of the entities and the relations are captured through their latent space representation. 
+
+#### Latent Distance Models
+These models utilized the distance-based scoring functions to embed the knowledge graph triples. 
+
 * [TransE](http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-rela): TransE is an energy based model which represents the
 relationships as translations in the embedding space. Which
 means that if (h,l,t) holds then the embedding of the tail
@@ -17,6 +22,10 @@ Both entities and relations are vectors in the same space[1].
 * [TransH](https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf): TransH follows the general principle of the TransE. However, compared to it, it introduces relation-specific hyperplanes. The entities are represented as vecotrs just like in TransE, however, the relation is modeled as a vector on its own hyperplane with a normal vector. The entities are then projected to the relation hyperplane to calculate the loss. 
 
 * [TransR](http://nlp.csai.tsinghua.edu.cn/~lyk/publications/aaai2015_transr.pdf): TransR is pretty similar to TransH, the only difference being that rather than having one relation hyperplane, it introduces relation-specific hyperplanes. The entities are vecotr in entity space and each relation is a vector in relation specific space. For calculating the loss, the entities are projected to relation specific space using the projection matrix. 
+
+###  Semantic Matching Models
+
+* [RESCAL](http://www.icml-2011.org/papers/438_icmlpaper.pdf): TransR is pretty similar to TransH, the only difference being that rather than having one relation hyperplane, it introduces relation-specific hyperplanes. The entities are vecotr in entity space and each relation is a vector in relation specific space. For calculating the loss, the entities are projected to relation specific space using the projection matrix. 
 
 ## Datasets
 We intend to provide the libraries to test the knowledge graph algorithms against all the well-known datasets available online. So far the library is able to work with the following datasets:
