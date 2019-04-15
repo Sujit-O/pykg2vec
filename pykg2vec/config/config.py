@@ -5,14 +5,16 @@ We store the base configuration of the models here
 """
 import tensorflow as tf
 import os
+
+
 class BasicConfig:
-    def __init__(self, 
+    def __init__(self,
                  test_step=100,
                  test_num=300,
                  triple_num=20,
-                 tmp='../intermediate',
-                 result='../results',
-                 figures= '../figures',
+                 tmp='./intermediate',
+                 result='./results',
+                 figures='./figures',
                  gpu_fraction=0.4,
                  hits=None,
                  gpu_allow_growth=True,
@@ -25,11 +27,12 @@ class BasicConfig:
                  plot_training_result=True,
                  plot_testing_result=True,
                  plot_entity_only=False):
-        
-        self.test_step = 100
-        self.test_num  = test_num
+
+        self.plot_entity_only = plot_entity_only
+        self.test_step = test_step
+        self.test_num = test_num
         self.disp_triple_num = triple_num
-        
+
         self.tmp = tmp
         self.result = result
         self.figures = figures
@@ -39,9 +42,9 @@ class BasicConfig:
             os.mkdir(result)
         if not os.path.exists(figures):
             os.mkdir(figures)
-        
+
         if hits is None:
-            hits = [10,5]
+            hits = [10, 5]
         self.hits = hits
 
         self.gpu_fraction = gpu_fraction
@@ -60,6 +63,7 @@ class BasicConfig:
         self.plot_training_result = plot_training_result
         self.plot_testing_result = plot_testing_result
 
+
 class TransRConfig(BasicConfig):
     def __init__(self,
                  learning_rate=0.01,
@@ -71,7 +75,6 @@ class TransRConfig(BasicConfig):
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam'):
-
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -84,6 +87,7 @@ class TransRConfig(BasicConfig):
         self.data = data
         self.optimizer = optimizer
 
+
 class TransEConfig(BasicConfig):
 
     def __init__(self,
@@ -95,7 +99,6 @@ class TransEConfig(BasicConfig):
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam'):
-
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -106,6 +109,7 @@ class TransEConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+
 
 class TransHConfig(BasicConfig):
 
@@ -118,7 +122,6 @@ class TransHConfig(BasicConfig):
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam'):
-
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -129,6 +132,7 @@ class TransHConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+
 
 class RescalConfig(BasicConfig):
 
@@ -136,13 +140,11 @@ class RescalConfig(BasicConfig):
                  learning_rate=0.001,
                  l1_flag=True,
                  hidden_size=50,
-                 load_from_data=False,
                  batch_size=128,
                  epochs=1000,
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam'):
-
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -153,6 +155,7 @@ class RescalConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+
 
 class SMEConfig(object):
 
@@ -165,7 +168,6 @@ class SMEConfig(object):
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam'):
-        
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate

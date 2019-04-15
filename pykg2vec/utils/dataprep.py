@@ -7,12 +7,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-sys.path.append("../")
-from config.global_config import GlobalConfig
-
+from pykg2vec.config.global_config import GlobalConfig
 import numpy as np
-# from pykg2vec.config.config import GlobalConfig
 import pickle
 import os
 from collections import defaultdict
@@ -24,6 +20,7 @@ class Triple(object):
         self.h = head
         self.r = relation
         self.t = tail
+
 
 class DataPrep(object):
 

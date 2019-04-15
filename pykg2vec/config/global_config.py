@@ -1,8 +1,8 @@
 import shutil, tarfile, urllib.request
-import pprint
 from pathlib import Path
 
 # TODO: to be moved to utils
+
 def extract(tar_path, extract_path='.'):
     tar = tarfile.open(tar_path, 'r')
     for item in tar:
@@ -10,12 +10,13 @@ def extract(tar_path, extract_path='.'):
         if item.name.find(".tgz") != -1 or item.name.find(".tar") != -1:
             extract(item.name, "./" + item.name[:item.name.rfind('/')])
 
+
 class FreebaseFB15k(object):
 
     def __init__(self):
         self.name="FB15k"
         self.url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
-        self.dataset_home_path = Path('..')/'dataset'
+        self.dataset_home_path = Path('.')/'dataset'
         self.dataset_home_path.mkdir(parents=True, exist_ok=True)
         self.dataset_home_path = self.dataset_home_path.resolve()
         self.root_path = self.dataset_home_path/'Freebase'
@@ -53,6 +54,7 @@ class FreebaseFB15k(object):
         for key, value in self.__dict__.items():
             print(key, value)
 
+
 class GlobalConfig(object):
 
     def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
@@ -67,9 +69,11 @@ class GlobalConfig(object):
         for key, value in self.dataset.__dict__.items():
             print(key, value)
 
+
 def test_init_database():
     global_config = GlobalConfig('Freebase15k')
     # global_config = GlobalConfig('Freebase100k')
+
 
 if __name__ == "__main__":
     test_init_database()

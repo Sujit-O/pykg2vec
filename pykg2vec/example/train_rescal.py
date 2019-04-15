@@ -1,13 +1,11 @@
-import sys, os
-sys.path.append("../")
-
 import tensorflow as tf
 from argparse import ArgumentParser
 
-from core.Rescal import Rescal
-from config.config import RescalConfig
-from utils.dataprep import DataPrep
-from utils.trainer import Trainer
+from pykg2vec.core.Rescal import Rescal
+from pykg2vec.config.config import RescalConfig
+from pykg2vec.utils.dataprep import DataPrep
+from pykg2vec.utils.trainer import Trainer
+
 
 def main(_):
     parser = ArgumentParser(description='Knowledge Graph Embedding with RESCAL')

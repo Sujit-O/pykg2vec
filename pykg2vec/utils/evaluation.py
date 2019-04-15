@@ -8,16 +8,9 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
 import numpy as np
 import pandas as pd
-
-sys.path.append("../")
-from core.KGMeta import EvaluationMeta
-import tensorflow as tf
-
-
-# from pykg2vec.core.KGMeta import Evaluation
+from pykg2vec.core.KGMeta import EvaluationMeta
 
 
 class Evaluation(EvaluationMeta):

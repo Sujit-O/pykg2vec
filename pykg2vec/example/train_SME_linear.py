@@ -1,13 +1,11 @@
-import sys, os
-sys.path.append("../")
-
 import tensorflow as tf
 from argparse import ArgumentParser
 
-from core.SMELinear import SMELinear
-from config.config import SMEConfig
-from utils.dataprep import DataPrep
-from utils.trainer import Trainer
+from pykg2vec.core.SMELinear import SMELinear
+from pykg2vec.config.config import SMEConfig
+from pykg2vec.utils.dataprep import DataPrep
+from pykg2vec.utils.trainer import Trainer
+
 
 def main(_):
     parser = ArgumentParser(description='Knowledge Graph Embedding with SME linear')

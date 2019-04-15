@@ -1,13 +1,11 @@
-import sys, os
-sys.path.append("../")
-
 import tensorflow as tf
 from argparse import ArgumentParser
 
-from core.TransE import TransE
-from config.config import TransEConfig
-from utils.dataprep import DataPrep
-from utils.trainer import Trainer
+from pykg2vec.core.TransE import TransE
+from pykg2vec.config.config import TransEConfig
+from pykg2vec.utils.dataprep import DataPrep
+from pykg2vec.utils.trainer import Trainer
+
 
 def main(_):
     parser = ArgumentParser(description='Knowledge Graph Embedding with TransE')

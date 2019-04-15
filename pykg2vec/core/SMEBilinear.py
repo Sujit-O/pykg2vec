@@ -4,12 +4,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
 import tensorflow as tf
-sys.path.append("../")
+from pykg2vec.core.KGMeta import ModelMeta
 
-from core.KGMeta import ModelMeta
-from utils.visualization import Visualization
 
 class SMEBilinear(ModelMeta):
     """

@@ -1,13 +1,10 @@
-import sys
-sys.path.append("../")
-from core.KGMeta import ModelMeta, TrainerMeta
-import pandas as pd
 import tensorflow as tf
 import timeit
-from argparse import ArgumentParser
 import os
-from utils.evaluation import Evaluation
-from utils.visualization import Visualization
+from pykg2vec.core.KGMeta import TrainerMeta
+from pykg2vec.utils.evaluation import Evaluation
+from pykg2vec.utils.visualization import Visualization
+
 
 class Trainer(TrainerMeta):
 

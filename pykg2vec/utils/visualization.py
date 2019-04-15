@@ -23,7 +23,7 @@ import os
 import seaborn
 import pandas as pd
 from matplotlib import colors as mcolors
-import random
+
 seaborn.set_style("darkgrid")
 
 

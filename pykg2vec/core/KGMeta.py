@@ -3,6 +3,7 @@
 """Abstract class for the Knowledge graph models"""
 from abc import ABCMeta
 
+
 class ModelMeta:
 	__metaclass__ = ABCMeta
 
@@ -34,6 +35,7 @@ class ModelMeta:
 		"""function to get the projected embedding value"""
 		pass
 
+
 class TrainerMeta:
 	__metaclass__ = ABCMeta
 
@@ -57,6 +59,7 @@ class TrainerMeta:
 		"""function to load the model"""
 		pass
 
+
 class VisualizationMeta:
 	__metaclass__ = ABCMeta
 	
@@ -71,6 +74,7 @@ class VisualizationMeta:
 	def summary(self):
 		"""function to print the summary"""
 		pass
+
 
 class EvaluationMeta:
 	__metaclass__ = ABCMeta

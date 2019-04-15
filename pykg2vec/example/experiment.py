@@ -1,18 +1,15 @@
-import sys
-sys.path.append("../")
-
 import tensorflow as tf
 
-from core.TransE import TransE
-from core.TransH import TransH
-from core.TransR import TransR
-from core.Rescal import Rescal
-from core.SMEBilinear import SMEBilinear
-from core.SMELinear import SMELinear
-from config.config import TransEConfig, TransHConfig, TransRConfig, RescalConfig, SMEConfig
+from pykg2vec.core.TransE import TransE
+from pykg2vec.core.TransH import TransH
+from pykg2vec.core.TransR import TransR
+from pykg2vec.core.Rescal import Rescal
+from pykg2vec.core.SMEBilinear import SMEBilinear
+from pykg2vec.core.SMELinear import SMELinear
+from pykg2vec.config.config import TransEConfig, TransHConfig, TransRConfig, RescalConfig, SMEConfig
 
-from utils.dataprep import DataPrep
-from utils.trainer import Trainer
+from pykg2vec.utils.dataprep import DataPrep
+from pykg2vec.utils.trainer import Trainer
 
 def experiment():
     
@@ -20,7 +17,7 @@ def experiment():
     knowledge_graph = DataPrep('Freebase15k')
     
     # preparing settings. 
-    epochs = 200
+    epochs = 5
     batch_size = 128
     learning_rate = 0.01
     hidden_size = 50
@@ -50,7 +47,7 @@ def experiment():
     configs = [transEconfig, transHconfig, transRconfig, rescalconfig, smeconfig]
     
     for config in configs:
-        config.test_step  = 0
+        config.test_step  = 2
         config.test_num   = 100
         config.save_model = True
         config.disp_result= False
