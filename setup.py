@@ -20,7 +20,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='pykg2vec',
-    version="0.0.38",
+    version="0.0.39",
     author="Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Martinez Canedo, Arquimedes",
     author_email="sujitchhetri@gmail.com",
     description="A python library for Knowledge Graph Embedding",
