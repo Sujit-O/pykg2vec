@@ -55,8 +55,8 @@ For best performance, we encourage the users to create a virtual environment and
 
 **Please install [tensorflow](https://www.tensorflow.org/install) cpu or gpu version before performing pip install of pykg2vec!**
 
-Prepare your environment:
 ```bash
+#Prepare your environment
 $ sudo apt update
 $ sudo apt install python3-dev python3-pip
 $ sudo pip3 install -U virtualenv     
