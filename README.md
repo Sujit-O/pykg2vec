@@ -61,14 +61,20 @@ $ sudo apt update
 $ sudo apt install python3-dev python3-pip
 $ sudo pip3 install -U virtualenv     
 
-#Create a virtual environment:
+#Create a virtual environment
+#If you have tensorflow installed in the root env, do the following
 $ virtualenv --system-site-packages -p python3 ./venv
+#If you you want to install tensorflow later, do the following
+$ virtualenv -p python3 ./venv
 
 #Activate the virtual environment using a shell-specific command:  
 $ source ./venv/bin/activate
 
 #Upgrade pip:  
 $ pip install --upgrade pip
+
+#If you have not installed tensorflow, or not used --system-site-package option while creating venv, install tensorflow first.
+(venv) $ pip install tensoflow
 
 #Install pyKG2Vec:  
 (venv) $ pip install pykg2vec
