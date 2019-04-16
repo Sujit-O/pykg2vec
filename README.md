@@ -126,7 +126,37 @@ if __name__ == "__main__":
     tf.app.run()
  
 ```
-We ran TransE for just 10 epochs, after which figures and results will be created. Some of the figures plotted in the end of the training are as follows:
+We ran TransE for just 10 epochs, after which figures and results will be created. It first of all stores the summary of the TransE model as follows:
+```
+----------------SUMMARY----------------
+plot_entity_only:False
+test_step:2
+test_num:500
+disp_triple_num:20
+tmp:./intermediate
+result:./results
+figures:./figures
+hits:[10,5]
+loadFromData:False
+save_model:False
+disp_summary:True
+disp_result:True
+plot_embedding:True
+log_device_placement:False
+plot_training_result:True
+plot_testing_result:True
+learning_rate:0.01
+L1_flag:True
+hidden_size:50
+batch_size:128
+epochs:10
+margin:1.0
+data:Freebase
+optimizer:adam
+-----------------------------------------
+```
+
+Some of the figures plotted in the end of the training are as follows:
 
 Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 :-------------------------:|:-------------------------:|:-------------------------:
@@ -134,7 +164,45 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 **Relation embedding plot**             |  **Entity embedding plot**   | **Relation and Entity Plot**
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_rel_plot_embedding_plot_0.png)| ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_entity_plot_embedding_plot_0.png) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_ent_n_rel_plot_embedding_plot_0.png)
 
+Besides the plots, it also generates csv file storing all the training results as follows:
 
+| Epoch | mean_rank | filter_mean_rank | norm_mean_rank | norm_filter_mean_rank | hits10 | filter_hits10 | norm_hit10 | norm_filter_hit10 | hits5 | filter_hits5 | norm_hit5 | norm_filter_hit5 | 
+|-------|-----------|------------------|----------------|-----------------------|--------|---------------|------------|-------------------|-------|--------------|-----------|------------------| 
+| 0     | 871.191   | 800.936          | 871.191        | 800.936               | 0.149  | 0.185         | 0.149      | 0.185             | 0.093 | 0.13         | 0.093     | 0.13             | 
+| 2     | 432.702   | 360.575          | 432.702        | 360.575               | 0.2    | 0.237         | 0.2        | 0.237             | 0.128 | 0.168        | 0.128     | 0.168            | 
+| 4     | 343.012   | 269.229          | 343.013        | 269.23                | 0.222  | 0.257         | 0.222      | 0.257             | 0.159 | 0.198        | 0.159     | 0.198            | 
+| 6     | 297.929   | 229.462          | 297.929        | 229.462               | 0.235  | 0.303         | 0.235      | 0.303             | 0.158 | 0.219        | 0.158     | 0.219            | 
+| 8     | 295.649   | 216.05           | 295.649        | 216.05                | 0.257  | 0.322         | 0.257      | 0.322             | 0.174 | 0.234        | 0.174     | 0.234            | 
+| 9     | 301.976   | 226.44           | 301.976        | 226.44                | 0.261  | 0.329         | 0.261      | 0.329             | 0.183 | 0.245        | 0.183     | 0.245            | 
+
+
+
+And it generates csv file storing all the testing results as follows:
+
+| Epochs | Loss        | 
+|--------|-------------| 
+| 0      | 184441.3958 | 
+| 1      | 56098.99278 | 
+| 2      | 40710.62086 | 
+| 3      | 32144.93828 | 
+| 4      | 27008.61401 | 
+| 5      | 23759.46096 | 
+| 6      | 21340.44356 | 
+| 7      | 19488.43535 | 
+| 8      | 17877.61715 | 
+| 9      | 16890.90618 | 
+
+
+And finally, we also provide the latex table as follows:
+```latex   
+\begin{tabular}{lrrrrrrrrrrrr}
+\toprule
+Algorithm &  Mean Rank &  Filt Mean Rank &  Norm Mean Rank &  Norm Filt Mean Rank &  Hits10 &  Filt Hits10 &  Norm Hits10 &  Norm Filt Hits10 &  Hits5 &  Filt Hits5 &  Norm Hits5 &  Norm Filt Hits5 \\
+\midrule
+   TransE &    301.976 &          226.44 &         301.976 &               226.44 &   0.261 &        0.329 &        0.261 &             0.329 &  0.183 &       0.245 &       0.183 &            0.245 \\
+\bottomrule
+\end{tabular}
+```
 
  ### Testing all the algorithms
 ```python
