@@ -126,14 +126,16 @@ if __name__ == "__main__":
     tf.app.run()
  
 ```
-The output of code will be as follows:
+We ran TransE for just 10 epochs, after which figures and results will be created. Some of the figures plotted in the end of the training are as follows:
 
-    
-<p align="center">
-  <img width="620" height="500" src="./pykg2vec/figures/transe_test.png">
-</p> 
-      
-      
+Training Loss Plot             |  Testing Rank Results | Testing Hits Result
+:-------------------------:|:-------------------------:|:-------------------------:
+![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/Freebase15k_training_loss_plot_0-1.png)  |  ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/Freebase15k_testing_rank_plot_1-1.png) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/Freebase15k_testing_hits_plot_1-1.png)
+**Relation embedding plot**             |  **Entity embedding plot**   | **Relation and Entity Plot**
+![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_rel_plot_embedding_plot_0.png)| ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_entity_plot_embedding_plot_0.png) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_ent_n_rel_plot_embedding_plot_0.png)
+
+
+
  ### Testing all the algorithms
 ```python
 import tensorflow as tf
