@@ -304,7 +304,6 @@ def experiment():
 if __name__ == "__main__":
    experiment()
 ```  
-The red nodes represent head entity, green nodes represent the relations and the blue node represents the tail entities.
 ## Learn More
 Here are some links to get you started with knowledge graph embedding methodologies.
 
