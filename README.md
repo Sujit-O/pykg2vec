@@ -57,24 +57,20 @@ For best performance, we encourage the users to create a virtual environment and
 
 Prepare your environment:
 ```bash
-sudo apt update
-sudo apt install python3-dev python3-pip
-sudo pip3 install -U virtualenv     
-```
- Create a virtual environment:
-```bash
-virtualenv --system-site-packages -p python3 ./venv
-```
- Activate the virtual environment using a shell-specific command:  
-```bash
-source ./venv/bin/activate
-``` 
- Upgrade pip:  
-```bash
-pip install --upgrade pip
-```
- Install pyKG2Vec:  
-```bash
+$ sudo apt update
+$ sudo apt install python3-dev python3-pip
+$ sudo pip3 install -U virtualenv     
+
+#Create a virtual environment:
+$ virtualenv --system-site-packages -p python3 ./venv
+
+#Activate the virtual environment using a shell-specific command:  
+$ source ./venv/bin/activate
+
+#Upgrade pip:  
+$ pip install --upgrade pip
+
+#Install pyKG2Vec:  
 (venv) $ pip install pykg2vec
 ``` 
  ## Usage Example
