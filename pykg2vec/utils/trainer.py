@@ -1,9 +1,11 @@
 import tensorflow as tf
 import timeit
 import os
-from pykg2vec.core.KGMeta import TrainerMeta
-from pykg2vec.utils.evaluation import Evaluation
-from pykg2vec.utils.visualization import Visualization
+import sys
+sys.path.append("../")
+from core.KGMeta import TrainerMeta
+from utils.evaluation import Evaluation
+from utils.visualization import Visualization
 
 
 class Trainer(TrainerMeta):
@@ -61,7 +63,7 @@ class Trainer(TrainerMeta):
         if self.config.disp_summary:
             self.summary()
 
-    def train_model_epoch(self, epoch_idx, debug=False):
+    def train_model_epoch(self, epoch_idx, debug=True):
         acc_loss = 0
         num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size if not debug else 5
 

@@ -6,11 +6,12 @@ This module is for evaluating the results
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
+import sys
+sys.path.append("../")
 import os
 import numpy as np
 import pandas as pd
-from pykg2vec.core.KGMeta import EvaluationMeta
+from core.KGMeta import EvaluationMeta
 
 
 class Evaluation(EvaluationMeta):

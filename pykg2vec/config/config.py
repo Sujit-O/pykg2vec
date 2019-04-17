@@ -178,3 +178,26 @@ class SMEConfig(object):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+
+class NTNConfig(BasicConfig):
+    def __init__(self,
+                 learning_rate=0.01,
+                 l1_flag=True,
+                 ent_hidden_size=32,
+                 rel_hidden_size=16,
+                 batch_size=128,
+                 epochs=2,
+                 margin=1.0,
+                 data='Freebase',
+                 optimizer='adam'):
+        BasicConfig.__init__(self)
+
+        self.learning_rate = learning_rate
+        self.L1_flag = l1_flag
+        self.ent_hidden_size = ent_hidden_size
+        self.rel_hidden_size = rel_hidden_size
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.margin = margin
+        self.data = data
+        self.optimizer = optimizer
