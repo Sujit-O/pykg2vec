@@ -26,12 +26,13 @@ def main(_):
     args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
     
     config = NTNConfig(learning_rate=args.learn_rate,
-                          batch_size=args.batch,
-                          epochs=args.epochs)
+                       batch_size=args.batch,
+                       epochs=args.epochs)
 
     config.test_step = args.test_step
     config.test_num  = args.test_num
     config.gpu_fraction = args.gpu_frac
+    config.plot_entity_only = True
 
     model = NTN(config, data_handler)
     

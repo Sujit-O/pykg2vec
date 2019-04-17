@@ -92,54 +92,93 @@ class NTN(ModelMeta):
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
         neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
 
-        energy_pos = tf.reduce_sum(pos_r_e*self.layer(pos_h_e, pos_t_e), -1)
-        energy_neg = tf.reduce_sum(neg_r_e*self.layer(neg_h_e, neg_t_e), -1)
+        energy_pos = tf.reduce_sum(pos_r_e*self.train_layer(pos_h_e, pos_t_e), -1)
+        energy_neg = tf.reduce_sum(neg_r_e*self.train_layer(neg_h_e, neg_t_e), -1)
         
         self.loss = tf.reduce_sum(tf.maximum(energy_neg + self.config.margin - energy_pos, 0))
 
-    def layer(self, h, t, expand=None):
-        # h => [m, d]
-        # self.mr1 => [d, k]
-        if expand == "t":
-            t = tf.tile(t, [tf.shape(h)[0],1])
-        elif expand == "h":
-            h = tf.tile(h, [tf.shape(t)[0],1])
-
+    def train_layer(self, h, t):
+        k = self.config.rel_hidden_size
+        # h => [m, d], self.mr1 => [d, k]
         mr1h = tf.matmul(h, self.mr1)
-
-        # t_e => [m, d]
-        # self.mr2 => [d, k]
-        mr2t =  tf.matmul(t, self.mr2)
-
+        # t => [m, d], self.mr2 => [d, k]
+        mr2t = tf.matmul(t, self.mr2)
         # br = [k]
         br = tf.squeeze(self.br, -1)
 
         # [m, k, 1, d]
-        expanded_h = tf.tile(tf.expand_dims(tf.expand_dims(h, 1),1), [1, self.config.rel_hidden_size, 1, 1])
+        expanded_h = tf.tile(tf.expand_dims(tf.expand_dims(h, 1),1), [1, k, 1, 1])
+
         # [m, k, d, d]
-        expanded_mr = tf.tile(tf.expand_dims(self.mr, 0), [tf.shape(h)[0], 1, 1, 1])
+        expanded_mr= tf.tile(tf.expand_dims(self.mr, 0), [tf.shape(h)[0], 1, 1, 1])
+        
         # [m, k, d, 1]
-        expanded_t = tf.tile(tf.expand_dims(tf.expand_dims(t, 1),3), [1, self.config.rel_hidden_size, 1, 1])
+        expanded_t = tf.tile(tf.expand_dims(tf.expand_dims(t, 1),3), [1, k, 1, 1])
 
         # [m, k]
         htmrt = tf.squeeze(tf.matmul(tf.matmul(expanded_h, expanded_mr), expanded_t), [2,3])
 
         return tf.tanh(mr1h+mr2t+br+htmrt)
+    
+    # Loop over ret_hidden_size
+    def test_layer(self, h, t, expand=None):
+        k = self.config.rel_hidden_size
+        # h => [m, d], self.mr1 => [d, k]
+        mr1h = tf.matmul(h, self.mr1)
+        # t => [m, d], self.mr2 => [d, k]
+        mr2t = tf.matmul(t, self.mr2)
+        # br = [k]
+        br = tf.squeeze(self.br, -1)
+
+        # [m, 1, d]
+        expanded_h = tf.expand_dims(h, 1)
+        # [m, d, 1]
+        expanded_t = tf.expand_dims(t, 2)
+       
+        if expand == "t":
+            size = tf.shape(h)[0]
+            expanded_t = tf.tile(expanded_t, [size, 1, 1])
+
+        elif expand == "h":
+            size = tf.shape(t)[0]
+            expanded_h = tf.tile(expanded_h, [size, 1, 1])
+
+        def condition(i, outputs):
+            return tf.less(i, k)
+        
+        def body(i, outputs):
+            # self.mr[i]: [d, d], mr_prime: [m, d, d]
+            mr_prime = tf.tile(tf.expand_dims(self.mr[i], 0), [size, 1, 1])
+            # [m, 1, 1]
+            htmrt_index = tf.squeeze(tf.matmul(tf.matmul(expanded_h, mr_prime), expanded_t), [1, 2])
+
+            outputs = outputs.write(i, tf.expand_dims(htmrt_index,0))
+            return [tf.add(i, 1), outputs]
+
+        i = tf.constant(0)
+        outputs = tf.TensorArray(dtype=tf.float32, infer_shape=True, size=1, dynamic_size=True) 
+
+        _, outputs = tf.while_loop(condition, body, [i, outputs])
+
+        htmrt = outputs.concat()
+        
+        htmrt = tf.transpose(htmrt)
+
+        return tf.tanh(mr1h+mr2t+br+htmrt)
 
     def test_step(self):
         num_entity = self.data_handler.tot_entity
-        # import pdb
-        # pdb.set_trace()
+
         h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        energy_h = tf.reduce_sum(r_vec*self.layer(self.ent_embeddings, t_vec, expand='t'), -1)
-        energy_t = tf.reduce_sum(r_vec*self.layer(h_vec, self.ent_embeddings, expand='h'), -1)
+        energy_h = tf.reduce_sum(r_vec*self.test_layer(self.ent_embeddings, t_vec, expand='t'), -1)
+        energy_t = tf.reduce_sum(r_vec*self.test_layer(h_vec, self.ent_embeddings, expand='h'), -1)
 
         self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
         norm_h_vec, norm_r_vec, norm_t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        norm_energy_h = tf.reduce_sum(norm_r_vec*self.layer(self.ent_embeddings, norm_t_vec, expand='t'), -1)
-        norm_energy_t = tf.reduce_sum(norm_r_vec*self.layer(norm_h_vec, self.ent_embeddings, expand='h'), -1)
+        norm_energy_h = tf.reduce_sum(norm_r_vec*self.test_layer(self.ent_embeddings, norm_t_vec, expand='t'), -1)
+        norm_energy_t = tf.reduce_sum(norm_r_vec*self.test_layer(norm_h_vec, self.ent_embeddings, expand='h'), -1)
 
         _, self.head_rank      = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
         _, self.tail_rank      = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
