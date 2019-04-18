@@ -54,25 +54,25 @@ class ConvE(ModelMeta):
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         with tf.name_scope("activation bias"):
-            self.b = tf.get_variable(name="bias", shape=[self.config.batch_size, num_total_ent],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.b = tf.get_variable(name="bias", shape=[self.config.batch_size, k],
+                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         with tf.name_scope("transformation matrix"):
             self.W = tf.get_variable(name="Wmatrix", shape=[k, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings,self.b, self.W]
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b, self.W]
 
     def def_loss(self):
-        # ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        # rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        pos_h_e = tf.nn.embedding_lookup(self.ent_embeddings, self.pos_h)
-        pos_r_e = tf.nn.embedding_lookup(self.ent_embeddings, self.pos_r)
-        pos_t_e = tf.nn.embedding_lookup(self.ent_embeddings, self.pos_t)
+        pos_h_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_h)
+        pos_r_e = tf.nn.embedding_lookup(rel_emb_norm, self.pos_r)
+        pos_t_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_t)
 
-        neg_h_e = tf.nn.embedding_lookup(self.ent_embeddings, self.neg_h)
-        neg_r_e = tf.nn.embedding_lookup(self.ent_embeddings, self.neg_r)
-        neg_t_e = tf.nn.embedding_lookup(self.ent_embeddings, self.neg_t)
+        neg_h_e = tf.nn.embedding_lookup(ent_emb_norm, self.neg_h)
+        neg_r_e = tf.nn.embedding_lookup(rel_emb_norm, self.neg_r)
+        neg_t_e = tf.nn.embedding_lookup(ent_emb_norm, self.neg_t)
 
         # prepare h,r
         stacked_inputs_h = tf.concat([pos_h_e, neg_h_e], 0)
@@ -83,12 +83,12 @@ class ConvE(ModelMeta):
 
         # prepare t
         stacked_inputs_t = tf.concat([pos_t_e, neg_t_e], 0)
-        y = tf.concat([tf.ones(self.config.batch_size,), tf.zeros(self.config.batch_size,)],0)
-        e2_multi = tf.scalar_mul((1.0 - self.config.label_smoothing), y)+(1.0 / self.config.hidden_size)
-        pred_val = self.layer(stacked_inputs,stacked_inputs_t)
+        y = tf.concat([tf.ones(self.config.batch_size, ), tf.zeros(self.config.batch_size, )], 0)
+        e2_multi = tf.scalar_mul((1.0 - self.config.label_smoothing), y) + (1.0 / self.config.hidden_size)
+        pred_val = self.layer(stacked_inputs, stacked_inputs_t)
         self.loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=e2_multi, logits=pred_val)
 
-    def layer(self, st_inp,st_inp_t, train= True):
+    def layer(self, st_inp, st_inp_t=None, train=True):
         # batch normalization in the first axis
         x = tf.layers.batch_normalization(st_inp, axis=0)
         # input dropout
@@ -100,11 +100,14 @@ class ConvE(ModelMeta):
         # first non-linear activation
         x = tf.nn.relu(x)
         # feature dropout
-        x = tf.layers.dropout(x, rate=self.config.featre_map_dropout)
+        x = tf.layers.dropout(x, rate=self.config.feature_map_dropout)
         # reshape the tensor to get the batch size
-        x = tf.reshape(x, [self.config.batch_size,-1])
+        if train:
+            x = tf.reshape(x, [self.config.batch_size, -1])
+        else:
+            x = tf.reshape(x, [1, -1])
         # pass the feature through fully connected layer, output size = batch size, hidden size
-        x = tf.layers.dense(x,units=self.config.hidden_size)
+        x = tf.layers.dense(x, units=self.config.hidden_size)
         # dropout in the hidden layer
         x = tf.layers.dropout(x, rate=self.config.hidden_dropout)
         # batch normalization across feature dimension
@@ -112,17 +115,19 @@ class ConvE(ModelMeta):
         # second non-linear activation
         x = tf.nn.relu(x)
         # matrix multiplication to project the tensor into k dimension
-
         x = tf.matmul(x, self.W)
         # add a bias value
-        x = tf.add(x, self.b)
-        # multiplication with
         if train:
-            x = tf.reduce_sum(tf.matmul(x, tf.transpose(st_inp_t)),1)
+            x = tf.add(x, self.b)
         else:
-            x = tf.reduce_sum(tf.matmul(x, tf.transpose(self.ent_embeddings)),1)
+            x = tf.add(x, tf.slice(self.b, [0, 0], [1, self.config.hidden_size]))
+        # inner product with the tail triple
+        if train:
+            x = tf.reduce_sum(tf.matmul(x, tf.transpose(st_inp_t)), 1)
+        else:
+            ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+            x = tf.matmul(x, tf.transpose(ent_emb_norm))
         # sigmoid activation
-
         pred = tf.nn.sigmoid(x)
 
         return pred
@@ -131,23 +136,24 @@ class ConvE(ModelMeta):
         num_entity = self.data_handler.tot_entity
         # import pdb
         # pdb.set_trace()
-        h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        energy_h = tf.reduce_sum(r_vec * self.layer(self.ent_embeddings, t_vec, expand='t'), -1)
-        energy_t = tf.reduce_sum(r_vec * self.layer(h_vec, self.ent_embeddings, expand='h'), -1)
+        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+        pos_h_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_h)
+        pos_r_e = tf.nn.embedding_lookup(rel_emb_norm, self.pos_r)
 
-        norm_h_vec, norm_r_vec, norm_t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        norm_energy_h = tf.reduce_sum(norm_r_vec * self.layer(self.ent_embeddings, norm_t_vec, expand='t'), -1)
-        norm_energy_t = tf.reduce_sum(norm_r_vec * self.layer(norm_h_vec, self.ent_embeddings, expand='h'), -1)
+        # prepare h,r
+        stacked_inputs_h = tf.reshape(pos_h_e, [1, 10, -1, 1])
+        stacked_inputs_r = tf.reshape(pos_r_e, [1, 10, -1, 1])
+        stacked_inputs_hr = tf.concat([stacked_inputs_h, stacked_inputs_r], 1)
 
-        _, self.head_rank = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
-        _, self.tail_rank = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
-        _, self.norm_head_rank = tf.nn.top_k(tf.negative(norm_energy_h), k=num_entity)
-        _, self.norm_tail_rank = tf.nn.top_k(tf.negative(norm_energy_t), k=num_entity)
+        pred_val_head = self.layer(stacked_inputs_hr, train=False)
+        pred_val_tail = self.layer(stacked_inputs_rt, train=False)
 
-        return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
+        _, head_rank = tf.nn.top_k(pred_val_head, k=num_entity)
+        _, tail_rank = tf.nn.top_k(pred_val_tail, k=num_entity)
+
+        return head_rank, tail_rank, None, None
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
@@ -167,12 +173,14 @@ class ConvE(ModelMeta):
         return self.get_embed(h, r, t, sess)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
+    # Unit Test Script with tensorflow Eager Execution
     import tensorflow as tf
     tf.enable_eager_execution()
     batch = 128
     embed_dim = 100
     tot_entity = 147000
+    train = True
     pos_h_e = tf.random_normal([batch // 2, embed_dim])
     print('pos_r_e:', pos_h_e)
     pos_r_e = tf.random_normal([batch // 2, embed_dim])
@@ -185,13 +193,14 @@ if __name__=='__main__':
     print('neg_r_e:', neg_r_e)
     neg_t_e = tf.random_normal([batch // 2, embed_dim])
     print('neg_t_e:', neg_t_e)
-    stacked_inputs_pos = tf.concat([pos_h_e, neg_h_e], 0)
-    stacked_inputs_neg = tf.concat([pos_r_e, neg_r_e], 0)
-    stacked_inputs_pos = tf.reshape(stacked_inputs_pos, [-1, 10, 20, 1])
-    stacked_inputs_neg = tf.reshape(stacked_inputs_neg, [-1, 10, 20, 1])
-    stacked_inputs = tf.concat([stacked_inputs_pos, stacked_inputs_neg], 1)
+    stacked_inputs_e = tf.concat([pos_h_e, neg_h_e], 0)
+    stacked_inputs_r = tf.concat([pos_r_e, neg_r_e], 0)
+    stacked_inputs_e = tf.reshape(stacked_inputs_e, [batch, 10, -1, 1])
+    stacked_inputs_r = tf.reshape(stacked_inputs_r, [batch, 10, -1, 1])
+    stacked_inputs = tf.concat([stacked_inputs_e, stacked_inputs_r], 1)
+    stacked_inputs_t = tf.concat([pos_t_e, neg_t_e], 0)
     print('stacked_inputs:', stacked_inputs)
-    x = tf.layers.batch_normalization(x, axis=0)
+    x = tf.layers.batch_normalization(stacked_inputs, axis=0)
     print("x_batch normalize:", x)
     x = tf.layers.dropout(x, rate=0.2)
     print("x_dropped out:", x)
@@ -213,7 +222,7 @@ if __name__=='__main__':
     print("x_batch normalize:", x)
     x = tf.nn.relu(x)
     print("x_relu activation:", x)
-    W = tf.get_variable(name="ent_embedding", shape=[tot_entity, embed_dim],
+    W = tf.get_variable(name="ent_embedding", shape=[embed_dim, embed_dim],
                         initializer=tf.contrib.layers.xavier_initializer(uniform=False))
     print("ent_embedding:", W)
     x = tf.matmul(x, tf.transpose(W))
@@ -223,5 +232,66 @@ if __name__=='__main__':
     print("bias:", b)
     x = tf.add(x, b)
     print("x_added with bias:", x)
+    ent_embeddings = tf.get_variable(name="ent_embedding", shape=[tot_entity, embed_dim],
+                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+    if train:
+        x = tf.reduce_sum(tf.matmul(x, tf.transpose(stacked_inputs_t)), 1)
+    else:
+        x = tf.reduce_sum(tf.matmul(x, tf.transpose(ent_embeddings)), 1)
     pred = tf.nn.sigmoid(x)
     print("prediction:", pred)
+
+    import tensorflow as tf
+
+    tf.enable_eager_execution()
+    batch = 128
+    embed_dim = 100
+    tot_entity = 147000
+    train = False
+    input_dropout = 0.2
+    input_dropout = 0.2
+    hidden_dropout = 0.3
+    feature_map_dropout = 0.2
+    ent_embeddings = tf.get_variable(name="ent_embedding", shape=[tot_entity, embed_dim],
+                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+    W = tf.get_variable(name="ent_embedding", shape=[embed_dim, embed_dim],
+                        initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+    b = tf.get_variable(name="b", shape=[batch, embed_dim],
+                        initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+    print("ent_embedding:", W)
+    pos_h_e = tf.random_normal([1, embed_dim])
+    print('pos_r_e:', pos_h_e)
+    pos_r_e = tf.random_normal([1, embed_dim])
+    print('pos_r_e:', pos_r_e)
+    pos_t_e = tf.random_normal([1, embed_dim])
+    stacked_inputs_h = tf.reshape(pos_h_e, [1, 10, -1, 1])
+    stacked_inputs_r = tf.reshape(pos_r_e, [1, 10, -1, 1])
+    stacked_inputs_hr = tf.concat([stacked_inputs_h, stacked_inputs_r], 1)
+    x = tf.layers.batch_normalization(stacked_inputs_hr, axis=0)
+    x = tf.layers.dropout(x, rate=input_dropout)
+    x = tf.layers.conv2d(x, 32, [3, 3], strides=(1, 1), padding='valid', activation=None)
+    x = tf.layers.batch_normalization(x, axis=1)
+    x = tf.nn.relu(x)
+    x = tf.layers.dropout(x, rate=feature_map_dropout)
+    if train:
+        x = tf.reshape(x, [batch_size, -1])
+    else:
+        x = tf.reshape(x, [1, -1])
+
+    x = tf.layers.dense(x, units=embed_dim)
+    x = tf.layers.dropout(x, rate=hidden_dropout)
+    x = tf.layers.batch_normalization(x, axis=1)
+    x = tf.nn.relu(x)
+    x = tf.matmul(x, W)
+    if train:
+        x = tf.add(x, b)
+    else:
+        x = tf.add(x, tf.slice(b, [0, 0], [1, embed_dim]))
+
+    if train:
+        x = tf.reduce_sum(tf.matmul(x, tf.transpose(st_inp_t)), 1)
+        x = tf.reduce_sum(tf.matmul(x, tf.transpose(ent_emb_norm)), 1)
+    else:
+        ent_emb_norm = tf.nn.l2_normalize(ent_embeddings, axis=1)
+        x = tf.matmul(x, tf.transpose(ent_emb_norm))
+    pred = tf.nn.sigmoid(x)
