@@ -11,7 +11,6 @@ import tensorflow as tf
 from core.KGMeta import ModelMeta
 
 
-
 class ConvE(ModelMeta):
     """
     ------------------Paper Title-----------------------------
