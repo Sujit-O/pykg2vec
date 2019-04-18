@@ -24,8 +24,8 @@ class BasicConfig:
                  disp_result=True,
                  plot_embedding=True,
                  log_device_placement=False,
-                 plot_training_result=True,
-                 plot_testing_result=True,
+                 plot_training_result=False,
+                 plot_testing_result=False,
                  plot_entity_only=False):
 
         self.plot_entity_only = plot_entity_only
@@ -179,13 +179,12 @@ class SMEConfig(object):
         self.data = data
         self.optimizer = optimizer
 
-
 class NTNConfig(BasicConfig):
     def __init__(self,
                  learning_rate=0.01,
                  l1_flag=True,
-                 ent_hidden_size=32,
-                 rel_hidden_size=16,
+                 ent_hidden_size=64,
+                 rel_hidden_size=32,
                  batch_size=128,
                  epochs=2,
                  margin=1.0,
@@ -203,34 +202,46 @@ class NTNConfig(BasicConfig):
         self.data = data
         self.optimizer = optimizer
 
-
-class ConvEConfig(BasicConfig):
+class SLMConfig(BasicConfig):
     def __init__(self,
-                 learning_rate=0.003,
+                 learning_rate=0.01,
                  l1_flag=True,
-                 hidden_size=32,
+                 ent_hidden_size=64,
+                 rel_hidden_size=32,
                  batch_size=128,
                  epochs=2,
-                 input_dropout=0.2,
-                 hidden_dropout=0.3,
-                 feature_map_dropout=0.2,
-                 lr_decay=0.995 ,
-                 label_smoothing=0.1,
-                 use_bias=True,
+                 margin=1.0,
                  data='Freebase',
                  optimizer='adam'):
         BasicConfig.__init__(self)
 
-        self.feature_map_dropout = feature_map_dropout
-        self.hidden_dropout = hidden_dropout
-        self.input_dropout = input_dropout
-        self.use_bias = use_bias
-        self.label_smoothing = label_smoothing
-        self.lr_decay = lr_decay
+        self.learning_rate = learning_rate
+        self.L1_flag = l1_flag
+        self.ent_hidden_size = ent_hidden_size
+        self.rel_hidden_size = rel_hidden_size
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.margin = margin
+        self.data = data
+        self.optimizer = optimizer
+
+class RotatEConfig(BasicConfig):
+    def __init__(self,
+                 learning_rate=0.01,
+                 l1_flag=True,
+                 hidden_size=50,
+                 batch_size=128,
+                 epochs=2,
+                 margin=1.0,
+                 data='Freebase',
+                 optimizer='adam'):
+        BasicConfig.__init__(self)
+
         self.learning_rate = learning_rate
         self.L1_flag = l1_flag
         self.hidden_size = hidden_size
         self.batch_size = batch_size
         self.epochs = epochs
+        self.margin = margin
         self.data = data
         self.optimizer = optimizer

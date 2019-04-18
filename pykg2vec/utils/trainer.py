@@ -63,7 +63,7 @@ class Trainer(TrainerMeta):
         if self.config.disp_summary:
             self.summary()
 
-    def train_model_epoch(self, epoch_idx, debug=True):
+    def train_model_epoch(self, epoch_idx, debug=False):
         acc_loss = 0
         num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size if not debug else 5
 
@@ -98,6 +98,8 @@ class Trainer(TrainerMeta):
 
     ''' Testing related functions:'''
     def tiny_test(self, curr_epoch):
+        start_time = timeit.default_timer()
+
         if self.config.test_step == 0:
             return 
             
@@ -107,6 +109,8 @@ class Trainer(TrainerMeta):
 
             self.evaluator.test(self.sess, curr_epoch)
             self.evaluator.print_test_summary(curr_epoch)
+
+            print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
 
     def full_test(self):
         self.evaluator.test(self.sess, self.config.epochs)
