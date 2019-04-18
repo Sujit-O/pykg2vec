@@ -155,7 +155,9 @@ class DataPrep(object):
 
     def batch_generator_train(self, src_triples=None, batch_size=128):
 
-        if src_triples == None:
+        batch_size = batch_size // 2
+        
+        if src_triples is None:
             #TODO: add parameter for specifying the source of triple
             src_triples = self.train_triples_ids
 

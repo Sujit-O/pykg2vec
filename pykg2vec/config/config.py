@@ -179,6 +179,7 @@ class SMEConfig(object):
         self.data = data
         self.optimizer = optimizer
 
+
 class NTNConfig(BasicConfig):
     def __init__(self,
                  learning_rate=0.01,
@@ -199,5 +200,37 @@ class NTNConfig(BasicConfig):
         self.batch_size = batch_size
         self.epochs = epochs
         self.margin = margin
+        self.data = data
+        self.optimizer = optimizer
+
+
+class ConvEConfig(BasicConfig):
+    def __init__(self,
+                 learning_rate=0.003,
+                 l1_flag=True,
+                 hidden_size=32,
+                 batch_size=128,
+                 epochs=2,
+                 input_dropout=0.2,
+                 hidden_dropout=0.3,
+                 feature_map_dropout=0.2,
+                 lr_decay=0.995 ,
+                 label_smoothing=0.1,
+                 use_bias=True,
+                 data='Freebase',
+                 optimizer='adam'):
+        BasicConfig.__init__(self)
+
+        self.feature_map_dropout = feature_map_dropout
+        self.hidden_dropout = hidden_dropout
+        self.input_dropout = input_dropout
+        self.use_bias = use_bias
+        self.label_smoothing = label_smoothing
+        self.lr_decay = lr_decay
+        self.learning_rate = learning_rate
+        self.L1_flag = l1_flag
+        self.hidden_size = hidden_size
+        self.batch_size = batch_size
+        self.epochs = epochs
         self.data = data
         self.optimizer = optimizer

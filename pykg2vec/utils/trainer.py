@@ -162,7 +162,7 @@ class Trainer(TrainerMeta):
         """function to print the summary"""
         print("\n----------SUMMARY----------")
         # Acquire the max length and add four more spaces
-        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 4
+        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 15
         for key, val in self.config.__dict__.items():
             if len(key) < maxspace:
                 for i in range(maxspace - len(key)):
