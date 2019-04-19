@@ -41,6 +41,10 @@ class SMELinear(ModelMeta):
         self.config = config
         self.data_handler = data_handler
         self.model_name = 'SMELinear'
+
+        self.def_inputs()
+        self.def_parameters()
+        self.def_loss()
     
     def gu(self, h, r):
         return tf.transpose(tf.matmul(self.mu1, tf.transpose(h)) + tf.matmul(self.mu2, tf.transpose(r)) + self.bu)

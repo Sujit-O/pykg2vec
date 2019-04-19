@@ -4,9 +4,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+sys.path.append("../")
 import tensorflow as tf
-from pykg2vec.core.KGMeta import ModelMeta
-
+from core.KGMeta import ModelMeta
 
 class TransE(ModelMeta):
     """
@@ -43,6 +44,10 @@ class TransE(ModelMeta):
         self.data_handler = data_handler
         self.model_name = 'TransE'
 
+        self.def_inputs()
+        self.def_parameters()
+        self.def_loss()
+
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
@@ -65,12 +70,10 @@ class TransE(ModelMeta):
 
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings]    
     
     def def_loss(self):
-        self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
         neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
 
@@ -79,26 +82,16 @@ class TransE(ModelMeta):
 
         self.loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
 
-    def test_step(self):
-        num_entity = self.data_handler.tot_entity
-        
+    def test_step(self):       
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)     
+        
         score_head = self.distance(self.ent_embeddings, rel_vec, tail_vec)
         score_tail = self.distance(head_vec, rel_vec, self.ent_embeddings)    
 
-        self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+        _, self.head_rank      = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
+        _, self.tail_rank      = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
 
-        norm_head_vec, norm_rel_vec, norm_tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        norm_score_head = self.distance(self.ent_embeddings, norm_rel_vec, norm_tail_vec)
-        norm_score_tail = self.distance(norm_head_vec, norm_rel_vec, self.ent_embeddings)
-
-        _, self.head_rank      = tf.nn.top_k(score_head, k=num_entity)
-        _, self.tail_rank      = tf.nn.top_k(score_tail, k=num_entity)
-        _, self.norm_head_rank = tf.nn.top_k(norm_score_head, k=self.data_handler.tot_entity)
-        _, self.norm_tail_rank = tf.nn.top_k(norm_score_tail, k=self.data_handler.tot_entity)
-
-        return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
+        return self.head_rank, self.tail_rank
 
     def distance(self, h, r, t):
         if self.config.L1_flag: 
@@ -108,9 +101,12 @@ class TransE(ModelMeta):
             
     def embed(self, h, r, t):
         """function to get the embedding value"""
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        emb_h = tf.nn.embedding_lookup(norm_ent_embeddings, h)
+        emb_r = tf.nn.embedding_lookup(norm_rel_embeddings, r)
+        emb_t = tf.nn.embedding_lookup(norm_ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess):

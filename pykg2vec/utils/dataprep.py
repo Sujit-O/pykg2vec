@@ -269,11 +269,11 @@ class DataPrep(object):
 
     def dump(self, debug=False):
         ''' dump key information'''
-        print("\n----------Relation to Indexes---------------")
+        print("\n----------Relation to Indexes--------------")
         pprint.pprint(self.relation2idx)
         print("---------------------------------------------")
         
-        print("\n----------Relation to Indexes---------------")
+        print("\n----------Relation to Indexes--------------")
         pprint.pprint(self.idx2relation)
         print("---------------------------------------------")
 

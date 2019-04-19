@@ -22,6 +22,10 @@ class SLM(ModelMeta):
         self.config = config
         self.data_handler = data_handler
         self.model_name = 'SLM'
+
+        self.def_inputs()
+        self.def_parameters()
+        self.def_loss()
     
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])

@@ -29,6 +29,10 @@ class Rescal(ModelMeta):
         self.config = config
         self.data_handler = data_handler
         self.model_name = 'Rescal'
+
+        self.def_inputs()
+        self.def_parameters()
+        self.def_loss()
        
     def def_inputs(self):
         with tf.name_scope("read_inputs"):

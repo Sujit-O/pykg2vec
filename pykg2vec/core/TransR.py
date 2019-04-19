@@ -4,9 +4,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+sys.path.append("../")
 import tensorflow as tf
 import numpy as np
-from pykg2vec.core.KGMeta import ModelMeta
+from core.KGMeta import ModelMeta
 
 
 class TransR(ModelMeta):
@@ -33,6 +35,10 @@ class TransR(ModelMeta):
         self.data_handler = data_handler
         self.model_name = 'TransR'
         
+        self.def_inputs()
+        self.def_parameters()
+        self.def_loss()
+
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [self.config.batch_size])
         self.pos_t = tf.placeholder(tf.int32, [self.config.batch_size])
@@ -92,24 +98,10 @@ class TransR(ModelMeta):
         score_head = self.distance(project_ent_embedding, rel_vec, tail_vec)
         score_tail = self.distance(head_vec, rel_vec, project_ent_embedding)
         
-        self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        norm_head_vec, norm_rel_vec, norm_tail_vec = self.embed(self.test_h, self.test_r, self.test_t) 
-        norm_pos_matrix = self.get_transform_matrix(self.test_r)
- 
-        norm_project_ent_embedding = self.transform(self.ent_embeddings, tf.transpose(tf.squeeze(norm_pos_matrix, [0])))
-        norm_project_ent_embedding = tf.nn.l2_normalize(norm_project_ent_embedding, axis=1)
-
-        norm_score_head = self.distance(norm_project_ent_embedding, norm_rel_vec, norm_tail_vec)
-        norm_score_tail = self.distance(norm_head_vec, norm_rel_vec, norm_project_ent_embedding)
-
         _, self.head_rank = tf.nn.top_k(score_head, k=num_total_ent)
         _, self.tail_rank = tf.nn.top_k(score_tail, k=num_total_ent)
-        _, self.norm_head_rank = tf.nn.top_k(norm_score_head, k=num_total_ent)
-        _, self.norm_tail_rank = tf.nn.top_k(norm_score_tail, k=num_total_ent)
 
-        return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
+        return self.head_rank, self.tail_rank
 
     def transform(self, matrix, embeddings):
         return tf.matmul(matrix, embeddings)
