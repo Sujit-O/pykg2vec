@@ -12,9 +12,9 @@ class BasicConfig:
                  test_step=100,
                  test_num=300,
                  triple_num=20,
-                 tmp='./intermediate',
-                 result='./results',
-                 figures='./figures',
+                 tmp='../intermediate',
+                 result='../results',
+                 figures='../figures',
                  gpu_fraction=0.4,
                  hits=None,
                  gpu_allow_growth=True,
@@ -120,6 +120,7 @@ class TransHConfig(BasicConfig):
                  batch_size=128,
                  epochs=1000,
                  margin=1.0,
+                 C = 0.123,
                  data='Freebase',
                  optimizer='adam'):
         BasicConfig.__init__(self)
@@ -132,6 +133,7 @@ class TransHConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+        self.C = C
 
 
 class RescalConfig(BasicConfig):
