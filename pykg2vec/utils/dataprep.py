@@ -17,13 +17,11 @@ import os
 from collections import defaultdict
 import pprint
 
-
 class Triple(object):
     def __init__(self, head=None, relation=None, tail=None):
         self.h = head
         self.r = relation
         self.t = tail
-
 
 class DataPrep(object):
 
@@ -269,7 +267,7 @@ class DataPrep(object):
                     else:
                         continue
 
-    def dump(self, debug=False):
+    def dump(self):
         ''' dump key information'''
         print("\n----------Relation to Indexes--------------")
         pprint.pprint(self.relation2idx)
@@ -283,10 +281,6 @@ class DataPrep(object):
         print("Total Training Triples   :", len(self.train_triples))
         print("Total Testing Triples    :", len(self.test_triples))
         print("Total validation Triples :", len(self.validation_triples))
-        if debug:
-            print("Total Training Triples   :", len(self.train_triples_ids), "(from train_triples_ids)")
-            print("Total Testing Triples    :", len(self.test_triples_ids), "(from test_triples_ids)")
-            print("Total validation Triples :", len(self.validation_triples_ids), "(from validation_triples_ids)")
         print("Total Entities           :", self.tot_entity)
         print("Total Relations          :", self.tot_relation)
         print("---------------------------------------------")
