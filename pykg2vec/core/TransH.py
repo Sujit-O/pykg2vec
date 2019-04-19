@@ -72,7 +72,17 @@ class TransH(ModelMeta):
         score_pos = self.distance(emb_ph, emb_pr, emb_pt)
         score_neg = self.distance(emb_nh, emb_nr, emb_nt)
 
-        self.loss = tf.reduce_sum(tf.maximum(0., score_pos + self.config.margin - score_neg))   
+        self.loss = tf.reduce_sum(tf.maximum(0., score_pos + self.config.margin - score_neg)) + self.get_reg()
+        
+    def get_reg(self):
+        norm_ent_embedding = tf.nn.l2_normalize(self.ent_embeddings, axis = -1)
+        norm_rel_embedding = tf.nn.l2_normalize(self.rel_embeddings, axis = -1)
+        norm_w = tf.nn.l2_normalize(self.w, axis = -1)
+
+        term1 = tf.reduce_sum(tf.maximum(tf.reduce_sum(norm_ent_embedding**2, -1) - 1, 0))      
+        term2 = tf.reduce_sum(tf.maximum(tf.div(tf.reduce_sum(norm_rel_embedding*norm_w, -1)**2, tf.reduce_sum(norm_rel_embedding**2, -1))-1e-07, 0))
+
+        return self.config.C*(term1+term2)
 
     def test_step(self):
         num_entity = self.data_handler.tot_entity
@@ -80,7 +90,8 @@ class TransH(ModelMeta):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
         pos_norm = self.get_proj(self.test_r)
 
-        project_ent_embedding = self.projection(self.ent_embeddings, pos_norm)
+        norm_ent_embedding = tf.nn.l2_normalize(self.ent_embeddings, 1)
+        project_ent_embedding = self.projection(norm_ent_embedding, pos_norm)
         score_head = self.distance(project_ent_embedding, rel_vec, tail_vec)
         score_tail = self.distance(head_vec, rel_vec, project_ent_embedding)
 
