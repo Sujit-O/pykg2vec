@@ -19,11 +19,13 @@ from collections import defaultdict
 import pprint
 from scipy import sparse as sps
 
+
 class Triple(object):
     def __init__(self, head=None, relation=None, tail=None):
         self.h = head
         self.r = relation
         self.t = tail
+
 
 class DataInput(object):
     def __init__(self, e1=None, r=None, e2=None, r_rev=None, e2_multi1=None, e2_multi2=None):
@@ -111,6 +113,10 @@ class DataPrep(object):
                 self.valid_data.append(DataInput(e1=e1_idx, r=r_idx,
                                                  e2=e2_idx, r_rev=r_rev_idx,
                                                  e2_multi1=e2_multi1, e2_multi2=e2_multi2))
+            self.validation_triples_ids = [
+                Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t])
+                for t
+                in self.validation_triples]
 
         for t in self.train_triples:
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
@@ -234,7 +240,7 @@ class DataPrep(object):
 
             row = []
             for k in range(batch_size):
-                row.append([k]*len(col[k]))
+                row.append([k] * len(col[k]))
             col_n = []
             row_n = []
             for i in range(batch_size):
@@ -242,9 +248,73 @@ class DataPrep(object):
                     col_n.append(col[i][j])
                     row_n.append(row[i][j])
 
-            e2_multi1 = sps.csr_matrix(([1]*len(row_n), (row_n, col_n)), shape=(batch_size, self.tot_entity))
+            e2_multi1 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(batch_size, self.tot_entity))
+
+            batch_idx += 1
 
             yield e1, r, np.array(e2_multi1.todense())
+
+            if batch_idx == number_of_batches:
+                batch_idx = 0
+
+    def batch_generator_test_hr_tr(self, batch_size=128):
+
+        batch_size = batch_size
+        array_rand_ids = np.random.permutation(len(self.test_data))
+        number_of_batches = len(self.test_data) // batch_size
+
+        # print("Number of batches:", number_of_batches)
+
+        batch_idx = 0
+        while True:
+            test_data = np.asarray([[self.test_data[x].e1,
+                                     self.test_data[x].r,
+                                     self.test_data[x].e2_multi1,
+                                     self.test_data[x].e2,
+                                     self.test_data[x].r_rev,
+                                     self.test_data[x].e2_multi2] for x in
+                                    array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
+
+            e1 = test_data[:, 0]
+            r = test_data[:, 1]
+            col = []
+            for k in test_data[:, 2]:
+                col.append(k)
+            row = []
+            for k in range(batch_size):
+                if col[k]:
+                    row.append([k] * len(col[k]))
+            col_n = []
+            row_n = []
+            for i in range(batch_size):
+                for j in range(len(col[i])):
+                    col_n.append(col[i][j])
+                    row_n.append(row[i][j])
+
+            e2_multi1 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(batch_size, self.tot_entity))
+
+            e2 = test_data[:, 3]
+            r_rev = test_data[:, 4]
+            col = []
+            for k in test_data[:, 5]:
+                col.append(k)
+
+            row = []
+            for k in range(batch_size):
+                if col[k]:
+                    row.append([k] * len(col[k]))
+            col_n = []
+            row_n = []
+            for i in range(batch_size):
+                for j in range(len(col[i])):
+                    col_n.append(col[i][j])
+                    row_n.append(row[i][j])
+
+            e2_multi2 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(batch_size, self.tot_entity))
+
+            batch_idx += 1
+
+            yield e1, r, np.array(e2_multi1.todense()), e2, r_rev, np.array(e2_multi2.todense())
 
             if batch_idx == number_of_batches:
                 batch_idx = 0
@@ -463,23 +533,19 @@ def test_data_prep_generator():
 def test_data_prep_generator_hr_t():
     data_handler = DataPrep('Freebase15k', algo=True)
     data_handler.dump()
-    gen = data_handler.batch_generator_train_hr_tr(batch_size=8)
+    gen = data_handler.batch_generator_test_hr_tr(batch_size=8)
     # import tensorflow as tf
     for i in range(10):
-        e1, r, e2_multi1 = list(next(gen))
+        e1, r, e2_multi1, e2, r_rev, e2_multi2 = list(next(gen))
+        e2_multi1 = np.asarray((e2_multi1 * 0.2) + 1.0 / data_handler.tot_entity)
+        e2_multi2 = np.asarray((e2_multi2 * 0.2) + 1.0 / data_handler.tot_entity)
         print("")
         print("e1:", e1)
         print("r:", r)
         print("e2_multi1:", e2_multi1)
-        # import pdb
-        # pdb.set_trace()
-        e2=np.asarray((e2_multi1 * 0.2)+1.0 / data_handler.tot_entity)
-        print(e2)
-        # e2_multi1 = tf.scalar_mul((1.0 - 0.2),
-        #                           e2_multi1.todense()) + (1.0 / data_handler.tot_entity)
-
-
-
+        print("e1:", e2)
+        print("r:", r_rev)
+        print("e2_multi1:", e2_multi2)
 
 
 if __name__ == '__main__':

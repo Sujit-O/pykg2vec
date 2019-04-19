@@ -17,9 +17,14 @@ from core.KGMeta import EvaluationMeta
 
 class Evaluation(EvaluationMeta):
 
-    def __init__(self, model=None, test_data=None, algo=False):
+    def __init__(self, model=None, test_data=None, algo=False, debug=False):
         self.model = model
         self.algo = algo
+        self.debug = debug
+        if not self.algo:
+            self.batch = 1
+        else:
+            self.batch = self.model.config.batch_size
         if test_data == 'test':
             if not self.algo:
                 self.data = model.data_handler.test_triples_ids
@@ -60,74 +65,94 @@ class Evaluation(EvaluationMeta):
         rank_tail = []
         filter_rank_head = []
         filter_rank_tail = []
+        if self.algo:
+            gen = self.model.data_handler.batch_generator_test_hr_tr(batch_size=self.model.config.batch_size)
+            loop_len = len(self.model.data_handler.test_data) // self.model.config.batch_size if not self.debug else 5
+            total_test = loop_len * self.model.config.batch_size
+        else:
+            loop_len = self.model.config.test_num
+            total_test = loop_len
 
-        for i in range(self.model.config.test_num):
+        for i in range(loop_len):
             t = self.data[i]
-
+            r_rev = None
             if not self.algo:
                 feed_dict = {
                     self.model.test_h: np.reshape(t.h, [1, ]),
                     self.model.test_r: np.reshape(t.r, [1, ]),
-                    self.model.test_t: np.reshape(t.t, [1, self.model.data_handler.tot_entity])
+                    self.model.test_t: np.reshape(t.t, [1, ])
                 }
+                t.h = [t.h]
+                t.r = [t.h]
+                t.t = [t.t]
+
             else:
+                e1, r, e2_multi1, e2, r_rev, e2_multi2 = next(gen)
+                t.h = e1
+                t.t = e2
+                t.r = r
                 feed_dict = {
-                    self.model.test_e1: np.reshape(t.e1, [1, ]),
-                    self.model.test_e2: np.reshape(t.e2, [1, ]),
-                    self.model.test_r: np.reshape(t.r, [1, ]),
-                    self.model.test_r_rev: np.reshape(t.r_rev, [1, ]),
-                    self.model.test_e2_multi1: np.reshape(t.e2_multi1, [1, self.model.data_handler.tot_entity ]),
-                    self.model.test_e2_multi2: np.reshape(t.e2_multi2, [1, self.model.data_handler.tot_entity ])
+                    self.model.test_e1: e1,
+                    self.model.test_e2: e2,
+                    self.model.test_r: r,
+                    self.model.test_r_rev: r_rev,
+                    self.model.test_e2_multi1: e2_multi1,
+                    self.model.test_e2_multi2: e2_multi2
                 }
 
             (id_replace_head, id_replace_tail) = sess.run([head_rank, tail_rank], feed_dict)
-            hrank = 0
-            fhrank = 0
-            for j in range(len(id_replace_head)):
-                val = id_replace_head[-j - 1]
-                if val == t.h:
-                    break
-                else:
-                    hrank += 1
-                    fhrank += 1
-                    if val in self.tr_h[(t.t, t.r)]:
-                        fhrank -= 1
+            for b in range(self.batch):
+                hrank = 0
+                fhrank = 0
+                for j in range(len(id_replace_head[b])):
+                    val = id_replace_head[b, -j - 1]
+                    if val == t.h[b]:
+                        break
+                    else:
+                        hrank += 1
+                        fhrank += 1
+                        if not self.algo:
+                            if val in self.tr_h[(t.t[b], t.r[b])]:
+                                fhrank -= 1
+                        else:
+                            if val in self.tr_h[(t.t[b], r_rev[b])]:
+                                fhrank -= 1
 
-            trank = 0
-            ftrank = 0
-            for j in range(len(id_replace_tail)):
-                val = id_replace_tail[-j - 1]
-                if val == t.t:
-                    break
-                else:
-                    trank += 1
-                    ftrank += 1
-                    if val in self.hr_t[(t.h, t.r)]:
-                        ftrank -= 1
+                trank = 0
+                ftrank = 0
+                for j in range(len(id_replace_tail[b])):
+                    val = id_replace_tail[b, -j - 1]
+                    if val == t.t[b]:
+                        break
+                    else:
+                        trank += 1
+                        ftrank += 1
+                        if val in self.hr_t[(t.h[b], t.r[b])]:
+                            ftrank -= 1
 
-            rank_head.append(hrank)
-            rank_tail.append(trank)
-            filter_rank_head.append(fhrank)
-            filter_rank_tail.append(ftrank)
+                rank_head.append(hrank)
+                rank_tail.append(trank)
+                filter_rank_head.append(fhrank)
+                filter_rank_tail.append(ftrank)
 
-        self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / self.model.config.test_num
-        self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / self.model.config.test_num
+        self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
+        self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
 
         self.filter_mean_rank_head[epoch] = np.sum(filter_rank_head,
-                                                   dtype=np.float32) / self.model.config.test_num
+                                                   dtype=np.float32) / total_test
         self.filter_mean_rank_tail[epoch] = np.sum(filter_rank_tail,
-                                                   dtype=np.float32) / self.model.config.test_num
+                                                   dtype=np.float32) / total_test
 
         for hit in self.hits:
             self.hit_head[(epoch, hit)] = np.sum(np.asarray(rank_head) < hit,
 
-                                                 dtype=np.float32) / self.model.config.test_num
+                                                 dtype=np.float32) / total_test
             self.hit_tail[(epoch, hit)] = np.sum(np.asarray(rank_tail) < hit,
-                                                 dtype=np.float32) / self.model.config.test_num
+                                                 dtype=np.float32) / total_test
             self.filter_hit_head[(epoch, hit)] = np.sum(np.asarray(filter_rank_head) < hit,
-                                                        dtype=np.float32) / self.model.config.test_num
+                                                        dtype=np.float32) / total_test
             self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
-                                                        dtype=np.float32) / self.model.config.test_num
+                                                        dtype=np.float32) / total_test
 
     def save_training_result(self, losses):
         if not os.path.exists(self.model.config.result):

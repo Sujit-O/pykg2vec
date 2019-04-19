@@ -38,6 +38,7 @@ class ConvE(ModelMeta):
 
         self.def_inputs()
         self.def_parameters()
+        self.def_layer()
         self.def_loss()
 
     def def_inputs(self):
@@ -45,12 +46,12 @@ class ConvE(ModelMeta):
         self.r = tf.placeholder(tf.int32, [None])
         self.e2_multi1 = tf.placeholder(tf.float32, [None, self.data_handler.tot_entity])
 
-        self.test_e1 = tf.placeholder(tf.int32, [1])
-        self.test_e2 = tf.placeholder(tf.int32, [1])
-        self.test_r = tf.placeholder(tf.int32, [1])
-        self.test_r_rev = tf.placeholder(tf.int32, [1])
-        self.test_e2_multi1 = tf.placeholder(tf.float32, [1, self.data_handler.tot_entity])
-        self.test_e2_multi2 = tf.placeholder(tf.float32, [1, self.data_handler.tot_entity])
+        self.test_e1 = tf.placeholder(tf.int32, [None])
+        self.test_e2 = tf.placeholder(tf.int32, [None])
+        self.test_r = tf.placeholder(tf.int32, [None])
+        self.test_r_rev = tf.placeholder(tf.int32, [None])
+        self.test_e2_multi1 = tf.placeholder(tf.float32, [None, self.data_handler.tot_entity])
+        self.test_e2_multi2 = tf.placeholder(tf.float32, [None, self.data_handler.tot_entity])
 
     def def_parameters(self):
         num_total_ent = self.data_handler.tot_entity
@@ -79,34 +80,45 @@ class ConvE(ModelMeta):
 
         stacked_er = tf.concat([stacked_e, stacked_r], 1)
 
-        e2_multi1 = self.e2_multi1*(1.0 - self.config.label_smoothing) + 1.0 / self.data_handler.tot_entity
+        e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_handler.tot_entity
         e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_handler.tot_entity])
-        pred = self.layer(stacked_er, train=True)
+        pred = self.layer(stacked_er)
 
         self.loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
 
-    def layer(self, st_inp, train=False):
+    def def_layer(self):
+        self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)
+        self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
+        self.conv2d_1 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', activation=None,
+                                               use_bias=True)
+        self.bn1 = tf.keras.layers.BatchNormalization(trainable=True)
+        self.feat_drop = tf.keras.layers.Dropout(rate=self.config.feature_map_dropout)
+        self.fc1 = tf.keras.layers.Dense(units=self.config.hidden_size)
+        self.hidden_drop = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
+        self.bn2 = tf.keras.layers.BatchNormalization(trainable=True)
+
+    def layer(self, st_inp):
         # batch normalization in the first axis
-        x = tf.keras.layers.BatchNormalization()(st_inp, training=train)
+        x = self.bn0(st_inp)
         # input dropout
-        x = tf.keras.layers.Dropout(rate=self.config.input_dropout)(x)
+        x = self.inp_drop(x)
         # 2d convolution layer, output channel =32, kernel size = 3,3
-        x = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', activation=None)(x)
+        x = self.conv2d_1(x)
         # batch normalization across feature dimension
-        x = tf.keras.layers.BatchNormalization()(x, training=train)
+        x = self.bn1(x)
         # first non-linear activation
         x = tf.nn.relu(x)
         # feature dropout
-        x = tf.keras.layers.Dropout(rate=self.config.feature_map_dropout)(x)
+        x = self.feat_drop(x)
         # reshape the tensor to get the batch size
         '''10368 with k=200,5184 with k=100, 2592 with k=50'''
         x = tf.reshape(x, [self.config.batch_size, self.last_dim])
         # pass the feature through fully connected layer, output size = batch size, hidden size
-        x = tf.keras.layers.Dense(units=self.config.hidden_size)(x)
+        x = self.fc1(x)
         # dropout in the hidden layer
-        x = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)(x)
+        x = self.hidden_drop(x)
         # batch normalization across feature dimension
-        x = tf.keras.layers.BatchNormalization()(x, training=train)
+        x = self.bn2(x)
         # second non-linear activation
         x = tf.nn.relu(x)
         # project and get inner product with the tail triple
@@ -136,9 +148,9 @@ class ConvE(ModelMeta):
         stacked_tr = tf.concat([stacked_tail_e, stacked_tail_r], 1)
 
         e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi1) + (1.0 / self.data.prep.tot_entity)
+                                  self.test_e2_multi1) + (1.0 / self.data_handler.tot_entity)
         e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi2) + (1.0 / self.data.prep.tot_entity)
+                                  self.test_e2_multi2) + (1.0 / self.data_handler.tot_entity)
 
         pred4head = self.layer(stacked_hr)
         pred4tail = self.layer(stacked_tr)
@@ -146,8 +158,8 @@ class ConvE(ModelMeta):
         head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred4head)
         tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred4tail)
 
-        _, head_rank = tf.nn.top_k(head_vec, k=self.data_handler.tot_entity)
-        _, tail_rank = tf.nn.top_k(tail_vec, k=self.data_handler.tot_entity)
+        _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_handler.tot_entity)
+        _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_handler.tot_entity)
 
         return head_rank, tail_rank
 
@@ -172,6 +184,7 @@ class ConvE(ModelMeta):
 if __name__ == '__main__':
     # Unit Test Script with tensorflow Eager Execution
     import tensorflow as tf
+
     tf.enable_eager_execution()
     batch = 128
     embed_dim = 100

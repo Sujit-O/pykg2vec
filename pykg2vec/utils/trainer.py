@@ -11,14 +11,15 @@ from utils.visualization import Visualization
 
 class Trainer(TrainerMeta):
 
-    def __init__(self, model, algo=False):
+    def __init__(self, model, algo=False, debug=False):
+        self.algo = algo
+        self.debug = debug
         self.model = model
         self.config = self.model.config
         self.data_handler = self.model.data_handler
 
-        self.evaluator = Evaluation(model=model, test_data='test',algo=algo)
+        self.evaluator = Evaluation(model=model, test_data='test', algo=self.algo, debug=self.debug)
         self.training_results = []
-        self.algo = algo
 
     def build_model(self):
         """function to build the model"""
@@ -49,7 +50,7 @@ class Trainer(TrainerMeta):
                 self.train_model_epoch(n_iter)
                 self.tiny_test(n_iter)
 
-            self.evaluator.save_test_summary(algo=self.model.model_name)
+            self.evaluator.save_test_summary()
             self.evaluator.save_training_result(self.training_results)
 
             if self.config.save_model:
@@ -61,7 +62,7 @@ class Trainer(TrainerMeta):
         if self.config.disp_summary:
             self.summary()
 
-    def train_model_epoch(self, epoch_idx, debug=False):
+    def train_model_epoch(self, epoch_idx):
         acc_loss = 0
 
         if not self.algo:
@@ -69,7 +70,7 @@ class Trainer(TrainerMeta):
         else:
             tot_data = len(self.data_handler.train_data)
 
-        num_batch = tot_data // self.config.batch_size if not debug else 5
+        num_batch = tot_data // self.config.batch_size if not self.debug else 5
 
         start_time = timeit.default_timer()
 

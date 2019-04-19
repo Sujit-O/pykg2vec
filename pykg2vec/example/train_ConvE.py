@@ -38,7 +38,7 @@ def main(_):
 
     model = ConvE(config, data_handler)
 
-    trainer = Trainer(model=model, algo=True)
+    trainer = Trainer(model=model, algo=True, debug=True)
     trainer.build_model()
     trainer.train_model()
 
