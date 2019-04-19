@@ -8,6 +8,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+
 sys.path.append("../")
 
 from config.global_config import GlobalConfig
@@ -16,6 +17,7 @@ import pickle
 import os
 from collections import defaultdict
 import pprint
+from scipy import sparse as sps
 
 class Triple(object):
     def __init__(self, head=None, relation=None, tail=None):
@@ -23,65 +25,123 @@ class Triple(object):
         self.r = relation
         self.t = tail
 
+class DataInput(object):
+    def __init__(self, e1=None, r=None, e2=None, r_rev=None, e2_multi1=None, e2_multi2=None):
+        self.e1 = e1
+        self.r = r
+        self.e2 = e2
+        self.r_rev = r_rev
+        self.e2_multi1 = e2_multi1
+        self.e2_multi2 = e2_multi2
+
+
 class DataPrep(object):
 
-    def __init__(self, name_dataset='Freebase15k'):
+    def __init__(self, name_dataset='Freebase15k', algo=False):
         '''store the information of database'''
+
         self.config = GlobalConfig(dataset=name_dataset)
 
         self.train_triples = []
         self.test_triples = []
         self.validation_triples = []
-        
-        self.tot_relation = 0
-        self.tot_triple   = 0
-        self.tot_entity   = 0
 
-        self.entity2idx   = {}
-        self.idx2entity   = {}
+        self.tot_relation = 0
+        self.tot_triple = 0
+        self.tot_entity = 0
+
+        self.entity2idx = {}
+        self.idx2entity = {}
 
         self.relation2idx = {}
         self.idx2relation = {}
 
         self.hr_t = defaultdict(set)
-        self.tr_t = defaultdict(set)      
+        self.tr_t = defaultdict(set)
 
-        self.read_triple(['train','test','valid']) #TODO: save the triples to prevent parsing everytime
-        self.calculate_mapping() # from entity and relation to indexes.
+        # for ConvE
+        self.label_graph = {}
+        self.train_graph = {}
+        self.train_data = []
+        self.test_data = []
+        self.valid_data = []
+        self.test_triples_no_rev = []
+        self.validation_triples_no_rev = []
 
-        self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.test_triples]
-        self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.train_triples]
-        self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.validation_triples]
+        # self.train_label
+        if not algo:
+            self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
+            self.calculate_mapping()  # from entity and relation to indexes.
+            self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in
+                                     self.test_triples]
+            self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t
+                                      in
+                                      self.train_triples]
+            self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t])
+                                           for t
+                                           in self.validation_triples]
+        else:
+            self.read_triple_hr_rt(['train', 'test', 'valid'])
+            self.calculate_mapping()  # from entity and relation to indexes.
+
+            for (e, r) in self.train_graph:
+                e1_idx = self.entity2idx[e]
+                r_idx = self.relation2idx[r]
+                e2_multi1 = [self.entity2idx[i] for i in list(self.train_graph[(e, r)])]
+                self.train_data.append(DataInput(e1=e1_idx, r=r_idx, e2_multi1=e2_multi1))
+
+            for t in self.test_triples_no_rev:
+                e1_idx = self.entity2idx[t.h]
+                e2_idx = self.entity2idx[t.t]
+                r_idx = self.relation2idx[t.r]
+                r_rev_idx = self.relation2idx[t.r + '_reverse']
+                e2_multi1 = [self.entity2idx[i] for i in self.label_graph[(t.h, t.r)]]
+                e2_multi2 = [self.entity2idx[i] for i in self.label_graph[(t.t, t.r + '_reverse')]]
+                self.test_data.append(DataInput(e1=e1_idx, r=r_idx,
+                                                e2=e2_idx, r_rev=r_rev_idx,
+                                                e2_multi1=e2_multi1, e2_multi2=e2_multi2))
+
+            for t in self.validation_triples_no_rev:
+                e1_idx = self.entity2idx[t.h]
+                e2_idx = self.entity2idx[t.t]
+                r_idx = self.relation2idx[t.r]
+                r_rev_idx = self.relation2idx[t.r + '_reverse']
+                e2_multi1 = [self.entity2idx[i] for i in self.label_graph[(t.h, t.r)]]
+                e2_multi2 = [self.entity2idx[i] for i in self.label_graph[(t.t, t.r + '_reverse')]]
+                self.valid_data.append(DataInput(e1=e1_idx, r=r_idx,
+                                                 e2=e2_idx, r_rev=r_rev_idx,
+                                                 e2_multi1=e2_multi1, e2_multi2=e2_multi2))
+
+        for t in self.train_triples:
+            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
         for t in self.test_triples:
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
             self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
-        for t in self.train_triples:
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+
         for t in self.validation_triples:
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
             self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
-        if self.config.negative_sample =='bern':          
+        if self.config.negative_sample == 'bern':
             self.relation_property_head = {x: [] for x in
-                                         range(self.tot_relation)}
+                                           range(self.tot_relation)}
             self.relation_property_tail = {x: [] for x in
-                                             range(self.tot_relation)}
+                                           range(self.tot_relation)}
             for t in self.train_triples:
                 self.relation_property_head[t[1]].append(t[0])
                 self.relation_property_tail[t[1]].append(t[2])
-            
+
             self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
-                        len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
-                                        for x in
-                                        self.relation_property_head.keys()}
+                    len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
+                                      for x in
+                                      self.relation_property_head.keys()}
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
 
         if self.config.dataset.entity2idx_path.is_file():
-
             with open(str(self.config.dataset.entity2idx_path), 'rb') as f:
                 self.entity2idx = pickle.load(f)
 
@@ -151,15 +211,53 @@ class DataPrep(object):
             with open(str(self.config.dataset.idx2relation_path), 'wb') as f:
                 pickle.dump(self.idx2relation, f)
 
+    def batch_generator_train_hr_tr(self, batch_size=128):
+
+        batch_size = batch_size
+        array_rand_ids = np.random.permutation(len(self.train_data))
+        number_of_batches = len(self.train_data) // batch_size
+
+        # print("Number of batches:", number_of_batches)
+
+        batch_idx = 0
+        while True:
+            train_data = np.asarray([[self.train_data[x].e1,
+                                      self.train_data[x].r,
+                                      self.train_data[x].e2_multi1] for x in
+                                     array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
+
+            e1 = train_data[:, 0]
+            r = train_data[:, 1]
+            col = []
+            for k in train_data[:, 2]:
+                col.append(k)
+
+            row = []
+            for k in range(batch_size):
+                row.append([k]*len(col[k]))
+            col_n = []
+            row_n = []
+            for i in range(batch_size):
+                for j in range(len(col[i])):
+                    col_n.append(col[i][j])
+                    row_n.append(row[i][j])
+
+            e2_multi1 = sps.csr_matrix(([1]*len(row_n), (row_n, col_n)), shape=(batch_size, self.tot_entity))
+
+            yield e1, r, np.array(e2_multi1.todense())
+
+            if batch_idx == number_of_batches:
+                batch_idx = 0
+
     def batch_generator_train(self, src_triples=None, batch_size=128):
 
         batch_size = batch_size // 2
-        
+
         if src_triples is None:
-            #TODO: add parameter for specifying the source of triple
+            # TODO: add parameter for specifying the source of triple
             src_triples = self.train_triples_ids
 
-        observed_triples = {(t.h, t.r, t.t): 1 for t in src_triples} 
+        observed_triples = {(t.h, t.r, t.t): 1 for t in src_triples}
         # 1 as positive, 0 as negative
 
         array_rand_ids = np.random.permutation(len(src_triples))
@@ -168,32 +266,33 @@ class DataPrep(object):
         # print("Number of batches:", number_of_batches)
 
         batch_idx = 0
-        last_h=0
-        last_r=0
-        last_t=0
+        last_h = 0
+        last_r = 0
+        last_t = 0
 
         while True:
-            
+
             pos_triples = np.asarray([[src_triples[x].h,
                                        src_triples[x].r,
-                                       src_triples[x].t] for x in array_rand_ids[batch_size*batch_idx:batch_size*(batch_idx+1)]])
-            
+                                       src_triples[x].t] for x in
+                                      array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
+
             ph = pos_triples[:, 0]
             pr = pos_triples[:, 1]
             pt = pos_triples[:, 2]
             nh = []
             nr = []
             nt = []
-            
+
             for t in pos_triples:
                 if self.config.negative_sample == 'uniform':
                     prob = 0.5
                 elif self.config.negative_sample == 'bern':
                     prob = self.relation_property[t[1]]
                 else:
-                    raise NotImplementedError("%s sampling not supported!" % self.config.negative_sample)              
+                    raise NotImplementedError("%s sampling not supported!" % self.config.negative_sample)
 
-                if np.random.random()>prob:
+                if np.random.random() > prob:
                     idx_replace_tail = np.random.randint(self.tot_entity)
 
                     break_cnt = 0
@@ -204,7 +303,7 @@ class DataPrep(object):
                         if break_cnt >= 100:
                             break
 
-                    if break_cnt >= 100: # can not find new negative triple.
+                    if break_cnt >= 100:  # can not find new negative triple.
                         nh.append(last_h)
                         nr.append(last_r)
                         nt.append(last_t)
@@ -212,11 +311,11 @@ class DataPrep(object):
                         nh.append(t[0])
                         nr.append(t[1])
                         nt.append(idx_replace_tail)
-                        last_h=t[0]
-                        last_r=t[1]
-                        last_t=idx_replace_tail
+                        last_h = t[0]
+                        last_r = t[1]
+                        last_t = idx_replace_tail
 
-                        observed_triples[(t[0],t[1],idx_replace_tail)] = 0
+                        observed_triples[(t[0], t[1], idx_replace_tail)] = 0
 
                 else:
                     idx_replace_head = np.random.randint(self.tot_entity)
@@ -228,7 +327,7 @@ class DataPrep(object):
                         if break_cnt >= 100:
                             break
 
-                    if break_cnt >= 100: # can not find new negative triple.
+                    if break_cnt >= 100:  # can not find new negative triple.
                         nh.append(last_h)
                         nr.append(last_r)
                         nt.append(last_t)
@@ -239,7 +338,7 @@ class DataPrep(object):
                         last_h = idx_replace_head
                         last_r = t[1]
                         last_t = t[2]
-                        
+
                         observed_triples[(idx_replace_head, t[1], t[2])] = 0
 
             batch_idx += 1
@@ -248,16 +347,15 @@ class DataPrep(object):
 
             if batch_idx == number_of_batches:
                 batch_idx = 0
-    
+
     def read_triple(self, datatype=None):
-        print("Reading Triples",datatype)
+        print("Reading Triples", datatype)
 
         for data in datatype:
-            with open(str(self.config.dataset.downloaded_path)+data+'.txt','r') as f:
+            with open(str(self.config.dataset.downloaded_path) + data + '.txt', 'r') as f:
                 for l in f.readlines():
                     h, r, t = l.split('\t')
-                    triple = Triple(h.strip(),r.strip(),t.strip())
-
+                    triple = Triple(h.strip(), r.strip(), t.strip())
                     if data == 'train':
                         self.train_triples.append(triple)
                     elif data == 'test':
@@ -267,12 +365,59 @@ class DataPrep(object):
                     else:
                         continue
 
+    def read_triple_hr_rt(self, datatype=None, reverse_r=True):
+        print("Reading Triples", datatype)
+
+        for data in datatype:
+            with open(str(self.config.dataset.downloaded_path) + data + '.txt', 'r') as f:
+                for l in f.readlines():
+                    h, r, t = l.split('\t')
+                    h = h.strip()
+                    r = r.strip()
+                    t = t.strip()
+
+                    r_rev = r + '_reverse'
+                    triple = Triple(h, r, t)
+                    triple_r = Triple(h, r_rev, t)
+
+                    if (h, r) not in self.label_graph:
+                        self.label_graph[(h, r)] = set()
+                    self.label_graph[(h, r)].add(t)
+
+                    if (t, r_rev) not in self.label_graph:
+                        self.label_graph[(t, r_rev)] = set()
+                    self.label_graph[(t, r_rev)].add(h)
+
+                    if data == 'train':
+                        self.train_triples.append(triple)
+                        self.train_triples.append(triple_r)
+                        if (h, r) not in self.train_graph:
+                            self.train_graph[(h, r)] = set()
+                        if (t, r_rev) not in self.train_graph:
+                            self.train_graph[(t, r_rev)] = set()
+
+                        self.train_graph[(h, r)].add(t)
+                        self.train_graph[(t, r_rev)].add(h)
+
+                    elif data == 'test':
+                        self.test_triples.append(triple)
+                        self.test_triples.append(triple_r)
+                        self.test_triples_no_rev.append(triple)
+
+                    elif data == 'valid':
+                        self.validation_triples.append(triple)
+                        self.validation_triples.append(triple_r)
+                        self.validation_triples_no_rev.append(triple)
+
+                    else:
+                        continue
+
     def dump(self):
         ''' dump key information'''
         print("\n----------Relation to Indexes--------------")
         pprint.pprint(self.relation2idx)
         print("---------------------------------------------")
-        
+
         print("\n----------Relation to Indexes--------------")
         pprint.pprint(self.idx2relation)
         print("---------------------------------------------")
@@ -288,15 +433,17 @@ class DataPrep(object):
     def dump_triples(self):
         '''dump all the triples'''
         for idx, triple in enumerate(self.train_triples):
-            print(idx, triple.h,triple.r,triple.t)
+            print(idx, triple.h, triple.r, triple.t)
         for idx, triple in enumerate(self.test_triples):
-            print(idx, triple.h,triple.r,triple.t)
+            print(idx, triple.h, triple.r, triple.t)
         for idx, triple in enumerate(self.validation_triples):
-            print(idx, triple.h,triple.r,triple.t)
+            print(idx, triple.h, triple.r, triple.t)
+
 
 def test_data_prep():
     data_handler = DataPrep('Freebase15k')
     data_handler.dump()
+
 
 def test_data_prep_generator():
     data_handler = DataPrep('Freebase15k')
@@ -312,7 +459,29 @@ def test_data_prep_generator():
         print("nr:", nr)
         print("nt:", nt)
 
-if __name__=='__main__':
+
+def test_data_prep_generator_hr_t():
+    data_handler = DataPrep('Freebase15k', algo=True)
+    data_handler.dump()
+    gen = data_handler.batch_generator_train_hr_tr(batch_size=8)
+    # import tensorflow as tf
+    for i in range(10):
+        e1, r, e2_multi1 = list(next(gen))
+        print("")
+        print("e1:", e1)
+        print("r:", r)
+        print("e2_multi1:", e2_multi1)
+        # import pdb
+        # pdb.set_trace()
+        e2=np.asarray((e2_multi1 * 0.2)+1.0 / data_handler.tot_entity)
+        print(e2)
+        # e2_multi1 = tf.scalar_mul((1.0 - 0.2),
+        #                           e2_multi1.todense()) + (1.0 / data_handler.tot_entity)
+
+
+
+
+
+if __name__ == '__main__':
     # test_data_prep()
-    test_data_prep_generator()
-    
+    test_data_prep_generator_hr_t()
