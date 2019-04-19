@@ -40,12 +40,12 @@ class TransR(ModelMeta):
         self.def_loss()
 
     def def_inputs(self):
-        self.pos_h = tf.placeholder(tf.int32, [self.config.batch_size])
-        self.pos_t = tf.placeholder(tf.int32, [self.config.batch_size])
-        self.pos_r = tf.placeholder(tf.int32, [self.config.batch_size])
-        self.neg_h = tf.placeholder(tf.int32, [self.config.batch_size])
-        self.neg_t = tf.placeholder(tf.int32, [self.config.batch_size])
-        self.neg_r = tf.placeholder(tf.int32, [self.config.batch_size])
+        self.pos_h = tf.placeholder(tf.int32, [None])
+        self.pos_t = tf.placeholder(tf.int32, [None])
+        self.pos_r = tf.placeholder(tf.int32, [None])
+        self.neg_h = tf.placeholder(tf.int32, [None])
+        self.neg_t = tf.placeholder(tf.int32, [None])
+        self.neg_r = tf.placeholder(tf.int32, [None])
         self.test_h = tf.placeholder(tf.int32, [1])
         self.test_t = tf.placeholder(tf.int32, [1])
         self.test_r = tf.placeholder(tf.int32, [1])
