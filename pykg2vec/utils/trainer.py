@@ -60,6 +60,38 @@ class Trainer(TrainerMeta):
         if self.config.disp_summary:
             self.summary()
 
+    def train_model_epoch_hr_rt(self, epoch_idx, debug=False):
+        acc_loss = 0
+        num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size if not debug else 5
+
+        start_time = timeit.default_timer()
+
+        gen_train = self.data_handler.batch_generator_train_hr_rt(batch_size=self.config.batch_size)
+
+        for batch_idx in range(num_batch):
+            e1, r, e2_multi1 = next(gen_train)
+
+            feed_dict = {
+                self.model.pos_h: ph,
+                self.model.pos_t: pt,
+                self.model.pos_r: pr,
+                self.model.neg_h: nh,
+                self.model.neg_t: nt,
+                self.model.neg_r: nr
+            }
+
+            _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
+
+            acc_loss += loss
+
+            print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
+                                                        batch_idx, num_batch, loss), end='\r')
+
+        print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
+            epoch_idx, acc_loss, timeit.default_timer() - start_time))
+
+        self.training_results.append([epoch_idx, acc_loss])
+
     def train_model_epoch(self, epoch_idx, debug=False):
         acc_loss = 0
         num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size if not debug else 5

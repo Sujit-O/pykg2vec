@@ -37,18 +37,23 @@ class ConvE(ModelMeta):
             raise NotImplementedError("The hidden dimension is not supported!")
         self.last_dim = self.dense_last_dim[self.config.hidden_size]
 
-    # def def_inputs(self):
-        self.pos_h = tf.placeholder(tf.int32, [None])
-        self.pos_t = tf.placeholder(tf.int32, [None])
-        self.pos_r = tf.placeholder(tf.int32, [None])
-        self.neg_h = tf.placeholder(tf.int32, [None])
-        self.neg_t = tf.placeholder(tf.int32, [None])
-        self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h = tf.placeholder(tf.int32, [1])
-        self.test_t = tf.placeholder(tf.int32, [1])
-        self.test_r = tf.placeholder(tf.int32, [1])
+        self.def_inputs()
+        self.def_parameters()
+        self.def_loss()
 
-    # def def_parameters(self):
+    def def_inputs(self):
+        self.e1 = tf.placeholder(tf.int32, [None])
+        self.r = tf.placeholder(tf.int32, [None])
+        self.e2_multi1 = tf.placeholder(tf.int32, [None])
+
+        self.test_e1 = tf.placeholder(tf.int32, [1])
+        self.test_e2 = tf.placeholder(tf.int32, [1])
+        self.test_r = tf.placeholder(tf.int32, [1])
+        self.test_r_rev = tf.placeholder(tf.int32, [1])
+        self.test_e2_multi1 = tf.placeholder(tf.int32, [1])
+        self.test_e2_multi2 = tf.placeholder(tf.int32, [1])
+
+    def def_parameters(self):
         num_total_ent = self.data_handler.tot_entity
         num_total_rel = self.data_handler.tot_relation
         k = self.config.hidden_size
@@ -68,32 +73,20 @@ class ConvE(ModelMeta):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        pos_h_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_h)
-        pos_r_e = tf.nn.embedding_lookup(rel_emb_norm, self.pos_r)
-        pos_t_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_t)
+        e1 = tf.nn.embedding_lookup(ent_emb_norm, self.e1)
+        r = tf.nn.embedding_lookup(rel_emb_norm, self.r)
 
-        neg_h_e = tf.nn.embedding_lookup(ent_emb_norm, self.neg_h)
-        neg_r_e = tf.nn.embedding_lookup(rel_emb_norm, self.neg_r)
-        neg_t_e = tf.nn.embedding_lookup(ent_emb_norm, self.neg_t)
+        stacked_e = tf.reshape(e1, [-1, 10, 20, 1])
+        stacked_r = tf.reshape(r, [-1, 10, 20, 1])
 
-        # prepare h,r
-        stacked_inputs_h = tf.concat([pos_h_e, neg_h_e], 0)
-        stacked_inputs_r = tf.concat([pos_r_e, neg_r_e], 0)
-        stacked_inputs_t = tf.concat([pos_t_e, neg_t_e], 0)
+        stacked_er = tf.concat([stacked_e, stacked_r], 1)
 
-        stacked_inputs_h = tf.reshape(stacked_inputs_h, [-1, 10, 20, 1])
-        stacked_inputs_r = tf.reshape(stacked_inputs_r, [-1, 10, 20, 1])
-        stacked_inputs_t = tf.reshape(stacked_inputs_t, [-1, 10, 20, 1])
+        e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
+                                  self.e2_multi1) + (1.0 / self.data.prep.tot_entity)
 
-        stacked_inputs_hr = tf.concat([stacked_inputs_h, stacked_inputs_r], 1)
-        stacked_inputs_rt = tf.concat([stacked_inputs_r, stacked_inputs_t], 1)
+        pred_h_rt = self.layer_hr_t(stacked_er)
 
-        y_hr_t = tf.concat([tf.ones(self.config.batch_size // 2, ), tf.zeros(self.config.batch_size // 2, )], 0)
-        e2_multi_hr_t = tf.scalar_mul((1.0 - self.config.label_smoothing), y_hr_t) + (1.0 / self.config.hidden_size)
-
-        pred_h_rt = self.layer_hr_t(stacked_inputs_rt)
-
-        self.loss =  tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi_hr_t, pred_hr_t))
+        self.loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred_h_rt))
 
     def layer(self, st_inp):
         # batch normalization in the first axis
