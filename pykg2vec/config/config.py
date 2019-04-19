@@ -74,7 +74,8 @@ class TransRConfig(BasicConfig):
                  epochs=2,
                  margin=1.0,
                  data='Freebase',
-                 optimizer='adam'):
+                 optimizer='adam',
+                 sampling="uniform"):
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -86,6 +87,7 @@ class TransRConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+        self.sampling = sampling
 
 
 class TransEConfig(BasicConfig):
@@ -98,7 +100,8 @@ class TransEConfig(BasicConfig):
                  epochs=1000,
                  margin=1.0,
                  data='Freebase',
-                 optimizer='adam'):
+                 optimizer='adam',
+                 sampling="uniform"):
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -109,6 +112,7 @@ class TransEConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+        self.sampling = sampling
 
 
 class TransHConfig(BasicConfig):
@@ -122,7 +126,8 @@ class TransHConfig(BasicConfig):
                  margin=1.0,
                  C = 0.123,
                  data='Freebase',
-                 optimizer='adam'):
+                 optimizer='adam',
+                 sampling="uniform"):
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -134,6 +139,7 @@ class TransHConfig(BasicConfig):
         self.data = data
         self.optimizer = optimizer
         self.C = C
+        self.sampling = sampling
 
 
 class RescalConfig(BasicConfig):
@@ -146,7 +152,8 @@ class RescalConfig(BasicConfig):
                  epochs=1000,
                  margin=1.0,
                  data='Freebase',
-                 optimizer='adam'):
+                 optimizer='adam',
+                 sampling="uniform"):
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -157,6 +164,7 @@ class RescalConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+        self.sampling = sampling
 
 
 class SMEConfig(object):
@@ -169,7 +177,8 @@ class SMEConfig(object):
                  epochs=1000,
                  margin=1.0,
                  data='Freebase',
-                 optimizer='adam'):
+                 optimizer='adam',
+                 sampling="uniform"):
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -180,6 +189,8 @@ class SMEConfig(object):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+        self.sampling = sampling
+
 
 class NTNConfig(BasicConfig):
     def __init__(self,
@@ -191,7 +202,8 @@ class NTNConfig(BasicConfig):
                  epochs=2,
                  margin=1.0,
                  data='Freebase',
-                 optimizer='adam'):
+                 optimizer='adam',
+                 sampling="uniform"):
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -203,6 +215,8 @@ class NTNConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+        self.sampling = sampling
+
 
 class SLMConfig(BasicConfig):
     def __init__(self,
@@ -214,7 +228,8 @@ class SLMConfig(BasicConfig):
                  epochs=2,
                  margin=1.0,
                  data='Freebase',
-                 optimizer='adam'):
+                 optimizer='adam',
+                 sampling="uniform"):
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -226,6 +241,8 @@ class SLMConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+        self.sampling = sampling
+
 
 class RotatEConfig(BasicConfig):
     def __init__(self,
@@ -236,7 +253,8 @@ class RotatEConfig(BasicConfig):
                  epochs=2,
                  margin=1.0,
                  data='Freebase',
-                 optimizer='adam'):
+                 optimizer='adam',
+                 sampling="uniform"):
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -247,6 +265,7 @@ class RotatEConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+        self.sampling = sampling
 
 
 class ConvEConfig(BasicConfig):
@@ -264,7 +283,8 @@ class ConvEConfig(BasicConfig):
                  use_bias=True,
                  margin=1.0,
                  data='Freebase',
-                 optimizer='adam'):
+                 optimizer='adam',
+                 sampling="uniform"):
         BasicConfig.__init__(self)
 
         self.feature_map_dropout = feature_map_dropout
@@ -281,3 +301,4 @@ class ConvEConfig(BasicConfig):
         self.margin = margin
         self.data = data
         self.optimizer = optimizer
+        self.sampling = sampling
