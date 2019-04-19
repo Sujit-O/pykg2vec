@@ -85,8 +85,9 @@ class TransE(ModelMeta):
     def test_step(self):       
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)     
         
-        score_head = self.distance(self.ent_embeddings, rel_vec, tail_vec)
-        score_tail = self.distance(head_vec, rel_vec, self.ent_embeddings)    
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1) 
+        score_head = self.distance(norm_ent_embeddings, rel_vec, tail_vec)
+        score_tail = self.distance(head_vec, rel_vec, norm_ent_embeddings)    
 
         _, self.head_rank      = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
         _, self.tail_rank      = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
