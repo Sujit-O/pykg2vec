@@ -31,6 +31,7 @@ def main(_):
     config.test_step = args.test_step
     config.test_num  = args.test_num
     config.gpu_fraction = args.gpu_frac
+    config.save_model = True
 
     model = Rescal(config, data_handler)
     
