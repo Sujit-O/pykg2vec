@@ -46,8 +46,14 @@ class DataPrep(object):
         self.idx2relation = {}
 
         self.hr_t = defaultdict(set)
-        self.tr_t = defaultdict(set)      
+        self.tr_t = defaultdict(set)
 
+        # for ConvE
+        self.label_graph = {}
+        self.train_graph = {}
+        self.test_cases  = {}
+
+        # self.train_label
         self.read_triple(['train','test','valid']) #TODO: save the triples to prevent parsing everytime
         self.calculate_mapping() # from entity and relation to indexes.
 
@@ -55,17 +61,18 @@ class DataPrep(object):
         self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.train_triples]
         self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in self.validation_triples]
 
-        for t in self.test_triples:
+        for t in self.train_triples:
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
             self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
-        for t in self.train_triples:
+
+        for t in self.test_triples:
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
             self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
         for t in self.validation_triples:
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
             self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
-        if self.config.negative_sample =='bern':          
+        if self.config.negative_sample == 'bern':
             self.relation_property_head = {x: [] for x in
                                          range(self.tot_relation)}
             self.relation_property_tail = {x: [] for x in

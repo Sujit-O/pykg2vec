@@ -28,11 +28,16 @@ class ConvE(ModelMeta):
     """
 
     def __init__(self, config=None, data_handler=None):
+
         self.config = config
         self.data_handler = data_handler
         self.model_name = 'ConvE'
+        self.dense_last_dim = {50: 2592, 100: 5184, 200: 10368}
+        if self.config.hidden_size not in self.dense_last_dim:
+            raise NotImplementedError("The hidden dimension is not supported!")
+        self.last_dim = self.dense_last_dim[self.config.hidden_size]
 
-    def def_inputs(self):
+    # def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
         self.pos_r = tf.placeholder(tf.int32, [None])
@@ -43,7 +48,7 @@ class ConvE(ModelMeta):
         self.test_t = tf.placeholder(tf.int32, [1])
         self.test_r = tf.placeholder(tf.int32, [1])
 
-    def def_parameters(self):
+    # def def_parameters(self):
         num_total_ent = self.data_handler.tot_entity
         num_total_rel = self.data_handler.tot_relation
         k = self.config.hidden_size
@@ -53,14 +58,11 @@ class ConvE(ModelMeta):
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        with tf.name_scope("activation bias"):
-            self.b = tf.get_variable(name="bias", shape=[self.config.batch_size, k],
+        with tf.name_scope("activation_bias"):
+            self.b = tf.get_variable(name="bias", shape=[self.config.batch_size, num_total_ent],
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        with tf.name_scope("transformation matrix"):
-            self.W = tf.get_variable(name="Wmatrix", shape=[k, k],
-                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b, self.W]
+        # self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
+        self.loss = None
 
     def def_loss(self):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
@@ -77,63 +79,56 @@ class ConvE(ModelMeta):
         # prepare h,r
         stacked_inputs_h = tf.concat([pos_h_e, neg_h_e], 0)
         stacked_inputs_r = tf.concat([pos_r_e, neg_r_e], 0)
-        stacked_inputs_h = tf.reshape(stacked_inputs_h, [self.config.batch_size, 10, -1, 1])
-        stacked_inputs_r = tf.reshape(stacked_inputs_r, [self.config.batch_size, 10, -1, 1])
-        stacked_inputs = tf.concat([stacked_inputs_h, stacked_inputs_r], 1)
-
-        # prepare t
         stacked_inputs_t = tf.concat([pos_t_e, neg_t_e], 0)
-        y = tf.concat([tf.ones(self.config.batch_size, ), tf.zeros(self.config.batch_size, )], 0)
-        e2_multi = tf.scalar_mul((1.0 - self.config.label_smoothing), y) + (1.0 / self.config.hidden_size)
-        pred_val = self.layer(stacked_inputs, stacked_inputs_t)
-        self.loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=e2_multi, logits=pred_val)
 
-    def layer(self, st_inp, st_inp_t=None, train=True):
+        stacked_inputs_h = tf.reshape(stacked_inputs_h, [-1, 10, 20, 1])
+        stacked_inputs_r = tf.reshape(stacked_inputs_r, [-1, 10, 20, 1])
+        stacked_inputs_t = tf.reshape(stacked_inputs_t, [-1, 10, 20, 1])
+
+        stacked_inputs_hr = tf.concat([stacked_inputs_h, stacked_inputs_r], 1)
+        stacked_inputs_rt = tf.concat([stacked_inputs_r, stacked_inputs_t], 1)
+
+        y_hr_t = tf.concat([tf.ones(self.config.batch_size // 2, ), tf.zeros(self.config.batch_size // 2, )], 0)
+        e2_multi_hr_t = tf.scalar_mul((1.0 - self.config.label_smoothing), y_hr_t) + (1.0 / self.config.hidden_size)
+
+        pred_h_rt = self.layer_hr_t(stacked_inputs_rt)
+
+        self.loss =  tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi_hr_t, pred_hr_t))
+
+    def layer(self, st_inp):
         # batch normalization in the first axis
-        x = tf.layers.batch_normalization(st_inp, axis=0)
+        x = tf.keras.layers.BatchNormalization()(st_inp, training=train)
         # input dropout
-        x = tf.layers.dropout(x, rate=self.config.input_dropout)
+        x = tf.keras.layers.Dropout(rate=self.config.input_dropout)(x)
         # 2d convolution layer, output channel =32, kernel size = 3,3
-        x = tf.layers.conv2d(x, 32, [3, 3], strides=(1, 1), padding='valid', activation=None)
+        x = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', activation=None)(x)
         # batch normalization across feature dimension
-        x = tf.layers.batch_normalization(x, axis=1)
+        x = tf.keras.layers.BatchNormalization()(x, training=train)
         # first non-linear activation
         x = tf.nn.relu(x)
         # feature dropout
-        x = tf.layers.dropout(x, rate=self.config.feature_map_dropout)
+        x = tf.keras.layers.Dropout(rate=self.config.feature_map_dropout)(x)
         # reshape the tensor to get the batch size
-        if train:
-            x = tf.reshape(x, [self.config.batch_size, -1])
-        else:
-            x = tf.reshape(x, [1, -1])
+        '''10368 with k=200,5184 with k=100, 2592 with k=50'''
+        x = tf.reshape(x, [self.config.batch_size, self.last_dim])
         # pass the feature through fully connected layer, output size = batch size, hidden size
-        x = tf.layers.dense(x, units=self.config.hidden_size)
+        x = tf.keras.layers.Dense(units=self.config.hidden_size)(x)
         # dropout in the hidden layer
-        x = tf.layers.dropout(x, rate=self.config.hidden_dropout)
+        x = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)(x)
         # batch normalization across feature dimension
-        x = tf.layers.batch_normalization(x, axis=1)
+        x = tf.keras.layers.BatchNormalization()(x, training=train)
         # second non-linear activation
         x = tf.nn.relu(x)
-        # matrix multiplication to project the tensor into k dimension
-        x = tf.matmul(x, self.W)
+        # project and get inner product with the tail triple
+        x = tf.matmul(x, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
         # add a bias value
-        if train:
-            x = tf.add(x, self.b)
-        else:
-            x = tf.add(x, tf.slice(self.b, [0, 0], [1, self.config.hidden_size]))
-        # inner product with the tail triple
-        if train:
-            x = tf.reduce_sum(tf.matmul(x, tf.transpose(st_inp_t)), 1)
-        else:
-            ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-            x = tf.matmul(x, tf.transpose(ent_emb_norm))
+        x = tf.add(x, self.b)
         # sigmoid activation
-        pred = tf.nn.sigmoid(x)
-
-        return pred
+        return tf.nn.sigmoid(x)
 
     def test_step(self):
         num_entity = self.data_handler.tot_entity
+        embed_dim = self.config.hidden_size
         # import pdb
         # pdb.set_trace()
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
@@ -141,16 +136,27 @@ class ConvE(ModelMeta):
 
         pos_h_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_h)
         pos_r_e = tf.nn.embedding_lookup(rel_emb_norm, self.pos_r)
+        pos_t_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_t)
 
         # prepare h,r
-        stacked_inputs_h = tf.reshape(pos_h_e, [1, 10, -1, 1])
-        stacked_inputs_r = tf.reshape(pos_r_e, [1, 10, -1, 1])
+        stacked_inputs_h = tf.reshape(pos_h_e, [-1, 10, 20, 1])
+        stacked_inputs_r = tf.reshape(pos_r_e, [-1, 10, 20, 1])
         stacked_inputs_hr = tf.concat([stacked_inputs_h, stacked_inputs_r], 1)
 
         pred_val_head = self.layer(stacked_inputs_hr, train=False)
-        pred_val_tail = self.layer(stacked_inputs_rt, train=False)
-
         _, head_rank = tf.nn.top_k(pred_val_head, k=num_entity)
+
+        pred_val_tail = []
+        for h_i in range(num_entity):
+            pos_h_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_h)
+            pos_r_e = tf.nn.embedding_lookup(rel_emb_norm, self.pos_r)
+
+            # prepare h,r
+            stacked_inputs_h = tf.reshape(pos_h_e, [1, 10, -1, 1])
+            stacked_inputs_r = tf.reshape(pos_r_e, [1, 10, -1, 1])
+            stacked_inputs_hr = tf.concat([stacked_inputs_h, stacked_inputs_r], 1)
+            pred_val_tail.append(self.layer(stacked_inputs_hr, pos_t_e, train=False, tail=True))
+
         _, tail_rank = tf.nn.top_k(pred_val_tail, k=num_entity)
 
         return head_rank, tail_rank, None, None
@@ -176,6 +182,7 @@ class ConvE(ModelMeta):
 if __name__ == '__main__':
     # Unit Test Script with tensorflow Eager Execution
     import tensorflow as tf
+
     tf.enable_eager_execution()
     batch = 128
     embed_dim = 100
