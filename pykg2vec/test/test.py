@@ -7,7 +7,7 @@ from core.TransE import TransE
 from core.TransH import TransH
 from core.TransR import TransR
 from config.config import TransEConfig, TransHConfig, TransHConfig, TransRConfig
-from utils.dataprep import DataPrep
+from utils.dataprep import KG
 from utils.trainer import Trainer
 
 import tensorflow as tf
@@ -16,7 +16,7 @@ class Pykg2vecTestCase(unittest.TestCase):
     
     def setUp(self):
         print('setup')
-        self.data_handler = DataPrep("Freebase15k")
+        self.data_handler = KG("Freebase15k")
 
     def test_transE(self):
         
@@ -74,11 +74,12 @@ class Pykg2vecTestCase(unittest.TestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(ATestCase('test_transE'))
-    suite.addTest(ATestCase('test_transH'))
-    suite.addTest(ATestCase('test_transR'))
+    suite.addTest(Pykg2vecTestCase('test_transE'))
+    suite.addTest(Pykg2vecTestCase('test_transH'))
+    suite.addTest(Pykg2vecTestCase('test_transR'))
     return suite
 
 if __name__ == '__main__':
+    """ Execute whole test case as a whole """
     runner = unittest.TextTestRunner()
     runner.run(suite())
