@@ -34,6 +34,7 @@ def main(_):
     config.test_num = args.test_num
     config.gpu_fraction = args.gpu_frac
     config.plot_entity_only = True
+    config.save_model = True
 
     model = ConvE(config, data_handler)
 

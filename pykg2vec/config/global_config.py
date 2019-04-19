@@ -16,7 +16,7 @@ class FreebaseFB15k(object):
     def __init__(self):
         self.name="FB15k"
         self.url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
-        self.dataset_home_path = Path('.')/'dataset'
+        self.dataset_home_path = Path('..')/'dataset'
         self.dataset_home_path.mkdir(parents=True, exist_ok=True)
         self.dataset_home_path = self.dataset_home_path.resolve()
         self.root_path = self.dataset_home_path/'Freebase'

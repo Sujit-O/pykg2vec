@@ -19,13 +19,11 @@ from collections import defaultdict
 import pprint
 from scipy import sparse as sps
 
-
 class Triple(object):
     def __init__(self, head=None, relation=None, tail=None):
         self.h = head
         self.r = relation
         self.t = tail
-
 
 class DataInput(object):
     def __init__(self, e1=None, r=None, e2=None, r_rev=None, e2_multi1=None, e2_multi2=None):
@@ -414,7 +412,7 @@ class DataPrep(object):
                     else:
                         continue
 
-    def dump(self, debug=False):
+    def dump(self):
         ''' dump key information'''
         print("\n----------Relation to Indexes--------------")
         pprint.pprint(self.relation2idx)
@@ -428,10 +426,6 @@ class DataPrep(object):
         print("Total Training Triples   :", len(self.train_triples))
         print("Total Testing Triples    :", len(self.test_triples))
         print("Total validation Triples :", len(self.validation_triples))
-        if debug:
-            print("Total Training Triples   :", len(self.train_triples_ids), "(from train_triples_ids)")
-            print("Total Testing Triples    :", len(self.test_triples_ids), "(from test_triples_ids)")
-            print("Total validation Triples :", len(self.validation_triples_ids), "(from validation_triples_ids)")
         print("Total Entities           :", self.tot_entity)
         print("Total Relations          :", self.tot_relation)
         print("---------------------------------------------")

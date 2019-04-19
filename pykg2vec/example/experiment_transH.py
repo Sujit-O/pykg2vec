@@ -33,7 +33,7 @@ def TransH_experiment():
     configs = [transH_unif_config, transH_bern_config]
     for config in configs:
         config.test_step  = 5
-        config.test_num   = 60000
+        config.test_num   = len(knowledge_graph.test_triples_ids)
         config.save_model = True
         config.disp_result= False
 
