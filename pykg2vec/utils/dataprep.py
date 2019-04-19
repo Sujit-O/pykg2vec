@@ -124,19 +124,18 @@ class DataPrep(object):
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
             self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
-        if self.config.negative_sample == 'bern':
-            self.relation_property_head = {x: [] for x in
-                                           range(self.tot_relation)}
-            self.relation_property_tail = {x: [] for x in
-                                           range(self.tot_relation)}
-            for t in self.train_triples:
-                self.relation_property_head[t[1]].append(t[0])
-                self.relation_property_tail[t[1]].append(t[2])
+        self.relation_property_head = {x: [] for x in
+                                       range(self.tot_relation)}
+        self.relation_property_tail = {x: [] for x in
+                                       range(self.tot_relation)}
+        for t in self.train_triples_ids:
+            self.relation_property_head[t.r].append(t.h)
+            self.relation_property_tail[t.r].append(t.t)
 
-            self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
-                    len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
-                                      for x in
-                                      self.relation_property_head.keys()}
+        self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
+                len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
+                                  for x in
+                                  self.relation_property_head.keys()}
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
@@ -348,6 +347,99 @@ class DataPrep(object):
             if batch_idx == number_of_batches:
                 batch_idx = 0
 
+    def batch_generator_bern(self, src_triples=None, batch_size=128):
+
+        batch_size = batch_size // 2
+
+        if src_triples is None:
+            # TODO: add parameter for specifying the source of triple
+            src_triples = self.train_triples_ids
+
+        observed_triples = {(t.h, t.r, t.t): 1 for t in src_triples}
+        # 1 as positive, 0 as negative
+
+        array_rand_ids = np.random.permutation(len(src_triples))
+        number_of_batches = len(src_triples) // batch_size
+
+        # print("Number of batches:", number_of_batches)
+
+        batch_idx = 0
+        last_h = 0
+        last_r = 0
+        last_t = 0
+
+        while True:
+
+            pos_triples = np.asarray([[src_triples[x].h,
+                                       src_triples[x].r,
+                                       src_triples[x].t] for x in
+                                      array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
+
+            ph = pos_triples[:, 0]
+            pr = pos_triples[:, 1]
+            pt = pos_triples[:, 2]
+            nh = []
+            nr = []
+            nt = []
+
+            for t in pos_triples:
+                prob = self.relation_property[t[1]]
+                
+                if np.random.random() > prob:
+                    idx_replace_tail = np.random.randint(self.tot_entity)
+
+                    break_cnt = 0
+                    while ((t[0], t[1], idx_replace_tail) in observed_triples
+                           or (t[0], t[1], idx_replace_tail) in observed_triples):
+                        idx_replace_tail = np.random.randint(self.tot_entity)
+                        break_cnt += 1
+                        if break_cnt >= 100:
+                            break
+
+                    if break_cnt >= 100:  # can not find new negative triple.
+                        nh.append(last_h)
+                        nr.append(last_r)
+                        nt.append(last_t)
+                    else:
+                        nh.append(t[0])
+                        nr.append(t[1])
+                        nt.append(idx_replace_tail)
+                        last_h = t[0]
+                        last_r = t[1]
+                        last_t = idx_replace_tail
+
+                        observed_triples[(t[0], t[1], idx_replace_tail)] = 0
+
+                else:
+                    idx_replace_head = np.random.randint(self.tot_entity)
+                    break_cnt = 0
+                    while ((idx_replace_head, t[1], t[2]) in observed_triples
+                           or (idx_replace_head, t[1], t[2]) in observed_triples):
+                        idx_replace_head = np.random.randint(self.tot_entity)
+                        break_cnt += 1
+                        if break_cnt >= 100:
+                            break
+
+                    if break_cnt >= 100:  # can not find new negative triple.
+                        nh.append(last_h)
+                        nr.append(last_r)
+                        nt.append(last_t)
+                    else:
+                        nh.append(idx_replace_head)
+                        nr.append(t[1])
+                        nt.append(t[2])
+                        last_h = idx_replace_head
+                        last_r = t[1]
+                        last_t = t[2]
+
+                        observed_triples[(idx_replace_head, t[1], t[2])] = 0
+
+            batch_idx += 1
+
+            yield ph, pr, pt, nh, nr, nt
+
+            if batch_idx == number_of_batches:
+                batch_idx = 0
     def read_triple(self, datatype=None):
         print("Reading Triples", datatype)
 
