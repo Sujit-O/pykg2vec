@@ -20,6 +20,7 @@ def TransH_experiment():
     transH_unif_config.C = 0.015625
     transH_unif_config.hidden_size = 50
     transH_unif_config.epochs = 500
+    transH_bern_config.sampling = "uniform"
 
     transH_bern_config = TransHConfig()
     transH_bern_config.learning_rate = 0.005

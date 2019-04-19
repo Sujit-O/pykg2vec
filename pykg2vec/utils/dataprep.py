@@ -41,7 +41,7 @@ class DataPrep(object):
         '''store the information of database'''
 
         self.config = GlobalConfig(dataset=name_dataset)
-
+        self.algo = algo
         self.train_triples = []
         self.test_triples = []
         self.validation_triples = []
@@ -69,7 +69,7 @@ class DataPrep(object):
         self.validation_triples_no_rev = []
 
         # self.train_label
-        if not algo:
+        if not self.algo:
             self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
             self.calculate_mapping()  # from entity and relation to indexes.
             self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in
@@ -470,7 +470,7 @@ class DataPrep(object):
 
                     r_rev = r + '_reverse'
                     triple = Triple(h, r, t)
-                    triple_r = Triple(h, r_rev, t)
+                    triple_r = Triple(t, r_rev, h)
 
                     if (h, r) not in self.label_graph:
                         self.label_graph[(h, r)] = set()

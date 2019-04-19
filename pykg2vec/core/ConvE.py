@@ -28,7 +28,6 @@ class ConvE(ModelMeta):
     """
 
     def __init__(self, config=None, data_handler=None):
-
         self.config = config
         self.data_handler = data_handler
         self.model_name = 'ConvE'
@@ -44,14 +43,14 @@ class ConvE(ModelMeta):
     def def_inputs(self):
         self.e1 = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
-        self.e2_multi1 = tf.placeholder(tf.int32, [None])
+        self.e2_multi1 = tf.placeholder(tf.float32, [None, self.data_handler.tot_entity])
 
         self.test_e1 = tf.placeholder(tf.int32, [1])
         self.test_e2 = tf.placeholder(tf.int32, [1])
         self.test_r = tf.placeholder(tf.int32, [1])
         self.test_r_rev = tf.placeholder(tf.int32, [1])
-        self.test_e2_multi1 = tf.placeholder(tf.int32, [1])
-        self.test_e2_multi2 = tf.placeholder(tf.int32, [1])
+        self.test_e2_multi1 = tf.placeholder(tf.float32, [1, self.data_handler.tot_entity])
+        self.test_e2_multi2 = tf.placeholder(tf.float32, [1, self.data_handler.tot_entity])
 
     def def_parameters(self):
         num_total_ent = self.data_handler.tot_entity
@@ -66,8 +65,7 @@ class ConvE(ModelMeta):
         with tf.name_scope("activation_bias"):
             self.b = tf.get_variable(name="bias", shape=[self.config.batch_size, num_total_ent],
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        # self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
-        self.loss = None
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
 
     def def_loss(self):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
@@ -81,14 +79,13 @@ class ConvE(ModelMeta):
 
         stacked_er = tf.concat([stacked_e, stacked_r], 1)
 
-        e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.e2_multi1) + (1.0 / self.data.prep.tot_entity)
+        e2_multi1 = self.e2_multi1*(1.0 - self.config.label_smoothing) + 1.0 / self.data_handler.tot_entity
+        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_handler.tot_entity])
+        pred = self.layer(stacked_er, train=True)
 
-        pred_h_rt = self.layer_hr_t(stacked_er)
+        self.loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
 
-        self.loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred_h_rt))
-
-    def layer(self, st_inp):
+    def layer(self, st_inp, train=False):
         # batch normalization in the first axis
         x = tf.keras.layers.BatchNormalization()(st_inp, training=train)
         # input dropout
@@ -120,39 +117,39 @@ class ConvE(ModelMeta):
         return tf.nn.sigmoid(x)
 
     def test_step(self):
-        num_entity = self.data_handler.tot_entity
-        embed_dim = self.config.hidden_size
-        # import pdb
-        # pdb.set_trace()
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        pos_h_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_h)
-        pos_r_e = tf.nn.embedding_lookup(rel_emb_norm, self.pos_r)
-        pos_t_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_t)
+        e1 = tf.nn.embedding_lookup(ent_emb_norm, self.test_e1)
+        e2 = tf.nn.embedding_lookup(ent_emb_norm, self.test_e2)
 
-        # prepare h,r
-        stacked_inputs_h = tf.reshape(pos_h_e, [-1, 10, 20, 1])
-        stacked_inputs_r = tf.reshape(pos_r_e, [-1, 10, 20, 1])
-        stacked_inputs_hr = tf.concat([stacked_inputs_h, stacked_inputs_r], 1)
+        r = tf.nn.embedding_lookup(rel_emb_norm, self.test_r)
+        r_rev = tf.nn.embedding_lookup(rel_emb_norm, self.test_r_rev)
 
-        pred_val_head = self.layer(stacked_inputs_hr, train=False)
-        _, head_rank = tf.nn.top_k(pred_val_head, k=num_entity)
+        stacked_head_e = tf.reshape(e1, [-1, 10, 20, 1])
+        stacked_head_r = tf.reshape(r, [-1, 10, 20, 1])
 
-        pred_val_tail = []
-        for h_i in range(num_entity):
-            pos_h_e = tf.nn.embedding_lookup(ent_emb_norm, self.pos_h)
-            pos_r_e = tf.nn.embedding_lookup(rel_emb_norm, self.pos_r)
+        stacked_tail_e = tf.reshape(e2, [-1, 10, 20, 1])
+        stacked_tail_r = tf.reshape(r_rev, [-1, 10, 20, 1])
 
-            # prepare h,r
-            stacked_inputs_h = tf.reshape(pos_h_e, [1, 10, -1, 1])
-            stacked_inputs_r = tf.reshape(pos_r_e, [1, 10, -1, 1])
-            stacked_inputs_hr = tf.concat([stacked_inputs_h, stacked_inputs_r], 1)
-            pred_val_tail.append(self.layer(stacked_inputs_hr, pos_t_e, train=False, tail=True))
+        stacked_hr = tf.concat([stacked_head_e, stacked_head_r], 1)
+        stacked_tr = tf.concat([stacked_tail_e, stacked_tail_r], 1)
 
-        _, tail_rank = tf.nn.top_k(pred_val_tail, k=num_entity)
+        e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
+                                  self.test_e2_multi1) + (1.0 / self.data.prep.tot_entity)
+        e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
+                                  self.test_e2_multi2) + (1.0 / self.data.prep.tot_entity)
 
-        return head_rank, tail_rank, None, None
+        pred4head = self.layer(stacked_hr)
+        pred4tail = self.layer(stacked_tr)
+
+        head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred4head)
+        tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred4tail)
+
+        _, head_rank = tf.nn.top_k(head_vec, k=self.data_handler.tot_entity)
+        _, tail_rank = tf.nn.top_k(tail_vec, k=self.data_handler.tot_entity)
+
+        return head_rank, tail_rank
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
@@ -175,7 +172,6 @@ class ConvE(ModelMeta):
 if __name__ == '__main__':
     # Unit Test Script with tensorflow Eager Execution
     import tensorflow as tf
-
     tf.enable_eager_execution()
     batch = 128
     embed_dim = 100

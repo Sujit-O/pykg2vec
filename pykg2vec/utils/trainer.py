@@ -11,13 +11,14 @@ from utils.visualization import Visualization
 
 class Trainer(TrainerMeta):
 
-    def __init__(self, model):
+    def __init__(self, model, algo=False):
         self.model = model
         self.config = self.model.config
         self.data_handler = self.model.data_handler
 
-        self.evaluator = Evaluation(model=model, test_data='test')
+        self.evaluator = Evaluation(model=model, test_data='test',algo=algo)
         self.training_results = []
+        self.algo = algo
 
     def build_model(self):
         """function to build the model"""
@@ -60,60 +61,46 @@ class Trainer(TrainerMeta):
         if self.config.disp_summary:
             self.summary()
 
-    def train_model_epoch_hr_rt(self, epoch_idx, debug=False):
-        acc_loss = 0
-        num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size if not debug else 5
-
-        start_time = timeit.default_timer()
-
-        gen_train = self.data_handler.batch_generator_train_hr_rt(batch_size=self.config.batch_size)
-
-        for batch_idx in range(num_batch):
-            e1, r, e2_multi1 = next(gen_train)
-
-            feed_dict = {
-                self.model.pos_h: ph,
-                self.model.pos_t: pt,
-                self.model.pos_r: pr,
-                self.model.neg_h: nh,
-                self.model.neg_t: nt,
-                self.model.neg_r: nr
-            }
-
-            _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
-
-            acc_loss += loss
-
-            print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                                                        batch_idx, num_batch, loss), end='\r')
-
-        print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
-            epoch_idx, acc_loss, timeit.default_timer() - start_time))
-
-        self.training_results.append([epoch_idx, acc_loss])
-
     def train_model_epoch(self, epoch_idx, debug=False):
         acc_loss = 0
-        num_batch = len(self.data_handler.train_triples_ids) // self.config.batch_size if not debug else 5
+
+        if not self.algo:
+            tot_data = len(self.data_handler.train_triples_ids)
+        else:
+            tot_data = len(self.data_handler.train_data)
+
+        num_batch = tot_data // self.config.batch_size if not debug else 5
 
         start_time = timeit.default_timer()
 
-        if self.config.sampling == "uniform":
-            gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
-        elif self.config.sampling == "bern":
-            gen_train = self.data_handler.batch_generator_bern(batch_size=self.config.batch_size)
+        if not self.algo:
+            if self.config.sampling == "uniform":
+                gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
+            elif self.config.sampling == "bern":
+                gen_train = self.data_handler.batch_generator_bern(batch_size=self.config.batch_size)
+        else:
+            gen_train = self.data_handler.batch_generator_train_hr_tr(batch_size=self.config.batch_size)
 
         for batch_idx in range(num_batch):
-            ph, pr, pt, nh, nr, nt = next(gen_train)
+            if not self.algo:
+                ph, pr, pt, nh, nr, nt = next(gen_train)
 
-            feed_dict = {
-                self.model.pos_h: ph,
-                self.model.pos_t: pt,
-                self.model.pos_r: pr,
-                self.model.neg_h: nh,
-                self.model.neg_t: nt,
-                self.model.neg_r: nr
-            }
+                feed_dict = {
+                    self.model.pos_h: ph,
+                    self.model.pos_t: pt,
+                    self.model.pos_r: pr,
+                    self.model.neg_h: nh,
+                    self.model.neg_t: nt,
+                    self.model.neg_r: nr
+                }
+            else:
+                e1, r, e2_multi1 = next(gen_train)
+
+                feed_dict = {
+                    self.model.e1: e1,
+                    self.model.r: r,
+                    self.model.e2_multi1: e2_multi1
+                }
 
             _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
 
