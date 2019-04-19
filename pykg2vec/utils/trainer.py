@@ -21,11 +21,6 @@ class Trainer(TrainerMeta):
 
     def build_model(self):
         """function to build the model"""
-
-        self.model.def_inputs()
-        self.model.def_parameters()
-        self.model.def_loss()
-
         self.sess = tf.Session(config=self.config.gpu_config)
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
 
@@ -155,7 +150,7 @@ class Trainer(TrainerMeta):
             viz = Visualization()
             viz.plot_train_result(path=self.config.result,
                                   result=self.config.figures,
-                                  algo=['TransE', 'TransR', 'TransH'],
+                                  algo=['TransE', 'TransR', 'TransH', 'SLM'],
                                   data=['Freebase15k'])
 
         if self.config.plot_testing_result:

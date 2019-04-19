@@ -10,33 +10,24 @@ import tensorflow as tf
 from core.KGMeta import ModelMeta
 
 
-class TransH(ModelMeta):
+class ProjE_pointwise(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-    Knowledge Graph Embedding by Translating on Hyperplanes
+    ---
     ------------------Paper Authors---------------------------
-    Zhen Wang1,Jianwen Zhang2, Jianlin Feng1, Zheng Chen2
-    1Department of Information Science and Technology, Sun Yat-sen University, Guangzhou, China
-    2Microsoft Research, Beijing, China
-    1{wangzh56@mail2, fengjlin@mail}.sysu.edu.cn
-    2{jiazhan, zhengc}@microsoft.com
+    ---
     ------------------Summary---------------------------------
-    TransH models a relation as a hyperplane together with a translation operation on it.
-    By doint this, it aims to preserve the mapping properties of relations such as reflexive,
-    one-to-many, many-to-one, and many-to-many with almost the same model complexity of TransE.
-
-    Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransH.py
-     and https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
+    ---
     """
     def __init__(self, config, data_handler):
         self.config = config
         self.data_handler = data_handler
-        self.model_name = 'TransH'
-        
+        self.model_name = 'ProjE_pointwise'
+
         self.def_inputs()
         self.def_parameters()
         self.def_loss()
-
+        
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
@@ -60,8 +51,13 @@ class TransH(ModelMeta):
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             
-            self.w = tf.get_variable(name="w", shape=[num_total_rel, k],
-                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.bc1 = tf.get_variable(name="bc1", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.De1 = tf.get_variable(name="De1", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.Dr1 = tf.get_variable(name="Dr1", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+
+            self.bc2 = tf.get_variable(name="bc1", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.De2 = tf.get_variable(name="De2", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.Dr2 = tf.get_variable(name="Dr2", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.w]
             
@@ -84,10 +80,22 @@ class TransH(ModelMeta):
         score_head = self.distance(project_ent_embedding, rel_vec, tail_vec)
         score_tail = self.distance(head_vec, rel_vec, project_ent_embedding)
 
+        self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+        self.w = tf.nn.l2_normalize(self.w, axis=1)
+  
+        norm_head_vec, norm_rel_vec, norm_tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
+        norm_pos_norm = self.get_proj(self.test_r)
+        
+        norm_project_ent_embedding = self.projection(self.ent_embeddings, norm_pos_norm)
+        norm_score_head = self.distance(norm_project_ent_embedding, norm_rel_vec, norm_tail_vec)
+        norm_score_tail = self.distance(norm_head_vec, norm_rel_vec, norm_project_ent_embedding)
+        
         _, self.head_rank      = tf.nn.top_k(score_head, k=num_entity)
         _, self.tail_rank      = tf.nn.top_k(score_tail, k=num_entity)
-        
-        return self.head_rank, self.tail_rank
+        _, self.norm_head_rank = tf.nn.top_k(norm_score_head, k=num_entity)
+        _, self.norm_tail_rank = tf.nn.top_k(norm_score_tail, k=num_entity)
+        return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
 
     def get_proj(self, r):
         return tf.nn.l2_normalize(tf.nn.embedding_lookup(self.w, r), axis=-1)
@@ -106,7 +114,6 @@ class TransH(ModelMeta):
         emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
         emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
-        
         emb_h = tf.nn.l2_normalize(emb_h, axis=-1)
         emb_r = tf.nn.l2_normalize(emb_r, axis=-1)
         emb_t = tf.nn.l2_normalize(emb_t, axis=-1)

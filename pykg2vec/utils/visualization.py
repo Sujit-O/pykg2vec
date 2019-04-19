@@ -301,6 +301,8 @@ class Visualization(object):
                     df = pd.concat(frames)
                 # print(df)
             plt.figure()
+            import pdb
+            pdb.set_trace()
             ax = seaborn.lineplot(x="Epochs", y="Loss", hue="Algorithm",
                                   markers=True, dashes=False, data=df)
             files = os.listdir(result)
@@ -331,26 +333,22 @@ class Visualization(object):
                     df['Epochs'] = df_2['Epoch']
                     df['Mean Rank'] = df_2['mean_rank']
                     df['Filt Mean Rank'] = df_2['filter_mean_rank']
-                    df['Norm Mean Rank'] = df_2['norm_mean_rank']
-                    df['Norm Filt Mean Rank'] = df_2['norm_filter_mean_rank']
+                
                     for hit in hits:
                         df['Hits' + str(hit)] = df_2['hits' + str(hit)]
                         df['Filt Hits' + str(hit)] = df_2['filter_hits' + str(hit)]
-                        df['Norm Hits' + str(hit)] = df_2['norm_hit' + str(hit)]
-                        df['Norm Filt Hits' + str(hit)] = df_2['norm_filter_hit' + str(hit)]
+                        
                 else:
                     df_3 = pd.DataFrame()
                     df_3['Algorithm'] = [a] * len(df_2)
                     df_3['Epochs'] = df_2['Epoch']
                     df_3['Mean Rank'] = df_2['mean_rank']
                     df_3['Filt Mean Rank'] = df_2['filter_mean_rank']
-                    df_3['Norm Mean Rank'] = df_2['norm_mean_rank']
-                    df_3['Norm Filt Mean Rank'] = df_2['norm_filter_mean_rank']
+                    
                     for hit in hits:
                         df_3['Hits' + str(hit)] = df_2['hits' + str(hit)]
                         df_3['Filt Hits' + str(hit)] = df_2['filter_hits' + str(hit)]
-                        df_3['Norm Hits' + str(hit)] = df_2['norm_hit' + str(hit)]
-                        df_3['Norm Filt Hits' + str(hit)] = df_2['norm_filter_hit' + str(hit)]
+                        
                     frames = [df, df_3]
                     df = pd.concat(frames)
 

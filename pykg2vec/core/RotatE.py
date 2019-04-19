@@ -21,6 +21,10 @@ class RotatE(ModelMeta):
         self.config = config
         self.data_handler = data_handler
         self.model_name = 'RotatE'
+
+        self.def_inputs()
+        self.def_parameters()
+        self.def_loss()
     
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
@@ -88,29 +92,15 @@ class RotatE(ModelMeta):
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
-        # emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        # emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        # emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
-
-        pi = 3.14159265358979323846
-        
-        # [m, k]        
+        pi = 3.14159265358979323846   
         h_e_r = tf.nn.embedding_lookup(self.ent_embeddings_real, h)
         h_e_i = tf.nn.embedding_lookup(self.ent_embeddings_imag, h)
-
         r_e_r = tf.nn.embedding_lookup(self.rel_embeddings_real, r)
-
         t_e_r = tf.nn.embedding_lookup(self.ent_embeddings_real, t)
         t_e_i = tf.nn.embedding_lookup(self.ent_embeddings_imag, t)
-
         r_e_r = r_e_r / pi 
-
-        # h = (h_e_r, h_e_i)
-        # t = (t_e_r, t_e_i)
-        # r = (r_e_r, r_e_i)
         r_e_i = tf.sin(r_e_r)
         r_e_r = tf.cos(r_e_r)
-
         return (h_e_r, h_e_i), (r_e_r, r_e_i), (t_e_r, t_e_i)
 
     def get_embed(self, h, r, t, sess=None):
