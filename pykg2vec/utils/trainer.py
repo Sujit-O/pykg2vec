@@ -98,7 +98,10 @@ class Trainer(TrainerMeta):
 
         start_time = timeit.default_timer()
 
-        gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
+        if self.config.sampling == "uniform":
+            gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
+        elif self.config.sampling == "bern":
+            gen_train = self.data_handler.batch_generator_bern(batch_size=self.config.batch_size)
 
         for batch_idx in range(num_batch):
             ph, pr, pt, nh, nr, nt = next(gen_train)
