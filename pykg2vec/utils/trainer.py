@@ -70,7 +70,7 @@ class Trainer(TrainerMeta):
         else:
             tot_data = len(self.data_handler.train_data)
 
-        num_batch = tot_data // self.config.batch_size if not self.debug else 5
+        num_batch = tot_data // self.config.batch_size if not self.debug else 2
 
         start_time = timeit.default_timer()
 

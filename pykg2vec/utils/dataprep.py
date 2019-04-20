@@ -96,6 +96,8 @@ class DataPrep(object):
                 e1_idx = self.entity2idx[t.h]
                 e2_idx = self.entity2idx[t.t]
                 r_idx = self.relation2idx[t.r]
+                if type(r_idx) is not int:
+                    print(t.r, r_idx)
                 r_rev_idx = self.relation2idx[t.r + '_reverse']
                 e2_multi1 = [self.entity2idx[i] for i in self.label_graph[(t.h, t.r)]]
                 e2_multi2 = [self.entity2idx[i] for i in self.label_graph[(t.t, t.r + '_reverse')]]
@@ -110,6 +112,8 @@ class DataPrep(object):
                 r_rev_idx = self.relation2idx[t.r + '_reverse']
                 e2_multi1 = [self.entity2idx[i] for i in self.label_graph[(t.h, t.r)]]
                 e2_multi2 = [self.entity2idx[i] for i in self.label_graph[(t.t, t.r + '_reverse')]]
+                if type(r_idx) is not int:
+                    print(t.r, r_idx)
                 self.valid_data.append(DataInput(e1=e1_idx, r=r_idx,
                                                  e2=e2_idx, r_rev=r_rev_idx,
                                                  e2_multi1=e2_multi1, e2_multi2=e2_multi2))
@@ -130,18 +134,19 @@ class DataPrep(object):
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
             self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
-        self.relation_property_head = {x: [] for x in
-                                       range(self.tot_relation)}
-        self.relation_property_tail = {x: [] for x in
-                                       range(self.tot_relation)}
-        for t in self.train_triples_ids:
-            self.relation_property_head[t.r].append(t.h)
-            self.relation_property_tail[t.r].append(t.t)
+        if not self.algo:
+            self.relation_property_head = {x: [] for x in
+                                           range(self.tot_relation)}
+            self.relation_property_tail = {x: [] for x in
+                                           range(self.tot_relation)}
+            for t in self.train_triples_ids:
+                self.relation_property_head[t.r].append(t.h)
+                self.relation_property_tail[t.r].append(t.t)
 
-        self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
-                len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
-                                  for x in
-                                  self.relation_property_head.keys()}
+            self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
+                    len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
+                                      for x in
+                                      self.relation_property_head.keys()}
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
@@ -262,8 +267,6 @@ class DataPrep(object):
         array_rand_ids = np.random.permutation(len(self.test_data))
         number_of_batches = len(self.test_data) // batch_size
 
-        # print("Number of batches:", number_of_batches)
-
         batch_idx = 0
         while True:
             test_data = np.asarray([[self.test_data[x].e1,
@@ -275,7 +278,11 @@ class DataPrep(object):
                                     array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
 
             e1 = test_data[:, 0]
-            r = test_data[:, 1]
+            try:
+                r = np.asarray(test_data[:, 1], dtype=int)
+            except:
+                import pdb
+                pdb.set_trace()
             col = []
             for k in test_data[:, 2]:
                 col.append(k)
@@ -625,19 +632,21 @@ def test_data_prep_generator():
 def test_data_prep_generator_hr_t():
     data_handler = DataPrep('Freebase15k', algo=True)
     data_handler.dump()
-    gen = data_handler.batch_generator_test_hr_tr(batch_size=8)
+    gen = data_handler.batch_generator_test_hr_tr(batch_size=128)
     # import tensorflow as tf
-    for i in range(10):
+    for i in range(1000):
         e1, r, e2_multi1, e2, r_rev, e2_multi2 = list(next(gen))
-        e2_multi1 = np.asarray((e2_multi1 * 0.2) + 1.0 / data_handler.tot_entity)
-        e2_multi2 = np.asarray((e2_multi2 * 0.2) + 1.0 / data_handler.tot_entity)
-        print("")
-        print("e1:", e1)
-        print("r:", r)
-        print("e2_multi1:", e2_multi1)
-        print("e1:", e2)
-        print("r:", r_rev)
-        print("e2_multi1:", e2_multi2)
+        # if np.shape(r)[-1]>1:
+        #     print(e1,r,e2)
+        # e2_multi1 = np.asarray((e2_multi1 * 0.2) + 1.0 / data_handler.tot_entity)
+        # e2_multi2 = np.asarray((e2_multi2 * 0.2) + 1.0 / data_handler.tot_entity)
+        # # print("")
+        # print("e1:", e1)
+        # print("r:", r)
+        # print("e2_multi1:", e2_multi1)
+        # print("e1:", e2)
+        # print("r:", r_rev)
+        # print("e2_multi1:", e2_multi2)
 
 
 if __name__ == '__main__':

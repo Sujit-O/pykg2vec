@@ -66,31 +66,31 @@ class Evaluation(EvaluationMeta):
         filter_rank_head = []
         filter_rank_tail = []
         if self.algo:
-            gen = self.model.data_handler.batch_generator_test_hr_tr(batch_size=self.model.config.batch_size)
-            loop_len = len(self.model.data_handler.test_data) // self.model.config.batch_size if not self.debug else 5
-            total_test = loop_len * self.model.config.batch_size
+            gen = self.model.data_handler.batch_generator_test_hr_tr(batch_size=self.batch)
+            loop_len = self.n_test // self.batch if not self.debug else 100
+            total_test = loop_len * self.batch
         else:
             loop_len = self.model.config.test_num
             total_test = loop_len
-
+        t = None
+        e1 = None
+        r = None
+        e2 = None
+        r_rev = None
         for i in range(loop_len):
-            t = self.data[i]
-            r_rev = None
+            # print("batch_id:", i)
+
             if not self.algo:
+                t = self.data[i]
                 feed_dict = {
                     self.model.test_h: np.reshape(t.h, [1, ]),
                     self.model.test_r: np.reshape(t.r, [1, ]),
                     self.model.test_t: np.reshape(t.t, [1, ])
                 }
-                t.h = [t.h]
-                t.r = [t.h]
-                t.t = [t.t]
 
             else:
                 e1, r, e2_multi1, e2, r_rev, e2_multi2 = next(gen)
-                t.h = e1
-                t.t = e2
-                t.r = r
+
                 feed_dict = {
                     self.model.test_e1: e1,
                     self.model.test_e2: e2,
@@ -100,35 +100,53 @@ class Evaluation(EvaluationMeta):
                     self.model.test_e2_multi2: e2_multi2
                 }
 
-            (id_replace_head, id_replace_tail) = sess.run([head_rank, tail_rank], feed_dict)
+            id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
             for b in range(self.batch):
                 hrank = 0
                 fhrank = 0
-                for j in range(len(id_replace_head[b])):
-                    val = id_replace_head[b, -j - 1]
-                    if val == t.h[b]:
-                        break
-                    else:
-                        hrank += 1
-                        fhrank += 1
-                        if not self.algo:
-                            if val in self.tr_h[(t.t[b], t.r[b])]:
-                                fhrank -= 1
+                if not self.algo:
+                    for j in range(len(id_replace_head[b])):
+                        val = id_replace_head[b, -j - 1]
+                        if val == t.h:
+                            break
                         else:
-                            if val in self.tr_h[(t.t[b], r_rev[b])]:
+                            hrank += 1
+                            fhrank += 1
+                            if val in self.tr_h[(t.t, t.r)]:
+                                fhrank -= 1
+                else:
+                    for j in range(len(id_replace_head[b])):
+                        val = id_replace_head[b, -j - 1]
+                        if val == e1[b]:
+                            break
+                        else:
+                            hrank += 1
+                            fhrank += 1
+                            if val in self.tr_h[(e2[b], r_rev[b])]:
                                 fhrank -= 1
 
                 trank = 0
                 ftrank = 0
-                for j in range(len(id_replace_tail[b])):
-                    val = id_replace_tail[b, -j - 1]
-                    if val == t.t[b]:
-                        break
-                    else:
-                        trank += 1
-                        ftrank += 1
-                        if val in self.hr_t[(t.h[b], t.r[b])]:
-                            ftrank -= 1
+                if not self.algo:
+                    for j in range(len(id_replace_tail[b])):
+                        val = id_replace_tail[b, -j - 1]
+                        if val == t.t:
+                            break
+                        else:
+                            trank += 1
+                            ftrank += 1
+                            if val in self.hr_t[(t.h, t.r)]:
+                                ftrank -= 1
+                else:
+                    for j in range(len(id_replace_tail[b])):
+                        val = id_replace_tail[b, -j - 1]
+                        if val == e2[b]:
+                            break
+                        else:
+                            trank += 1
+                            ftrank += 1
+                            if val in self.hr_t[(e1[b], r[b])]:
+                                ftrank -= 1
 
                 rank_head.append(hrank)
                 rank_tail.append(trank)
