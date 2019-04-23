@@ -25,7 +25,7 @@ class Pykg2vecTestCase(unittest.TestCase):
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
-        config.save_model = True
+        config.save_model = False
         config.disp_result= False
 
         model = TransE(config, self.data_handler)
@@ -41,7 +41,7 @@ class Pykg2vecTestCase(unittest.TestCase):
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
-        config.save_model = True
+        config.save_model = False
         config.disp_result= False
         config.C = 0.125
 
@@ -59,7 +59,7 @@ class Pykg2vecTestCase(unittest.TestCase):
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
-        config.save_model = True
+        config.save_model = False
         config.disp_result= False
 
 
