@@ -101,20 +101,41 @@ class Evaluation(EvaluationMeta):
                 }
 
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
-            for b in range(self.batch):
+
+            if not self.algo:
                 hrank = 0
                 fhrank = 0
-                if not self.algo:
-                    for j in range(len(id_replace_head[b])):
-                        val = id_replace_head[b, -j - 1]
-                        if val == t.h:
-                            break
-                        else:
-                            hrank += 1
-                            fhrank += 1
-                            if val in self.tr_h[(t.t, t.r)]:
-                                fhrank -= 1
-                else:
+                for j in range(len(id_replace_head)):
+                    val = id_replace_head[-j - 1]
+                    if val == t.h:
+                        break
+                    else:
+                        hrank += 1
+                        fhrank += 1
+                        if val in self.tr_h[(t.t, t.r)]:
+                            fhrank -= 1
+                            
+                trank = 0
+                ftrank = 0
+                for j in range(len(id_replace_tail)):
+                    val = id_replace_tail[-j - 1]
+                    if val == t.t:
+                        break
+                    else:
+                        trank += 1
+                        ftrank += 1
+                        if val in self.hr_t[(t.h, t.r)]:
+                            ftrank -= 1
+                
+                rank_head.append(hrank)
+                rank_tail.append(trank)
+                filter_rank_head.append(fhrank)
+                filter_rank_tail.append(ftrank)
+            else:
+                for b in range(self.batch):
+                    hrank = 0
+                    fhrank = 0
+                    
                     for j in range(len(id_replace_head[b])):
                         val = id_replace_head[b, -j - 1]
                         if val == e1[b]:
@@ -125,19 +146,9 @@ class Evaluation(EvaluationMeta):
                             if val in self.tr_h[(e2[b], r_rev[b])]:
                                 fhrank -= 1
 
-                trank = 0
-                ftrank = 0
-                if not self.algo:
-                    for j in range(len(id_replace_tail[b])):
-                        val = id_replace_tail[b, -j - 1]
-                        if val == t.t:
-                            break
-                        else:
-                            trank += 1
-                            ftrank += 1
-                            if val in self.hr_t[(t.h, t.r)]:
-                                ftrank -= 1
-                else:
+                    trank = 0
+                    ftrank = 0
+                    
                     for j in range(len(id_replace_tail[b])):
                         val = id_replace_tail[b, -j - 1]
                         if val == e2[b]:
@@ -147,6 +158,85 @@ class Evaluation(EvaluationMeta):
                             ftrank += 1
                             if val in self.hr_t[(e1[b], r[b])]:
                                 ftrank -= 1
+
+                    rank_head.append(hrank)
+                    rank_tail.append(trank)
+                    filter_rank_head.append(fhrank)
+                    filter_rank_tail.append(ftrank)
+
+        self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
+        self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
+
+        self.filter_mean_rank_head[epoch] = np.sum(filter_rank_head,
+                                                   dtype=np.float32) / total_test
+        self.filter_mean_rank_tail[epoch] = np.sum(filter_rank_tail,
+                                                   dtype=np.float32) / total_test
+
+        for hit in self.hits:
+            self.hit_head[(epoch, hit)] = np.sum(np.asarray(rank_head) < hit,
+
+                                                 dtype=np.float32) / total_test
+            self.hit_tail[(epoch, hit)] = np.sum(np.asarray(rank_tail) < hit,
+                                                 dtype=np.float32) / total_test
+            self.filter_hit_head[(epoch, hit)] = np.sum(np.asarray(filter_rank_head) < hit,
+                                                        dtype=np.float32) / total_test
+            self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
+                                                        dtype=np.float32) / total_test
+
+    def test_proje(self, sess=None, epoch=None):
+        head_rank, tail_rank = self.model.test_step()
+        self.epoch.append(epoch)
+        if not sess:
+            raise NotImplementedError('No session found for evaluation!')
+
+        rank_head = []
+        rank_tail = []
+        filter_rank_head = []
+        filter_rank_tail = []
+       
+        gen = self.model.data_handler.batch_generator_train_proje(src_triples=self.model.data_handler.test_triples_ids, batch_size=self.batch)
+        loop_len = self.n_test // self.batch if not self.debug else 100
+        total_test = loop_len * self.batch
+
+        for i in range(loop_len):
+            # print("batch_id:", i)
+            datas = next(gen)
+            # import pdb
+            # pdb.set_trace()
+            feed_dict = {
+                self.model.test_h: datas[:,0],
+                self.model.test_r: datas[:,1],
+                self.model.test_t: datas[:,2]
+            }
+
+            id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
+
+            for b in range(self.batch):
+                hrank = 0
+                fhrank = 0
+                
+                for j in range(len(id_replace_head[b])):
+                    val = id_replace_head[b, -j - 1]
+                    if val == datas[:,0][b]:
+                        break
+                    else:
+                        hrank += 1
+                        fhrank += 1
+                        if val in self.tr_h[(datas[:,2][b], datas[:,1][b])]:
+                            fhrank -= 1
+
+                trank = 0
+                ftrank = 0
+                
+                for j in range(len(id_replace_tail[b])):
+                    val = id_replace_tail[b, -j - 1]
+                    if val == datas[:,2][b]:
+                        break
+                    else:
+                        trank += 1
+                        ftrank += 1
+                        if val in self.hr_t[(datas[:,0][b], datas[:,1][b])]:
+                            ftrank -= 1
 
                 rank_head.append(hrank)
                 rank_tail.append(trank)

@@ -19,13 +19,13 @@ from collections import defaultdict
 import pprint
 from scipy import sparse as sps
 
+from multiprocessing import JoinableQueue, Queue, Process
 
 class Triple(object):
     def __init__(self, head=None, relation=None, tail=None):
         self.h = head
         self.r = relation
         self.t = tail
-
 
 class DataInput(object):
     def __init__(self, e1=None, r=None, e2=None, r_rev=None, e2_multi1=None, e2_multi2=None):
@@ -35,7 +35,6 @@ class DataInput(object):
         self.r_rev = r_rev
         self.e2_multi1 = e2_multi1
         self.e2_multi2 = e2_multi2
-
 
 class DataPrep(object):
 
@@ -70,6 +69,7 @@ class DataPrep(object):
         self.test_triples_no_rev = []
         self.validation_triples_no_rev = []
 
+        self.sampling = "uniform"
         # self.train_label
         if not self.algo:
             self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
@@ -82,6 +82,13 @@ class DataPrep(object):
             self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t])
                                            for t
                                            in self.validation_triples]
+            self.hr_t_ids_train = defaultdict(set)
+            self.tr_t_ids_train = defaultdict(set)
+
+            for t in self.train_triples_ids:
+                self.hr_t_ids_train[(t.h, t.r)].add(t.t)
+                self.tr_t_ids_train[(t.t, t.r)].add(t.h)
+
         else:
             self.read_triple_hr_rt(['train', 'test', 'valid'])
             self.calculate_mapping()  # from entity and relation to indexes.
@@ -122,6 +129,8 @@ class DataPrep(object):
                 for t
                 in self.validation_triples]
 
+        
+
         for t in self.train_triples:
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
             self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
@@ -135,18 +144,21 @@ class DataPrep(object):
             self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
         if not self.algo:
-            self.relation_property_head = {x: [] for x in
-                                           range(self.tot_relation)}
-            self.relation_property_tail = {x: [] for x in
-                                           range(self.tot_relation)}
-            for t in self.train_triples_ids:
-                self.relation_property_head[t.r].append(t.h)
-                self.relation_property_tail[t.r].append(t.t)
 
-            self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
-                    len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
-                                      for x in
-                                      self.relation_property_head.keys()}
+            if self.sampling == "bern":
+                import pdb
+                pdb.set_trace()
+                self.relation_property_head = {x: [] for x in range(self.tot_relation)}
+                self.relation_property_tail = {x: [] for x in 
+                                               range(self.tot_relation)}
+                for t in self.train_triples_ids:
+                    self.relation_property_head[t.r].append(t.h)
+                    self.relation_property_tail[t.r].append(t.t)
+
+                self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
+                        len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
+                                          for x in
+                                          self.relation_property_head.keys()}
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
@@ -361,9 +373,9 @@ class DataPrep(object):
             nt = []
 
             for t in pos_triples:
-                if self.config.negative_sample == 'uniform':
+                if self.sampling == 'uniform':
                     prob = 0.5
-                elif self.config.negative_sample == 'bern':
+                elif self.sampling == 'bern':
                     prob = self.relation_property[t[1]]
                 else:
                     raise NotImplementedError("%s sampling not supported!" % self.config.negative_sample)
@@ -517,6 +529,27 @@ class DataPrep(object):
 
             if batch_idx == number_of_batches:
                 batch_idx = 0
+    
+    def batch_generator_train_proje(self, src_triples=None, batch_size=128):
+        batch_size = batch_size
+
+        if src_triples is None:
+            src_triples = self.train_triples_ids
+
+        array_rand_ids = np.random.permutation(len(src_triples))
+        number_of_batches = len(src_triples) // batch_size
+
+        batch_idx = 0
+        while True:           
+            triples = np.asarray([[src_triples[x].h, src_triples[x].r, src_triples[x].t] for x in
+                                      array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
+            batch_idx += 1
+
+            yield triples
+
+            if batch_idx == number_of_batches:
+                batch_idx = 0
+
     def read_triple(self, datatype=None):
         print("Reading Triples", datatype)
 
@@ -525,6 +558,8 @@ class DataPrep(object):
                 for l in f.readlines():
                     h, r, t = l.split('\t')
                     triple = Triple(h.strip(), r.strip(), t.strip())
+
+
                     if data == 'train':
                         self.train_triples.append(triple)
                     elif data == 'test':
@@ -608,11 +643,50 @@ class DataPrep(object):
         for idx, triple in enumerate(self.validation_triples):
             print(idx, triple.h, triple.r, triple.t)
 
+    def start_multiprocessing(self):
+        self.raw_training_data_queue = Queue()
+        self.training_data_queue = Queue()
+       
+        self.data_generators = list()
+        for i in range(8):
+            self.data_generators.append(Process(target=self.data_generator_func, args=(self.raw_training_data_queue, self.training_data_queue, self.hr_t_ids_train, self.tr_t_ids_train, self.tot_entity, 0.5)))
+            self.data_generators[-1].start()
+
+    def stop_multiprocessing(self):
+        for process in self.data_generators:
+            process.terminate()
+
+    def data_generator_func(self, in_queue: JoinableQueue, out_queue: Queue, tr_h, hr_t, n_entity, neg_weight):
+
+        while True:
+            dat = in_queue.get()
+            if dat is None:
+                break
+
+            hr_hr_batch = list()
+            hr_tweight = list()
+            tr_tr_batch = list()
+            tr_hweight = list()
+            htr = dat
+
+            for idx in range(htr.shape[0]):
+                if np.random.uniform(-1, 1) > 0:  # t r predict h
+                    tr_hweight.append(
+                        [1. if x in tr_h[(htr[idx, 1],htr[idx, 2])] else y for
+                         x, y in enumerate(np.random.choice([0., -1.], size=n_entity, p=[1 - neg_weight, neg_weight]))])
+                    tr_tr_batch.append((htr[idx, 2], htr[idx, 1]))
+                else:  # h r predict t
+                    hr_tweight.append(
+                        [1. if x in tr_h[(htr[idx, 0], htr[idx, 2])] else y for
+                         x, y in enumerate(np.random.choice([0., -1.], size=n_entity, p=[1 - neg_weight, neg_weight]))])
+                    hr_hr_batch.append((htr[idx, 0], htr[idx, 1]))
+
+            out_queue.put((np.asarray(hr_hr_batch, dtype=np.int32), np.asarray(hr_tweight, dtype=np.float32),
+                           np.asarray(tr_tr_batch, dtype=np.int32), np.asarray(tr_hweight, dtype=np.float32)))
 
 def test_data_prep():
     data_handler = DataPrep('Freebase15k')
     data_handler.dump()
-
 
 def test_data_prep_generator():
     data_handler = DataPrep('Freebase15k')
@@ -647,7 +721,6 @@ def test_data_prep_generator_hr_t():
         # print("e1:", e2)
         # print("r:", r_rev)
         # print("e2_multi1:", e2_multi2)
-
 
 if __name__ == '__main__':
     # test_data_prep()

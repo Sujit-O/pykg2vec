@@ -29,15 +29,19 @@ class ProjE_pointwise(ModelMeta):
         self.def_loss()
         
     def def_inputs(self):
-        self.pos_h = tf.placeholder(tf.int32, [None])
-        self.pos_t = tf.placeholder(tf.int32, [None])
-        self.pos_r = tf.placeholder(tf.int32, [None])
-        self.neg_h = tf.placeholder(tf.int32, [None])
-        self.neg_t = tf.placeholder(tf.int32, [None])
-        self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h = tf.placeholder(tf.int32, [1])
-        self.test_t = tf.placeholder(tf.int32, [1])
-        self.test_r = tf.placeholder(tf.int32, [1])
+        num_total_ent = self.data_handler.tot_entity
+
+        self.test_h = tf.placeholder(tf.int32, [None])
+        self.test_t = tf.placeholder(tf.int32, [None])
+        self.test_r = tf.placeholder(tf.int32, [None])
+
+        self.hr_h = tf.placeholder(tf.int32, [None]) #[m]
+        self.hr_r = tf.placeholder(tf.int32, [None]) #[m]
+        self.hr_t = tf.placeholder(tf.float32, [None, num_total_ent]) #[m, tot_entity]
+
+        self.tr_t = tf.placeholder(tf.int32, [None]) #[m]
+        self.tr_r = tf.placeholder(tf.int32, [None]) #[m]
+        self.tr_h = tf.placeholder(tf.float32, [None, num_total_ent]) #[m, tot_entity]
     
     def def_parameters(self):
         num_total_ent = self.data_handler.tot_entity
@@ -55,59 +59,64 @@ class ProjE_pointwise(ModelMeta):
             self.De1 = tf.get_variable(name="De1", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.Dr1 = tf.get_variable(name="Dr1", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            self.bc2 = tf.get_variable(name="bc1", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.bc2 = tf.get_variable(name="bc2", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.De2 = tf.get_variable(name="De2", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.Dr2 = tf.get_variable(name="Dr2", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.w]
+            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2, self.De2, self.Dr2]
             
     def def_loss(self):
-        emb_ph, emb_pr, emb_pt = self.embed(self.pos_h, self.pos_r, self.pos_t)
-        emb_nh, emb_nr, emb_nt = self.embed(self.neg_h, self.neg_r, self.neg_t)
-        
-        score_pos = self.distance(emb_ph, emb_pr, emb_pt)
-        score_neg = self.distance(emb_nh, emb_nr, emb_nt)
+        # norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1) #[tot_ent, k]
+        # norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1) #[tot_rel, k]
+        norm_ent_embeddings = self.ent_embeddings #[tot_ent, k]
+        norm_rel_embeddings = self.rel_embeddings #[tot_rel, k]
 
-        self.loss = tf.reduce_sum(tf.maximum(0., score_pos + self.config.margin - score_neg))   
+        emb_hr_h = tf.nn.embedding_lookup(norm_ent_embeddings, self.hr_h) #[m, k]
+        emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.hr_r) #[m, k]
+
+        emb_tr_t = tf.nn.embedding_lookup(norm_ent_embeddings, self.tr_t) #[m, k]
+        emb_tr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.tr_r) #[m, k]
+
+        hrt_sigmoid = self.g(self.f1(emb_hr_h, emb_hr_r), norm_ent_embeddings)
+
+        hrt_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., self.hr_t)))
+        hrt_loss_right= - tf.reduce_sum((tf.log(tf.clip_by_value(1-hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.hr_t))))
+
+        hrt_loss = hrt_loss_left + hrt_loss_right
+
+        trh_sigmoid = self.g(self.f2(emb_tr_t, emb_tr_r), norm_ent_embeddings)
+
+        trh_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., self.tr_h)))
+        trh_loss_right= - tf.reduce_sum((tf.log(tf.clip_by_value(1-trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.tr_h))))
+
+        self.loss = hrt_loss_left + hrt_loss_right
+
+    def f1(self, h, r):
+        return tf.tanh(h*self.De1 + r*self.Dr1 + self.bc1)
+    def f2(self, t, r):
+        return tf.tanh(t*self.De2 + r*self.Dr2 + self.bc2)
+    def g(self, f, W):
+        return tf.sigmoid(tf.matmul(f, tf.transpose(W)))
 
     def test_step(self):
         num_entity = self.data_handler.tot_entity
 
-        head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        pos_norm = self.get_proj(self.test_r)
+        # norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1) #[tot_ent, k]
+        # norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1) #[tot_rel, k]
+        norm_ent_embeddings = self.ent_embeddings #[tot_ent, k]
+        norm_rel_embeddings = self.rel_embeddings #[tot_rel, k]
 
-        project_ent_embedding = self.projection(self.ent_embeddings, pos_norm)
-        score_head = self.distance(project_ent_embedding, rel_vec, tail_vec)
-        score_tail = self.distance(head_vec, rel_vec, project_ent_embedding)
-
-        self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-        self.w = tf.nn.l2_normalize(self.w, axis=1)
-  
-        norm_head_vec, norm_rel_vec, norm_tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        norm_pos_norm = self.get_proj(self.test_r)
+        h_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_h) #[1, k]
+        r_vec = tf.nn.embedding_lookup(norm_rel_embeddings, self.test_r) #[1, k]
+        t_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_t) #[1, k]
         
-        norm_project_ent_embedding = self.projection(self.ent_embeddings, norm_pos_norm)
-        norm_score_head = self.distance(norm_project_ent_embedding, norm_rel_vec, norm_tail_vec)
-        norm_score_tail = self.distance(norm_head_vec, norm_rel_vec, norm_project_ent_embedding)
+        hrt_sigmoid = - self.g(self.f1(h_vec, r_vec), norm_ent_embeddings)
+        trh_sigmoid = - self.g(self.f2(t_vec, r_vec), norm_ent_embeddings)
         
-        _, self.head_rank      = tf.nn.top_k(score_head, k=num_entity)
-        _, self.tail_rank      = tf.nn.top_k(score_tail, k=num_entity)
-        _, self.norm_head_rank = tf.nn.top_k(norm_score_head, k=num_entity)
-        _, self.norm_tail_rank = tf.nn.top_k(norm_score_tail, k=num_entity)
-        return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
+        _, self.head_rank      = tf.nn.top_k(trh_sigmoid, k=num_entity)
+        _, self.tail_rank      = tf.nn.top_k(hrt_sigmoid, k=num_entity)
 
-    def get_proj(self, r):
-        return tf.nn.l2_normalize(tf.nn.embedding_lookup(self.w, r), axis=-1)
-
-    def projection(self, entity, wr):
-        return entity - tf.reduce_sum(entity * wr, -1, keepdims = True) * wr
-    
-    def distance(self, h, r, t):
-        if self.config.L1_flag: 
-            return tf.reduce_sum(tf.abs(h+r-t), axis=1) # L1 norm 
-        else:
-            return tf.reduce_sum((h+r-t)**2, axis=1) # L2 norm
+        return self.head_rank, self.tail_rank
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
