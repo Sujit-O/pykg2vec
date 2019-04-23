@@ -46,9 +46,22 @@ class Trainer(TrainerMeta):
         if self.config.loadFromData:
             self.load_model()
         else:
+            if self.model.model_name == "ProjE_pointwise":
+                self.data_handler.start_multiprocessing()
+            
             for n_iter in range(self.config.epochs):
-                self.train_model_epoch(n_iter)
-                self.tiny_test(n_iter)
+                if self.model.model_name == "ProjE_pointwise":
+                    self.train_model_epoch_proje(n_iter)
+                    self.tiny_test_proje(n_iter)
+                elif self.model.model_name == "ConvE":
+                    self.train_model_epoch_conve(n_iter)
+                    self.tiny_test(n_iter)
+                else:
+                    self.train_model_epoch(n_iter)
+                    self.tiny_test(n_iter)
+            
+            if self.model.model_name == "ProjE_pointwise":
+                self.data_handler.end()
 
             self.evaluator.save_test_summary()
             self.evaluator.save_training_result(self.training_results)
@@ -60,48 +73,76 @@ class Trainer(TrainerMeta):
             self.display()
 
         if self.config.disp_summary:
-            self.summary()
+            self.summary()       
+
+    def train_model_epoch_proje(self, epoch_idx):
+        acc_loss = 0
+
+        tot_data = len(self.data_handler.train_triples_ids)
+        
+        num_batch = tot_data // self.config.batch_size if not self.debug else 5
+
+        start_time = timeit.default_timer()
+
+        gen_train = self.data_handler.batch_generator_train_proje(batch_size=self.config.batch_size)
+        batch_counts = 0
+        
+        for batch_idx in range(num_batch):
+            triples = next(gen_train)
+            self.data_handler.raw_training_data_queue.put(triples)
+            batch_counts += 1
+        
+        while batch_counts > 0:
+            batch_counts -= 1
+
+            hr_hr, hr_t, tr_tr, tr_h = self.data_handler.training_data_queue.get()
+
+            feed_dict = {
+                self.model.hr_h: hr_hr[:, 0],
+                self.model.hr_r: hr_hr[:, 1],
+                self.model.hr_t: hr_t,
+                self.model.tr_t: tr_tr[:, 0],
+                self.model.tr_r: tr_tr[:, 1],
+                self.model.tr_h: tr_h
+            }
+
+            _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
+
+            acc_loss += loss
+
+            print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
+                                                        batch_counts, num_batch, loss), end='\r')
+
+        print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
+            epoch_idx, acc_loss, timeit.default_timer() - start_time))
+
+        self.training_results.append([epoch_idx, acc_loss])
 
     def train_model_epoch(self, epoch_idx):
         acc_loss = 0
-
-        if not self.algo:
-            tot_data = len(self.data_handler.train_triples_ids)
-        else:
-            tot_data = len(self.data_handler.train_data)
+    
+        tot_data = len(self.data_handler.train_data)
 
         num_batch = tot_data // self.config.batch_size if not self.debug else 2
 
         start_time = timeit.default_timer()
 
-        if not self.algo:
-            if self.config.sampling == "uniform":
-                gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
-            elif self.config.sampling == "bern":
-                gen_train = self.data_handler.batch_generator_bern(batch_size=self.config.batch_size)
-        else:
-            gen_train = self.data_handler.batch_generator_train_hr_tr(batch_size=self.config.batch_size)
+        if self.config.sampling == "uniform":
+            gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
+        elif self.config.sampling == "bern":
+            gen_train = self.data_handler.batch_generator_bern(batch_size=self.config.batch_size)
 
         for batch_idx in range(num_batch):
-            if not self.algo:
-                ph, pr, pt, nh, nr, nt = next(gen_train)
+            ph, pr, pt, nh, nr, nt = next(gen_train)
 
-                feed_dict = {
-                    self.model.pos_h: ph,
-                    self.model.pos_t: pt,
-                    self.model.pos_r: pr,
-                    self.model.neg_h: nh,
-                    self.model.neg_t: nt,
-                    self.model.neg_r: nr
-                }
-            else:
-                e1, r, e2_multi1 = next(gen_train)
-
-                feed_dict = {
-                    self.model.e1: e1,
-                    self.model.r: r,
-                    self.model.e2_multi1: e2_multi1
-                }
+            feed_dict = {
+                self.model.pos_h: ph,
+                self.model.pos_t: pt,
+                self.model.pos_r: pr,
+                self.model.neg_h: nh,
+                self.model.neg_t: nt,
+                self.model.neg_r: nr
+            }
 
             _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
 
@@ -115,6 +156,39 @@ class Trainer(TrainerMeta):
 
         self.training_results.append([epoch_idx, acc_loss])
 
+    def train_model_epoch_conve(self, epoch_idx):
+        acc_loss = 0
+
+        tot_data = len(self.data_handler.train_data)
+
+        num_batch = tot_data // self.config.batch_size if not self.debug else 2
+
+        start_time = timeit.default_timer()
+
+        gen_train = self.data_handler.batch_generator_train_hr_tr(batch_size=self.config.batch_size)
+
+        for batch_idx in range(num_batch):
+            
+            e1, r, e2_multi1 = next(gen_train)
+
+            feed_dict = {
+                self.model.e1: e1,
+                self.model.r: r,
+                self.model.e2_multi1: e2_multi1
+            }
+
+            _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
+
+            acc_loss += loss
+
+            print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
+                                                        batch_idx, num_batch, loss), end='\r')
+
+        print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
+            epoch_idx, acc_loss, timeit.default_timer() - start_time))
+
+        self.training_results.append([epoch_idx, acc_loss])
+    
     ''' Testing related functions:'''
 
     def tiny_test(self, curr_epoch):
@@ -127,6 +201,20 @@ class Trainer(TrainerMeta):
                 curr_epoch == 0 or \
                 curr_epoch == self.config.epochs - 1:
             self.evaluator.test(self.sess, curr_epoch)
+            self.evaluator.print_test_summary(curr_epoch)
+
+            print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
+
+    def tiny_test_proje(self, curr_epoch):
+        start_time = timeit.default_timer()
+
+        if self.config.test_step == 0:
+            return
+
+        if curr_epoch % self.config.test_step == 0 or \
+                curr_epoch == 0 or \
+                curr_epoch == self.config.epochs - 1:
+            self.evaluator.test_proje(self.sess, curr_epoch)
             self.evaluator.print_test_summary(curr_epoch)
 
             print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
