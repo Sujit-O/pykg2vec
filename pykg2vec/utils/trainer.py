@@ -7,7 +7,7 @@ sys.path.append("../")
 from core.KGMeta import TrainerMeta
 from utils.evaluation import Evaluation
 from utils.visualization import Visualization
-
+import numpy as np
 
 class Trainer(TrainerMeta):
 
@@ -61,7 +61,7 @@ class Trainer(TrainerMeta):
                     self.tiny_test(n_iter)
             
             if self.model.model_name == "ProjE_pointwise":
-                self.data_handler.end()
+                self.data_handler.stop_multiprocessing()
 
             self.evaluator.save_test_summary()
             self.evaluator.save_training_result(self.training_results)
@@ -90,6 +90,9 @@ class Trainer(TrainerMeta):
         for batch_idx in range(num_batch):
             triples = next(gen_train)
             self.data_handler.raw_training_data_queue.put(triples)
+
+
+
             batch_counts += 1
         
         while batch_counts > 0:

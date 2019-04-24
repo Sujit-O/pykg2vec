@@ -72,6 +72,7 @@ class DataPrep(object):
         self.sampling = "uniform"
         # self.train_label
         if not self.algo:
+
             self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
             self.calculate_mapping()  # from entity and relation to indexes.
             self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in
@@ -649,7 +650,7 @@ class DataPrep(object):
        
         self.data_generators = list()
         for i in range(8):
-            self.data_generators.append(Process(target=self.data_generator_func, args=(self.raw_training_data_queue, self.training_data_queue, self.hr_t_ids_train, self.tr_t_ids_train, self.tot_entity, 0.5)))
+            self.data_generators.append(Process(target=self.data_generator_func, args=(self.raw_training_data_queue, self.training_data_queue, self.tr_t_ids_train, self.hr_t_ids_train, self.tot_entity, 0.5)))
             self.data_generators[-1].start()
 
     def stop_multiprocessing(self):
@@ -671,14 +672,26 @@ class DataPrep(object):
 
             for idx in range(htr.shape[0]):
                 if np.random.uniform(-1, 1) > 0:  # t r predict h
-                    tr_hweight.append(
-                        [1. if x in tr_h[(htr[idx, 1],htr[idx, 2])] else y for
-                         x, y in enumerate(np.random.choice([0., -1.], size=n_entity, p=[1 - neg_weight, neg_weight]))])
+                    temp = np.zeros(n_entity)
+                    for idx2 in np.random.permutation(n_entity)[0:n_entity//2]:
+                        temp[idx2] = -1.0 
+                    for head in tr_h[(htr[idx, 2],htr[idx, 1])]:
+                        temp[head] = 1.0
+                    tr_hweight.append(temp)
+                    # tr_hweight.append(
+                    #     [1. if x in tr_h[(htr[idx, 1],htr[idx, 2])] else y for
+                    #      x, y in enumerate(np.random.choice([0., -1.], size=n_entity, p=[1 - neg_weight, neg_weight]))])
                     tr_tr_batch.append((htr[idx, 2], htr[idx, 1]))
                 else:  # h r predict t
-                    hr_tweight.append(
-                        [1. if x in tr_h[(htr[idx, 0], htr[idx, 2])] else y for
-                         x, y in enumerate(np.random.choice([0., -1.], size=n_entity, p=[1 - neg_weight, neg_weight]))])
+                    temp = np.zeros(n_entity)
+                    for idx2 in np.random.permutation(n_entity)[0:n_entity//2]:
+                        temp[idx2] = -1.0 
+                    for tail in hr_t[(htr[idx, 0],htr[idx, 1])]:
+                        temp[tail] = 1.0
+                    hr_tweight.append(temp)
+                    # hr_tweight.append(
+                    #     [1. if x in tr_h[(htr[idx, 0], htr[idx, 2])] else y for
+                    #      x, y in enumerate(np.random.choice([0., -1.], size=n_entity, p=[1 - neg_weight, neg_weight]))])
                     hr_hr_batch.append((htr[idx, 0], htr[idx, 1]))
 
             out_queue.put((np.asarray(hr_hr_batch, dtype=np.int32), np.asarray(hr_tweight, dtype=np.float32),
