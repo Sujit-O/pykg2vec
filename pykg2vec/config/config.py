@@ -303,6 +303,7 @@ class ConvEConfig(BasicConfig):
         self.optimizer = optimizer
         self.sampling = sampling
 
+
 class ProjE_pointwiseConfig(BasicConfig):
     def __init__(self,
                  learning_rate=0.003,
