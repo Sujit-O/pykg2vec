@@ -8,7 +8,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-
+import progressbar
 sys.path.append("../")
 
 from config.global_config import GlobalConfig
@@ -21,11 +21,13 @@ from scipy import sparse as sps
 
 from multiprocessing import JoinableQueue, Queue, Process
 
+
 class Triple(object):
     def __init__(self, head=None, relation=None, tail=None):
         self.h = head
         self.r = relation
         self.t = tail
+
 
 class DataInput(object):
     def __init__(self, e1=None, r=None, e2=None, r_rev=None, e2_multi1=None, e2_multi2=None):
@@ -35,6 +37,7 @@ class DataInput(object):
         self.r_rev = r_rev
         self.e2_multi1 = e2_multi1
         self.e2_multi2 = e2_multi2
+
 
 class DataPrep(object):
 
@@ -93,44 +96,62 @@ class DataPrep(object):
         else:
             self.read_triple_hr_rt(['train', 'test', 'valid'])
             self.calculate_mapping()  # from entity and relation to indexes.
+            if not os.path.exists(self.config.tmp_data):
+                os.mkdir(self.config.tmp_data)
+            if not os.path.exists(self.config.tmp_data / 'train_data.pkl'):
+                print("\nPreparing Training Data!")
+                with progressbar.ProgressBar(max_value=len(self.train_graph)) as bar:
+                    for i,(e, r) in enumerate(self.train_graph):
+                        e1_idx = self.entity2idx[e]
+                        r_idx = self.relation2idx[r]
+                        e2_multi1 = [self.entity2idx[i] for i in list(self.train_graph[(e, r)])]
+                        self.train_data.append(DataInput(e1=e1_idx, r=r_idx, e2_multi1=e2_multi1))
+                        bar.update(i)
+                with open(self.config.tmp_data / 'train_data.pkl', 'wb') as f:
+                    pickle.dump(self.train_data, f)
 
-            for (e, r) in self.train_graph:
-                e1_idx = self.entity2idx[e]
-                r_idx = self.relation2idx[r]
-                e2_multi1 = [self.entity2idx[i] for i in list(self.train_graph[(e, r)])]
-                self.train_data.append(DataInput(e1=e1_idx, r=r_idx, e2_multi1=e2_multi1))
+            if not os.path.exists(self.config.tmp_data / 'test_data.pkl'):
+                print("\nPreparing Testing Data!")
+                with progressbar.ProgressBar(max_value=len(self.test_triples_no_rev)) as bar:
+                    for i,t in enumerate(self.test_triples_no_rev):
+                        e1_idx = self.entity2idx[t.h]
+                        e2_idx = self.entity2idx[t.t]
+                        r_idx = self.relation2idx[t.r]
+                        if type(r_idx) is not int:
+                            print(t.r, r_idx)
+                        r_rev_idx = self.relation2idx[t.r + '_reverse']
+                        e2_multi1 = [self.entity2idx[i] for i in self.label_graph[(t.h, t.r)]]
+                        e2_multi2 = [self.entity2idx[i] for i in self.label_graph[(t.t, t.r + '_reverse')]]
+                        self.test_data.append(DataInput(e1=e1_idx, r=r_idx,
+                                                        e2=e2_idx, r_rev=r_rev_idx,
+                                                        e2_multi1=e2_multi1, e2_multi2=e2_multi2))
+                        bar.update(i)
+                with open(self.config.tmp_data / 'test_data.pkl', 'wb') as f:
+                    pickle.dump(self.test_data, f)
 
-            for t in self.test_triples_no_rev:
-                e1_idx = self.entity2idx[t.h]
-                e2_idx = self.entity2idx[t.t]
-                r_idx = self.relation2idx[t.r]
-                if type(r_idx) is not int:
-                    print(t.r, r_idx)
-                r_rev_idx = self.relation2idx[t.r + '_reverse']
-                e2_multi1 = [self.entity2idx[i] for i in self.label_graph[(t.h, t.r)]]
-                e2_multi2 = [self.entity2idx[i] for i in self.label_graph[(t.t, t.r + '_reverse')]]
-                self.test_data.append(DataInput(e1=e1_idx, r=r_idx,
-                                                e2=e2_idx, r_rev=r_rev_idx,
-                                                e2_multi1=e2_multi1, e2_multi2=e2_multi2))
+            if not os.path.exists(self.config.tmp_data / 'valid_data.pkl'):
+                print("\nPreparing Validation Data!")
+                with progressbar.ProgressBar(max_value=len(self.validation_triples_no_rev)) as bar:
+                    for i,t in enumerate(self.validation_triples_no_rev):
+                        e1_idx = self.entity2idx[t.h]
+                        e2_idx = self.entity2idx[t.t]
+                        r_idx = self.relation2idx[t.r]
+                        r_rev_idx = self.relation2idx[t.r + '_reverse']
+                        e2_multi1 = [self.entity2idx[i] for i in self.label_graph[(t.h, t.r)]]
+                        e2_multi2 = [self.entity2idx[i] for i in self.label_graph[(t.t, t.r + '_reverse')]]
+                        if type(r_idx) is not int:
+                            print(t.r, r_idx)
+                        self.valid_data.append(DataInput(e1=e1_idx, r=r_idx,
+                                                         e2=e2_idx, r_rev=r_rev_idx,
+                                                         e2_multi1=e2_multi1, e2_multi2=e2_multi2))
+                        bar.update(i)
+                with open(self.config.tmp_data / 'valid_data.pkl', 'wb') as f:
+                    pickle.dump(self.valid_data, f)
 
-            for t in self.validation_triples_no_rev:
-                e1_idx = self.entity2idx[t.h]
-                e2_idx = self.entity2idx[t.t]
-                r_idx = self.relation2idx[t.r]
-                r_rev_idx = self.relation2idx[t.r + '_reverse']
-                e2_multi1 = [self.entity2idx[i] for i in self.label_graph[(t.h, t.r)]]
-                e2_multi2 = [self.entity2idx[i] for i in self.label_graph[(t.t, t.r + '_reverse')]]
-                if type(r_idx) is not int:
-                    print(t.r, r_idx)
-                self.valid_data.append(DataInput(e1=e1_idx, r=r_idx,
-                                                 e2=e2_idx, r_rev=r_rev_idx,
-                                                 e2_multi1=e2_multi1, e2_multi2=e2_multi2))
             self.validation_triples_ids = [
                 Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t])
                 for t
                 in self.validation_triples]
-
-        
 
         for t in self.train_triples:
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
@@ -150,7 +171,7 @@ class DataPrep(object):
                 import pdb
                 pdb.set_trace()
                 self.relation_property_head = {x: [] for x in range(self.tot_relation)}
-                self.relation_property_tail = {x: [] for x in 
+                self.relation_property_tail = {x: [] for x in
                                                range(self.tot_relation)}
                 for t in self.train_triples_ids:
                     self.relation_property_head[t.r].append(t.h)
@@ -474,7 +495,7 @@ class DataPrep(object):
 
             for t in pos_triples:
                 prob = self.relation_property[t[1]]
-                
+
                 if np.random.random() > prob:
                     idx_replace_tail = np.random.randint(self.tot_entity)
 
@@ -530,7 +551,7 @@ class DataPrep(object):
 
             if batch_idx == number_of_batches:
                 batch_idx = 0
-    
+
     def batch_generator_train_proje(self, src_triples=None, batch_size=128):
         batch_size = batch_size
 
@@ -541,9 +562,9 @@ class DataPrep(object):
         number_of_batches = len(src_triples) // batch_size
 
         batch_idx = 0
-        while True:           
+        while True:
             triples = np.asarray([[src_triples[x].h, src_triples[x].r, src_triples[x].t] for x in
-                                      array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
+                                  array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
             batch_idx += 1
 
             yield triples
@@ -559,7 +580,6 @@ class DataPrep(object):
                 for l in f.readlines():
                     h, r, t = l.split('\t')
                     triple = Triple(h.strip(), r.strip(), t.strip())
-
 
                     if data == 'train':
                         self.train_triples.append(triple)
@@ -647,10 +667,12 @@ class DataPrep(object):
     def start_multiprocessing(self):
         self.raw_training_data_queue = Queue()
         self.training_data_queue = Queue()
-       
+
         self.data_generators = list()
         for i in range(8):
-            self.data_generators.append(Process(target=self.data_generator_func, args=(self.raw_training_data_queue, self.training_data_queue, self.tr_t_ids_train, self.hr_t_ids_train, self.tot_entity, 0.5)))
+            self.data_generators.append(Process(target=self.data_generator_func, args=(
+            self.raw_training_data_queue, self.training_data_queue, self.tr_t_ids_train, self.hr_t_ids_train,
+            self.tot_entity, 0.5)))
             self.data_generators[-1].start()
 
     def stop_multiprocessing(self):
@@ -673,9 +695,9 @@ class DataPrep(object):
             for idx in range(htr.shape[0]):
                 if np.random.uniform(-1, 1) > 0:  # t r predict h
                     temp = np.zeros(n_entity)
-                    for idx2 in np.random.permutation(n_entity)[0:n_entity//2]:
-                        temp[idx2] = -1.0 
-                    for head in tr_h[(htr[idx, 2],htr[idx, 1])]:
+                    for idx2 in np.random.permutation(n_entity)[0:n_entity // 2]:
+                        temp[idx2] = -1.0
+                    for head in tr_h[(htr[idx, 2], htr[idx, 1])]:
                         temp[head] = 1.0
                     tr_hweight.append(temp)
                     # tr_hweight.append(
@@ -684,9 +706,9 @@ class DataPrep(object):
                     tr_tr_batch.append((htr[idx, 2], htr[idx, 1]))
                 else:  # h r predict t
                     temp = np.zeros(n_entity)
-                    for idx2 in np.random.permutation(n_entity)[0:n_entity//2]:
-                        temp[idx2] = -1.0 
-                    for tail in hr_t[(htr[idx, 0],htr[idx, 1])]:
+                    for idx2 in np.random.permutation(n_entity)[0:n_entity // 2]:
+                        temp[idx2] = -1.0
+                    for tail in hr_t[(htr[idx, 0], htr[idx, 1])]:
                         temp[tail] = 1.0
                     hr_tweight.append(temp)
                     # hr_tweight.append(
@@ -697,9 +719,11 @@ class DataPrep(object):
             out_queue.put((np.asarray(hr_hr_batch, dtype=np.int32), np.asarray(hr_tweight, dtype=np.float32),
                            np.asarray(tr_tr_batch, dtype=np.int32), np.asarray(tr_hweight, dtype=np.float32)))
 
+
 def test_data_prep():
     data_handler = DataPrep('Freebase15k')
     data_handler.dump()
+
 
 def test_data_prep_generator():
     data_handler = DataPrep('Freebase15k')
@@ -734,6 +758,7 @@ def test_data_prep_generator_hr_t():
         # print("e1:", e2)
         # print("r:", r_rev)
         # print("e2_multi1:", e2_multi2)
+
 
 if __name__ == '__main__':
     # test_data_prep()

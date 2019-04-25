@@ -92,13 +92,15 @@ class GeneratorConfig(object):
                       by data_handler
     """
 
-    def __init__(self, batch_size=2,
+    def __init__(self, batch_size=128,
                  loss_type='entropy',
                  data_path=Path('..') / 'data',
                  sampling=None,
-                 queue_size=10,
-                 thread_num=4
+                 queue_size=40,
+                 thread_num=20,
+                 data='train'
                  ):
+        self.data = data
         self.thread_num = thread_num
         self.queue_size = queue_size
         self.sampling = sampling
