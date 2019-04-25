@@ -66,10 +66,8 @@ class ProjE_pointwise(ModelMeta):
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2, self.De2, self.Dr2]
             
     def def_loss(self):
-        # norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1) #[tot_ent, k]
-        # norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1) #[tot_rel, k]
-        norm_ent_embeddings = self.ent_embeddings #[tot_ent, k]
-        norm_rel_embeddings = self.rel_embeddings #[tot_rel, k]
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1) #[tot_ent, k]
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1) #[tot_rel, k]
 
         emb_hr_h = tf.nn.embedding_lookup(norm_ent_embeddings, self.hr_h) #[m, k]
         emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.hr_r) #[m, k]
@@ -77,19 +75,20 @@ class ProjE_pointwise(ModelMeta):
         emb_tr_t = tf.nn.embedding_lookup(norm_ent_embeddings, self.tr_t) #[m, k]
         emb_tr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.tr_r) #[m, k]
 
-        hrt_sigmoid = self.g(self.f1(emb_hr_h, emb_hr_r), norm_ent_embeddings)
+        hrt_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_h, emb_hr_r), 0.5), norm_ent_embeddings)
 
         hrt_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., self.hr_t)))
         hrt_loss_right= - tf.reduce_sum((tf.log(tf.clip_by_value(1-hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.hr_t))))
 
         hrt_loss = hrt_loss_left + hrt_loss_right
 
-        trh_sigmoid = self.g(self.f2(emb_tr_t, emb_tr_r), norm_ent_embeddings)
+        trh_sigmoid = self.g(tf.nn.dropout(self.f2(emb_tr_t, emb_tr_r), 0.5), norm_ent_embeddings)
 
         trh_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., self.tr_h)))
         trh_loss_right= - tf.reduce_sum((tf.log(tf.clip_by_value(1-trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.tr_h))))
 
-        self.loss = hrt_loss_left + hrt_loss_right
+        trh_loss = trh_loss_left + trh_loss_right
+        self.loss = hrt_loss + trh_loss
 
     def f1(self, h, r):
         return tf.tanh(h*self.De1 + r*self.Dr1 + self.bc1)
@@ -101,10 +100,8 @@ class ProjE_pointwise(ModelMeta):
     def test_step(self):
         num_entity = self.data_handler.tot_entity
 
-        # norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1) #[tot_ent, k]
-        # norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1) #[tot_rel, k]
-        norm_ent_embeddings = self.ent_embeddings #[tot_ent, k]
-        norm_rel_embeddings = self.rel_embeddings #[tot_rel, k]
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1) #[tot_ent, k]
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1) #[tot_rel, k]
 
         h_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_h) #[1, k]
         r_vec = tf.nn.embedding_lookup(norm_rel_embeddings, self.test_r) #[1, k]

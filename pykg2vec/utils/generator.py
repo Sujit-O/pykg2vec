@@ -12,13 +12,12 @@ import sys
 sys.path.append("../")
 
 from config.global_config import GeneratorConfig
+from utils.dataprep import DataPrep, DataInput
 import numpy as np
 from scipy import sparse as sps
-from multiprocessing import Process, Queue, Lock
-from ctypes import cdll
-import ctypes
-import file_handler as fh
+from threading import Thread, currentThread
 import pickle
+from queue import Queue
 
 
 class Generator(object):
@@ -29,55 +28,95 @@ class Generator(object):
           batch for training algorithms
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, data_handler=None):
         if not config:
             self.config = GeneratorConfig()
         else:
             self.config = config
-        if not config:
-            raise NotImplementedError('No configuration found for Generator!')
-        self.Queue = Queue(self.config.queue_size)
+        if not data_handler:
+            self.data_handler = DataPrep('Freebase15k',
+                                         algo=True if self.config.loss_type.startswith("entropy") else False)
+        else:
+            self.data_handler = data_handler
+
+        self.queue = Queue(self.config.queue_size)
         # c extension to handle data
-        self.read_data = fh.read_data
         if self.config.loss_type == 'entropy':
-            with open(self.config.tmp_data / 'train_data.pkl', 'rb') as f:
+            with open(self.config.data_path / 'train_data.pkl', 'rb') as f:
                 self.train_data = pickle.load(f)
-            with open(self.config.tmp_data / 'test_data.pkl', 'rb') as f:
+            with open(self.config.data_path / 'test_data.pkl', 'rb') as f:
                 self.test_data = pickle.load(f)
-            with open(self.config.tmp_data / 'valid_data.pkl', 'rb') as f:
+            with open(self.config.data_path / 'valid_data.pkl', 'rb') as f:
                 self.valid_data = pickle.load(f)
+            self.rand_ids_train = np.random.permutation(len(self.train_data))
+            self.rand_ids_test = np.random.permutation(len(self.train_data))
+            self.rand_ids_valid = np.random.permutation(len(self.train_data))
+        self.thread_list = []
+
 
     def __iter__(self):
-        return self
+        return self.gen_train_batch_entropy()
 
-    def process_data(self):
-        pass
+    def gen_train_batch_entropy(self):
+        bs = self.config.batch_size
+        te = self.data_handler.tot_entity
+        number_of_batches = len(self.train_data) // bs
 
-    def process_one_train_batch(self):
+        batch_idx = 0
+
+        while True:
+            if not self.queue.full():
+                threads = []
+                for i in range(self.config.thread_num):
+                    raw_data = np.asarray([[self.train_data[x].e1,
+                                            self.train_data[x].r,
+                                            self.train_data[x].e2_multi1] for x in
+                                           self.rand_ids_train[bs * batch_idx: bs * (batch_idx + 1)]])
+                    worker = Thread(target=self.process_one_train_batch_entropy, args=(raw_data, bs, te,))
+                    # print("batch id:", batch_idx, " qL:", self.queue.qsize(), " theadID: ", worker.name)
+                    self.thread_list.append(worker)
+                    worker.setDaemon(True)
+                    worker.start()
+                    threads.append(worker)
+                    batch_idx += 1
+
+                    if batch_idx == number_of_batches:
+                        batch_idx = 0
+
+            # print("2: getting one batch!", self.queue.qsize())
+            data = self.queue.get()
+            # print("2: removed one batch:", self.queue.qsize())
+            yield data[0], data[1], data[2]
+
+    def process_one_train_batch_entropy(self, raw_data, bs, te):
         # read the batch
-        self.mem_lock.acquire()
-        batch_data = self.read_data(self.current_batch_idx,
-                                    self.config.batch_size,
-                                    self.config.total_entity,
-                                    self.config.data_path)
+        e1 = raw_data[:, 0]
+        r = raw_data[:, 1]
+        col = []
+        for k in raw_data[:, 2]:
+            col.append(k)
+        row = []
+        for k in range(bs):
+            row.append([k] * len(col[k]))
+        col_n = []
+        row_n = []
+        for i in range(bs):
+            for j in range(len(col[i])):
+                col_n.append(col[i][j])
+                row_n.append(row[i][j])
 
-        # update the current_batch size for the next process
-
-        self.current_batch_idx += 1
-        if self.current_batch_idx >= self.total_batch:
-            self.current_batch_idx = 0
-        self.mem_lock.release()
-
-        self.queue_lock.acquire()
-        # TODO: Store the batch in the queue
-        self.queue_lock.release()
-
-    def next(self):
-        pass
+        e2_multi1 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
+        self.queue.put([e1, r, np.array(e2_multi1.todense())])
 
 
 def test_generator():
-    pass
+    gen = iter(Generator())
+    for i in range(50):
+        e1, r, e2_multi1 = list(next(gen))
+        print("\n----batch:", i)
+        print("e1:", e1)
+        print("r:", r)
+        print("e2_multi1:", e2_multi1)
 
 
 if __name__ == '__main__':

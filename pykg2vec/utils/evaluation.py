@@ -67,7 +67,7 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
         if self.algo:
             gen = self.model.data_handler.batch_generator_test_hr_tr(batch_size=self.batch)
-            loop_len = self.n_test // self.batch if not self.debug else 100
+            loop_len = self.n_test // self.batch if not self.debug else 1000
             total_test = loop_len * self.batch
         else:
             loop_len = self.model.config.test_num

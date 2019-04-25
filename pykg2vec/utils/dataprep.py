@@ -18,18 +18,14 @@ import os
 from collections import defaultdict
 import pprint
 from scipy import sparse as sps
-import pandas as pd
-import progressbar
 
 from multiprocessing import JoinableQueue, Queue, Process
-
 
 class Triple(object):
     def __init__(self, head=None, relation=None, tail=None):
         self.h = head
         self.r = relation
         self.t = tail
-
 
 class DataInput(object):
     def __init__(self, e1=None, r=None, e2=None, r_rev=None, e2_multi1=None, e2_multi2=None):
@@ -39,7 +35,6 @@ class DataInput(object):
         self.r_rev = r_rev
         self.e2_multi1 = e2_multi1
         self.e2_multi2 = e2_multi2
-
 
 class DataPrep(object):
 
@@ -77,6 +72,7 @@ class DataPrep(object):
         self.sampling = "uniform"
         # self.train_label
         if not self.algo:
+
             self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
             self.calculate_mapping()  # from entity and relation to indexes.
             self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in
@@ -104,9 +100,6 @@ class DataPrep(object):
                 e2_multi1 = [self.entity2idx[i] for i in list(self.train_graph[(e, r)])]
                 self.train_data.append(DataInput(e1=e1_idx, r=r_idx, e2_multi1=e2_multi1))
 
-            with open(self.config.tmp_data / 'train_data.pkl', 'wb') as f:
-                pickle.dump(self.train_data, f)
-
             for t in self.test_triples_no_rev:
                 e1_idx = self.entity2idx[t.h]
                 e2_idx = self.entity2idx[t.t]
@@ -119,8 +112,6 @@ class DataPrep(object):
                 self.test_data.append(DataInput(e1=e1_idx, r=r_idx,
                                                 e2=e2_idx, r_rev=r_rev_idx,
                                                 e2_multi1=e2_multi1, e2_multi2=e2_multi2))
-            with open(self.config.tmp_data / 'test_data.pkl', 'wb') as f:
-                pickle.dump(self.train_data, f)
 
             for t in self.validation_triples_no_rev:
                 e1_idx = self.entity2idx[t.h]
@@ -134,15 +125,12 @@ class DataPrep(object):
                 self.valid_data.append(DataInput(e1=e1_idx, r=r_idx,
                                                  e2=e2_idx, r_rev=r_rev_idx,
                                                  e2_multi1=e2_multi1, e2_multi2=e2_multi2))
-
-            with open(self.config.tmp_data / 'valid_data.pkl', 'wb') as f:
-                pickle.dump(self.train_data, f)
-            # import pdb
-            # pdb.set_trace()
             self.validation_triples_ids = [
                 Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t])
                 for t
                 in self.validation_triples]
+
+        
 
         for t in self.train_triples:
             self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
@@ -162,7 +150,7 @@ class DataPrep(object):
                 import pdb
                 pdb.set_trace()
                 self.relation_property_head = {x: [] for x in range(self.tot_relation)}
-                self.relation_property_tail = {x: [] for x in
+                self.relation_property_tail = {x: [] for x in 
                                                range(self.tot_relation)}
                 for t in self.train_triples_ids:
                     self.relation_property_head[t.r].append(t.h)
@@ -486,7 +474,7 @@ class DataPrep(object):
 
             for t in pos_triples:
                 prob = self.relation_property[t[1]]
-
+                
                 if np.random.random() > prob:
                     idx_replace_tail = np.random.randint(self.tot_entity)
 
@@ -542,7 +530,7 @@ class DataPrep(object):
 
             if batch_idx == number_of_batches:
                 batch_idx = 0
-
+    
     def batch_generator_train_proje(self, src_triples=None, batch_size=128):
         batch_size = batch_size
 
@@ -553,9 +541,9 @@ class DataPrep(object):
         number_of_batches = len(src_triples) // batch_size
 
         batch_idx = 0
-        while True:
+        while True:           
             triples = np.asarray([[src_triples[x].h, src_triples[x].r, src_triples[x].t] for x in
-                                  array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
+                                      array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
             batch_idx += 1
 
             yield triples
@@ -571,6 +559,7 @@ class DataPrep(object):
                 for l in f.readlines():
                     h, r, t = l.split('\t')
                     triple = Triple(h.strip(), r.strip(), t.strip())
+
 
                     if data == 'train':
                         self.train_triples.append(triple)
@@ -658,12 +647,10 @@ class DataPrep(object):
     def start_multiprocessing(self):
         self.raw_training_data_queue = Queue()
         self.training_data_queue = Queue()
-
+       
         self.data_generators = list()
         for i in range(8):
-            self.data_generators.append(Process(target=self.data_generator_func, args=(
-                self.raw_training_data_queue, self.training_data_queue, self.hr_t_ids_train, self.tr_t_ids_train,
-                self.tot_entity, 0.5)))
+            self.data_generators.append(Process(target=self.data_generator_func, args=(self.raw_training_data_queue, self.training_data_queue, self.tr_t_ids_train, self.hr_t_ids_train, self.tot_entity, 0.5)))
             self.data_generators[-1].start()
 
     def stop_multiprocessing(self):
@@ -685,24 +672,34 @@ class DataPrep(object):
 
             for idx in range(htr.shape[0]):
                 if np.random.uniform(-1, 1) > 0:  # t r predict h
-                    tr_hweight.append(
-                        [1. if x in tr_h[(htr[idx, 1], htr[idx, 2])] else y for
-                         x, y in enumerate(np.random.choice([0., -1.], size=n_entity, p=[1 - neg_weight, neg_weight]))])
+                    temp = np.zeros(n_entity)
+                    for idx2 in np.random.permutation(n_entity)[0:n_entity//2]:
+                        temp[idx2] = -1.0 
+                    for head in tr_h[(htr[idx, 2],htr[idx, 1])]:
+                        temp[head] = 1.0
+                    tr_hweight.append(temp)
+                    # tr_hweight.append(
+                    #     [1. if x in tr_h[(htr[idx, 1],htr[idx, 2])] else y for
+                    #      x, y in enumerate(np.random.choice([0., -1.], size=n_entity, p=[1 - neg_weight, neg_weight]))])
                     tr_tr_batch.append((htr[idx, 2], htr[idx, 1]))
                 else:  # h r predict t
-                    hr_tweight.append(
-                        [1. if x in tr_h[(htr[idx, 0], htr[idx, 2])] else y for
-                         x, y in enumerate(np.random.choice([0., -1.], size=n_entity, p=[1 - neg_weight, neg_weight]))])
+                    temp = np.zeros(n_entity)
+                    for idx2 in np.random.permutation(n_entity)[0:n_entity//2]:
+                        temp[idx2] = -1.0 
+                    for tail in hr_t[(htr[idx, 0],htr[idx, 1])]:
+                        temp[tail] = 1.0
+                    hr_tweight.append(temp)
+                    # hr_tweight.append(
+                    #     [1. if x in tr_h[(htr[idx, 0], htr[idx, 2])] else y for
+                    #      x, y in enumerate(np.random.choice([0., -1.], size=n_entity, p=[1 - neg_weight, neg_weight]))])
                     hr_hr_batch.append((htr[idx, 0], htr[idx, 1]))
 
             out_queue.put((np.asarray(hr_hr_batch, dtype=np.int32), np.asarray(hr_tweight, dtype=np.float32),
                            np.asarray(tr_tr_batch, dtype=np.int32), np.asarray(tr_hweight, dtype=np.float32)))
 
-
 def test_data_prep():
     data_handler = DataPrep('Freebase15k')
     data_handler.dump()
-
 
 def test_data_prep_generator():
     data_handler = DataPrep('Freebase15k')
@@ -722,11 +719,10 @@ def test_data_prep_generator():
 def test_data_prep_generator_hr_t():
     data_handler = DataPrep('Freebase15k', algo=True)
     data_handler.dump()
-    gen = data_handler.batch_generator_train_hr_tr(batch_size=128)
+    gen = data_handler.batch_generator_test_hr_tr(batch_size=128)
     # import tensorflow as tf
     for i in range(1000):
-        e1, r, e2_multi1 = list(next(gen))
-        # e1, r, e2_multi1, e2, r_rev, e2_multi2 = list(next(gen))
+        e1, r, e2_multi1, e2, r_rev, e2_multi2 = list(next(gen))
         # if np.shape(r)[-1]>1:
         #     print(e1,r,e2)
         # e2_multi1 = np.asarray((e2_multi1 * 0.2) + 1.0 / data_handler.tot_entity)
@@ -738,7 +734,6 @@ def test_data_prep_generator_hr_t():
         # print("e1:", e2)
         # print("r:", r_rev)
         # print("e2_multi1:", e2_multi2)
-
 
 if __name__ == '__main__':
     # test_data_prep()
