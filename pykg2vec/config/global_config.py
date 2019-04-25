@@ -89,21 +89,20 @@ class GeneratorConfig(object):
                       by data_handler
     """
 
-    def __init__(self, batch_size=50,
+    def __init__(self, batch_size=2,
                  loss_type='entropy',
-                 data_path=None,
+                 data_path=Path('..') / 'data',
                  sampling=None,
                  queue_size=10,
-                 process_num=4,
-                 tota_data=None
+                 thread_num=4
                  ):
-        self.tota_data = tota_data
-        self.process_num = process_num
+        self.thread_num = thread_num
         self.queue_size = queue_size
         self.sampling = sampling
         self.data_path = data_path
         self.loss_type = loss_type
         self.batch_size = batch_size
+
 
 
 # valid_keys = ['batch_size', 'loss_type',
