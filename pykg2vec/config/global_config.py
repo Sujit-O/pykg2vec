@@ -95,9 +95,9 @@ class GeneratorConfig(object):
     def __init__(self, batch_size=128,
                  loss_type='entropy',
                  data_path=Path('..') / 'data',
-                 sampling=None,
-                 queue_size=40,
-                 thread_num=20,
+                 sampling='uniform',
+                 queue_size=50,
+                 thread_num=50,
                  data='train', 
                  algo ='ConvE'
                  ):

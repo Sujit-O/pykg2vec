@@ -42,7 +42,7 @@ class DataInput(object):
 
 class DataPrep(object):
 
-    def __init__(self, name_dataset='Freebase15k', sampling = "uniform", algo='ConvE'):
+    def __init__(self, name_dataset='Freebase15k', sampling="uniform", algo='ConvE'):
         '''store the information of database'''
 
         self.config = GlobalConfig(dataset=name_dataset)
@@ -65,6 +65,9 @@ class DataPrep(object):
         self.hr_t = defaultdict(set)
         self.tr_t = defaultdict(set)
 
+        if not os.path.exists(self.config.tmp_data):
+            os.mkdir(self.config.tmp_data)
+
         if self.algo.lower().startswith('conve'):
             self.label_graph = {}
             self.train_graph = {}
@@ -76,8 +79,7 @@ class DataPrep(object):
 
             self.read_triple_hr_rt(['train', 'test', 'valid'])
             self.calculate_mapping()
-            if not os.path.exists(self.config.tmp_data):
-                os.mkdir(self.config.tmp_data)
+
             if not os.path.exists(self.config.tmp_data / 'train_data.pkl'):
                 print("\nPreparing Training Data!")
                 with progressbar.ProgressBar(max_value=len(self.train_graph)) as bar:
@@ -133,28 +135,57 @@ class DataPrep(object):
                 for t
                 in self.validation_triples]
 
-        elif self.algo.lower() in ['transe', 'tranr', 'transh',
-                                 'proje_pointwise', 'rescal',
-                                 'slm', 'smebilinear', 'smelinear', 'ntn', 'rotate']:
+        elif any(self.algo.lower().startswith(x) for x in ['transe', 'tranr', 'transh',
+                                   'proje', 'rescal',
+                                   'slm', 'smebilinear', 'smelinear', 'ntn', 'rotate']):
 
             self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
             self.calculate_mapping()  # from entity and relation to indexes.
-            self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in
-                                     self.test_triples]
-            self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t
-                                      in
-                                      self.train_triples]
-            self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t])
-                                           for t
-                                           in self.validation_triples]
+
+            if not os.path.exists(self.config.tmp_data / 'test_triples_ids.pkl'):
+                self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
+                                                self.entity2idx[t.t]) for t in
+                                         self.test_triples]
+                with open(self.config.tmp_data / 'test_triples_ids.pkl', 'wb') as f:
+                    pickle.dump(self.test_triples_ids, f)
+            else:
+                with open(self.config.tmp_data / 'test_triples_ids.pkl', 'rb') as f:
+                    self.test_triples_ids = pickle.load(f)
+
+            if not os.path.exists(self.config.tmp_data / 'train_triples_ids.pkl'):
+                self.train_triples_ids = [Triple(self.entity2idx[t.h],
+                                                 self.relation2idx[t.r], self.entity2idx[t.t]) for t
+                                          in
+                                          self.train_triples]
+                with open(self.config.tmp_data / 'train_triples_ids.pkl', 'wb') as f:
+                    pickle.dump(self.train_triples_ids, f)
+            else:
+                with open(self.config.tmp_data / 'train_triples_ids.pkl', 'rb') as f:
+                    self.train_triples_ids = pickle.load(f)
+
+            if not os.path.exists(self.config.tmp_data / 'validation_triples_ids.pkl'):
+                self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
+                                                      self.entity2idx[t.t])
+                                               for t
+                                               in self.validation_triples]
+                with open(self.config.tmp_data / 'validation_triples_ids.pkl', 'wb') as f:
+                    pickle.dump(self.validation_triples_ids, f)
+            else:
+                with open(self.config.tmp_data / 'validation_triples_ids.pkl', 'rb') as f:
+                    self.validation_triples_ids = pickle.load(f)
 
             if self.algo.lower().startswith('proje'):
                 self.hr_t_ids_train = defaultdict(set)
-                self.tr_t_ids_train = defaultdict(set)
+                self.tr_h_ids_train = defaultdict(set)
 
-                for t in self.train_triples_ids:
-                    self.hr_t_ids_train[(t.h, t.r)].add(t.t)
-                    self.tr_t_ids_train[(t.t, t.r)].add(t.h)
+                if not os.path.exists(self.config.tmp_data / 'hr_t_ids_train.pkl'):
+                    for t in self.train_triples_ids:
+                        self.hr_t_ids_train[(t.h, t.r)].add(t.t)
+                        self.tr_h_ids_train[(t.t, t.r)].add(t.h)
+                    with open(self.config.tmp_data / 'hr_t_ids_train.pkl', 'wb') as f:
+                        pickle.dump(self.hr_t_ids_train, f)
+                    with open(self.config.tmp_data / 'tr_h_ids_train.pkl', 'wb') as f:
+                        pickle.dump(self.tr_h_ids_train, f)
 
             if self.sampling == "bern":
                 import pdb
@@ -170,21 +201,34 @@ class DataPrep(object):
                         len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
                                           for x in
                                           self.relation_property_head.keys()}
+                with open(self.config.tmp_data / 'relation_property.pkl', 'wb') as f:
+                    pickle.dump(self.relation_property, f)
+
         else:
             raise NotImplementedError("Data preparation is not implemented for algorithm:", self.algo)
 
-        for t in self.train_triples:
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+        if not os.path.exists(self.config.tmp_data / 'hr_t.pkl'):
+            for t in self.train_triples:
+                self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+                self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
-        for t in self.test_triples:
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+            for t in self.test_triples:
+                self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+                self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
-        for t in self.validation_triples:
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+            for t in self.validation_triples:
+                self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+                self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
+            with open(self.config.tmp_data / 'hr_t.pkl', 'wb') as f:
+                pickle.dump(self.hr_t, f)
+            with open(self.config.tmp_data / 'tr_t.pkl', 'wb') as f:
+                pickle.dump(self.tr_t, f)
+        else:
+            with open(self.config.tmp_data / 'hr_t.pkl', 'rb') as f:
+                self.hr_t=pickle.load(f)
+            with open(self.config.tmp_data / 'tr_t.pkl', 'rb') as f:
+                self.tr_t=pickle.load(f)
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
