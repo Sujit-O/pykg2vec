@@ -52,7 +52,7 @@ class Generator(object):
             self.rand_ids_test = np.random.permutation(len(self.train_data))
             self.rand_ids_valid = np.random.permutation(len(self.train_data))
         self.thread_list = []
-
+        self.thread_cnt = 0
 
     def __iter__(self):
         return self.gen_train_batch_entropy()
@@ -61,6 +61,7 @@ class Generator(object):
         bs = self.config.batch_size
         te = self.data_handler.tot_entity
         number_of_batches = len(self.train_data) // bs
+        print("Number_of_batches:", number_of_batches)
 
         batch_idx = 0
 
@@ -68,24 +69,29 @@ class Generator(object):
             if not self.queue.full():
                 threads = []
                 for i in range(self.config.thread_num):
-                    raw_data = np.asarray([[self.train_data[x].e1,
-                                            self.train_data[x].r,
-                                            self.train_data[x].e2_multi1] for x in
-                                           self.rand_ids_train[bs * batch_idx: bs * (batch_idx + 1)]])
-                    worker = Thread(target=self.process_one_train_batch_entropy, args=(raw_data, bs, te,))
-                    # print("batch id:", batch_idx, " qL:", self.queue.qsize(), " theadID: ", worker.name)
-                    self.thread_list.append(worker)
-                    worker.setDaemon(True)
-                    worker.start()
-                    threads.append(worker)
-                    batch_idx += 1
+                    if self.thread_cnt < self.config.thread_num:
+                        raw_data = np.asarray([[self.train_data[x].e1,
+                                                self.train_data[x].r,
+                                                self.train_data[x].e2_multi1] for x in
+                                               self.rand_ids_train[bs * batch_idx: bs * (batch_idx + 1)]])
+                        worker = Thread(target=self.process_one_train_batch_entropy, args=(raw_data, bs, te,))
+                        # print("batch id:", batch_idx, " qL:", self.queue.qsize(), " theadID: ", worker.name)
+                        self.thread_list.append(worker)
+                        worker.setDaemon(True)
+                        worker.start()
+                        threads.append(worker)
+                        self.thread_cnt += 1
+                        batch_idx += 1
 
-                    if batch_idx == number_of_batches:
-                        batch_idx = 0
+                        if batch_idx >= number_of_batches:
+                            # print("\n \t \t----Finished  Epoch-----------")
+                            batch_idx = 0
 
             # print("2: getting one batch!", self.queue.qsize())
             data = self.queue.get()
             # print("2: removed one batch:", self.queue.qsize())
+            # print("Total Threads:", self.thread_cnt)
+            # print("Queue Size:",self.queue.qsize())
             yield data[0], data[1], data[2]
 
     def process_one_train_batch_entropy(self, raw_data, bs, te):
@@ -107,11 +113,12 @@ class Generator(object):
 
         e2_multi1 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
         self.queue.put([e1, r, np.array(e2_multi1.todense())])
+        self.thread_cnt -= 1
 
 
 def test_generator():
     gen = iter(Generator())
-    for i in range(50):
+    for i in range(5000):
         e1, r, e2_multi1 = list(next(gen))
         print("\n----batch:", i)
         print("e1:", e1)
