@@ -107,6 +107,7 @@ class GeneratorConfig(object):
         self.batch_size = batch_size
 
 
+
 # valid_keys = ['batch_size', 'loss_type',
 #               'data_path', 'sampling',
 #               'queue_size', 'process_num',
