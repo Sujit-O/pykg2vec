@@ -11,7 +11,7 @@ import numpy as np
 
 class Trainer(TrainerMeta):
 
-    def __init__(self, model, algo=False, debug=False):
+    def __init__(self, model, algo='ConvE', debug=False):
         self.algo = algo
         self.debug = debug
         self.model = model

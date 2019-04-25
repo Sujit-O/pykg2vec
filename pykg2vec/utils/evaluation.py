@@ -17,7 +17,7 @@ from core.KGMeta import EvaluationMeta
 
 class Evaluation(EvaluationMeta):
 
-    def __init__(self, model=None, test_data=None, algo=False, debug=False):
+    def __init__(self, model=None, test_data=None, algo='Conve', debug=False):
         self.model = model
         self.algo = algo
         self.debug = debug
@@ -26,12 +26,12 @@ class Evaluation(EvaluationMeta):
         else:
             self.batch = self.model.config.batch_size
         if test_data == 'test':
-            if not self.algo:
+            if not self.algo.lower().startswith('conve'):
                 self.data = model.data_handler.test_triples_ids
             else:
                 self.data = model.data_handler.test_data
         elif test_data == 'valid':
-            if not self.algo:
+            if not self.algo.lower().startswith('conve'):
                 self.data = model.data_handler.validation_triples_ids
             else:
                 self.data = model.data_handler.valid_data
@@ -65,7 +65,7 @@ class Evaluation(EvaluationMeta):
         rank_tail = []
         filter_rank_head = []
         filter_rank_tail = []
-        if self.algo:
+        if self.algo.lower().startswith('conve'):
             gen = self.model.data_handler.batch_generator_test_hr_tr(batch_size=self.batch)
             loop_len = self.n_test // self.batch if not self.debug else 1000
             total_test = loop_len * self.batch
@@ -80,7 +80,7 @@ class Evaluation(EvaluationMeta):
         for i in range(loop_len):
             # print("batch_id:", i)
 
-            if not self.algo:
+            if not self.algo.lower().startswith('conve'):
                 t = self.data[i]
                 feed_dict = {
                     self.model.test_h: np.reshape(t.h, [1, ]),
@@ -102,7 +102,7 @@ class Evaluation(EvaluationMeta):
 
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
 
-            if not self.algo:
+            if not self.algo.lower().startswith('conve'):
                 hrank = 0
                 fhrank = 0
                 for j in range(len(id_replace_head)):

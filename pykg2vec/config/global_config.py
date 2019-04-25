@@ -98,8 +98,10 @@ class GeneratorConfig(object):
                  sampling=None,
                  queue_size=40,
                  thread_num=20,
-                 data='train'
+                 data='train', 
+                 algo ='ConvE'
                  ):
+        self.algo = algo
         self.data = data
         self.thread_num = thread_num
         self.queue_size = queue_size

@@ -9,6 +9,7 @@ from __future__ import print_function
 
 import sys
 import progressbar
+
 sys.path.append("../")
 
 from config.global_config import GlobalConfig
@@ -41,11 +42,12 @@ class DataInput(object):
 
 class DataPrep(object):
 
-    def __init__(self, name_dataset='Freebase15k', algo=False):
+    def __init__(self, name_dataset='Freebase15k', sampling = "uniform", algo='ConvE'):
         '''store the information of database'''
 
         self.config = GlobalConfig(dataset=name_dataset)
         self.algo = algo
+        self.sampling = sampling
         self.train_triples = []
         self.test_triples = []
         self.validation_triples = []
@@ -63,45 +65,23 @@ class DataPrep(object):
         self.hr_t = defaultdict(set)
         self.tr_t = defaultdict(set)
 
-        # for ConvE
-        self.label_graph = {}
-        self.train_graph = {}
-        self.train_data = []
-        self.test_data = []
-        self.valid_data = []
-        self.test_triples_no_rev = []
-        self.validation_triples_no_rev = []
+        if self.algo.lower().startswith('conve'):
+            self.label_graph = {}
+            self.train_graph = {}
+            self.train_data = []
+            self.test_data = []
+            self.valid_data = []
+            self.test_triples_no_rev = []
+            self.validation_triples_no_rev = []
 
-        self.sampling = "uniform"
-        # self.train_label
-        if not self.algo:
-
-            self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
-            self.calculate_mapping()  # from entity and relation to indexes.
-            self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in
-                                     self.test_triples]
-            self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t
-                                      in
-                                      self.train_triples]
-            self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t])
-                                           for t
-                                           in self.validation_triples]
-            self.hr_t_ids_train = defaultdict(set)
-            self.tr_t_ids_train = defaultdict(set)
-
-            for t in self.train_triples_ids:
-                self.hr_t_ids_train[(t.h, t.r)].add(t.t)
-                self.tr_t_ids_train[(t.t, t.r)].add(t.h)
-
-        else:
             self.read_triple_hr_rt(['train', 'test', 'valid'])
-            self.calculate_mapping()  # from entity and relation to indexes.
+            self.calculate_mapping()
             if not os.path.exists(self.config.tmp_data):
                 os.mkdir(self.config.tmp_data)
             if not os.path.exists(self.config.tmp_data / 'train_data.pkl'):
                 print("\nPreparing Training Data!")
                 with progressbar.ProgressBar(max_value=len(self.train_graph)) as bar:
-                    for i,(e, r) in enumerate(self.train_graph):
+                    for i, (e, r) in enumerate(self.train_graph):
                         e1_idx = self.entity2idx[e]
                         r_idx = self.relation2idx[r]
                         e2_multi1 = [self.entity2idx[i] for i in list(self.train_graph[(e, r)])]
@@ -113,7 +93,7 @@ class DataPrep(object):
             if not os.path.exists(self.config.tmp_data / 'test_data.pkl'):
                 print("\nPreparing Testing Data!")
                 with progressbar.ProgressBar(max_value=len(self.test_triples_no_rev)) as bar:
-                    for i,t in enumerate(self.test_triples_no_rev):
+                    for i, t in enumerate(self.test_triples_no_rev):
                         e1_idx = self.entity2idx[t.h]
                         e2_idx = self.entity2idx[t.t]
                         r_idx = self.relation2idx[t.r]
@@ -132,7 +112,7 @@ class DataPrep(object):
             if not os.path.exists(self.config.tmp_data / 'valid_data.pkl'):
                 print("\nPreparing Validation Data!")
                 with progressbar.ProgressBar(max_value=len(self.validation_triples_no_rev)) as bar:
-                    for i,t in enumerate(self.validation_triples_no_rev):
+                    for i, t in enumerate(self.validation_triples_no_rev):
                         e1_idx = self.entity2idx[t.h]
                         e2_idx = self.entity2idx[t.t]
                         r_idx = self.relation2idx[t.r]
@@ -153,19 +133,28 @@ class DataPrep(object):
                 for t
                 in self.validation_triples]
 
-        for t in self.train_triples:
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+        elif self.algo.lower() in ['transe', 'tranr', 'transh',
+                                 'proje_pointwise', 'rescal',
+                                 'slm', 'smebilinear', 'smelinear', 'ntn', 'rotate']:
 
-        for t in self.test_triples:
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+            self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
+            self.calculate_mapping()  # from entity and relation to indexes.
+            self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t in
+                                     self.test_triples]
+            self.train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t]) for t
+                                      in
+                                      self.train_triples]
+            self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t])
+                                           for t
+                                           in self.validation_triples]
 
-        for t in self.validation_triples:
-            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+            if self.algo.lower().startswith('proje'):
+                self.hr_t_ids_train = defaultdict(set)
+                self.tr_t_ids_train = defaultdict(set)
 
-        if not self.algo:
+                for t in self.train_triples_ids:
+                    self.hr_t_ids_train[(t.h, t.r)].add(t.t)
+                    self.tr_t_ids_train[(t.t, t.r)].add(t.h)
 
             if self.sampling == "bern":
                 import pdb
@@ -181,6 +170,21 @@ class DataPrep(object):
                         len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
                                           for x in
                                           self.relation_property_head.keys()}
+        else:
+            raise NotImplementedError("Data preparation is not implemented for algorithm:", self.algo)
+
+        for t in self.train_triples:
+            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+
+        for t in self.test_triples:
+            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+
+        for t in self.validation_triples:
+            self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
+            self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
@@ -671,8 +675,8 @@ class DataPrep(object):
         self.data_generators = list()
         for i in range(8):
             self.data_generators.append(Process(target=self.data_generator_func, args=(
-            self.raw_training_data_queue, self.training_data_queue, self.tr_t_ids_train, self.hr_t_ids_train,
-            self.tot_entity, 0.5)))
+                self.raw_training_data_queue, self.training_data_queue, self.tr_t_ids_train, self.hr_t_ids_train,
+                self.tot_entity, 0.5)))
             self.data_generators[-1].start()
 
     def stop_multiprocessing(self):

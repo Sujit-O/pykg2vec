@@ -28,20 +28,20 @@ class Generator(object):
           batch for training algorithms
     """
 
-    def __init__(self, config=None, data_handler=None):
+    def __init__(self, config=None, data_handler=None, algo='ConvE'):
         if not config:
             self.config = GeneratorConfig()
         else:
             self.config = config
         if not data_handler:
             self.data_handler = DataPrep('Freebase15k',
-                                         algo=True if self.config.loss_type.startswith("entropy") else False)
+                                         algo=algo)
         else:
             self.data_handler = data_handler
 
         self.queue = Queue(self.config.queue_size)
         # c extension to handle data
-        if self.config.loss_type == 'entropy':
+        if self.config.algo.lower().startswith('conve'):
             with open(self.config.data_path / 'train_data.pkl', 'rb') as f:
                 self.train_data = pickle.load(f)
             with open(self.config.data_path / 'test_data.pkl', 'rb') as f:
@@ -57,9 +57,9 @@ class Generator(object):
         self.thread_cnt = 0
 
     def __iter__(self):
-        return self.gen_batch_entropy()
+        return self.gen_batch_conve()
 
-    def gen_batch_entropy(self):
+    def gen_batch_conve(self):
         bs = self.config.batch_size
         te = self.data_handler.tot_entity
         if self.config.data.startswith('train'):
@@ -103,10 +103,10 @@ class Generator(object):
                         else:
                             raise NotImplementedError("The data type passed is wrong!")
                         if self.config.data.startswith('train'):
-                            worker = Thread(target=self.process_one_train_batch_entropy,
+                            worker = Thread(target=self.process_one_train_batch_conve,
                                             args=(raw_data, bs, te,))
                         else:
-                            worker = Thread(target=self.process_one_test_batch_entropy,
+                            worker = Thread(target=self.process_one_test_batch_conve,
                                             args=(raw_data, bs, te,))
                         # print("batch id:", batch_idx, " qL:", self.queue.qsize(),
                         # " theadID: ", worker.name)
@@ -128,7 +128,7 @@ class Generator(object):
             # print("Queue Size:",self.queue.qsize())
             yield data
 
-    def process_one_train_batch_entropy(self, raw_data, bs, te):
+    def process_one_train_batch_conve(self, raw_data, bs, te):
         # read the batch
         e1 = raw_data[:, 0]
         r = raw_data[:, 1]
@@ -150,7 +150,7 @@ class Generator(object):
         self.queue.put([e1, r, np.array(e2_multi1.todense())])
         self.thread_cnt -= 1
 
-    def process_one_test_batch_entropy(self, raw_data, bs, te):
+    def process_one_test_batch_conve(self, raw_data, bs, te):
         # read the batch
         e1 = raw_data[:, 0]
         r = raw_data[:, 1]
