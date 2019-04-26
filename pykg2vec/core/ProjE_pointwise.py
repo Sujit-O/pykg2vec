@@ -154,8 +154,6 @@ class ProjE_pointwise(ModelMeta):
     def get_proj_embed(self, h, r, t, sess):
         """function to get the projectd embedding value in numpy"""
         return self.get_embed(h, r, t, sess)
-<<<<<<< HEAD
-
 
 if __name__ == '__main__':
     # Unit Test Script with tensorflow Eager Execution
@@ -253,5 +251,4 @@ if __name__ == '__main__':
     regularizer_loss = tf.reduce_sum(tf.abs(De1) + tf.abs(Dr1)) + tf.reduce_sum(tf.abs(De2) + tf.abs(Dr2)) \
                         + tf.reduce_sum(tf.abs(ent_embeddings)) + tf.reduce_sum(tf.abs(rel_embeddings))
     loss = hrt_loss + trh_loss + regularizer_loss*1e-5
-=======
->>>>>>> 207cb892106f4da6f7b0e3e4d434a87a2bca5d37
+

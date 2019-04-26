@@ -30,7 +30,6 @@ def gen_id(ids):
             i = 0
 
 
-
 class Generator(object):
     """Generator class for the embedding algorithms
         Args:
@@ -235,7 +234,7 @@ class Generator(object):
         worker = Process(target=self.raw_data_generator_proje, args=(ids,))
         worker.daemon = True
         worker.start()
-        self.pool_process(bs=self.config.batch_size, n_entity=n_entity, neg_weight=neg_weight)
+        self.pool_process_proje(bs=self.config.batch_size, n_entity=n_entity, neg_weight=neg_weight)
 
         while True:
             yield self.processed_queue.get()
@@ -369,8 +368,8 @@ class Generator(object):
             self.processed_queue.put([ph, pr, pt])
 
     def process_function_train_conve(self):
-        bs=self.config.batch_size
-        te=self.data_stats.tot_entity
+        bs = self.config.batch_size
+        te = self.data_stats.tot_entity
         while True:
             raw_data = self.raw_queue.get()
             e1 = raw_data[:, 0]
@@ -553,6 +552,6 @@ def test_generator_trans():
 
 
 if __name__ == '__main__':
-    # test_generator_proje()
+    test_generator_proje()
     # test_generator_conve()
-    test_generator_trans()
+    # test_generator_trans()
