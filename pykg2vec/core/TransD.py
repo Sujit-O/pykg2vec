@@ -14,18 +14,15 @@ from core.KGMeta import ModelMeta
 class TransD(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-    Learning Entity and Relation Embeddings for Knowledge Graph Completion
+    Knowledge Graph Embedding via Dynamic Mapping Matrix
     ------------------Paper Authors---------------------------
-    Yankai Lin1, Zhiyuan Liu1∗, Maosong Sun 1,2, Yang Liu3, Xuan Zhu 3
-    1 Department of Computer Science and Technology, State Key Lab on Intelligent Technology and Systems,
-    National Lab for Information Science and Technology, Tsinghua University, Beijing, China
-    2 Jiangsu Collaborative Innovation Center for Language Competence, Jiangsu, China
-    3 Samsung R&D Institute of China, Beijing, China
+    Guoliang Ji, Shizhu He, Liheng Xu, Kang Liu, Jun Zhao
+    National Laboratory of Pattern Recognition (NLPR) 
+    Institute of Automation Chinese Academy of Sciences, Beijing, 100190, China 
+    {guoliang.ji,shizhu.he,lhxu,kliu,jzhao}@nlpr.ia.ac.cn
     ------------------Summary---------------------------------
-    TranR is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
-    builds entity and relation embeddings by regarding a relation as translation from head entity to tail
-    entity. However, compared to them, it builds the entity and relation embeddings in a separate entity
-    and relation spaces.
+    TransD constructs a dynamic mapping matrix for each entity-relation pair by considering the diversity of entities and relations simultaneously. 
+    Compared with TransR/CTransR, TransD has fewer parameters and has no matrix vector multiplication.
 
     Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransD.py
     """
@@ -61,40 +58,64 @@ class TransD(ModelMeta):
             self.ent_embeddings = tf.get_variable(name="ent_embedding",
                                                   shape=[num_total_ent, d],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.ent_mappings   = tf.get_variable(name="ent_mappings",
+                                                  shape=[num_total_ent, d],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+
             self.rel_embeddings = tf.get_variable(name="rel_embedding",
                                                   shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.rel_mappings   = tf.get_variable(name="rel_mappings",
+                                                  shape=[num_total_rel, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            rel_matrix = np.zeros([num_total_rel, d*k], dtype=np.float32)
-            
-            for i in range(num_total_rel):
-                for j in range(k):
-                    for z in range(d):
-                        if j == z:
-                            rel_matrix[i][j * d + z] = 1.0
-
-            self.rel_matrix = tf.Variable(rel_matrix, name="rel_matrix")
-
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
+            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.ent_mappings, self.rel_mappings]
 
     def def_loss(self):
+        d = self.config.ent_hidden_size
+        k = self.config.rel_hidden_size
+
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
         neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
+
+        pos_h_m = tf.nn.embedding_lookup(self.ent_mappings, self.pos_h)
+        pos_r_m = tf.nn.embedding_lookup(self.rel_mappings, self.pos_r)
+        pos_t_m = tf.nn.embedding_lookup(self.ent_mappings, self.pos_t)
+
+        pos_h_e = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(pos_r_m, -1) @ tf.expand_dims(pos_h_m, -2)) + tf.eye(k, batch_shape=[tf.shape(pos_h_m)[0]], num_columns=d)) @ tf.expand_dims(pos_h_e, -1) , -1), -1)
+        pos_t_e = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(pos_r_m, -1) @ tf.expand_dims(pos_t_m, -2)) + tf.eye(k, batch_shape=[tf.shape(pos_t_m)[0]], num_columns=d)) @ tf.expand_dims(pos_t_e, -1) , -1), -1)
+
+        neg_h_m = tf.nn.embedding_lookup(self.ent_mappings, self.neg_h)
+        neg_r_m = tf.nn.embedding_lookup(self.rel_mappings, self.neg_r)
+        neg_t_m = tf.nn.embedding_lookup(self.ent_mappings, self.neg_t)
+
+        neg_h_e = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(neg_r_m, -1) @ tf.expand_dims(neg_h_m, -2)) + tf.eye(k, batch_shape=[tf.shape(neg_h_m)[0]], num_columns=d)) @ tf.expand_dims(neg_h_e, -1) , -1), -1)
+        neg_t_e = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(neg_r_m, -1) @ tf.expand_dims(neg_t_m, -2)) + tf.eye(k, batch_shape=[tf.shape(neg_t_m)[0]], num_columns=d)) @ tf.expand_dims(neg_t_e, -1) , -1), -1)
 
         score_pos = self.distance(pos_h_e, pos_r_e, pos_t_e)
         score_neg = self.distance(neg_h_e, neg_r_e, neg_t_e)
 
         self.loss = tf.reduce_sum(tf.maximum(score_pos - score_neg + self.config.margin, 0))
 
+    def mapping(self, h_e, h_m, r_m):
+        # ex. projected head => wr * whT * h + h
+        return h_e + tf.matmul(r_m, h_m, transpose_b=True)
+
     def test_step(self):
         num_total_ent = self.data_handler.tot_entity
+        d = self.config.ent_hidden_size
+        k = self.config.rel_hidden_size
 
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        pos_matrix = self.get_transform_matrix(self.test_r)
- 
-        project_ent_embedding = self.transform(self.ent_embeddings, tf.transpose(tf.squeeze(pos_matrix, [0])))
-        project_ent_embedding = tf.nn.l2_normalize(project_ent_embedding, axis=1)
+        h_m = tf.nn.embedding_lookup(self.ent_mappings, self.test_h)
+        r_m = tf.nn.embedding_lookup(self.rel_mappings, self.test_r)
+        t_m = tf.nn.embedding_lookup(self.ent_mappings, self.test_t)
+
+        head_vec = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(r_m, -1) @ tf.expand_dims(h_m, -2)) + tf.eye(k, batch_shape=[tf.shape(h_m)[0]], num_columns=d)) @ tf.expand_dims(head_vec, -1) , -1), -1)
+        tail_vec = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(r_m, -1) @ tf.expand_dims(t_m, -2)) + tf.eye(k, batch_shape=[tf.shape(t_m)[0]], num_columns=d)) @ tf.expand_dims(tail_vec, -1) , -1), -1)
         
+        project_ent_embedding = tf.nn.l2_normalize(tf.reduce_sum(((tf.tile(tf.expand_dims(r_m, -1), [tf.shape(self.ent_mappings)[0], 1, 1]) @ tf.expand_dims(self.ent_mappings, -2)) + tf.eye(k, batch_shape=[tf.shape(self.ent_mappings)[0]], num_columns=d)) @ tf.expand_dims(self.ent_embeddings, -1) , -1), -1)
+               
         score_head = self.distance(project_ent_embedding, rel_vec, tail_vec)
         score_tail = self.distance(head_vec, rel_vec, project_ent_embedding)
         
@@ -103,37 +124,14 @@ class TransD(ModelMeta):
 
         return self.head_rank, self.tail_rank
 
-    def transform(self, matrix, embeddings):
-        return tf.matmul(matrix, embeddings)
-
-    def distance(self, h, r, t):
-        if self.config.L1_flag: 
-            return tf.reduce_sum(tf.abs(h+r-t), axis=1) # L1 norm 
-        else:
-            return tf.reduce_sum((h+r-t)**2, axis=1) # L2 norm
-
-    def get_transform_matrix(self, r):
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
-        return tf.reshape(tf.nn.embedding_lookup(self.rel_matrix, r), [-1, k, d])
+    def distance(self, h, r, t):    
+        return tf.reduce_sum((h+r-t)**2, axis=1) # L2 norm
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
-
-        h_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings, h), [-1, d, 1])
-        r_e = tf.reshape(tf.nn.embedding_lookup(self.rel_embeddings, r), [-1, k])
-        t_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings, t), [-1, d, 1])
-        matrix = tf.reshape(tf.nn.embedding_lookup(self.rel_matrix, r), [-1, k, d])
-
-        transform_h_e = self.transform(matrix, h_e)
-        transform_t_e = self.transform(matrix, t_e)
-
-        #||h||2 ≤ 1, ||r||2 ≤ 1, ||t||2 ≤ 1, ||hMr||2 ≤ 1, ||tMr||2 ≤ 1.
-        h_e = tf.nn.l2_normalize(tf.reshape(transform_h_e, [-1, k]), -1)
-        r_e = tf.nn.l2_normalize(tf.reshape(r_e, [-1, k]), -1)
-        t_e = tf.nn.l2_normalize(tf.reshape(transform_t_e, [-1, k]), -1) 
+        h_e = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        r_e = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        t_e = tf.nn.embedding_lookup(self.ent_embeddings, t)
 
         return h_e, r_e, t_e
 
