@@ -163,7 +163,7 @@ class DataPrep(object):
                 for t
                 in self.validation_triples]
 
-        elif any(self.algo.lower().startswith(x) for x in ['transe', 'tranr', 'transh',
+        elif any(self.algo.lower().startswith(x) for x in ['transe', 'transr', 'transh', 'transd',
                                                            'proje', 'rescal',
                                                            'slm', 'sme_bilinear', 'sme_linear', 'ntn', 'rotate']):
 
