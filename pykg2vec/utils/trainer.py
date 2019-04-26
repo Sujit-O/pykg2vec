@@ -170,7 +170,7 @@ class Trainer(TrainerMeta):
 
         tot_data = self.data_handler.data_stats.tot_train_triples
 
-        num_batch = tot_data // self.config.batch_size if not self.debug else 500
+        num_batch = tot_data // self.config.batch_size if not self.debug else 10
 
         start_time = timeit.default_timer()
 
