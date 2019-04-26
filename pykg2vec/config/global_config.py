@@ -1,6 +1,7 @@
 import shutil, tarfile, urllib.request
 from pathlib import Path
 import os
+import multiprocessing
 
 # TODO: to be moved to utils
 
@@ -97,13 +98,17 @@ class GeneratorConfig(object):
                  data_path=Path('..') / 'data',
                  sampling='uniform',
                  queue_size=50,
-                 thread_num=50,
+                 raw_queue_size=50,
+                 processed_queue_size=50,
+                 process_num=6,
                  data='train', 
                  algo ='ConvE'
                  ):
+        self.process_num = process_num
+        self.raw_queue_size = raw_queue_size
+        self.processed_queue_size = processed_queue_size
         self.algo = algo
         self.data = data
-        self.thread_num = thread_num
         self.queue_size = queue_size
         self.sampling = sampling
         self.data_path = data_path
