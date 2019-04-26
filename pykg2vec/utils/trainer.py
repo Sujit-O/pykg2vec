@@ -11,7 +11,7 @@ import numpy as np
 
 class Trainer(TrainerMeta):
 
-    def __init__(self, model, algo=False, debug=False):
+    def __init__(self, model, algo='ConvE', debug=False):
         self.algo = algo
         self.debug = debug
         self.model = model
@@ -164,7 +164,7 @@ class Trainer(TrainerMeta):
 
         tot_data = len(self.data_handler.train_data)
 
-        num_batch = tot_data // self.config.batch_size if not self.debug else 2
+        num_batch = tot_data // self.config.batch_size if not self.debug else 500
 
         start_time = timeit.default_timer()
 

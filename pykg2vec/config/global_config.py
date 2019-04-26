@@ -1,6 +1,6 @@
 import shutil, tarfile, urllib.request
 from pathlib import Path
-
+import os
 
 # TODO: to be moved to utils
 
@@ -65,6 +65,9 @@ class GlobalConfig(object):
             raise NotImplementedError("%s dataset config not found!" % dataset)
 
         self.negative_sample = negative_sample
+        self.tmp_data = Path('..') / 'data'
+        if not os.path.exists(self.tmp_data):
+            os.mkdir(self.tmp_data)
 
     def dump(self):
         for key, value in self.dataset.__dict__.items():
@@ -89,21 +92,24 @@ class GeneratorConfig(object):
                       by data_handler
     """
 
-    def __init__(self, batch_size=50,
+    def __init__(self, batch_size=128,
                  loss_type='entropy',
-                 data_path=None,
-                 sampling=None,
-                 queue_size=10,
-                 process_num=4,
-                 tota_data=None
+                 data_path=Path('..') / 'data',
+                 sampling='uniform',
+                 queue_size=50,
+                 thread_num=50,
+                 data='train', 
+                 algo ='ConvE'
                  ):
-        self.tota_data = tota_data
-        self.process_num = process_num
+        self.algo = algo
+        self.data = data
+        self.thread_num = thread_num
         self.queue_size = queue_size
         self.sampling = sampling
         self.data_path = data_path
         self.loss_type = loss_type
         self.batch_size = batch_size
+
 
 
 # valid_keys = ['batch_size', 'loss_type',

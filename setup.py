@@ -7,16 +7,15 @@ import glob
 DISTNAME = 'pykg2vec'
 
 INSTALL_REQUIRES = (
-            'numpy>=1.16.2',
-            'networkx==2.2',
-            'matplotlib==3.0.3',
-            'seaborn==0.9.0',
-            'scikit_learn==0.20.3'
+    'numpy>=1.16.2',
+    'networkx==2.2',
+    'matplotlib==3.0.3',
+    'seaborn==0.9.0',
+    'scikit_learn==0.20.3'
 )
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-
 
 setuptools.setup(
     name='pykg2vec',
@@ -24,6 +23,7 @@ setuptools.setup(
     author="Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Martinez Canedo, Arquimedes",
     author_email="sujitchhetri@gmail.com",
     description="A python library for Knowledge Graph Embedding",
+    ext_modules=[setuptools.Extension('file_handler', ['./pykg2vec/csource/file_handler.c'])],
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Sujit-O/pykg2vec.git",
