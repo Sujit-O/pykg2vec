@@ -8,7 +8,7 @@ import sys
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
-
+from utils.dataprep import DataPrep
 
 class ProjE_pointwise(ModelMeta):
     """
@@ -49,19 +49,33 @@ class ProjE_pointwise(ModelMeta):
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
+            bound = 6 / (k**0.5)
+
             self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                                                  initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                             maxval=bound,
+                                                                                             seed=345))
             
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                                                  initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                             maxval=bound,
+                                                                                             seed=346))
             
-            self.bc1 = tf.get_variable(name="bc1", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.De1 = tf.get_variable(name="De1", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.Dr1 = tf.get_variable(name="Dr1", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.bc1 = tf.get_variable(name="bc1", initializer=tf.zeros([k]))
+            self.De1 = tf.get_variable(name="De1", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                                      maxval=bound,
+                                                                                                      seed=445))
+            self.Dr1 = tf.get_variable(name="Dr1", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                                      maxval=bound,
+                                                                                                      seed=445))
 
-            self.bc2 = tf.get_variable(name="bc2", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.De2 = tf.get_variable(name="De2", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.Dr2 = tf.get_variable(name="Dr2", shape=[k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.bc2 = tf.get_variable(name="bc2", initializer=tf.zeros([k]))
+            self.De2 = tf.get_variable(name="De2", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                                      maxval=bound,
+                                                                                                      seed=445))
+            self.Dr2 = tf.get_variable(name="Dr2", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                                      maxval=bound,
+                                                                                                      seed=445))
 
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2, self.De2, self.Dr2]
             
@@ -88,7 +102,10 @@ class ProjE_pointwise(ModelMeta):
         trh_loss_right= - tf.reduce_sum((tf.log(tf.clip_by_value(1-trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.tr_h))))
 
         trh_loss = trh_loss_left + trh_loss_right
-        self.loss = hrt_loss + trh_loss
+
+        regularizer_loss = tf.reduce_sum(tf.abs(self.De1) + tf.abs(self.Dr1)) + tf.reduce_sum(tf.abs(self.De2) + tf.abs(self.Dr2)) \
+                            + tf.reduce_sum(tf.abs(self.ent_embeddings)) + tf.reduce_sum(tf.abs(self.rel_embeddings))
+        self.loss = hrt_loss + trh_loss + regularizer_loss*1e-5
 
     def f1(self, h, r):
         return tf.tanh(h*self.De1 + r*self.Dr1 + self.bc1)
@@ -137,3 +154,101 @@ class ProjE_pointwise(ModelMeta):
     def get_proj_embed(self, h, r, t, sess):
         """function to get the projectd embedding value in numpy"""
         return self.get_embed(h, r, t, sess)
+
+
+if __name__ == '__main__':
+    # Unit Test Script with tensorflow Eager Execution
+    import tensorflow as tf
+
+    tf.enable_eager_execution()
+    knowledge_graph = DataPrep("Freebase15k")
+
+    batch = 128
+    k = 100
+    num_total_ent = knowledge_graph.tot_entity
+    num_total_rel = knowledge_graph.tot_relation
+
+    bound = 6 / (k**0.5)
+    ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
+                                                  initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                             maxval=bound,
+                                                                                             seed=345))
+            
+    rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
+                                          initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                     maxval=bound,
+                                                                                     seed=346))
+    
+    bc1 = tf.get_variable(name="bc1", initializer=tf.zeros([k]))
+    De1 = tf.get_variable(name="De1", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                              maxval=bound,
+                                                                                              seed=445))
+    Dr1 = tf.get_variable(name="Dr1", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                              maxval=bound,
+                                                                                              seed=445))
+
+    bc2 = tf.get_variable(name="bc2", initializer=tf.zeros([k]))
+    De2 = tf.get_variable(name="De2", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                              maxval=bound,
+                                                                                              seed=445))
+    Dr2 = tf.get_variable(name="Dr2", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
+                                                                                              maxval=bound,
+                                                                                              seed=445))
+
+    
+    knowledge_graph.start_multiprocessing()
+    
+    gen = knowledge_graph.batch_generator_train_proje(batch_size=100)
+    batch_counts = 0
+
+    for i in range(8):
+        triples = next(gen)
+        knowledge_graph.raw_training_data_queue.put(triples)
+        batch_counts += 1
+    
+    
+    
+    batch_counts -= 1
+    hr_hr, hr_t, tr_tr, tr_h = knowledge_graph.training_data_queue.get()
+    knowledge_graph.stop_multiprocessing()
+
+    def f1(h, r):
+        return tf.tanh(h*De1 + r*Dr1 + bc1)
+    def f2(t, r):
+        return tf.tanh(t*De2 + r*Dr2 + bc2)
+    def g(f, W):
+        return tf.sigmoid(tf.matmul(f, tf.transpose(W)))
+    import pdb
+    pdb.set_trace()
+    hr_h = hr_hr[:,0]
+    hr_r = hr_hr[:,1]
+    tr_t = tr_tr[:,0]
+    tr_r = tr_tr[:,1]
+
+
+    norm_ent_embeddings = tf.nn.l2_normalize(ent_embeddings, -1) #[tot_ent, k]
+    norm_rel_embeddings = tf.nn.l2_normalize(rel_embeddings, -1) #[tot_rel, k]
+
+    emb_hr_h = tf.nn.embedding_lookup(norm_ent_embeddings, hr_h) #[m, k]
+    emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, hr_r) #[m, k]
+
+    emb_tr_t = tf.nn.embedding_lookup(norm_ent_embeddings, tr_t) #[m, k]
+    emb_tr_r = tf.nn.embedding_lookup(norm_rel_embeddings, tr_r) #[m, k]
+
+    hrt_sigmoid = g(tf.nn.dropout(f1(emb_hr_h, emb_hr_r), 0.5), norm_ent_embeddings)
+
+    hrt_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., hr_t)))
+    hrt_loss_right= - tf.reduce_sum((tf.log(tf.clip_by_value(1-hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(hr_t))))
+
+    hrt_loss = hrt_loss_left + hrt_loss_right
+
+    trh_sigmoid = g(tf.nn.dropout(f2(emb_tr_t, emb_tr_r), 0.5), norm_ent_embeddings)
+
+    trh_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tr_h)))
+    trh_loss_right= - tf.reduce_sum((tf.log(tf.clip_by_value(1-trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(tr_h))))
+
+    trh_loss = trh_loss_left + trh_loss_right
+
+    regularizer_loss = tf.reduce_sum(tf.abs(De1) + tf.abs(Dr1)) + tf.reduce_sum(tf.abs(De2) + tf.abs(Dr2)) \
+                        + tf.reduce_sum(tf.abs(ent_embeddings)) + tf.reduce_sum(tf.abs(rel_embeddings))
+    loss = hrt_loss + trh_loss + regularizer_loss*1e-5
