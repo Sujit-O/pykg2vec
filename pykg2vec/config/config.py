@@ -5,6 +5,7 @@ We store the base configuration of the models here
 """
 import tensorflow as tf
 import os
+from pathlib import Path
 
 
 class BasicConfig:
@@ -12,9 +13,10 @@ class BasicConfig:
                  test_step=100,
                  test_num=300,
                  triple_num=20,
-                 tmp='../intermediate',
-                 result='../results',
-                 figures='../figures',
+                 tmp=Path('..') / 'intermediate',
+                 result=Path('..') / 'results',
+                 figures=Path('..') / 'figures',
+                 tmp_data=Path('..') / 'data',
                  gpu_fraction=0.4,
                  hits=None,
                  gpu_allow_growth=True,
@@ -28,6 +30,7 @@ class BasicConfig:
                  plot_testing_result=False,
                  plot_entity_only=False):
 
+        self.tmp_data = tmp_data
         self.plot_entity_only = plot_entity_only
         self.test_step = test_step
         self.test_num = test_num
@@ -124,7 +127,7 @@ class TransHConfig(BasicConfig):
                  batch_size=128,
                  epochs=1000,
                  margin=1.0,
-                 C = 0.123,
+                 C=0.123,
                  data='Freebase',
                  optimizer='adam',
                  sampling="uniform"):
@@ -278,7 +281,7 @@ class ConvEConfig(BasicConfig):
                  input_dropout=0.2,
                  hidden_dropout=0.3,
                  feature_map_dropout=0.2,
-                 lr_decay=0.995 ,
+                 lr_decay=0.995,
                  label_smoothing=0.1,
                  use_bias=True,
                  margin=1.0,
@@ -314,7 +317,7 @@ class ProjE_pointwiseConfig(BasicConfig):
                  input_dropout=0.2,
                  hidden_dropout=0.3,
                  feature_map_dropout=0.2,
-                 lr_decay=0.995 ,
+                 lr_decay=0.995,
                  label_smoothing=0.1,
                  use_bias=True,
                  margin=1.0,

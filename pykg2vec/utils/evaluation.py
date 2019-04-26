@@ -15,32 +15,17 @@ import pandas as pd
 from core.KGMeta import EvaluationMeta
 from utils.generator import Generator
 from config.global_config import GeneratorConfig
+import pickle
+from pathlib import Path
 
 
 class Evaluation(EvaluationMeta):
 
-    def __init__(self, model=None, test_data=None, debug=False):
+    def __init__(self, model=None, debug=False):
         self.model = model
         self.debug = debug
-        if not self.model.model_name.lower().startswith('conve'):
-            self.batch = 1
-        else:
-            self.batch = self.model.config.batch_size
-        if test_data == 'test':
-            if not self.model.model_name.lower().startswith('conve'):
-                self.data = model.data_handler.test_triples_ids
-            else:
-                self.data = model.data_handler.test_data
-        elif test_data == 'valid':
-            if not self.model.model_name.lower().startswith('conve'):
-                self.data = model.data_handler.validation_triples_ids
-            else:
-                self.data = model.data_handler.valid_data
-        else:
-            raise NotImplementedError('Invalid testing data: enter test or valid!')
+        self.batch = self.model.config.batch_size
 
-        self.hr_t = model.data_handler.hr_t
-        self.tr_h = model.data_handler.tr_t
         self.n_test = model.config.test_num
         self.hits = model.config.hits
 
@@ -56,7 +41,21 @@ class Evaluation(EvaluationMeta):
 
         self.epoch = []
 
-    def test(self, sess=None, epoch=None):
+        with open(self.model.config.tmp_data / 'hr_t.pkl', 'rb') as f:
+            self.hr_t = pickle.load(f)
+        with open(self.model.config.tmp_data / 'tr_h.pkl', 'rb') as f:
+            self.tr_h = pickle.load(f)
+
+    def test(self, sess=None, epoch=None,test_data='test'):
+        if test_data == 'test':
+            with open(self.config.data_path / 'test_triples_ids.pkl', 'rb') as f:
+                data = pickle.load(f)
+        elif test_data == 'valid':
+            with open(self.config.data_path / 'validation_triples_ids.pkl', 'rb') as f:
+                data = pickle.load(f)
+        else:
+            raise NotImplementedError('Invalid testing data: enter test or valid!')
+
         head_rank, tail_rank = self.model.test_step()
         self.epoch.append(epoch)
         if not sess:
@@ -66,104 +65,48 @@ class Evaluation(EvaluationMeta):
         rank_tail = []
         filter_rank_head = []
         filter_rank_tail = []
-        if self.model.model_name.lower().startswith('conve'):
-            gen = self.model.data_handler.batch_generator_test_hr_tr(batch_size=self.batch)
-            loop_len = self.n_test // self.batch if not self.debug else 1000
-            total_test = loop_len * self.batch
-        else:
-            loop_len = self.model.config.test_num
-            total_test = loop_len
-        t = None
-        e1 = None
-        r = None
-        e2 = None
-        r_rev = None
+        loop_len = self.model.config.test_num
+        total_test = loop_len
+
         for i in range(loop_len):
             # print("batch_id:", i)
-
-            if not self.model.model_name.lower().startswith('conve'):
-                t = self.data[i]
-                feed_dict = {
-                    self.model.test_h: np.reshape(t.h, [1, ]),
-                    self.model.test_r: np.reshape(t.r, [1, ]),
-                    self.model.test_t: np.reshape(t.t, [1, ])
-                }
-
-            else:
-                e1, r, e2_multi1, e2, r_rev, e2_multi2 = next(gen)
-
-                feed_dict = {
-                    self.model.test_e1: e1,
-                    self.model.test_e2: e2,
-                    self.model.test_r: r,
-                    self.model.test_r_rev: r_rev,
-                    self.model.test_e2_multi1: e2_multi1,
-                    self.model.test_e2_multi2: e2_multi2
-                }
+            t = data[i]
+            feed_dict = {
+                self.model.test_h: np.reshape(t.h, [1, ]),
+                self.model.test_r: np.reshape(t.r, [1, ]),
+                self.model.test_t: np.reshape(t.t, [1, ])
+            }
 
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
 
-            if not self.model.model_name.lower().startswith('conve'):
-                hrank = 0
-                fhrank = 0
-                for j in range(len(id_replace_head)):
-                    val = id_replace_head[-j - 1]
-                    if val == t.h:
-                        break
-                    else:
-                        hrank += 1
-                        fhrank += 1
-                        if val in self.tr_h[(t.t, t.r)]:
-                            fhrank -= 1
+            hrank = 0
+            fhrank = 0
+            for j in range(len(id_replace_head)):
+                val = id_replace_head[-j - 1]
+                if val == t.h:
+                    break
+                else:
+                    hrank += 1
+                    fhrank += 1
+                    if val in self.tr_h[(t.t, t.r)]:
+                        fhrank -= 1
 
-                trank = 0
-                ftrank = 0
-                for j in range(len(id_replace_tail)):
-                    val = id_replace_tail[-j - 1]
-                    if val == t.t:
-                        break
-                    else:
-                        trank += 1
-                        ftrank += 1
-                        if val in self.hr_t[(t.h, t.r)]:
-                            ftrank -= 1
+            trank = 0
+            ftrank = 0
+            for j in range(len(id_replace_tail)):
+                val = id_replace_tail[-j - 1]
+                if val == t.t:
+                    break
+                else:
+                    trank += 1
+                    ftrank += 1
+                    if val in self.hr_t[(t.h, t.r)]:
+                        ftrank -= 1
 
-                rank_head.append(hrank)
-                rank_tail.append(trank)
-                filter_rank_head.append(fhrank)
-                filter_rank_tail.append(ftrank)
-            else:
-                for b in range(self.batch):
-                    hrank = 0
-                    fhrank = 0
-
-                    for j in range(len(id_replace_head[b])):
-                        val = id_replace_head[b, -j - 1]
-                        if val == e1[b]:
-                            break
-                        else:
-                            hrank += 1
-                            fhrank += 1
-                            if val in self.tr_h[(e2[b], r_rev[b])]:
-                                fhrank -= 1
-
-                    trank = 0
-                    ftrank = 0
-
-                    for j in range(len(id_replace_tail[b])):
-                        val = id_replace_tail[b, -j - 1]
-                        if val == e2[b]:
-                            break
-                        else:
-                            trank += 1
-                            ftrank += 1
-                            if val in self.hr_t[(e1[b], r[b])]:
-                                ftrank -= 1
-
-                    rank_head.append(hrank)
-                    rank_tail.append(trank)
-                    filter_rank_head.append(fhrank)
-                    filter_rank_tail.append(ftrank)
+            rank_head.append(hrank)
+            rank_tail.append(trank)
+            filter_rank_head.append(fhrank)
+            filter_rank_tail.append(ftrank)
 
         self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
         self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
@@ -196,7 +139,7 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name)))
-        loop_len = self.n_test // self.batch if not self.debug else 1000
+        loop_len = self.n_test // self.batch if not self.debug else 10
         total_test = loop_len * self.batch
 
         for i in range(loop_len):

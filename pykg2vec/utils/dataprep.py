@@ -79,7 +79,7 @@ class DataPrep(object):
         self.idx2relation = {}
 
         self.hr_t = defaultdict(set)
-        self.tr_t = defaultdict(set)
+        self.tr_h = defaultdict(set)
 
         if not os.path.exists(self.config.tmp_data):
             os.mkdir(self.config.tmp_data)
@@ -244,25 +244,25 @@ class DataPrep(object):
         if not os.path.exists(self.config.tmp_data / 'hr_t.pkl'):
             for t in self.train_triples:
                 self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-                self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+                self.tr_h[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
             for t in self.test_triples:
                 self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-                self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+                self.tr_h[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
             for t in self.validation_triples:
                 self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-                self.tr_t[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
+                self.tr_h[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
             with open(self.config.tmp_data / 'hr_t.pkl', 'wb') as f:
                 pickle.dump(self.hr_t, f)
-            with open(self.config.tmp_data / 'tr_t.pkl', 'wb') as f:
-                pickle.dump(self.tr_t, f)
+            with open(self.config.tmp_data / 'tr_h.pkl', 'wb') as f:
+                pickle.dump(self.tr_h, f)
         else:
             with open(self.config.tmp_data / 'hr_t.pkl', 'rb') as f:
                 self.hr_t = pickle.load(f)
-            with open(self.config.tmp_data / 'tr_t.pkl', 'rb') as f:
-                self.tr_t = pickle.load(f)
+            with open(self.config.tmp_data / 'tr_h.pkl', 'rb') as f:
+                self.tr_h = pickle.load(f)
 
         if not os.path.exists(self.config.tmp_data / 'data_stats.pkl'):
             with open(self.config.tmp_data / 'data_stats.pkl', 'wb') as f:

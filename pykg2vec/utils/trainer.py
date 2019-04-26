@@ -21,7 +21,7 @@ class Trainer(TrainerMeta):
         self.config = self.model.config
         self.data_handler = self.model.data_handler
 
-        self.evaluator = Evaluation(model=model, test_data='test', debug=self.debug)
+        self.evaluator = Evaluation(model=model, debug=self.debug)
         self.training_results = []
         self.gen_train = None
 
