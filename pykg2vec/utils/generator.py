@@ -12,7 +12,7 @@ import sys
 sys.path.append("../")
 
 from config.global_config import GeneratorConfig
-from utils.dataprep import DataPrep, DataInput
+from utils.dataprep import DataPrep, DataInput, DataStats
 import numpy as np
 from scipy import sparse as sps
 from threading import Thread, currentThread
@@ -28,19 +28,18 @@ class Generator(object):
           batch for training algorithms
     """
 
-    def __init__(self, config=None, data_handler=None):
+    def __init__(self, config=None):
 
         if not config:
             self.config = GeneratorConfig()
         else:
             self.config = config
-        if not data_handler:
-            self.data_handler = DataPrep('Freebase15k',
-                                         algo=self.config.algo)
-        else:
-            self.data_handler = data_handler
 
         self.queue = Queue(self.config.queue_size)
+
+        with open(self.config.data_path / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
+
         # c extension to handle data
         if self.config.algo.lower().startswith('conve'):
             with open(self.config.data_path / 'train_data.pkl', 'rb') as f:
@@ -100,7 +99,7 @@ class Generator(object):
 
     def gen_batch_conve(self):
         bs = self.config.batch_size
-        te = self.data_handler.tot_entity
+        te = self.data_stats.tot_entity
         if self.config.data.startswith('train'):
             number_of_batches = len(self.train_data) // bs
         elif self.config.data.startswith('test'):
@@ -167,7 +166,7 @@ class Generator(object):
     def gen_batch_proje(self, n_entity=None, neg_weight=0.5):
         bs = self.config.batch_size
         if not n_entity:
-            n_entity = self.data_handler.tot_entity
+            n_entity = self.data_stats.tot_entity
         if self.config.data.startswith('train'):
             number_of_batches = len(self.train_triples_ids) // bs
         elif self.config.data.startswith('test'):
@@ -201,8 +200,12 @@ class Generator(object):
                     else:
                         raise NotImplementedError("The data type passed is wrong!")
                     # self.process_one_train_batch_proje(raw_data, n_entity, neg_weight)
-                    worker = Thread(target=self.process_one_train_batch_proje,
-                                    args=(raw_data, n_entity, neg_weight,))
+                    if self.config.data.startswith('train'):
+                        worker = Thread(target=self.process_one_train_batch_proje,
+                                        args=(raw_data, n_entity, neg_weight,))
+                    else:
+                        worker = Thread(target=self.process_one_test_batch_proje,
+                                        args=(raw_data,))
                     # print("batch id:", batch_idx, " qL:", self.queue.qsize(),
                     # " theadID: ", worker.name)
                     self.thread_list.append(worker)
@@ -226,7 +229,7 @@ class Generator(object):
 
     def gen_batch_trans(self):
         bs = self.config.batch_size
-        te = self.data_handler.tot_entity
+        te = self.data_stats.tot_entity
         if self.config.data.startswith('train'):
             number_of_batches = len(self.train_triples_ids) // bs
             self.observed_triples = {(t.h, t.r, t.t): 1 for t in self.train_triples_ids}
@@ -288,7 +291,7 @@ class Generator(object):
             yield data
 
     def process_one_train_batch_trans(self, pos_triples):
-        te = self.data_handler.tot_entity
+        te = self.data_stats.tot_entity
         bs = self.config.batch_size
         ph = pos_triples[:, 0]
         pr = pos_triples[:, 1]
@@ -404,6 +407,14 @@ class Generator(object):
         self.queue.put([np.asarray(hr_hr_batch, dtype=np.int32), np.asarray(hr_tweight, dtype=np.float32),
                         np.asarray(tr_tr_batch, dtype=np.int32), np.asarray(tr_hweight, dtype=np.float32)])
         # print(self.thread_cnt, self.queue.qsize())
+        self.thread_cnt -= 1
+
+    def process_one_test_batch_proje(self, raw_data):
+        h = raw_data[:, 0]
+        r = raw_data[:, 1]
+        t = raw_data[:, 2]
+
+        self.queue.put([h,r,t])
         self.thread_cnt -= 1
 
     def process_one_train_batch_conve(self, raw_data, bs, te):

@@ -1,10 +1,13 @@
 import tensorflow as tf
 from argparse import ArgumentParser
 
-from pykg2vec.core.Rescal import Rescal
-from pykg2vec.config.config import RescalConfig
-from pykg2vec.utils.dataprep import DataPrep
-from pykg2vec.utils.trainer import Trainer
+import sys
+sys.path.append("../")
+
+from core.Rescal import Rescal
+from config.config import RescalConfig
+from utils.dataprep import DataPrep
+from utils.trainer import Trainer
 
 
 def main(_):
@@ -20,8 +23,8 @@ def main(_):
     parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
     args = parser.parse_args()
 
-    data_handler = DataPrep(args.dataset)
-    args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
+    data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='Rescal')
+    # args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
     
     config = RescalConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,

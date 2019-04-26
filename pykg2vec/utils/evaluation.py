@@ -13,25 +13,26 @@ import os
 import numpy as np
 import pandas as pd
 from core.KGMeta import EvaluationMeta
+from utils.generator import Generator
+from config.global_config import GeneratorConfig
 
 
 class Evaluation(EvaluationMeta):
 
-    def __init__(self, model=None, test_data=None, algo='Conve', debug=False):
+    def __init__(self, model=None, test_data=None, debug=False):
         self.model = model
-        self.algo = algo
         self.debug = debug
-        if not self.algo:
+        if not self.model.model_name.lower().startswith('conve'):
             self.batch = 1
         else:
             self.batch = self.model.config.batch_size
         if test_data == 'test':
-            if not self.algo.lower().startswith('conve'):
+            if not self.model.model_name.lower().startswith('conve'):
                 self.data = model.data_handler.test_triples_ids
             else:
                 self.data = model.data_handler.test_data
         elif test_data == 'valid':
-            if not self.algo.lower().startswith('conve'):
+            if not self.model.model_name.lower().startswith('conve'):
                 self.data = model.data_handler.validation_triples_ids
             else:
                 self.data = model.data_handler.valid_data
@@ -65,7 +66,7 @@ class Evaluation(EvaluationMeta):
         rank_tail = []
         filter_rank_head = []
         filter_rank_tail = []
-        if self.algo.lower().startswith('conve'):
+        if self.model.model_name.lower().startswith('conve'):
             gen = self.model.data_handler.batch_generator_test_hr_tr(batch_size=self.batch)
             loop_len = self.n_test // self.batch if not self.debug else 1000
             total_test = loop_len * self.batch
@@ -80,7 +81,7 @@ class Evaluation(EvaluationMeta):
         for i in range(loop_len):
             # print("batch_id:", i)
 
-            if not self.algo.lower().startswith('conve'):
+            if not self.model.model_name.lower().startswith('conve'):
                 t = self.data[i]
                 feed_dict = {
                     self.model.test_h: np.reshape(t.h, [1, ]),
@@ -102,7 +103,7 @@ class Evaluation(EvaluationMeta):
 
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
 
-            if not self.algo.lower().startswith('conve'):
+            if not self.model.model_name.lower().startswith('conve'):
                 hrank = 0
                 fhrank = 0
                 for j in range(len(id_replace_head)):
@@ -114,7 +115,7 @@ class Evaluation(EvaluationMeta):
                         fhrank += 1
                         if val in self.tr_h[(t.t, t.r)]:
                             fhrank -= 1
-                            
+
                 trank = 0
                 ftrank = 0
                 for j in range(len(id_replace_tail)):
@@ -126,7 +127,7 @@ class Evaluation(EvaluationMeta):
                         ftrank += 1
                         if val in self.hr_t[(t.h, t.r)]:
                             ftrank -= 1
-                
+
                 rank_head.append(hrank)
                 rank_tail.append(trank)
                 filter_rank_head.append(fhrank)
@@ -135,7 +136,7 @@ class Evaluation(EvaluationMeta):
                 for b in range(self.batch):
                     hrank = 0
                     fhrank = 0
-                    
+
                     for j in range(len(id_replace_head[b])):
                         val = id_replace_head[b, -j - 1]
                         if val == e1[b]:
@@ -148,7 +149,7 @@ class Evaluation(EvaluationMeta):
 
                     trank = 0
                     ftrank = 0
-                    
+
                     for j in range(len(id_replace_tail[b])):
                         val = id_replace_tail[b, -j - 1]
                         if val == e2[b]:
@@ -183,6 +184,94 @@ class Evaluation(EvaluationMeta):
             self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
                                                         dtype=np.float32) / total_test
 
+    def test_conve(self, sess=None, epoch=None):
+        head_rank, tail_rank = self.model.test_step()
+        self.epoch.append(epoch)
+        if not sess:
+            raise NotImplementedError('No session found for evaluation!')
+
+        rank_head = []
+        rank_tail = []
+        filter_rank_head = []
+        filter_rank_tail = []
+
+        gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name)))
+        loop_len = self.n_test // self.batch if not self.debug else 1000
+        total_test = loop_len * self.batch
+
+        for i in range(loop_len):
+
+            data = list(next(gen_test))
+
+            e1 = data[0]
+            r = data[1]
+            e2_multi1 = data[2]
+            e2 = data[3]
+            r_rev = data[4]
+            e2_multi2 = data[5]
+
+            feed_dict = {
+                self.model.test_e1: e1,
+                self.model.test_e2: e2,
+                self.model.test_r: r,
+                self.model.test_r_rev: r_rev,
+                self.model.test_e2_multi1: e2_multi1,
+                self.model.test_e2_multi2: e2_multi2
+            }
+
+            id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
+
+            for b in range(self.batch):
+                hrank = 0
+                fhrank = 0
+
+                for j in range(len(id_replace_head[b])):
+                    val = id_replace_head[b, -j - 1]
+                    if val == e1[b]:
+                        break
+                    else:
+                        hrank += 1
+                        fhrank += 1
+                        if val in self.tr_h[(e2[b], r_rev[b])]:
+                            fhrank -= 1
+
+                trank = 0
+                ftrank = 0
+
+                for j in range(len(id_replace_tail[b])):
+                    val = id_replace_tail[b, -j - 1]
+                    if val == e2[b]:
+                        break
+                    else:
+                        trank += 1
+                        ftrank += 1
+                        if val in self.hr_t[(e1[b], r[b])]:
+                            ftrank -= 1
+
+                rank_head.append(hrank)
+                rank_tail.append(trank)
+                filter_rank_head.append(fhrank)
+                filter_rank_tail.append(ftrank)
+
+        self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
+        self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
+
+        self.filter_mean_rank_head[epoch] = np.sum(filter_rank_head,
+                                                   dtype=np.float32) / total_test
+        self.filter_mean_rank_tail[epoch] = np.sum(filter_rank_tail,
+                                                   dtype=np.float32) / total_test
+
+        for hit in self.hits:
+            self.hit_head[(epoch, hit)] = np.sum(np.asarray(rank_head) < hit,
+
+                                                 dtype=np.float32) / total_test
+            self.hit_tail[(epoch, hit)] = np.sum(np.asarray(rank_tail) < hit,
+                                                 dtype=np.float32) / total_test
+            self.filter_hit_head[(epoch, hit)] = np.sum(np.asarray(filter_rank_head) < hit,
+                                                        dtype=np.float32) / total_test
+            self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
+                                                        dtype=np.float32) / total_test
+
     def test_proje(self, sess=None, epoch=None):
         head_rank, tail_rank = self.model.test_step()
         self.epoch.append(epoch)
@@ -193,20 +282,19 @@ class Evaluation(EvaluationMeta):
         rank_tail = []
         filter_rank_head = []
         filter_rank_tail = []
-       
-        gen = self.model.data_handler.batch_generator_train_proje(src_triples=self.model.data_handler.test_triples_ids, batch_size=self.batch)
+        gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name)))
         loop_len = self.n_test // self.batch if not self.debug else 100
         total_test = loop_len * self.batch
 
         for i in range(loop_len):
             # print("batch_id:", i)
-            datas = next(gen)
+            data = list(next(gen_test))
             # import pdb
             # pdb.set_trace()
             feed_dict = {
-                self.model.test_h: datas[:,0],
-                self.model.test_r: datas[:,1],
-                self.model.test_t: datas[:,2]
+                self.model.test_h: data[:, 0],
+                self.model.test_r: data[:, 1],
+                self.model.test_t: data[:, 2]
             }
 
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
@@ -214,28 +302,28 @@ class Evaluation(EvaluationMeta):
             for b in range(self.batch):
                 hrank = 0
                 fhrank = 0
-                
+
                 for j in range(len(id_replace_head[b])):
                     val = id_replace_head[b, -j - 1]
-                    if val == datas[:,0][b]:
+                    if val == data[:, 0][b]:
                         break
                     else:
                         hrank += 1
                         fhrank += 1
-                        if val in self.tr_h[(datas[:,2][b], datas[:,1][b])]:
+                        if val in self.tr_h[(data[:, 2][b], data[:, 1][b])]:
                             fhrank -= 1
 
                 trank = 0
                 ftrank = 0
-                
+
                 for j in range(len(id_replace_tail[b])):
                     val = id_replace_tail[b, -j - 1]
-                    if val == datas[:,2][b]:
+                    if val == data[:, 2][b]:
                         break
                     else:
                         trank += 1
                         ftrank += 1
-                        if val in self.hr_t[(datas[:,0][b], datas[:,1][b])]:
+                        if val in self.hr_t[(data[:, 0][b], data[:, 1][b])]:
                             ftrank -= 1
 
                 rank_head.append(hrank)

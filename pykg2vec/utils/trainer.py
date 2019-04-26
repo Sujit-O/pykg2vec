@@ -7,19 +7,23 @@ sys.path.append("../")
 from core.KGMeta import TrainerMeta
 from utils.evaluation import Evaluation
 from utils.visualization import Visualization
+from utils.generator import Generator
+from config.global_config import GeneratorConfig
+from utils.dataprep import DataInput
 import numpy as np
+
 
 class Trainer(TrainerMeta):
 
-    def __init__(self, model, algo='ConvE', debug=False):
-        self.algo = algo
+    def __init__(self, model, debug=False):
         self.debug = debug
         self.model = model
         self.config = self.model.config
         self.data_handler = self.model.data_handler
 
-        self.evaluator = Evaluation(model=model, test_data='test', algo=self.algo, debug=self.debug)
+        self.evaluator = Evaluation(model=model, test_data='test', debug=self.debug)
         self.training_results = []
+        self.gen_train = None
 
     def build_model(self):
         """function to build the model"""
@@ -46,16 +50,18 @@ class Trainer(TrainerMeta):
         if self.config.loadFromData:
             self.load_model()
         else:
-            if self.model.model_name == "ProjE_pointwise":
-                self.data_handler.start_multiprocessing()
-            
+            # if self.model.model_name == "ProjE_pointwise":
+            #      self.data_handler.start_multiprocessing()
+            #
+            self.gen_train = iter(Generator(config=GeneratorConfig(data='train', algo=self.model.model_name)))
+
             for n_iter in range(self.config.epochs):
                 if self.model.model_name == "ProjE_pointwise":
                     self.train_model_epoch_proje(n_iter)
                     self.tiny_test_proje(n_iter)
                 elif self.model.model_name == "ConvE":
                     self.train_model_epoch_conve(n_iter)
-                    self.tiny_test(n_iter)
+                    self.tiny_test_conve(n_iter)
                 else:
                     self.train_model_epoch(n_iter)
                     self.tiny_test(n_iter)
@@ -78,27 +84,21 @@ class Trainer(TrainerMeta):
     def train_model_epoch_proje(self, epoch_idx):
         acc_loss = 0
 
-        tot_data = len(self.data_handler.train_triples_ids)
+        tot_data = self.data_handler.data_stats.tot_train_triples
         
         num_batch = tot_data // self.config.batch_size if not self.debug else 5
 
         start_time = timeit.default_timer()
 
-        gen_train = self.data_handler.batch_generator_train_proje(batch_size=self.config.batch_size)
+        # gen_train = self.data_handler.batch_generator_train_proje(batch_size=self.config.batch_size)
         batch_counts = 0
         
         for batch_idx in range(num_batch):
-            triples = next(gen_train)
-            self.data_handler.raw_training_data_queue.put(triples)
-
-
-
-            batch_counts += 1
-        
-        while batch_counts > 0:
-            batch_counts -= 1
-
-            hr_hr, hr_t, tr_tr, tr_h = self.data_handler.training_data_queue.get()
+            data = list(next(self.gen_train))
+            hr_hr = data[0]
+            hr_t = data[1]
+            tr_tr = data[2]
+            tr_h = data[3]
 
             feed_dict = {
                 self.model.hr_h: hr_hr[:, 0],
@@ -124,19 +124,25 @@ class Trainer(TrainerMeta):
     def train_model_epoch(self, epoch_idx):
         acc_loss = 0
     
-        tot_data = len(self.data_handler.train_data)
+        tot_data = self.data_handler.data_stats.tot_train_triples
 
         num_batch = tot_data // self.config.batch_size if not self.debug else 2
 
         start_time = timeit.default_timer()
 
-        if self.config.sampling == "uniform":
-            gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
-        elif self.config.sampling == "bern":
-            gen_train = self.data_handler.batch_generator_bern(batch_size=self.config.batch_size)
+        # if self.config.sampling == "uniform":
+        #     gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
+        # elif self.config.sampling == "bern":
+        #     gen_train = self.data_handler.batch_generator_bern(batch_size=self.config.batch_size)
 
         for batch_idx in range(num_batch):
-            ph, pr, pt, nh, nr, nt = next(gen_train)
+            data = list(next(self.gen_train))
+            ph = data[0]
+            pr = data[1]
+            pt = data[2]
+            nh = data[3]
+            nr = data[4]
+            nt = data[5]
 
             feed_dict = {
                 self.model.pos_h: ph,
@@ -162,17 +168,19 @@ class Trainer(TrainerMeta):
     def train_model_epoch_conve(self, epoch_idx):
         acc_loss = 0
 
-        tot_data = len(self.data_handler.train_data)
+        tot_data = self.data_handler.data_stats.tot_train_triples
 
         num_batch = tot_data // self.config.batch_size if not self.debug else 500
 
         start_time = timeit.default_timer()
 
-        gen_train = self.data_handler.batch_generator_train_hr_tr(batch_size=self.config.batch_size)
+        # gen_train = self.data_handler.batch_generator_train_hr_tr(batch_size=self.config.batch_size)
 
         for batch_idx in range(num_batch):
-            
-            e1, r, e2_multi1 = next(gen_train)
+            data = list(next(self.gen_train))
+            e1 = data[0]
+            r = data[1]
+            e2_multi1 = data[2]
 
             feed_dict = {
                 self.model.e1: e1,
@@ -204,6 +212,20 @@ class Trainer(TrainerMeta):
                 curr_epoch == 0 or \
                 curr_epoch == self.config.epochs - 1:
             self.evaluator.test(self.sess, curr_epoch)
+            self.evaluator.print_test_summary(curr_epoch)
+
+            print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
+
+    def tiny_test_conve(self, curr_epoch):
+        start_time = timeit.default_timer()
+
+        if self.config.test_step == 0:
+            return
+
+        if curr_epoch % self.config.test_step == 0 or \
+                curr_epoch == 0 or \
+                curr_epoch == self.config.epochs - 1:
+            self.evaluator.test_conve(self.sess, curr_epoch)
             self.evaluator.print_test_summary(curr_epoch)
 
             print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))

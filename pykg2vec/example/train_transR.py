@@ -20,8 +20,8 @@ def main(_):
     # parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
     args = parser.parse_args()
 
-    data_handler = DataPrep(args.dataset)
-    args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
+    data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='TransR')
+    # args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
     
     config = TransRConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,

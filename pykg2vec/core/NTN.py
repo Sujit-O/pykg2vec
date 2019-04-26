@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import sys
+
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
@@ -18,6 +19,7 @@ class NTN(ModelMeta):
     ------------------Summary---------------------------------
     ---
     """
+
     def __init__(self, config=None, data_handler=None):
         self.config = config
         self.data_handler = data_handler
@@ -26,7 +28,7 @@ class NTN(ModelMeta):
         self.def_inputs()
         self.def_parameters()
         self.def_loss()
-    
+
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
@@ -49,27 +51,30 @@ class NTN(ModelMeta):
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        
+
         with tf.name_scope("weights_and_parameters"):
-            self.mr1 = tf.get_variable(name="mr1", shape=[d, k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.mr2 = tf.get_variable(name="mr2", shape=[d, k], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.br  = tf.get_variable(name="br",  shape=[k, 1], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.mr  = tf.get_variable(name="mr",  shape=[k, d, d], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.mr1 = tf.get_variable(name="mr1", shape=[d, k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.mr2 = tf.get_variable(name="mr2", shape=[d, k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.br = tf.get_variable(name="br", shape=[k, 1],
+                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.mr = tf.get_variable(name="mr", shape=[k, d, d],
+                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, \
                                self.mr1, self.mr2, self.br, self.mr]
-    
 
     def def_loss(self):
         self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-        
+
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
         neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
 
-        energy_pos = tf.reduce_sum(pos_r_e*self.train_layer(pos_h_e, pos_t_e), -1)
-        energy_neg = tf.reduce_sum(neg_r_e*self.train_layer(neg_h_e, neg_t_e), -1)
-        
+        energy_pos = tf.reduce_sum(pos_r_e * self.train_layer(pos_h_e, pos_t_e), -1)
+        energy_neg = tf.reduce_sum(neg_r_e * self.train_layer(neg_h_e, neg_t_e), -1)
+
         self.loss = tf.reduce_sum(tf.maximum(energy_neg + self.config.margin - energy_pos, 0))
 
     def train_layer(self, h, t):
@@ -82,19 +87,19 @@ class NTN(ModelMeta):
         br = tf.squeeze(self.br, -1)
 
         # [m, k, 1, d]
-        expanded_h = tf.tile(tf.expand_dims(tf.expand_dims(h, 1),1), [1, k, 1, 1])
+        expanded_h = tf.tile(tf.expand_dims(tf.expand_dims(h, 1), 1), [1, k, 1, 1])
 
         # [m, k, d, d]
-        expanded_mr= tf.tile(tf.expand_dims(self.mr, 0), [tf.shape(h)[0], 1, 1, 1])
-        
+        expanded_mr = tf.tile(tf.expand_dims(self.mr, 0), [tf.shape(h)[0], 1, 1, 1])
+
         # [m, k, d, 1]
-        expanded_t = tf.tile(tf.expand_dims(tf.expand_dims(t, 1),3), [1, k, 1, 1])
+        expanded_t = tf.tile(tf.expand_dims(tf.expand_dims(t, 1), 3), [1, k, 1, 1])
 
         # [m, k]
-        htmrt = tf.squeeze(tf.matmul(tf.matmul(expanded_h, expanded_mr), expanded_t), [2,3])
+        htmrt = tf.squeeze(tf.matmul(tf.matmul(expanded_h, expanded_mr), expanded_t), [2, 3])
 
-        return tf.tanh(mr1h+mr2t+br+htmrt)
-    
+        return tf.tanh(mr1h + mr2t + br + htmrt)
+
     # Loop over ret_hidden_size
     def test_layer(self, h, t, expand=None):
         k = self.config.rel_hidden_size
@@ -109,7 +114,7 @@ class NTN(ModelMeta):
         expanded_h = tf.expand_dims(h, 1)
         # [m, d, 1]
         expanded_t = tf.expand_dims(t, 2)
-       
+
         if expand == "t":
             size = tf.shape(h)[0]
             expanded_t = tf.tile(expanded_t, [size, 1, 1])
@@ -120,60 +125,53 @@ class NTN(ModelMeta):
 
         def condition(i, outputs):
             return tf.less(i, k)
-        
+
         def body(i, outputs):
             # self.mr[i]: [d, d], mr_prime: [m, d, d]
             mr_prime = tf.tile(tf.expand_dims(self.mr[i], 0), [size, 1, 1])
             # [m, 1, 1]
             htmrt_index = tf.squeeze(tf.matmul(tf.matmul(expanded_h, mr_prime), expanded_t), [1, 2])
 
-            outputs = outputs.write(i, tf.expand_dims(htmrt_index,0))
+            outputs = outputs.write(i, tf.expand_dims(htmrt_index, 0))
             return [tf.add(i, 1), outputs]
 
         i = tf.constant(0)
-        outputs = tf.TensorArray(dtype=tf.float32, infer_shape=True, size=1, dynamic_size=True) 
+        outputs = tf.TensorArray(dtype=tf.float32, infer_shape=True, size=1, dynamic_size=True)
 
         _, outputs = tf.while_loop(condition, body, [i, outputs])
 
         htmrt = outputs.concat()
-        
+
         htmrt = tf.transpose(htmrt)
 
-        return tf.tanh(mr1h+mr2t+br+htmrt)
+        return tf.tanh(mr1h + mr2t + br + htmrt)
 
     def test_step(self):
         num_entity = self.data_handler.tot_entity
 
         h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        energy_h = tf.reduce_sum(r_vec*self.test_layer(self.ent_embeddings, t_vec, expand='t'), -1)
-        energy_t = tf.reduce_sum(r_vec*self.test_layer(h_vec, self.ent_embeddings, expand='h'), -1)
+        energy_h = tf.reduce_sum(r_vec * self.test_layer(tf.nn.l2_normalize(self.ent_embeddings, axis=1),
+                                                         t_vec, expand='t'), -1)
+        energy_t = tf.reduce_sum(r_vec * self.test_layer(h_vec, tf.nn.l2_normalize(self.ent_embeddings, axis=1),
+                                                         expand='h'), -1)
 
-        self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+        _, head_rank = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
+        _, tail_rank = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
 
-        norm_h_vec, norm_r_vec, norm_t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        norm_energy_h = tf.reduce_sum(norm_r_vec*self.test_layer(self.ent_embeddings, norm_t_vec, expand='t'), -1)
-        norm_energy_t = tf.reduce_sum(norm_r_vec*self.test_layer(norm_h_vec, self.ent_embeddings, expand='h'), -1)
-
-        _, self.head_rank      = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
-        _, self.tail_rank      = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
-        _, self.norm_head_rank = tf.nn.top_k(tf.negative(norm_energy_h), k=num_entity)
-        _, self.norm_tail_rank = tf.nn.top_k(tf.negative(norm_energy_t), k=num_entity)
-
-        return self.head_rank, self.tail_rank, self.norm_head_rank, self.norm_tail_rank
+        return head_rank, tail_rank
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
+        emb_h = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), h)
+        emb_r = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.rel_embeddings, axis=1), r)
+        emb_t = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t)
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess=None):
         """function to get the embedding value in numpy"""
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
-        return h, r, t 
+        return h, r, t
 
     def get_proj_embed(self, h, r, t, sess):
         """function to get the projected embedding value in numpy"""

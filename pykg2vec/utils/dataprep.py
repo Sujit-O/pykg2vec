@@ -40,11 +40,27 @@ class DataInput(object):
         self.e2_multi2 = e2_multi2
 
 
+class DataStats(object):
+    def __init__(self, tot_entity=None,
+                 tot_relation=None,
+                 tot_triple=None,
+                 tot_train_triples=None,
+                 tot_test_triples=None,
+                 tot_valid_triples=None):
+        self.tot_triple = tot_triple
+        self.tot_valid_triples = tot_valid_triples
+        self.tot_test_triples = tot_test_triples
+        self.tot_train_triples = tot_train_triples
+        self.tot_relation = tot_relation
+        self.tot_relation = tot_relation
+        self.tot_entity = tot_entity
+
+
 class DataPrep(object):
 
     def __init__(self, name_dataset='Freebase15k', sampling="uniform", algo='ConvE'):
         '''store the information of database'''
-
+        self.data_stats = DataStats()
         self.config = GlobalConfig(dataset=name_dataset)
         self.algo = algo
         self.sampling = sampling
@@ -91,6 +107,10 @@ class DataPrep(object):
                         bar.update(i)
                 with open(self.config.tmp_data / 'train_data.pkl', 'wb') as f:
                     pickle.dump(self.train_data, f)
+            else:
+                with open(self.config.tmp_data / 'train_data.pkl', 'rb') as f:
+                    self.train_data=pickle.load(f)
+            self.data_stats.tot_train_triples = len(self.train_data)
 
             if not os.path.exists(self.config.tmp_data / 'test_data.pkl'):
                 print("\nPreparing Testing Data!")
@@ -110,6 +130,10 @@ class DataPrep(object):
                         bar.update(i)
                 with open(self.config.tmp_data / 'test_data.pkl', 'wb') as f:
                     pickle.dump(self.test_data, f)
+            else:
+                with open(self.config.tmp_data / 'test_data.pkl', 'rb') as f:
+                    self.test_data = pickle.load(f)
+            self.data_stats.tot_test_triples = len(self.test_data)
 
             if not os.path.exists(self.config.tmp_data / 'valid_data.pkl'):
                 print("\nPreparing Validation Data!")
@@ -129,6 +153,10 @@ class DataPrep(object):
                         bar.update(i)
                 with open(self.config.tmp_data / 'valid_data.pkl', 'wb') as f:
                     pickle.dump(self.valid_data, f)
+            else:
+                with open(self.config.tmp_data / 'valid_data.pkl', 'rb') as f:
+                    self.valid_data = pickle.load(f)
+            self.data_stats.tot_valid_triples = len(self.valid_data)
 
             self.validation_triples_ids = [
                 Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t])
@@ -136,8 +164,8 @@ class DataPrep(object):
                 in self.validation_triples]
 
         elif any(self.algo.lower().startswith(x) for x in ['transe', 'tranr', 'transh',
-                                   'proje', 'rescal',
-                                   'slm', 'smebilinear', 'smelinear', 'ntn', 'rotate']):
+                                                           'proje', 'rescal',
+                                                           'slm', 'sme_bilinear', 'sme_linear', 'ntn', 'rotate']):
 
             self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
             self.calculate_mapping()  # from entity and relation to indexes.
@@ -152,6 +180,8 @@ class DataPrep(object):
                 with open(self.config.tmp_data / 'test_triples_ids.pkl', 'rb') as f:
                     self.test_triples_ids = pickle.load(f)
 
+            self.data_stats.tot_test_triples = len(self.test_triples_ids)
+
             if not os.path.exists(self.config.tmp_data / 'train_triples_ids.pkl'):
                 self.train_triples_ids = [Triple(self.entity2idx[t.h],
                                                  self.relation2idx[t.r], self.entity2idx[t.t]) for t
@@ -163,6 +193,8 @@ class DataPrep(object):
                 with open(self.config.tmp_data / 'train_triples_ids.pkl', 'rb') as f:
                     self.train_triples_ids = pickle.load(f)
 
+            self.data_stats.tot_train_triples = len(self.train_triples_ids)
+
             if not os.path.exists(self.config.tmp_data / 'validation_triples_ids.pkl'):
                 self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
                                                       self.entity2idx[t.t])
@@ -173,6 +205,8 @@ class DataPrep(object):
             else:
                 with open(self.config.tmp_data / 'validation_triples_ids.pkl', 'rb') as f:
                     self.validation_triples_ids = pickle.load(f)
+
+            self.data_stats.tot_valid_triples = len(self.validation_triples_ids)
 
             if self.algo.lower().startswith('proje'):
                 self.hr_t_ids_train = defaultdict(set)
@@ -226,9 +260,20 @@ class DataPrep(object):
                 pickle.dump(self.tr_t, f)
         else:
             with open(self.config.tmp_data / 'hr_t.pkl', 'rb') as f:
-                self.hr_t=pickle.load(f)
+                self.hr_t = pickle.load(f)
             with open(self.config.tmp_data / 'tr_t.pkl', 'rb') as f:
-                self.tr_t=pickle.load(f)
+                self.tr_t = pickle.load(f)
+
+        if not os.path.exists(self.config.tmp_data / 'data_stats.pkl'):
+            with open(self.config.tmp_data / 'data_stats.pkl', 'wb') as f:
+                pickle.dump(self.data_stats, f)
+        else:
+            with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+                self.data_stats = pickle.load(f)
+
+        self.tot_triple = self.data_stats.tot_triple
+        self.tot_entity = self.data_stats.tot_entity
+        self.tot_relation = self.data_stats.tot_relation
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
@@ -251,6 +296,10 @@ class DataPrep(object):
             self.tot_triple = len(self.train_triples) + \
                               len(self.test_triples) + \
                               len(self.validation_triples)
+
+            self.data_stats.tot_entity = self.tot_entity
+            self.data_stats.tot_relation = self.tot_relation
+            self.data_stats.tot_triple = self.tot_triple
             return
 
         heads = []
@@ -302,6 +351,10 @@ class DataPrep(object):
         if not os.path.isfile(str(self.config.dataset.idx2relation_path)):
             with open(str(self.config.dataset.idx2relation_path), 'wb') as f:
                 pickle.dump(self.idx2relation, f)
+
+        self.data_stats.tot_entity = self.tot_entity
+        self.data_stats.tot_relation = self.tot_relation
+        self.data_stats.tot_triple = self.tot_triple
 
     def batch_generator_train_hr_tr(self, batch_size=128):
 

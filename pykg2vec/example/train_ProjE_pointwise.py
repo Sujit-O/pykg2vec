@@ -22,8 +22,8 @@ def main(_):
     parser.add_argument('-k', '--embed', default=200, type=int, help='Hidden embedding size')
     args = parser.parse_args()
 
-    data_handler = DataPrep(args.dataset)
-    args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
+    data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='proje')
+    # args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
     
     config = ProjE_pointwiseConfig(learning_rate=args.learn_rate,
                        batch_size=args.batch,
