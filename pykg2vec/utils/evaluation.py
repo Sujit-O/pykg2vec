@@ -48,10 +48,10 @@ class Evaluation(EvaluationMeta):
 
     def test(self, sess=None, epoch=None,test_data='test'):
         if test_data == 'test':
-            with open(self.config.data_path / 'test_triples_ids.pkl', 'rb') as f:
+            with open(self.model.config.tmp_data / 'test_triples_ids.pkl', 'rb') as f:
                 data = pickle.load(f)
         elif test_data == 'valid':
-            with open(self.config.data_path / 'validation_triples_ids.pkl', 'rb') as f:
+            with open(self.model.config.tmp_data / 'validation_triples_ids.pkl', 'rb') as f:
                 data = pickle.load(f)
         else:
             raise NotImplementedError('Invalid testing data: enter test or valid!')
