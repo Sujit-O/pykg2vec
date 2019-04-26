@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
@@ -19,6 +20,7 @@ class ProjE_pointwise(ModelMeta):
     ------------------Summary---------------------------------
     ---
     """
+
     def __init__(self, config, data_handler):
         self.config = config
         self.data_handler = data_handler
@@ -27,7 +29,7 @@ class ProjE_pointwise(ModelMeta):
         self.def_inputs()
         self.def_parameters()
         self.def_loss()
-        
+
     def def_inputs(self):
         num_total_ent = self.data_handler.tot_entity
 
@@ -35,71 +37,67 @@ class ProjE_pointwise(ModelMeta):
         self.test_t = tf.placeholder(tf.int32, [None])
         self.test_r = tf.placeholder(tf.int32, [None])
 
-        self.hr_h = tf.placeholder(tf.int32, [None]) #[m]
-        self.hr_r = tf.placeholder(tf.int32, [None]) #[m]
-        self.hr_t = tf.placeholder(tf.float32, [None, num_total_ent]) #[m, tot_entity]
+        self.hr_h = tf.placeholder(tf.int32, [None])  # [m]
+        self.hr_r = tf.placeholder(tf.int32, [None])  # [m]
+        self.hr_t = tf.placeholder(tf.float32, [None, num_total_ent])  # [m, tot_entity]
 
-        self.tr_t = tf.placeholder(tf.int32, [None]) #[m]
-        self.tr_r = tf.placeholder(tf.int32, [None]) #[m]
-        self.tr_h = tf.placeholder(tf.float32, [None, num_total_ent]) #[m, tot_entity]
-    
+        self.tr_t = tf.placeholder(tf.int32, [None])  # [m]
+        self.tr_r = tf.placeholder(tf.int32, [None])  # [m]
+        self.tr_h = tf.placeholder(tf.float32, [None, num_total_ent])  # [m, tot_entity]
+
     def def_parameters(self):
         num_total_ent = self.data_handler.tot_entity
         num_total_rel = self.data_handler.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
-            bound = 6 / (k**0.5)
 
             self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
-                                                  initializer=tf.random_uniform_initializer(minval=-bound,
-                                                                                             maxval=bound,
-                                                                                             seed=345))
-            
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
-                                                  initializer=tf.random_uniform_initializer(minval=-bound,
-                                                                                             maxval=bound,
-                                                                                             seed=346))
-            
-            self.bc1 = tf.get_variable(name="bc1", initializer=tf.zeros([k]))
-            self.De1 = tf.get_variable(name="De1", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
-                                                                                                      maxval=bound,
-                                                                                                      seed=445))
-            self.Dr1 = tf.get_variable(name="Dr1", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
-                                                                                                      maxval=bound,
-                                                                                                      seed=445))
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            self.bc2 = tf.get_variable(name="bc2", initializer=tf.zeros([k]))
-            self.De2 = tf.get_variable(name="De2", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
-                                                                                                      maxval=bound,
-                                                                                                      seed=445))
-            self.Dr2 = tf.get_variable(name="Dr2", shape=[k], initializer=tf.random_uniform_initializer(minval=-bound,
-                                                                                                      maxval=bound,
-                                                                                                      seed=445))
+            self.bc1 = tf.get_variable(name="bc1", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.De1 = tf.get_variable(name="De1", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.Dr1 = tf.get_variable(name="Dr1", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2, self.De2, self.Dr2]
-            
+            self.bc2 = tf.get_variable(name="bc2", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.De2 = tf.get_variable(name="De2", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.Dr2 = tf.get_variable(name="Dr2", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+
+            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2,
+                                   self.De2, self.Dr2]
+
     def def_loss(self):
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1) #[tot_ent, k]
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1) #[tot_rel, k]
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
 
-        emb_hr_h = tf.nn.embedding_lookup(norm_ent_embeddings, self.hr_h) #[m, k]
-        emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.hr_r) #[m, k]
+        emb_hr_h = tf.nn.embedding_lookup(norm_ent_embeddings, self.hr_h)  # [m, k]
+        emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.hr_r)  # [m, k]
 
-        emb_tr_t = tf.nn.embedding_lookup(norm_ent_embeddings, self.tr_t) #[m, k]
-        emb_tr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.tr_r) #[m, k]
+        emb_tr_t = tf.nn.embedding_lookup(norm_ent_embeddings, self.tr_t)  # [m, k]
+        emb_tr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.tr_r)  # [m, k]
 
         hrt_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_h, emb_hr_r), 0.5), norm_ent_embeddings)
 
         hrt_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., self.hr_t)))
-        hrt_loss_right= - tf.reduce_sum((tf.log(tf.clip_by_value(1-hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.hr_t))))
+        hrt_loss_right = - tf.reduce_sum(
+            (tf.log(tf.clip_by_value(1 - hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.hr_t))))
 
         hrt_loss = hrt_loss_left + hrt_loss_right
 
         trh_sigmoid = self.g(tf.nn.dropout(self.f2(emb_tr_t, emb_tr_r), 0.5), norm_ent_embeddings)
 
         trh_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., self.tr_h)))
-        trh_loss_right= - tf.reduce_sum((tf.log(tf.clip_by_value(1-trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.tr_h))))
+        trh_loss_right = - tf.reduce_sum(
+            (tf.log(tf.clip_by_value(1 - trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.tr_h))))
 
         trh_loss = trh_loss_left + trh_loss_right
 
@@ -108,29 +106,31 @@ class ProjE_pointwise(ModelMeta):
         self.loss = hrt_loss + trh_loss + regularizer_loss*1e-5
 
     def f1(self, h, r):
-        return tf.tanh(h*self.De1 + r*self.Dr1 + self.bc1)
+        return tf.tanh(h * self.De1 + r * self.Dr1 + self.bc1)
+
     def f2(self, t, r):
-        return tf.tanh(t*self.De2 + r*self.Dr2 + self.bc2)
+        return tf.tanh(t * self.De2 + r * self.Dr2 + self.bc2)
+
     def g(self, f, W):
         return tf.sigmoid(tf.matmul(f, tf.transpose(W)))
 
     def test_step(self):
         num_entity = self.data_handler.tot_entity
 
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1) #[tot_ent, k]
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1) #[tot_rel, k]
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
 
-        h_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_h) #[1, k]
-        r_vec = tf.nn.embedding_lookup(norm_rel_embeddings, self.test_r) #[1, k]
-        t_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_t) #[1, k]
-        
+        h_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_h)  # [1, k]
+        r_vec = tf.nn.embedding_lookup(norm_rel_embeddings, self.test_r)  # [1, k]
+        t_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_t)  # [1, k]
+
         hrt_sigmoid = - self.g(self.f1(h_vec, r_vec), norm_ent_embeddings)
         trh_sigmoid = - self.g(self.f2(t_vec, r_vec), norm_ent_embeddings)
-        
-        _, self.head_rank      = tf.nn.top_k(trh_sigmoid, k=num_entity)
-        _, self.tail_rank      = tf.nn.top_k(hrt_sigmoid, k=num_entity)
 
-        return self.head_rank, self.tail_rank
+        _, head_rank = tf.nn.top_k(trh_sigmoid, k=num_entity)
+        _, tail_rank = tf.nn.top_k(hrt_sigmoid, k=num_entity)
+
+        return head_rank, tail_rank
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
@@ -140,7 +140,7 @@ class ProjE_pointwise(ModelMeta):
         emb_h = tf.nn.l2_normalize(emb_h, axis=-1)
         emb_r = tf.nn.l2_normalize(emb_r, axis=-1)
         emb_t = tf.nn.l2_normalize(emb_t, axis=-1)
-        
+
         proj_vec = self.get_proj(r)
 
         return self.projection(emb_h, proj_vec), emb_r, self.projection(emb_t, proj_vec)
@@ -154,6 +154,7 @@ class ProjE_pointwise(ModelMeta):
     def get_proj_embed(self, h, r, t, sess):
         """function to get the projectd embedding value in numpy"""
         return self.get_embed(h, r, t, sess)
+<<<<<<< HEAD
 
 
 if __name__ == '__main__':
@@ -252,3 +253,5 @@ if __name__ == '__main__':
     regularizer_loss = tf.reduce_sum(tf.abs(De1) + tf.abs(Dr1)) + tf.reduce_sum(tf.abs(De2) + tf.abs(Dr2)) \
                         + tf.reduce_sum(tf.abs(ent_embeddings)) + tf.reduce_sum(tf.abs(rel_embeddings))
     loss = hrt_loss + trh_loss + regularizer_loss*1e-5
+=======
+>>>>>>> 207cb892106f4da6f7b0e3e4d434a87a2bca5d37

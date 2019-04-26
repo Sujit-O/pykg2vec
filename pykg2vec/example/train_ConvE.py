@@ -23,8 +23,8 @@ def main(_):
     # parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
     args = parser.parse_args()
 
-    data_handler = DataPrep(args.dataset, algo=True)
-    args.test_num = min(len(data_handler.test_data), args.test_num)
+    data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='conve')
+    # args.test_num = min(len(data_handler.test_data), args.test_num)
 
     config = ConvEConfig(learning_rate=args.learn_rate,
                          batch_size=args.batch,
@@ -38,7 +38,7 @@ def main(_):
 
     model = ConvE(config, data_handler)
 
-    trainer = Trainer(model=model, algo=True, debug=True)
+    trainer = Trainer(model=model, debug=True)
     trainer.build_model()
     trainer.train_model()
 
