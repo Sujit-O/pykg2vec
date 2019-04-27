@@ -17,7 +17,7 @@ class BasicConfig:
                  result=Path('..') / 'results',
                  figures=Path('..') / 'figures',
                  tmp_data=Path('..') / 'data',
-                 gpu_fraction=0.4,
+                 gpu_fraction=0.8,
                  hits=None,
                  gpu_allow_growth=True,
                  load_from_data=False,

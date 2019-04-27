@@ -115,7 +115,7 @@ class Trainer(TrainerMeta):
 
             print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
                                                         batch_counts, num_batch, loss), end='\r')
-
+            batch_counts+=1
         print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
             epoch_idx, acc_loss, timeit.default_timer() - start_time))
 
@@ -126,7 +126,7 @@ class Trainer(TrainerMeta):
     
         tot_data = self.data_handler.data_stats.tot_train_triples
 
-        num_batch = tot_data // self.config.batch_size if not self.debug else 2
+        num_batch = tot_data // self.config.batch_size if not self.debug else 100
 
         start_time = timeit.default_timer()
 
@@ -170,7 +170,7 @@ class Trainer(TrainerMeta):
 
         tot_data = self.data_handler.data_stats.tot_train_triples
 
-        num_batch = tot_data // self.config.batch_size if not self.debug else 10
+        num_batch = tot_data // self.config.batch_size if not self.debug else 100
 
         start_time = timeit.default_timer()
 
@@ -211,7 +211,8 @@ class Trainer(TrainerMeta):
         if curr_epoch % self.config.test_step == 0 or \
                 curr_epoch == 0 or \
                 curr_epoch == self.config.epochs - 1:
-            self.evaluator.test(self.sess, curr_epoch)
+            # self.evaluator.test(self.sess, curr_epoch)
+            self.evaluator.test_batch(self.sess, curr_epoch)
             self.evaluator.print_test_summary(curr_epoch)
 
             print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))

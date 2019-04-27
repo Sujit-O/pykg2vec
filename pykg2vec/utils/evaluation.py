@@ -14,8 +14,10 @@ import numpy as np
 import pandas as pd
 from core.KGMeta import EvaluationMeta
 from utils.generator import Generator
+from utils.dataprep import DataStats
 from config.global_config import GeneratorConfig
 import pickle
+from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
 
@@ -45,8 +47,71 @@ class Evaluation(EvaluationMeta):
             self.hr_t = pickle.load(f)
         with open(self.model.config.tmp_data / 'tr_h.pkl', 'rb') as f:
             self.tr_h = pickle.load(f)
+        with open(self.model.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
 
-    def test(self, sess=None, epoch=None,test_data='test'):
+    def test_batch(self, sess=None, epoch=None, test_data='test'):
+
+        head_rank, tail_rank = self.model.test_batch()
+        self.epoch.append(epoch)
+        if not sess:
+            raise NotImplementedError('No session found for evaluation!')
+
+        rank_head = []
+        rank_tail = []
+        filter_rank_head = []
+        filter_rank_tail = []
+
+        gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name, batch_size=1000)))
+        self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
+        loop_len = self.n_test // self.batch if not self.debug else 2
+        print("Testing [%d/%d] Triples" % (self.n_test, self.data_stats.tot_test_triples))
+        total_test = loop_len * self.batch
+        if self.n_test < self.batch:
+            loop_len = 1
+            total_test = self.n_test
+
+        for i in range(loop_len):
+            data = list(next(gen_test))
+            ph = data[0]
+            pr = data[1]
+            pt = data[2]
+            feed_dict = {
+                self.model.test_h_batch: ph,
+                self.model.test_r_batch: pr,
+                self.model.test_t_batch: pt}
+
+            id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
+            do = ThreadPool(50)
+
+            hdata = do.map(self.zip_eval_batch_head, zip(id_replace_head, ph, pt, pr))
+            tdata = do.map(self.zip_eval_batch_tail, zip(id_replace_tail, ph, pr, pt))
+
+            rank_head += [i for i, _ in hdata]
+            rank_tail += [i for i, _ in tdata]
+            filter_rank_head += [i for _, i in hdata]
+            filter_rank_tail += [i for _, i in tdata]
+
+        self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
+        self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
+
+        self.filter_mean_rank_head[epoch] = np.sum(filter_rank_head,
+                                                   dtype=np.float32) / total_test
+        self.filter_mean_rank_tail[epoch] = np.sum(filter_rank_tail,
+                                                   dtype=np.float32) / total_test
+
+        for hit in self.hits:
+            self.hit_head[(epoch, hit)] = np.sum(np.asarray(rank_head) < hit,
+
+                                                 dtype=np.float32) / total_test
+            self.hit_tail[(epoch, hit)] = np.sum(np.asarray(rank_tail) < hit,
+                                                 dtype=np.float32) / total_test
+            self.filter_hit_head[(epoch, hit)] = np.sum(np.asarray(filter_rank_head) < hit,
+                                                        dtype=np.float32) / total_test
+            self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
+                                                        dtype=np.float32) / total_test
+
+    def test(self, sess=None, epoch=None, test_data='test'):
         if test_data == 'test':
             with open(self.model.config.tmp_data / 'test_triples_ids.pkl', 'rb') as f:
                 data = pickle.load(f)
@@ -127,6 +192,43 @@ class Evaluation(EvaluationMeta):
             self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
                                                         dtype=np.float32) / total_test
 
+    def eval_batch_head(self, id_replace_head, e1, e2, r_rev):
+        hrank = 0
+        fhrank = 0
+
+        for j in range(len(id_replace_head)):
+            val = id_replace_head[-j - 1]
+            if val == e1:
+                break
+            else:
+                hrank += 1
+                fhrank += 1
+                if val in self.tr_h[(e2, r_rev)]:
+                    fhrank -= 1
+
+        return hrank, fhrank
+
+    def zip_eval_batch_head(self, data):
+        return self.eval_batch_head(*data)
+
+    def eval_batch_tail(self, id_replace_tail, e1, r, e2):
+        trank = 0
+        ftrank = 0
+
+        for j in range(len(id_replace_tail)):
+            val = id_replace_tail[-j - 1]
+            if val == e2:
+                break
+            else:
+                trank += 1
+                ftrank += 1
+                if val in self.hr_t[(e1, r)]:
+                    ftrank -= 1
+        return trank, ftrank
+
+    def zip_eval_batch_tail(self, data):
+        return self.eval_batch_tail(*data)
+
     def test_conve(self, sess=None, epoch=None):
         head_rank, tail_rank = self.model.test_step()
         self.epoch.append(epoch)
@@ -139,11 +241,13 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name)))
-        loop_len = self.n_test // self.batch if not self.debug else 10
+        loop_len = self.n_test // self.batch if not self.debug else 1
         total_test = loop_len * self.batch
+        if self.n_test < self.batch:
+            loop_len = 1
+            total_test = self.n_test
 
         for i in range(loop_len):
-
             data = list(next(gen_test))
 
             e1 = data[0]
@@ -164,37 +268,44 @@ class Evaluation(EvaluationMeta):
 
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
 
-            for b in range(self.batch):
-                hrank = 0
-                fhrank = 0
-
-                for j in range(len(id_replace_head[b])):
-                    val = id_replace_head[b, -j - 1]
-                    if val == e1[b]:
-                        break
-                    else:
-                        hrank += 1
-                        fhrank += 1
-                        if val in self.tr_h[(e2[b], r_rev[b])]:
-                            fhrank -= 1
-
-                trank = 0
-                ftrank = 0
-
-                for j in range(len(id_replace_tail[b])):
-                    val = id_replace_tail[b, -j - 1]
-                    if val == e2[b]:
-                        break
-                    else:
-                        trank += 1
-                        ftrank += 1
-                        if val in self.hr_t[(e1[b], r[b])]:
-                            ftrank -= 1
-
-                rank_head.append(hrank)
-                rank_tail.append(trank)
-                filter_rank_head.append(fhrank)
-                filter_rank_tail.append(ftrank)
+            do = ThreadPool(50)
+            hdata = do.map(self.zip_eval_batch_head, zip(id_replace_head, e1, e2, r_rev))
+            tdata = do.map(self.zip_eval_batch_tail, zip(id_replace_tail, e1, r, e2))
+            rank_head += [i for i, _ in hdata]
+            rank_tail += [i for i, _ in tdata]
+            filter_rank_head += [i for _, i in hdata]
+            filter_rank_tail += [i for _, i in tdata]
+            # for b in range(self.batch):
+            #     hrank = 0
+            #     fhrank = 0
+            #
+            #     for j in range(len(id_replace_head[b])):
+            #         val = id_replace_head[b, -j - 1]
+            #         if val == e1[b]:
+            #             break
+            #         else:
+            #             hrank += 1
+            #             fhrank += 1
+            #             if val in self.tr_h[(e2[b], r_rev[b])]:
+            #                 fhrank -= 1
+            #
+            #     trank = 0
+            #     ftrank = 0
+            #
+            #     for j in range(len(id_replace_tail[b])):
+            #         val = id_replace_tail[b, -j - 1]
+            #         if val == e2[b]:
+            #             break
+            #         else:
+            #             trank += 1
+            #             ftrank += 1
+            #             if val in self.hr_t[(e1[b], r[b])]:
+            #                 ftrank -= 1
+            #
+            #     rank_head.append(hrank)
+            #     rank_tail.append(trank)
+            #     filter_rank_head.append(fhrank)
+            #     filter_rank_tail.append(ftrank)
 
         self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
         self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test

@@ -5,9 +5,11 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
+
 
 class TransE(ModelMeta):
     """
@@ -39,6 +41,7 @@ class TransE(ModelMeta):
     Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
      and https://github.com/wencolani/TransE.git
     """
+
     def __init__(self, config=None, data_handler=None):
         self.config = config
         self.data_handler = data_handler
@@ -58,6 +61,9 @@ class TransE(ModelMeta):
         self.test_h = tf.placeholder(tf.int32, [1])
         self.test_t = tf.placeholder(tf.int32, [1])
         self.test_r = tf.placeholder(tf.int32, [1])
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         num_total_ent = self.data_handler.tot_entity
@@ -70,9 +76,9 @@ class TransE(ModelMeta):
 
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings]    
-    
+
+            self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
+
     def def_loss(self):
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
         neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
@@ -82,24 +88,42 @@ class TransE(ModelMeta):
 
         self.loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
 
-    def test_step(self):       
-        head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)     
-        
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1) 
+    def test_step(self):
+        head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
+
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         score_head = self.distance(norm_ent_embeddings, rel_vec, tail_vec)
-        score_tail = self.distance(head_vec, rel_vec, norm_ent_embeddings)    
+        score_tail = self.distance(head_vec, rel_vec, norm_ent_embeddings)
 
-        _, self.head_rank      = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
-        _, self.tail_rank      = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
 
-        return self.head_rank, self.tail_rank
+        return head_rank, tail_rank
+
+    def test_batch(self):
+        head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        score_head = self.distance_batch(norm_ent_embeddings, tf.expand_dims(rel_vec,axis=1), tf.expand_dims(tail_vec,axis=1))
+        score_tail = self.distance_batch(tf.expand_dims(head_vec,axis=1), tf.expand_dims(rel_vec,axis=1), norm_ent_embeddings)
+
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
+
+        return head_rank, tail_rank
 
     def distance(self, h, r, t):
-        if self.config.L1_flag: 
-            return tf.reduce_sum(tf.abs(h+r-t), axis=1) # L1 norm 
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
         else:
-            return tf.reduce_sum((h+r-t)**2, axis=1) # L2 norm
-            
+            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
+
+    def distance_batch(self, h, r, t):
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=2)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=2)  # L2 norm
+
     def embed(self, h, r, t):
         """function to get the embedding value"""
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
