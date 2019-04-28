@@ -14,17 +14,8 @@ from core.KGMeta import ModelMeta
 class Complex(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-    Convolutional 2D Knowledge Graph Embeddings
     ------------------Paper Authors---------------------------
-    Tim Dettmers∗
-    Università della Svizzera italiana
-    tim.dettmers@gmail.com
-    Pasquale Minervini, Pontus Stenetorp, Sebastian Riedel
-    University College London
-    {p.minervini,p.stenetorp,s.riedel}@cs.ucl.ac.uk
     ------------------Summary---------------------------------
-    ConvE is a multi-layer convolutional network model for link prediction,
-    it is a embedding model which is highly parameter efficient.
     """
 
     def __init__(self, config=None, data_stats=None):
@@ -54,15 +45,15 @@ class Complex(ModelMeta):
         k = self.config.hidden_size
         with tf.name_scope("embedding"):
             self.emb_e_real = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                                              initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.emb_e_img = tf.get_variable(name="emb_e_img", shape=[self.tot_ent, k],
-                                              initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.emb_rel_real = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
-                                              initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.emb_rel_img = tf.get_variable(name="emb_rel_img", shape=[self.tot_rel, k],
                                              initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.emb_rel_real = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
+                                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.emb_rel_img = tf.get_variable(name="emb_rel_img", shape=[self.tot_rel, k],
+                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-        self.parameter_list = [self.emb_e_real, self.emb_e_img, self.emb_rel_real,self.emb_rel_img]
+        self.parameter_list = [self.emb_e_real, self.emb_e_img, self.emb_rel_real, self.emb_rel_img]
 
     def def_loss(self):
         e1_embedded_real = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
@@ -90,10 +81,9 @@ class Complex(ModelMeta):
     def def_layer(self):
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
 
-
     def layer(self, e1, rel):
-        e1=tf.squeeze(e1)
-        rel=tf.squeeze(rel)
+        e1 = tf.squeeze(e1)
+        rel = tf.squeeze(rel)
         e1 = self.inp_drop(e1)
         rel = self.inp_drop(rel)
 

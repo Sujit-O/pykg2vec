@@ -62,7 +62,8 @@ class Evaluation(EvaluationMeta):
         filter_rank_head = []
         filter_rank_tail = []
 
-        gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name, batch_size=1000)))
+        gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
+                                                         batch_size=self.model.config.batch_size)))
         self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
         loop_len = self.n_test // self.batch if not self.debug else 2
         print("Testing [%d/%d] Triples" % (self.n_test, self.data_stats.tot_test_triples))
@@ -82,7 +83,7 @@ class Evaluation(EvaluationMeta):
                 self.model.test_t_batch: pt}
 
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
-            do = ThreadPool(50)
+            do = ThreadPool(20)
 
             hdata = do.map(self.zip_eval_batch_head, zip(id_replace_head, ph, pt, pr))
             tdata = do.map(self.zip_eval_batch_tail, zip(id_replace_tail, ph, pr, pt))
@@ -240,8 +241,11 @@ class Evaluation(EvaluationMeta):
         filter_rank_head = []
         filter_rank_tail = []
 
-        gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name)))
-        loop_len = self.n_test // self.batch if not self.debug else 1
+        gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
+                                                         batch_size=self.model.config.batch_size)))
+        self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
+        loop_len = self.n_test // self.batch if not self.debug else 2
+        print("Testing [%d/%d] Triples" % (self.n_test, self.data_stats.tot_test_triples))
         total_test = loop_len * self.batch
         if self.n_test < self.batch:
             loop_len = 1
