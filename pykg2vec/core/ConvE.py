@@ -85,7 +85,12 @@ class ConvE(ModelMeta):
         e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
         pred = self.layer(stacked_er)
 
-        self.loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
+        loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
+
+        regul_func = tf.reduce_mean(e1 ** 2) + tf.reduce_mean(r ** 2)
+
+        self.loss = loss + self.config.lmbda * regul_func
+
 
     def def_layer(self):
         self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)

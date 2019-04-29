@@ -332,12 +332,14 @@ class ConvEConfig(BasicConfig):
                  lr_decay=0.995,
                  label_smoothing=0.1,
                  use_bias=True,
+                 lmbda=0.1,
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam',
                  sampling="uniform"):
         BasicConfig.__init__(self)
 
+        self.lmbda = lmbda
         self.feature_map_dropout = feature_map_dropout
         self.hidden_dropout = hidden_dropout
         self.input_dropout = input_dropout
@@ -368,12 +370,14 @@ class ProjE_pointwiseConfig(BasicConfig):
                  lr_decay=0.995,
                  label_smoothing=0.1,
                  use_bias=True,
+                 lmbda=0.1,
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam',
                  sampling="uniform"):
         BasicConfig.__init__(self)
 
+        self.lmbda = lmbda
         self.feature_map_dropout = feature_map_dropout
         self.hidden_dropout = hidden_dropout
         self.input_dropout = input_dropout
@@ -404,12 +408,14 @@ class ComplexConfig(BasicConfig):
                  lr_decay=0.995,
                  label_smoothing=0.1,
                  use_bias=True,
+                 lmbda=0.1,
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam',
                  sampling="uniform"):
         BasicConfig.__init__(self)
 
+        self.lmbda = lmbda
         self.feature_map_dropout = feature_map_dropout
         self.hidden_dropout = hidden_dropout
         self.input_dropout = input_dropout
@@ -425,3 +431,42 @@ class ComplexConfig(BasicConfig):
         self.data = data
         self.optimizer = optimizer
         self.sampling = sampling
+
+
+class DistMultConfig(BasicConfig):
+    def __init__(self,
+                 learning_rate=0.003,
+                 l1_flag=True,
+                 hidden_size=50,
+                 batch_size=128,
+                 epochs=2,
+                 input_dropout=0.2,
+                 hidden_dropout=0.3,
+                 feature_map_dropout=0.2,
+                 lr_decay=0.995,
+                 lmbda = 0.1,
+                 label_smoothing=0.1,
+                 use_bias=True,
+                 margin=1.0,
+                 data='Freebase',
+                 optimizer='adam',
+                 sampling="uniform"):
+        BasicConfig.__init__(self)
+
+        self.lmbda = lmbda
+        self.feature_map_dropout = feature_map_dropout
+        self.hidden_dropout = hidden_dropout
+        self.input_dropout = input_dropout
+        self.use_bias = use_bias
+        self.label_smoothing = label_smoothing
+        self.lr_decay = lr_decay
+        self.learning_rate = learning_rate
+        self.L1_flag = l1_flag
+        self.hidden_size = hidden_size
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.margin = margin
+        self.data = data
+        self.optimizer = optimizer
+        self.sampling = sampling
+

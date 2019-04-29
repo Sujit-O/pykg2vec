@@ -84,7 +84,7 @@ class DataPrep(object):
         if not os.path.exists(self.config.tmp_data):
             os.mkdir(self.config.tmp_data)
 
-        if self.algo.lower() in ["conve", "complex"]:
+        if self.algo.lower() in ["conve", "complex", "distmult"]:
             self.label_graph = {}
             self.train_graph = {}
             self.train_data = []
