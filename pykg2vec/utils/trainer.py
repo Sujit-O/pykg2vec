@@ -65,7 +65,9 @@ class Trainer(TrainerMeta):
                 else:
                     self.train_model_epoch(n_iter)
                     self.tiny_test(n_iter)
-            
+
+            self.gen_train.stop()
+
             if self.model.model_name == "ProjE_pointwise":
                 self.data_handler.stop_multiprocessing()
 

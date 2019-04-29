@@ -242,8 +242,8 @@ class Evaluation(EvaluationMeta):
         filter_rank_head = []
         filter_rank_tail = []
 
-        gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                         batch_size=self.model.config.batch_size)))
+        gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
+                                                         batch_size=self.model.config.batch_size))
         self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
         loop_len = self.n_test // self.batch if not self.debug else 2
         print("Testing [%d/%d] Triples" % (self.n_test, self.data_stats.tot_test_triples))
@@ -280,38 +280,8 @@ class Evaluation(EvaluationMeta):
             rank_tail += [i for i, _ in tdata]
             filter_rank_head += [i for _, i in hdata]
             filter_rank_tail += [i for _, i in tdata]
-            # for b in range(self.batch):
-            #     hrank = 0
-            #     fhrank = 0
-            #
-            #     for j in range(len(id_replace_head[b])):
-            #         val = id_replace_head[b, -j - 1]
-            #         if val == e1[b]:
-            #             break
-            #         else:
-            #             hrank += 1
-            #             fhrank += 1
-            #             if val in self.tr_h[(e2[b], r_rev[b])]:
-            #                 fhrank -= 1
-            #
-            #     trank = 0
-            #     ftrank = 0
-            #
-            #     for j in range(len(id_replace_tail[b])):
-            #         val = id_replace_tail[b, -j - 1]
-            #         if val == e2[b]:
-            #             break
-            #         else:
-            #             trank += 1
-            #             ftrank += 1
-            #             if val in self.hr_t[(e1[b], r[b])]:
-            #                 ftrank -= 1
-            #
-            #     rank_head.append(hrank)
-            #     rank_tail.append(trank)
-            #     filter_rank_head.append(fhrank)
-            #     filter_rank_tail.append(ftrank)
 
+        gen_test.stop()
         self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
         self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
 
@@ -341,7 +311,7 @@ class Evaluation(EvaluationMeta):
         rank_tail = []
         filter_rank_head = []
         filter_rank_tail = []
-        gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name)))
+        gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name))
         loop_len = self.n_test // self.batch if not self.debug else 100
         total_test = loop_len * self.batch
 
@@ -389,7 +359,7 @@ class Evaluation(EvaluationMeta):
                 rank_tail.append(trank)
                 filter_rank_head.append(fhrank)
                 filter_rank_tail.append(ftrank)
-
+        gen_test.stop()
         self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
         self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
 
