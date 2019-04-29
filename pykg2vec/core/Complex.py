@@ -95,7 +95,7 @@ class Complex(ModelMeta):
         rel = self.inp_drop(rel)
         return e1, rel
 
-    def test_batch(self):
+    def test_step(self):
         e1_embedded_real, rel_embedded_real, e1_embedded_img, rel_embedded_img = self.embed(self.test_e1, self.test_r)
         e2_embedded_real, r_rev_embedded_real, e2_embedded_img, r_rev_embedded_img = self.embed(self.test_e2,
                                                                                                 self.test_r_rev)
