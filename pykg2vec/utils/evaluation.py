@@ -65,7 +65,7 @@ class Evaluation(EvaluationMeta):
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
                                                          batch_size=self.model.config.batch_size))
         self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
-        loop_len = self.n_test // self.batch if not self.debug else 2
+        loop_len = self.n_test // self.batch if not self.debug else 1
         print("Testing [%d/%d] Triples" % (self.n_test, self.data_stats.tot_test_triples))
         total_test = loop_len * self.batch
         if self.n_test < self.batch:
@@ -273,7 +273,7 @@ class Evaluation(EvaluationMeta):
 
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
 
-            do = ThreadPool(50)
+            do = ThreadPool(20)
             hdata = do.map(self.zip_eval_batch_head, zip(id_replace_head, e1, e2, r_rev))
             tdata = do.map(self.zip_eval_batch_tail, zip(id_replace_tail, e1, r, e2))
             rank_head += [i for i, _ in hdata]

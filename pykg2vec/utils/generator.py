@@ -205,6 +205,7 @@ class Generator:
                 p = Process(target=self.process_function_train_proje, args=(bs, n_entity, neg_weight,))
             else:
                 p = Process(target=self.process_function_test_proje, args=(bs, n_entity, neg_weight,))
+            self.process_list.append(p)
             p.daemon = True
             p.start()
 
@@ -214,6 +215,7 @@ class Generator:
                 p = Process(target=self.process_function_train_conve, args=())
             else:
                 p = Process(target=self.process_function_test_conve, args=())
+            self.process_list.append(p)
             p.daemon = True
             p.start()
 
@@ -245,6 +247,7 @@ class Generator:
 
         worker = Process(target=self.raw_data_generator_proje, args=(ids,))
         worker.daemon = True
+        self.process_list.append(worker)
         worker.start()
         self.pool_process_proje(bs=self.config.batch_size, n_entity=n_entity, neg_weight=neg_weight)
 
@@ -265,6 +268,7 @@ class Generator:
 
         worker = Process(target=self.raw_data_generator_conve, args=(ids,))
         worker.daemon = True
+        self.process_list.append(worker)
         worker.start()
         self.pool_process_conve()
 
