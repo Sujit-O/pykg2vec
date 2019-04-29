@@ -35,7 +35,7 @@ def main(_):
     config.plot_entity_only = True
     config.save_model = True
 
-    model = NTN(config, data_handler)
+    model = NTN(config)
     
     trainer = Trainer(model=model)
     trainer.build_model()

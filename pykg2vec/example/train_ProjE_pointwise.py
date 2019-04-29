@@ -37,7 +37,7 @@ def main(_):
     config.save_model = True
     config.sampling = "proje"
 
-    model = ProjE_pointwise(config, data_handler)
+    model = ProjE_pointwise(config)
     
     trainer = Trainer(model=model)
     trainer.build_model()

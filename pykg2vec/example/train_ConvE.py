@@ -36,7 +36,7 @@ def main(_):
     # config.plot_entity_only = True
     config.save_model = True
 
-    model = ConvE(config, data_handler)
+    model = ConvE(config)
 
     trainer = Trainer(model=model, debug=False)
     trainer.build_model()

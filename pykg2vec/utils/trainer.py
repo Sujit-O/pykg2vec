@@ -19,8 +19,6 @@ class Trainer(TrainerMeta):
         self.debug = debug
         self.model = model
         self.config = self.model.config
-        self.data_handler = self.model.data_handler
-
         self.evaluator = Evaluation(model=model, debug=self.debug)
         self.training_results = []
         self.gen_train = None
@@ -59,7 +57,7 @@ class Trainer(TrainerMeta):
                 if self.model.model_name == "ProjE_pointwise":
                     self.train_model_epoch_proje(n_iter)
                     self.tiny_test_proje(n_iter)
-                elif self.model.model_name == "ConvE":
+                elif self.model.model_name.lower() in ['conve', 'complex']:
                     self.train_model_epoch_conve(n_iter)
                     self.tiny_test_conve(n_iter)
                 else:
@@ -67,9 +65,6 @@ class Trainer(TrainerMeta):
                     self.tiny_test(n_iter)
 
             self.gen_train.stop()
-
-            if self.model.model_name == "ProjE_pointwise":
-                self.data_handler.stop_multiprocessing()
 
             self.evaluator.save_test_summary()
             self.evaluator.save_training_result(self.training_results)
@@ -126,7 +121,7 @@ class Trainer(TrainerMeta):
     def train_model_epoch(self, epoch_idx):
         acc_loss = 0
     
-        tot_data = self.data_handler.data_stats.tot_train_triples
+        tot_data = self.model.data_stats.tot_train_triples
 
         num_batch = tot_data // self.config.batch_size if not self.debug else 100
 
@@ -170,7 +165,7 @@ class Trainer(TrainerMeta):
     def train_model_epoch_conve(self, epoch_idx):
         acc_loss = 0
 
-        tot_data = self.data_handler.data_stats.tot_train_triples
+        tot_data = self.model.data_stats.tot_train_triples
 
         num_batch = tot_data // self.config.batch_size if not self.debug else 100
 

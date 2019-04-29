@@ -10,6 +10,8 @@ sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
 from utils.dataprep import DataPrep
+import pickle
+
 
 class ProjE_pointwise(ModelMeta):
     """
@@ -21,9 +23,10 @@ class ProjE_pointwise(ModelMeta):
     ---
     """
 
-    def __init__(self, config, data_handler):
+    def __init__(self, config):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'ProjE_pointwise'
 
         self.def_inputs()
@@ -31,7 +34,7 @@ class ProjE_pointwise(ModelMeta):
         self.def_loss()
 
     def def_inputs(self):
-        num_total_ent = self.data_handler.tot_entity
+        num_total_ent = self.data_stats.tot_entity
 
         self.test_h = tf.placeholder(tf.int32, [None])
         self.test_t = tf.placeholder(tf.int32, [None])
@@ -46,8 +49,8 @@ class ProjE_pointwise(ModelMeta):
         self.tr_h = tf.placeholder(tf.float32, [None, num_total_ent])  # [m, tot_entity]
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -115,7 +118,7 @@ class ProjE_pointwise(ModelMeta):
         return tf.sigmoid(tf.matmul(f, tf.transpose(W)))
 
     def test_step(self):
-        num_entity = self.data_handler.tot_entity
+        num_entity = self.data_stats.tot_entity
 
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
         norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]

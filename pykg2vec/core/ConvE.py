@@ -9,7 +9,7 @@ import sys
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
-
+import pickle
 
 class ConvE(ModelMeta):
     """
@@ -27,9 +27,10 @@ class ConvE(ModelMeta):
     it is a embedding model which is highly parameter efficient.
     """
 
-    def __init__(self, config=None, data_handler=None):
+    def __init__(self, config=None):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'ConvE'
         self.dense_last_dim = {50: 2592, 100: 5184, 200: 10368}
         if self.config.hidden_size not in self.dense_last_dim:
@@ -44,18 +45,18 @@ class ConvE(ModelMeta):
     def def_inputs(self):
         self.e1 = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
-        self.e2_multi1 = tf.placeholder(tf.float32, [None, self.data_handler.tot_entity])
+        self.e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
         self.test_e1 = tf.placeholder(tf.int32, [None])
         self.test_e2 = tf.placeholder(tf.int32, [None])
         self.test_r = tf.placeholder(tf.int32, [None])
         self.test_r_rev = tf.placeholder(tf.int32, [None])
-        self.test_e2_multi1 = tf.placeholder(tf.float32, [None, self.data_handler.tot_entity])
-        self.test_e2_multi2 = tf.placeholder(tf.float32, [None, self.data_handler.tot_entity])
+        self.test_e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.test_e2_multi2 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -80,8 +81,8 @@ class ConvE(ModelMeta):
 
         stacked_er = tf.concat([stacked_e, stacked_r], 1)
 
-        e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_handler.tot_entity
-        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_handler.tot_entity])
+        e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
         pred = self.layer(stacked_er)
 
         self.loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
@@ -148,9 +149,9 @@ class ConvE(ModelMeta):
         stacked_tr = tf.concat([stacked_tail_e, stacked_tail_r], 1)
 
         e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi1) + (1.0 / self.data_handler.tot_entity)
+                                  self.test_e2_multi1) + (1.0 / self.data_stats.tot_entity)
         e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi2) + (1.0 / self.data_handler.tot_entity)
+                                  self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
 
         pred4head = self.layer(stacked_hr)
         pred4tail = self.layer(stacked_tr)
@@ -158,8 +159,8 @@ class ConvE(ModelMeta):
         head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred4head)
         tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred4tail)
 
-        _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_handler.tot_entity)
-        _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_handler.tot_entity)
+        _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 

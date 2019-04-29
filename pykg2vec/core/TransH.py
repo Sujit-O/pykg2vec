@@ -8,7 +8,7 @@ import sys
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
-
+import pickle
 
 class TransH(ModelMeta):
     """
@@ -28,9 +28,10 @@ class TransH(ModelMeta):
     Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransH.py
      and https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
     """
-    def __init__(self, config, data_handler):
+    def __init__(self, config):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'TransH'
         
         self.def_inputs()
@@ -49,8 +50,8 @@ class TransH(ModelMeta):
         self.test_r = tf.placeholder(tf.int32, [1])
     
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -85,7 +86,7 @@ class TransH(ModelMeta):
         return self.config.C*(term1+term2)
 
     def test_step(self):
-        num_entity = self.data_handler.tot_entity
+        num_entity = self.data_stats.tot_entity
 
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
         pos_norm = self.get_proj(self.test_r)

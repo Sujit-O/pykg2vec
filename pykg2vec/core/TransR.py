@@ -9,7 +9,7 @@ sys.path.append("../")
 import tensorflow as tf
 import numpy as np
 from core.KGMeta import ModelMeta
-
+import pickle
 
 class TransR(ModelMeta):
     """
@@ -30,9 +30,10 @@ class TransR(ModelMeta):
     Portion of Code Based on https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
     """
 
-    def __init__(self, config, data_handler, load_entity=None, load_rel=None):
+    def __init__(self, config):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'TransR'
         
         self.def_inputs()
@@ -51,8 +52,8 @@ class TransR(ModelMeta):
         self.test_r = tf.placeholder(tf.int32, [1])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         d = self.config.ent_hidden_size
         k = self.config.rel_hidden_size
 
@@ -87,7 +88,7 @@ class TransR(ModelMeta):
         self.loss = tf.reduce_sum(tf.maximum(score_pos - score_neg + self.config.margin, 0))
 
     def test_step(self):
-        num_total_ent = self.data_handler.tot_entity
+        num_total_ent = self.data_stats.tot_entity
 
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
         pos_matrix = self.get_transform_matrix(self.test_r)

@@ -36,7 +36,7 @@ def main(_):
     config.gpu_fraction = args.gpu_frac
     config.save_model = True
 
-    model = SMELinear(config, data_handler)
+    model = SMELinear(config)
     
     trainer = Trainer(model=model)
     trainer.build_model()

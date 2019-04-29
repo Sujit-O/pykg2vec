@@ -36,7 +36,7 @@ def main(_):
     config.C = 0.015625
     config.margin = 0.5
 
-    model = TransH(config, data_handler)
+    model = TransH(config)
     
     trainer = Trainer(model=model)
     trainer.build_model()

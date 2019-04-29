@@ -35,7 +35,7 @@ def main(_):
     config.gpu_fraction = args.gpu_frac
     config.save_model = True
 
-    model = TransE(config, data_handler)
+    model = TransE(config)
     
     trainer = Trainer(model=model)
     trainer.build_model()

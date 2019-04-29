@@ -7,7 +7,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 from pykg2vec.core.KGMeta import ModelMeta
-
+import pickle
 
 class Rescal(ModelMeta):
     """
@@ -26,9 +26,10 @@ class Rescal(ModelMeta):
      and https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
     """
 
-    def __init__(self, config, data_handler):
+    def __init__(self, config):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'Rescal'
 
         self.def_inputs()
@@ -48,8 +49,8 @@ class Rescal(ModelMeta):
             self.test_r = tf.placeholder(tf.int32, [1])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -101,7 +102,7 @@ class Rescal(ModelMeta):
 
     def test_step(self):
         k = self.config.hidden_size
-        num_entity = self.data_handler.tot_entity
+        num_entity = self.data_stats.tot_entity
 
         h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
 

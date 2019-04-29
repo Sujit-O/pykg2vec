@@ -9,7 +9,7 @@ sys.path.append("../")
 import tensorflow as tf
 import numpy as np
 from core.KGMeta import ModelMeta
-
+import pickle
 
 class TransD(ModelMeta):
     """
@@ -27,9 +27,10 @@ class TransD(ModelMeta):
     Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransD.py
     """
 
-    def __init__(self, config, data_handler, load_entity=None, load_rel=None):
+    def __init__(self, config):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'TransD'
         
         self.def_inputs()
@@ -48,8 +49,8 @@ class TransD(ModelMeta):
         self.test_r = tf.placeholder(tf.int32, [1])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         d = self.config.ent_hidden_size
         k = self.config.rel_hidden_size
 
@@ -102,7 +103,7 @@ class TransD(ModelMeta):
         return h_e + tf.matmul(r_m, h_m, transpose_b=True)
 
     def test_step(self):
-        num_total_ent = self.data_handler.tot_entity
+        num_total_ent = self.data_stats.tot_entity
         d = self.config.ent_hidden_size
         k = self.config.rel_hidden_size
 

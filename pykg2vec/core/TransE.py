@@ -9,7 +9,7 @@ import sys
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
-
+import pickle
 
 class TransE(ModelMeta):
     """
@@ -42,9 +42,10 @@ class TransE(ModelMeta):
      and https://github.com/wencolani/TransE.git
     """
 
-    def __init__(self, config=None, data_handler=None):
+    def __init__(self, config=None):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'TransE'
 
         self.def_inputs()
@@ -66,8 +67,8 @@ class TransE(ModelMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -95,8 +96,8 @@ class TransE(ModelMeta):
         score_head = self.distance(norm_ent_embeddings, rel_vec, tail_vec)
         score_tail = self.distance(head_vec, rel_vec, norm_ent_embeddings)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
@@ -107,8 +108,8 @@ class TransE(ModelMeta):
         score_head = self.distance_batch(norm_ent_embeddings, tf.expand_dims(rel_vec,axis=1), tf.expand_dims(tail_vec,axis=1))
         score_tail = self.distance_batch(tf.expand_dims(head_vec,axis=1), tf.expand_dims(rel_vec,axis=1), norm_ent_embeddings)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
