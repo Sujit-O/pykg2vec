@@ -30,7 +30,7 @@ def gen_id(ids):
             i = 0
 
 
-class Generator(object):
+class Generator:
     """Generator class for the embedding algorithms
         Args:
           config: generator configuration
@@ -48,6 +48,7 @@ class Generator(object):
         self.queue = Queue(self.config.queue_size)
         self.raw_queue = Queue(self.config.raw_queue_size)
         self.processed_queue = Queue(self.config.processed_queue_size)
+        self.process_list = []
 
         with open(self.config.data_path / 'data_stats.pkl', 'rb') as f:
             self.data_stats = pickle.load(f)
@@ -98,13 +99,23 @@ class Generator(object):
             with open(self.config.tmp_data / 'relation_property.pkl', 'rb') as f:
                 self.relation_property = pickle.load(f)
 
-    def __iter__(self):
         if self.config.algo.lower().startswith('conve'):
-            return self.gen_batch_conve()
+            self.gen_batch_conve()
         elif self.config.algo.lower().startswith('proje'):
-            return self.gen_batch_proje()
+            self.gen_batch_proje()
         else:
-            return self.gen_batch_trans()
+            self.gen_batch_trans()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        while True:
+            return self.processed_queue.get()
+
+    def stop(self):
+        for p in self.process_list:
+            p.terminate()
 
     def raw_data_generator_proje(self, ids):
         gen = iter(gen_id(ids))
@@ -212,6 +223,7 @@ class Generator(object):
                 p = Process(target=self.process_function_train_trans, args=())
             else:
                 p = Process(target=self.process_function_test_trans, args=())
+            self.process_list.append(p)
             p.daemon = True
             p.start()
 
@@ -236,9 +248,6 @@ class Generator(object):
         worker.start()
         self.pool_process_proje(bs=self.config.batch_size, n_entity=n_entity, neg_weight=neg_weight)
 
-        while True:
-            yield self.processed_queue.get()
-
     def gen_batch_conve(self):
         bs = self.config.batch_size
         te = self.data_stats.tot_entity
@@ -258,9 +267,6 @@ class Generator(object):
         worker.daemon = True
         worker.start()
         self.pool_process_conve()
-
-        while True:
-            yield self.processed_queue.get()
 
     def gen_batch_trans(self):
         bs = self.config.batch_size
@@ -282,11 +288,9 @@ class Generator(object):
 
         worker = Process(target=self.raw_data_generator_trans, args=(ids,))
         worker.daemon = True
+        self.process_list.append(worker)
         worker.start()
         self.pool_process_trans()
-
-        while True:
-            yield self.processed_queue.get()
 
     def process_function_train_trans(self):
         te = self.data_stats.tot_entity
@@ -533,8 +537,8 @@ def test_generator_proje():
 
 def test_generator_trans():
     import time
-    gen = iter(Generator(config=GeneratorConfig(data='test', algo='TransE')))
-    for i in range(100):
+    gen = Generator(config=GeneratorConfig(data='test', algo='TransE'))
+    for i in range(1000):
         data = list(next(gen))
         print("----batch:", i)
         ph = data[0]
@@ -543,15 +547,16 @@ def test_generator_trans():
         # nh = data[3]
         # nr = data[4]
         # nt = data[5]
-        print("ph:", ph)
-        print("pr:", pr)
-        print("pt:", pt)
+        # print("ph:", ph)
+        # print("pr:", pr)
+        # print("pt:", pt)
         # print("nh:", nh)
         # print("nr:", nr)
         # print("nt:", nt)
+    gen.stop()
 
 
 if __name__ == '__main__':
-    test_generator_proje()
+    # test_generator_proje()
     # test_generator_conve()
-    # test_generator_trans()
+    test_generator_trans()

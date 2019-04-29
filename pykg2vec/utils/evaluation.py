@@ -62,8 +62,8 @@ class Evaluation(EvaluationMeta):
         filter_rank_head = []
         filter_rank_tail = []
 
-        gen_test = iter(Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                         batch_size=self.model.config.batch_size)))
+        gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
+                                                         batch_size=self.model.config.batch_size))
         self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
         loop_len = self.n_test // self.batch if not self.debug else 2
         print("Testing [%d/%d] Triples" % (self.n_test, self.data_stats.tot_test_triples))
@@ -111,6 +111,7 @@ class Evaluation(EvaluationMeta):
                                                         dtype=np.float32) / total_test
             self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
                                                         dtype=np.float32) / total_test
+        gen_test.stop()
 
     def test(self, sess=None, epoch=None, test_data='test'):
         if test_data == 'test':

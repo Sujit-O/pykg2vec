@@ -20,8 +20,9 @@ class Complex(ModelMeta):
 
     def __init__(self, config=None, data_stats=None):
         self.config = config
-        self.tot_ent = data_stats.tot_entity
-        self.tot_rel = data_stats.tot_relation
+        self.data_stats = data_stats
+        self.tot_ent = self.data_stats.tot_entity
+        self.tot_rel = self.data_stats.tot_relation
         self.model_name = 'Ccmplex'
 
         self.def_inputs()
@@ -32,14 +33,14 @@ class Complex(ModelMeta):
     def def_inputs(self):
         self.e1 = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
-        self.e2_multi1 = tf.placeholder(tf.float32, [None, self.data_handler.tot_entity])
+        self.e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
         self.test_e1 = tf.placeholder(tf.int32, [None])
         self.test_e2 = tf.placeholder(tf.int32, [None])
         self.test_r = tf.placeholder(tf.int32, [None])
         self.test_r_rev = tf.placeholder(tf.int32, [None])
-        self.test_e2_multi1 = tf.placeholder(tf.float32, [None, self.data_handler.tot_entity])
-        self.test_e2_multi2 = tf.placeholder(tf.float32, [None, self.data_handler.tot_entity])
+        self.test_e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.test_e2_multi2 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
     def def_parameters(self):
         k = self.config.hidden_size
@@ -56,25 +57,29 @@ class Complex(ModelMeta):
         self.parameter_list = [self.emb_e_real, self.emb_e_img, self.emb_rel_real, self.emb_rel_img]
 
     def def_loss(self):
-        e1_embedded_real = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        rel_embedded_real = self.emb_rel_real(rel).squeeze()
-        e1_embedded_img = self.emb_e_img(e1).squeeze()
-        rel_embedded_img = self.emb_rel_img(rel).squeeze()
+        # norm_emb_e_real = tf.nn.l2_normalize(self.emb_e_real, axis=1)
+        # norm_emb_e_img = tf.nn.l2_normalize(self.emb_e_img, axis=1)
+        # norm_emb_rel_real = tf.nn.l2_normalize(self.emb_rel_real, axis=1)
+        # norm_emb_rel_img = tf.nn.l2_normalize(self.emb_rel_img, axis=1)
 
-        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+        e1_embedded_real = tf.nn.embedding_lookup(self.emb_e_real, self.e1)
+        rel_embedded_real = tf.nn.embedding_lookup(self.emb_rel_real, self.r)
+        e1_embedded_img = tf.nn.embedding_lookup(self.emb_e_img, self.e1)
+        rel_embedded_img = tf.nn.embedding_lookup(self.emb_rel_img, self.r)
 
-        e1 = tf.nn.embedding_lookup(ent_emb_norm, self.e1)
-        r = tf.nn.embedding_lookup(rel_emb_norm, self.r)
+        e1_embedded_real,rel_embedded_real = self.layer(e1_embedded_real,rel_embedded_real)
+        e1_embedded_img, rel_embedded_img = self.layer(e1_embedded_img, rel_embedded_img)
 
-        stacked_e = tf.reshape(e1, [-1, 10, 20, 1])
-        stacked_r = tf.reshape(r, [-1, 10, 20, 1])
+        realrealreal = tf.matmul(e1_embedded_real * rel_embedded_real, tf.transpose(self.emb_e_real))
+        realimgimg = tf.matmul(e1_embedded_real * rel_embedded_img, tf.transpose(self.emb_e_img))
+        imgrealimg = tf.matmul(e1_embedded_img * rel_embedded_real, tf.transpose(self.emb_e_img))
+        imgimgreal = tf.matmul(e1_embedded_img * rel_embedded_img, tf.transpose(self.emb_e_real))
 
-        stacked_er = tf.concat([stacked_e, stacked_r], 1)
+        pred = realrealreal + realimgimg + imgrealimg - imgimgreal
+        pred = tf.nn.sigmoid(pred)
 
         e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_handler.tot_entity
-        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_handler.tot_entity])
-        pred = self.layer(stacked_er)
+        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats])
 
         self.loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
 
@@ -86,8 +91,7 @@ class Complex(ModelMeta):
         rel = tf.squeeze(rel)
         e1 = self.inp_drop(e1)
         rel = self.inp_drop(rel)
-
-        return tf.nn.sigmoid(x)
+        return e1, rel
 
     def test_step(self):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
