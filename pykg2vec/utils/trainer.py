@@ -53,7 +53,7 @@ class Trainer(TrainerMeta):
             # if self.model.model_name == "ProjE_pointwise":
             #      self.data_handler.start_multiprocessing()
             #
-            self.gen_train = iter(Generator(config=GeneratorConfig(data='train', algo=self.model.model_name)))
+            self.gen_train = Generator(config=GeneratorConfig(data='train', algo=self.model.model_name))
 
             for n_iter in range(self.config.epochs):
                 if self.model.model_name == "ProjE_pointwise":
