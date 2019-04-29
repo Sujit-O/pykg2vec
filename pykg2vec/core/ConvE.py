@@ -129,7 +129,7 @@ class ConvE(ModelMeta):
         # sigmoid activation
         return tf.nn.sigmoid(x)
 
-    def test_step(self):
+    def test_batch(self):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 

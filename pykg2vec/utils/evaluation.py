@@ -232,7 +232,7 @@ class Evaluation(EvaluationMeta):
         return self.eval_batch_tail(*data)
 
     def test_conve(self, sess=None, epoch=None):
-        head_rank, tail_rank = self.model.test_step()
+        head_rank, tail_rank = self.model.test_batch()
         self.epoch.append(epoch)
         if not sess:
             raise NotImplementedError('No session found for evaluation!')

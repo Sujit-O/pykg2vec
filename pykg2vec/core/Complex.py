@@ -95,7 +95,7 @@ class Complex(ModelMeta):
         rel = self.inp_drop(rel)
         return e1, rel
 
-    def test_step(self):
+    def test_batch(self):
         e1_embedded_real, rel_embedded_real, e1_embedded_img, rel_embedded_img = self.embed(self.test_e1, self.test_r)
         e2_embedded_real, r_rev_embedded_real, e2_embedded_img, r_rev_embedded_img = self.embed(self.test_e2,
                                                                                                 self.test_r_rev)
@@ -141,15 +141,15 @@ class Complex(ModelMeta):
         tr_pred = tf.nn.sigmoid(tr_pred)
 
         e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi1) + (1.0 / self.data_handler.tot_entity)
+                                  self.test_e2_multi1) + (1.0 / self.data_stats.tot_entity)
         e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi2) + (1.0 / self.data_handler.tot_entity)
+                                  self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
 
         head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, hr_pred)
         tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, tr_pred)
 
-        _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_handler.tot_entity)
-        _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_handler.tot_entity)
+        _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
