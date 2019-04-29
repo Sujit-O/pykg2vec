@@ -51,6 +51,9 @@ class TransH(ModelMeta):
         self.test_h = tf.placeholder(tf.int32, [1])
         self.test_t = tf.placeholder(tf.int32, [1])
         self.test_r = tf.placeholder(tf.int32, [1])
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
@@ -105,15 +108,35 @@ class TransH(ModelMeta):
 
         return head_rank, tail_rank
 
+    def test_batch(self):
+        num_entity = self.data_stats.tot_entity
+
+        head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+        pos_norm = self.get_proj(self.test_r_batch)
+
+        norm_ent_embedding = tf.nn.l2_normalize(self.ent_embeddings, 1)
+        project_ent_embedding = self.projection(norm_ent_embedding, tf.expand_dims(pos_norm,axis=1))
+        score_head = self.distance(project_ent_embedding,
+                                   tf.expand_dims(rel_vec, axis=1),
+                                   tf.expand_dims(tail_vec, axis=1), axis=2)
+        score_tail = self.distance(tf.expand_dims(head_vec, axis=1),
+                                   tf.expand_dims(rel_vec, axis=1),
+                                   project_ent_embedding, axis=2)
+
+        _, head_rank = tf.nn.top_k(score_head, k=num_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=num_entity)
+
+        return head_rank, tail_rank
+
     def get_proj(self, r):
         return tf.nn.l2_normalize(tf.nn.embedding_lookup(self.w, r), axis=-1)
 
     def projection(self, entity, wr):
         return entity - tf.reduce_sum(entity * wr, -1, keepdims=True) * wr
 
-    def distance(self, h, r, t):
+    def distance(self, h, r, t, axis=1):
         if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
+            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
         else:
             return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
 
