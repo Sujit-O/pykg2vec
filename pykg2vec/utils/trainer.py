@@ -209,7 +209,7 @@ class Trainer(TrainerMeta):
                 curr_epoch == 0 or \
                 curr_epoch == self.config.epochs - 1:
             # self.evaluator.test(self.sess, curr_epoch)
-            self.evaluator.test_batch(self.sess, curr_epoch)
+            self.evaluator.test_step(self.sess, curr_epoch)
             self.evaluator.print_test_summary(curr_epoch)
 
             print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))

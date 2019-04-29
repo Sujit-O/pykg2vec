@@ -115,7 +115,7 @@ class TransH(ModelMeta):
         pos_norm = self.get_proj(self.test_r_batch)
 
         norm_ent_embedding = tf.nn.l2_normalize(self.ent_embeddings, 1)
-        project_ent_embedding = self.projection(norm_ent_embedding, tf.expand_dims(pos_norm,axis=1))
+        project_ent_embedding = self.projection(norm_ent_embedding, tf.expand_dims(pos_norm, axis=1))
         score_head = self.distance(project_ent_embedding,
                                    tf.expand_dims(rel_vec, axis=1),
                                    tf.expand_dims(tail_vec, axis=1), axis=2)

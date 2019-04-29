@@ -11,6 +11,7 @@ import tensorflow as tf
 from core.KGMeta import ModelMeta
 import pickle
 
+
 class TransE(ModelMeta):
     """
     ------------------Paper Title-----------------------------
@@ -105,12 +106,12 @@ class TransE(ModelMeta):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        score_head = self.distance_batch(norm_ent_embeddings,
-                                         tf.expand_dims(rel_vec, axis=1),
-                                         tf.expand_dims(tail_vec, axis=1), axis=2)
-        score_tail = self.distance_batch(tf.expand_dims(head_vec, axis=1),
-                                         tf.expand_dims(rel_vec, axis=1),
-                                         norm_ent_embeddings, axis=2)
+        score_head = self.distance(norm_ent_embeddings,
+                                   tf.expand_dims(rel_vec, axis=1),
+                                   tf.expand_dims(tail_vec, axis=1), axis=2)
+        score_tail = self.distance(tf.expand_dims(head_vec, axis=1),
+                                   tf.expand_dims(rel_vec, axis=1),
+                                   norm_ent_embeddings, axis=2)
 
         _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
         _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
