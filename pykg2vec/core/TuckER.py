@@ -65,8 +65,8 @@ class TuckER(ModelMeta):
         self.hidden_dropout1 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout1)
         self.hidden_dropout2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout2)
 
-        self.bn0 = tf.keras.layers.BatchNormalization()
-        self.bn1 = tf.keras.layers.BatchNormalization()
+        self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)
+        self.bn1 = tf.keras.layers.BatchNormalization(trainable=True)
 
     def forward(self, e1, r):
         e1 = tf.nn.embedding_lookup(self.E, e1)
@@ -88,7 +88,7 @@ class TuckER(ModelMeta):
 
         return tf.nn.sigmoid(x)
 
-    def loss(self):
+    def def_loss(self):
         pred = self.forward(self.e1, self.r)
 
         e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
@@ -100,7 +100,7 @@ class TuckER(ModelMeta):
         self.loss = loss + self.config.lmbda * reg_losses
 
     def test_batch(self):
-        pred_tails = self.forwad(self.test_e1, self.test_r)
+        pred_tails = self.forward(self.test_e1, self.test_r)
         pred_heads = self.forward(self.test_e2, self.test_r_rev)
 
         e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
@@ -143,27 +143,37 @@ if __name__ == '__main__':
     sys.path.append("../")
     from config.config import TuckERConfig
 
-    tf.enable_eager_execution()
-    batch = 128
-    d1 = 64
-    d2 = 32
-    tot_ent = 14700
-    tot_rel = 2600
-    train = True
-    e1 = np.random.randint(0, tot_ent, size=(batch, 1))
-    print('pos_r_e:', e1)
-    r = np.random.randint(0, tot_rel, size=(batch, 1))
-    print('pos_r_e:', r)
-    e2 = np.random.randint(0, tot_ent, size=(batch, 1))
-    print('pos_t_e:', e2)
-    r_rev = np.random.randint(0, tot_rel, size=(batch, 1))
-    print('pos_r_e:', r_rev)
-
+    # tf.enable_eager_execution()
+    # batch = 128
+    # d1 = 64
+    # d2 = 32
+    # tot_ent = 14951
+    # tot_rel = 2600
+    # train = True
+    # e1 = np.random.randint(0, tot_ent, size=(batch, 1))
+    # print('pos_r_e:', e1)
+    # r = np.random.randint(0, tot_rel, size=(batch, 1))
+    # print('pos_r_e:', r)
+    # e2 = np.random.randint(0, tot_ent, size=(batch, 1))
+    # print('pos_t_e:', e2)
+    # r_rev = np.random.randint(0, tot_rel, size=(batch, 1))
+    # print('pos_r_e:', r_rev)
+    #
     config = TuckERConfig()
-
+    #
     model = TuckER(config=config)
     optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
     grads = optimizer.compute_gradients(model.loss)
-
-    pred = model.forward(e1, r)
-    print(pred)
+    #
+    # logits = model.forward(e1, r)
+    # print("pred:",logits)
+    #
+    # e2_multi1 = tf.constant(np.random.randint(0,2,size=(batch, tot_ent)), dtype=tf.float32)
+    # # e2_multi1 = e2_multi1 * (1.0 - 0.1) + 1.0 / tot_ent
+    # print("e2_multi1:", e2_multi1)
+    # loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+    #     logits=logits,
+    #     labels=e2_multi1))
+    # print("loss:", loss)
+    # optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
+    # grads = optimizer.compute_gradients(model.loss)
