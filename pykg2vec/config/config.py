@@ -389,3 +389,27 @@ class ProjE_pointwiseConfig(BasicConfig):
         self.data = data
         self.optimizer = optimizer
         self.sampling = sampling
+
+class KG2EConfig(BasicConfig):
+
+    def __init__(self,
+                 learning_rate=0.001,
+                 l1_flag=True,
+                 hidden_size=50,
+                 batch_size=128,
+                 epochs=1000,
+                 margin=1.0,
+                 data='Freebase',
+                 optimizer='adam',
+                 sampling="uniform"):
+        BasicConfig.__init__(self)
+
+        self.learning_rate = learning_rate
+        self.L1_flag = l1_flag
+        self.hidden_size = hidden_size
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.margin = margin
+        self.data = data
+        self.optimizer = optimizer
+        self.sampling = sampling
