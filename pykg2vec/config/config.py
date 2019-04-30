@@ -229,7 +229,8 @@ class SMEConfig(object):
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam',
-                 sampling="uniform"):
+                 sampling="uniform", 
+                 bilinear=False):
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -241,6 +242,7 @@ class SMEConfig(object):
         self.data = data
         self.optimizer = optimizer
         self.sampling = sampling
+        self.bilinear = bilinear
 
 
 class NTNConfig(BasicConfig):
@@ -406,7 +408,11 @@ class KG2EConfig(BasicConfig):
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam',
-                 sampling="uniform"):
+                 sampling="uniform", 
+                 distance_measure="kl_divergence",
+                 cmax=0.05,
+                 cmin=5.00
+                 ):
         BasicConfig.__init__(self)
 
         self.learning_rate = learning_rate
@@ -418,6 +424,9 @@ class KG2EConfig(BasicConfig):
         self.data = data
         self.optimizer = optimizer
         self.sampling = sampling
+        self.distance_measure = distance_measure
+        self.cmax = cmax
+        self.cmin = cmin
 
 
 class ComplexConfig(BasicConfig):

@@ -10,7 +10,7 @@ from utils.trainer import Trainer
 
 
 def main(_):
-    parser = ArgumentParser(description='Knowledge Graph Embedding with KG2E')
+    parser = ArgumentParser(description='Knowledge Graph Embedding with KG2E KL-divergence')
     parser.add_argument('-b', '--batch', default=1440, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
     parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
@@ -23,18 +23,20 @@ def main(_):
     args = parser.parse_args()
 
     data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='KG2E')
-    # args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
     
     config = KG2EConfig(learning_rate=args.learn_rate,
-                          batch_size=args.batch,
-                          epochs=args.epochs,
-                          hidden_size=args.embed)
+                        batch_size=args.batch,
+                        epochs=args.epochs,
+                        hidden_size=args.embed,
+                        distance_measure="kl_divergence")
 
     config.test_step = args.test_step
     config.test_num  = args.test_num
     config.gpu_fraction = args.gpu_frac
     config.save_model = True
     config.margin = 1.0
+    config.cmax = 5.00
+    config.cmin = 0.05
 
     model = KG2E(config, data_handler)
     

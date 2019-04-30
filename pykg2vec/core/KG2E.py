@@ -9,31 +9,30 @@ import sys
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
-
-import numpy as np
+import pickle
 
 class KG2E(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-    Transition-based Knowledge Graph Embedding with Relational Mapping Properties
+    Learning to Represent Knowledge Graphs with Gaussian Embedding
     ------------------Paper Authors---------------------------
-    Miao Fan(1,3), Qiang Zhou(1), Emily Chang(2), Thomas Fang Zheng(1,4),
-    1. CSLT, Tsinghua National Laboratory for Information Science and Technology
-    Department of Computer Science and Technology, Tsinghua University, Beijing, 100084, China.
-    2. Emory University, U.S.A.
-    3. fanmiao.cslt.thu@gmail.com, 4. fzheng@tsinghua.edu.cn Abstract
+    Shizhu He, Kang Liu, Guoliang Ji and Jun Zhao 
+    National Laboratory of Pattern Recognition Institute of Automation, 
+    Chinese Academy of Sciences, Beijing, 100190, China 
+    {shizhu.he, kliu, guoliang.ji, jzhao}@nlpr.ia.ac.cn
     ------------------Summary---------------------------------
-    TransM is another line of research that improves TransE by relaxing the overstrict requirement of 
-    h+r ==> t. TransM associates each fact (h, r, t) with a weight theta(r) specific to the relation. 
-     
-
-    https://github.com/wencolani/TransE.git
     """
 
     def __init__(self, config=None, data_handler=None):
         self.config = config
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.data_handler = data_handler
-        self.model_name = 'TransM'
+
+        if self.config.distance_measure == "expected_likelihood":
+            self.model_name = 'KG2E_EL'
+        else:
+            self.model_name = 'KG2E_KL'
 
         self.def_inputs()
         self.def_parameters()
@@ -71,52 +70,71 @@ class KG2E(ModelMeta):
             self.rel_embeddings_sigma = tf.get_variable(name="rel_embeddings_sigma", shape=[num_total_rel, k], 
                                                         initializer=tf.contrib.layers.xavier_initializer(uniform=True))
 
-            self.ent_embeddings_sigma = tf.maximum(0.05, tf.minimum(5., (self.ent_embeddings_sigma + 1.0)))
-            self.rel_embeddings_sigma = tf.maximum(0.05, tf.minimum(5., (self.rel_embeddings_sigma + 1.0)))
+            self.ent_embeddings_sigma = tf.maximum(self.config.cmin, tf.minimum(self.config.cmax, (self.ent_embeddings_sigma + 1.0)))
+            self.rel_embeddings_sigma = tf.maximum(self.config.cmin, tf.minimum(self.config.cmax, (self.rel_embeddings_sigma + 1.0)))
 
             self.parameter_list = [self.ent_embeddings_mu, self.ent_embeddings_sigma, 
                                    self.rel_embeddings_mu, self.rel_embeddings_sigma]
 
-    def def_loss(self):
 
+    def def_loss(self):
         pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu, pos_t_sigma = self.get_embed_guassian(self.pos_h, self.pos_r, self.pos_t)
         neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu, neg_t_sigma = self.get_embed_guassian(self.neg_h, self.neg_r, self.neg_t)
 
-        score_pos = self.cal_score(pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu, pos_t_sigma)
-
-        score_neg = self.cal_score(neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu, neg_t_sigma)
+        if self.config.distance_measure == "expected_likelihood":
+            score_pos = self.cal_score_expected_likelihood(pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu, pos_t_sigma)
+            score_neg = self.cal_score_expected_likelihood(neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu, neg_t_sigma)
+        else:
+            score_pos = self.cal_score_kl_divergence(pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu, pos_t_sigma)
+            score_neg = self.cal_score_kl_divergence(neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu, neg_t_sigma)
 
         self.loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
-
-    def cal_score(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
+        
+       
+    def cal_score_kl_divergence(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
         ''' 
             trace_fac: tr(sigma_r-1 * (sigma_h + sigma_t))
             mul_fac: (mu_h + mu_r - mu_t).T * sigma_r-1 * (mu_h + mu_r - mu_t)
             det_fac: log(det(sigma_r)/det(sigma_h + sigma_t))
-        '''    
-        k = self.config.hidden_size
-
+        '''
         trace_fac = tf.reduce_sum((h_sigma + t_sigma) / r_sigma, -1)
         mul_fac = tf.reduce_sum((- h_mu + t_mu - r_mu)**2 / r_sigma, -1)
         det_fac = tf.reduce_sum(tf.log(h_sigma + t_sigma) - tf.log(r_sigma), -1)
         
-        return trace_fac + mul_fac - det_fac - k
+        return trace_fac + mul_fac - det_fac - self.config.hidden_size
 
+    def cal_score_expected_likelihood(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
+        ''' 
+            mul_fac: (mu_h + mu_r - mu_t).T * sigma_r-1 * (mu_h + mu_r - mu_t)
+            det_fac: log(det(sigma_r + sigma_h + sigma_t))
+        '''    
+        mul_fac = tf.reduce_sum((h_mu + r_mu - t_mu)**2 / (h_sigma + r_sigma + t_sigma), -1)
+        det_fac = tf.reduce_sum(tf.log(h_sigma + r_sigma + t_sigma), -1)
+        
+        return mul_fac + det_fac - self.config.hidden_size
 
     def test_step(self):
-
         test_h_mu, test_h_sigma, test_r_mu, test_r_sigma, test_t_mu, test_t_sigma = self.get_embed_guassian(self.test_h, self.test_r, self.test_t)
 
         norm_ent_embeddings_mu    = tf.nn.l2_normalize(self.ent_embeddings_mu,    axis=1)
         norm_ent_embeddings_sigma = tf.nn.l2_normalize(self.ent_embeddings_sigma, axis=1)
 
-        score_head = self.cal_score(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, \
-                                    test_r_mu, test_r_sigma, \
-                                    test_t_mu, test_t_sigma)
+        if self.config.distance_measure == "expected_likelihood":
+            score_head = self.cal_score_expected_likelihood(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, \
+                                                            test_r_mu, test_r_sigma, \
+                                                            test_t_mu, test_t_sigma)
 
-        score_tail = self.cal_score(test_h_mu, test_h_sigma, \
-                                    test_r_mu, test_r_sigma, \
-                                    norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
+            score_tail = self.cal_score_expected_likelihood(test_h_mu, test_h_sigma, \
+                                                            test_r_mu, test_r_sigma, \
+                                                            norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
+        else:
+            score_head = self.cal_score_kl_divergence(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, \
+                                                      test_r_mu, test_r_sigma, \
+                                                      test_t_mu, test_t_sigma)
+
+            score_tail = self.cal_score_kl_divergence(test_h_mu, test_h_sigma, \
+                                                      test_r_mu, test_r_sigma, \
+                                                      norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
         
         _, head_rank = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
         _, tail_rank = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
@@ -124,37 +142,32 @@ class KG2E(ModelMeta):
         return head_rank, tail_rank
 
     def test_batch(self):
-        # [m, k]
         test_h_mu, test_h_sigma, test_r_mu, test_r_sigma, test_t_mu, test_t_sigma = self.get_embed_guassian(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        # [14951, k]
         norm_ent_embeddings_mu    = tf.nn.l2_normalize(self.ent_embeddings_mu,    axis=1)
         norm_ent_embeddings_sigma = tf.nn.l2_normalize(self.ent_embeddings_sigma, axis=1)
 
-        score_head = self.cal_score(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, \
-                                    tf.expand_dims(test_r_mu, axis=1), tf.expand_dims(test_r_sigma, axis=1), \
-                                    tf.expand_dims(test_t_mu, axis=1), tf.expand_dims(test_t_sigma, axis=1))
+        if self.config.distance_measure == "expected_likelihood":
+            score_head = self.cal_score_expected_likelihood(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, \
+                                                            tf.expand_dims(test_r_mu, axis=1), tf.expand_dims(test_r_sigma, axis=1), \
+                                                            tf.expand_dims(test_t_mu, axis=1), tf.expand_dims(test_t_sigma, axis=1))
 
-        score_tail = self.cal_score(tf.expand_dims(test_h_mu, axis=1), tf.expand_dims(test_h_sigma, axis=1), \
-                                    tf.expand_dims(test_r_mu, axis=1), tf.expand_dims(test_r_sigma, axis=1), \
-                                    norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
+            score_tail = self.cal_score_expected_likelihood(tf.expand_dims(test_h_mu, axis=1), tf.expand_dims(test_h_sigma, axis=1), \
+                                                            tf.expand_dims(test_r_mu, axis=1), tf.expand_dims(test_r_sigma, axis=1), \
+                                                            norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
+        else:
+            score_head = self.cal_score_kl_divergence(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, \
+                                                      tf.expand_dims(test_r_mu, axis=1), tf.expand_dims(test_r_sigma, axis=1), \
+                                                      tf.expand_dims(test_t_mu, axis=1), tf.expand_dims(test_t_sigma, axis=1))
+
+            score_tail = self.cal_score_kl_divergence(tf.expand_dims(test_h_mu, axis=1), tf.expand_dims(test_h_sigma, axis=1), \
+                                                      tf.expand_dims(test_r_mu, axis=1), tf.expand_dims(test_r_sigma, axis=1), \
+                                                      norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
 
         _, head_rank = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
         _, tail_rank = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
 
         return head_rank, tail_rank
-
-    def distance(self, h, r, t):
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
-
-    def distance_batch(self, h, r, t):
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=2)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=2)  # L2 norm
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
