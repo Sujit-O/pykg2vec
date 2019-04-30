@@ -61,8 +61,10 @@ class ConvE(ModelMeta):
 
         with tf.name_scope("embedding"):
             self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
+                                                  regularizer=tf.contrib.layers.l2_regularizer(scale=0.1),
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
+                                                  regularizer=tf.contrib.layers.l2_regularizer(scale=0.1),
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         with tf.name_scope("activation_bias"):
             self.b = tf.get_variable(name="bias", shape=[self.config.batch_size, num_total_ent],
@@ -87,9 +89,9 @@ class ConvE(ModelMeta):
 
         loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
 
-        regul_func = tf.reduce_mean(e1 ** 2) + tf.reduce_mean(r ** 2)
+        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
 
-        self.loss = loss + self.config.lmbda * regul_func
+        self.loss = loss + self.config.lmbda * reg_losses
 
 
     def def_layer(self):

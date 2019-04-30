@@ -49,111 +49,66 @@ class TuckER(ModelMeta):
         num_total_rel = self.data_stats.tot_relation
         d1 = self.config.ent_hidden_size
         d2 = self.config.rel_hidden_size
+        regularizer = tf.contrib.layers.l2_regularizer(scale=0.1)
 
         with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, d1],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, d2],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        with tf.name_scope("weight"):
-            self.W = tf.get_variable(name="weight", shape=[d2, d1, d1],
-                                     initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.W]
+            self.E = tf.get_variable(name="ent_embedding", shape=[num_total_ent, d1],
+                                     regularizer=regularizer,
+                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.R = tf.get_variable(name="rel_embedding", shape=[num_total_rel, d2],
+                                     regularizer=regularizer,
+                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        with tf.name_scope("W"):
+            self.W = tf.get_variable(name="W", shape=[d2, d1, d1],
+                                     regularizer=regularizer,
+                                     initializer=tf.initializers.random_uniform(minval=-1, maxval=1))
+        self.parameter_list = [self.E, self.R, self.W]
 
-    def def_loss(self):
-        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+    def def_layer(self):
+        self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
+        self.hidden_dropout1 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout1)
+        self.hidden_dropout2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout2)
 
-        e1 = tf.nn.embedding_lookup(ent_emb_norm, self.e1)
-        r = tf.nn.embedding_lookup(rel_emb_norm, self.r)
+        self.bn0 = tf.keras.layers.BatchNormalization()
+        self.bn1 = tf.keras.layers.BatchNormalization()
 
-        stacked_e = tf.reshape(e1, [-1, 10, 20, 1])
-        stacked_r = tf.reshape(r, [-1, 10, 20, 1])
+    def forward(self, e1, r):
+        d1 = self.config.ent_hidden_size
+        d2 = self.config.rel_hidden_size
 
-        stacked_er = tf.concat([stacked_e, stacked_r], 1)
+        e1 = tf.nn.embedding_lookup(self.E, e1)
+        r = tf.nn.embedding_lookup(self.R, r)
+
+        e1 = self.bn0(e1)
+        e1 = self.inp_drop(e1)
+        e1 = tf.reshape(e1, [-1, 1, d1])
+
+        W_mat = tf.matmul(r, tf.reshape(self.W, [d2, -1]))
+        W_mat = tf.reshape(W_mat, [-1, d1, d1])
+        W_mat = self.hidden_dropout1(W_mat)
+
+        x = tf.matmul(e1, W_mat)
+        x = tf.reshape(x, [-1, d1])
+        x = self.bn1(x)
+        x = self.hidden_dropout2(x)
+        x = tf.matmul(x, tf.transpose(self.E))
+
+        pred = tf.nn.sigmoid(x)
+
+        return pred
+
+    def loss(self):
+        pred = self.forward(self.e1, self.r)
 
         e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
-        pred = self.layer(stacked_er)
 
         loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
 
-        regul_func = tf.reduce_mean(e1 ** 2) + tf.reduce_mean(r ** 2)
+        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
 
-        self.loss = loss + self.config.lmbda * regul_func
-
-    def def_layer(self):
-        self.bn0 = tf.keras.layers.BatchNormalization()
-        self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
-        self.conv2d_1 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', activation=None,
-                                               use_bias=True)
-        self.bn1 = tf.keras.layers.BatchNormalization(trainable=True)
-        self.feat_drop = tf.keras.layers.Dropout(rate=self.config.feature_map_dropout)
-        self.fc1 = tf.keras.layers.Dense(units=self.config.hidden_size)
-        self.hidden_drop = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
-        self.bn2 = tf.keras.layers.BatchNormalization(trainable=True)
-
-    def layer(self, st_inp):
-        # batch normalization in the first axis
-        x = self.bn0(st_inp)
-        # input dropout
-        x = self.inp_drop(x)
-        # 2d convolution layer, output channel =32, kernel size = 3,3
-        x = self.conv2d_1(x)
-        # batch normalization across feature dimension
-        x = self.bn1(x)
-        # first non-linear activation
-        x = tf.nn.relu(x)
-        # feature dropout
-        x = self.feat_drop(x)
-        # reshape the tensor to get the batch size
-        '''10368 with k=200,5184 with k=100, 2592 with k=50'''
-        x = tf.reshape(x, [self.config.batch_size, self.last_dim])
-        # pass the feature through fully connected layer, output size = batch size, hidden size
-        x = self.fc1(x)
-        # dropout in the hidden layer
-        x = self.hidden_drop(x)
-        # batch normalization across feature dimension
-        x = self.bn2(x)
-        # second non-linear activation
-        x = tf.nn.relu(x)
-        # project and get inner product with the tail triple
-        x = tf.matmul(x, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-        # add a bias value
-        x = tf.add(x, self.b)
-        # sigmoid activation
-        return tf.nn.sigmoid(x)
+        self.loss = loss + self.config.lmbda * reg_losses
 
     def test_batch(self):
-        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        e1 = tf.nn.embedding_lookup(ent_emb_norm, self.test_e1)
-        e2 = tf.nn.embedding_lookup(ent_emb_norm, self.test_e2)
-
-        r = tf.nn.embedding_lookup(rel_emb_norm, self.test_r)
-        r_rev = tf.nn.embedding_lookup(rel_emb_norm, self.test_r_rev)
-
-        stacked_head_e = tf.reshape(e1, [-1, 10, 20, 1])
-        stacked_head_r = tf.reshape(r, [-1, 10, 20, 1])
-
-        stacked_tail_e = tf.reshape(e2, [-1, 10, 20, 1])
-        stacked_tail_r = tf.reshape(r_rev, [-1, 10, 20, 1])
-
-        stacked_hr = tf.concat([stacked_head_e, stacked_head_r], 1)
-        stacked_tr = tf.concat([stacked_tail_e, stacked_tail_r], 1)
-
-        e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi1) + (1.0 / self.data_stats.tot_entity)
-        e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
-
-        pred4head = self.layer(stacked_hr)
-        pred4tail = self.layer(stacked_tr)
-
-        head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred4head)
-        tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred4tail)
-
         _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_stats.tot_entity)
         _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_stats.tot_entity)
 
