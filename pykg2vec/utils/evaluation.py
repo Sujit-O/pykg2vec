@@ -408,7 +408,7 @@ class Evaluation(EvaluationMeta):
         files = os.listdir(self.model.config.result)
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
         df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
-        with open(self.model.config.result + '/' + self.model.model_name + '_Training_results_' + str(l) + '.csv',
+        with open(self.model.config.result / (self.model.model_name + '_Training_results_' + str(l) + '.csv'),
                   'w') as fh:
             df.to_csv(fh)
 
@@ -418,7 +418,7 @@ class Evaluation(EvaluationMeta):
 
         files = os.listdir(self.model.config.result)
         l = len([f for f in files if self.model.model_name in f if 'Testing' in f])
-        with open(self.model.config.result + '/' + self.model.model_name + '_summary_' + str(l) + '.txt', 'w') as fh:
+        with open(self.model.config.result / (self.model.model_name + '_summary_' + str(l) + '.txt'), 'w') as fh:
             fh.write('----------------SUMMARY----------------\n')
             for key, val in self.model.config.__dict__.items():
                 if 'gpu' in key:
@@ -452,7 +452,8 @@ class Evaluation(EvaluationMeta):
             results.append(res_tmp)
 
         df = pd.DataFrame(results, columns=columns)
-        with open(self.model.config.result + '/' + self.model.model_name + '_Testing_results_' + str(l) + '.csv',
+        
+        with open(self.model.config.result / (self.model.model_name + '_Testing_results_' + str(l) + '.csv'),
                   'w') as fh:
             df.to_csv(fh)
 
