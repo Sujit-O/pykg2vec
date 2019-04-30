@@ -12,7 +12,7 @@ from utils.trainer import Trainer
 
 def main(_):
     parser = ArgumentParser(description='Knowledge Graph Embedding with RotatE')
-    parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
+    parser.add_argument('-b', '--batch', default=256, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
     parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
     parser.add_argument('-l', '--epochs', default=100, type=int, help='Number of Epochs')
