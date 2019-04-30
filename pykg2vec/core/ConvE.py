@@ -126,7 +126,7 @@ class ConvE(ModelMeta):
         stacked_er = tf.concat([stacked_e, stacked_r], 1)
 
         e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
+        # e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
         pred = self.forward(stacked_er)
 
         loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
@@ -160,14 +160,14 @@ class ConvE(ModelMeta):
         e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
                                   self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
 
-        pred4head = self.forwad(stacked_hr)
+        pred4head = self.forward(stacked_hr)
         pred4tail = self.forward(stacked_tr)
 
-        head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred4head)
-        tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred4tail)
+        head_vec = -tf.keras.backend.binary_crossentropy(e2_multi1, pred4head)
+        tail_vec = -tf.keras.backend.binary_crossentropy(e2_multi2, pred4tail)
 
-        _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(head_vec, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(tail_vec, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 

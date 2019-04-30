@@ -333,7 +333,8 @@ class Evaluation(EvaluationMeta):
         rank_tail = []
         filter_rank_head = []
         filter_rank_tail = []
-        gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name))
+        gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name, \
+            batch_size=self.model.config.batch_size))
         loop_len = self.n_test // self.batch if not self.debug else 100
         total_test = loop_len * self.batch
 
