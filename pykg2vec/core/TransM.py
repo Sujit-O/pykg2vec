@@ -74,8 +74,6 @@ class TransM(ModelMeta):
                 rel_counts[t.r] += 1
 
             theta = [1/np.log(2+rel_counts[x]/(1+len(rel__tail[x])) + rel_counts[x]/(1+len(rel__head[x]))) for x in range(num_total_rel)]
-            import pdb
-            pdb.set_trace()
             self.theta = tf.Variable(np.asarray(theta, dtype=np.float32), trainable=False)
             
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.theta]
