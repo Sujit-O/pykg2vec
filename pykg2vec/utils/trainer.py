@@ -57,7 +57,7 @@ class Trainer(TrainerMeta):
                 if self.model.model_name == "ProjE_pointwise":
                     self.train_model_epoch_proje(n_iter)
                     self.tiny_test_proje(n_iter)
-                elif self.model.model_name.lower() in ['conve', 'complex', "distmult"]:
+                elif self.model.model_name.lower() in ['conve', 'complex', "distmult", "tucker"]:
                     self.train_model_epoch_conve(n_iter)
                     self.tiny_test_conve(n_iter)
                 else:

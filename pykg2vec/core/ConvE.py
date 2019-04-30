@@ -71,29 +71,6 @@ class ConvE(ModelMeta):
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
 
-    def def_loss(self):
-        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        e1 = tf.nn.embedding_lookup(ent_emb_norm, self.e1)
-        r = tf.nn.embedding_lookup(rel_emb_norm, self.r)
-
-        stacked_e = tf.reshape(e1, [-1, 10, 20, 1])
-        stacked_r = tf.reshape(r, [-1, 10, 20, 1])
-
-        stacked_er = tf.concat([stacked_e, stacked_r], 1)
-
-        e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
-        pred = self.layer(stacked_er)
-
-        loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
-
-        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-
-        self.loss = loss + self.config.lmbda * reg_losses
-
-
     def def_layer(self):
         self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
@@ -105,7 +82,7 @@ class ConvE(ModelMeta):
         self.hidden_drop = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
         self.bn2 = tf.keras.layers.BatchNormalization(trainable=True)
 
-    def layer(self, st_inp):
+    def forward(self, st_inp):
         # batch normalization in the first axis
         x = self.bn0(st_inp)
         # input dropout
@@ -136,6 +113,29 @@ class ConvE(ModelMeta):
         # sigmoid activation
         return tf.nn.sigmoid(x)
 
+    def def_loss(self):
+        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        e1 = tf.nn.embedding_lookup(ent_emb_norm, self.e1)
+        r = tf.nn.embedding_lookup(rel_emb_norm, self.r)
+
+        stacked_e = tf.reshape(e1, [-1, 10, 20, 1])
+        stacked_r = tf.reshape(r, [-1, 10, 20, 1])
+
+        stacked_er = tf.concat([stacked_e, stacked_r], 1)
+
+        e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
+        pred = self.forward(stacked_er)
+
+        loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
+
+        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+
+        self.loss = loss + self.config.lmbda * reg_losses
+
+
     def test_batch(self):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
@@ -160,8 +160,8 @@ class ConvE(ModelMeta):
         e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
                                   self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
 
-        pred4head = self.layer(stacked_hr)
-        pred4tail = self.layer(stacked_tr)
+        pred4head = self.forwad(stacked_hr)
+        pred4tail = self.forward(stacked_tr)
 
         head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred4head)
         tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred4tail)

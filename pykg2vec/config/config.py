@@ -521,7 +521,10 @@ class TuckERConfig(BasicConfig):
                  label_smoothing=0.1,
                  use_bias=True,
                  lmbda=0.01,
-                 margin=1.0):
+                 margin=1.0,
+                 data='Freebase',
+                 optimizer='adam',
+                 sampling="uniform"):
         BasicConfig.__init__(self)
 
         self.margin = margin
@@ -539,3 +542,6 @@ class TuckERConfig(BasicConfig):
         self.use_bias = use_bias
         self.label_smoothing = label_smoothing
         self.lr_decay = lr_decay
+        self.data = data
+        self.optimizer = optimizer
+        self.sampling = sampling

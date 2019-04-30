@@ -53,8 +53,7 @@ class Generator:
         with open(self.config.data_path / 'data_stats.pkl', 'rb') as f:
             self.data_stats = pickle.load(f)
 
-        # c extension to handle data
-        if self.config.algo.lower() in ["conve", "complex", "distmult"]:
+        if self.config.algo.lower() in ["conve", "complex", "distmult", "tucker"]:
             with open(self.config.data_path / 'train_data.pkl', 'rb') as f:
                 self.train_data = pickle.load(f)
             with open(self.config.data_path / 'test_data.pkl', 'rb') as f:
@@ -99,7 +98,7 @@ class Generator:
             with open(self.config.tmp_data / 'relation_property.pkl', 'rb') as f:
                 self.relation_property = pickle.load(f)
 
-        if self.config.algo.lower() in ["conve", "complex", "distmult"]:
+        if self.config.algo.lower() in ["conve", "complex", "distmult", "tucker"]:
             self.gen_batch_conve()
         elif self.config.algo.lower().startswith('proje'):
             self.gen_batch_proje()

@@ -47,19 +47,19 @@ class TuckER(ModelMeta):
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
         num_total_rel = self.data_stats.tot_relation
-        d1 = self.config.ent_hidden_size
-        d2 = self.config.rel_hidden_size
+        self.d1 = self.config.ent_hidden_size
+        self.d2 = self.config.rel_hidden_size
         regularizer = tf.contrib.layers.l2_regularizer(scale=0.1)
 
         with tf.name_scope("embedding"):
-            self.E = tf.get_variable(name="ent_embedding", shape=[num_total_ent, d1],
+            self.E = tf.get_variable(name="ent_embedding", shape=[num_total_ent, self.d1],
                                      regularizer=regularizer,
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.R = tf.get_variable(name="rel_embedding", shape=[num_total_rel, d2],
+            self.R = tf.get_variable(name="rel_embedding", shape=[num_total_rel, self.d2],
                                      regularizer=regularizer,
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         with tf.name_scope("W"):
-            self.W = tf.get_variable(name="W", shape=[d2, d1, d1],
+            self.W = tf.get_variable(name="W", shape=[self.d2, self.d1, self.d1],
                                      regularizer=regularizer,
                                      initializer=tf.initializers.random_uniform(minval=-1, maxval=1))
         self.parameter_list = [self.E, self.R, self.W]
@@ -73,22 +73,19 @@ class TuckER(ModelMeta):
         self.bn1 = tf.keras.layers.BatchNormalization()
 
     def forward(self, e1, r):
-        d1 = self.config.ent_hidden_size
-        d2 = self.config.rel_hidden_size
-
         e1 = tf.nn.embedding_lookup(self.E, e1)
         r = tf.nn.embedding_lookup(self.R, r)
 
         e1 = self.bn0(e1)
         e1 = self.inp_drop(e1)
-        e1 = tf.reshape(e1, [-1, 1, d1])
+        e1 = tf.reshape(e1, [-1, 1, self.config.ent_hidden_size])
 
-        W_mat = tf.matmul(r, tf.reshape(self.W, [d2, -1]))
-        W_mat = tf.reshape(W_mat, [-1, d1, d1])
+        W_mat = tf.matmul(r, tf.reshape(self.W, [self.d2, -1]))
+        W_mat = tf.reshape(W_mat, [-1, self.d1, self.d1])
         W_mat = self.hidden_dropout1(W_mat)
 
         x = tf.matmul(e1, W_mat)
-        x = tf.reshape(x, [-1, d1])
+        x = tf.reshape(x, [-1, self.d1])
         x = self.bn1(x)
         x = self.hidden_dropout2(x)
         x = tf.matmul(x, tf.transpose(self.E))
@@ -109,6 +106,17 @@ class TuckER(ModelMeta):
         self.loss = loss + self.config.lmbda * reg_losses
 
     def test_batch(self):
+        pred_tails = self.forwad(self.test_e1, self.test_r)
+        pred_heads = self.forward(self.test_e2, self.test_r_rev)
+
+        e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
+                                  self.test_e2_multi1) + (1.0 / self.data_stats.tot_entity)
+        e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
+                                  self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
+
+        head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred_tails)
+        tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred_heads)
+
         _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_stats.tot_entity)
         _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_stats.tot_entity)
 
@@ -116,9 +124,9 @@ class TuckER(ModelMeta):
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
+        emb_h = tf.nn.embedding_lookup(self.E, h)
+        emb_r = tf.nn.embedding_lookup(self.R, r)
+        emb_t = tf.nn.embedding_lookup(self.E, t)
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess=None):
