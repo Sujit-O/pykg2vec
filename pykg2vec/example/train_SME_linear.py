@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 import sys
 sys.path.append("../")
 
-from core.SMELinear import SMELinear
+from core.SME import SME
 from config.config import SMEConfig
 from utils.dataprep import DataPrep
 from utils.trainer import Trainer
@@ -35,8 +35,9 @@ def main(_):
     config.test_num  = args.test_num
     config.gpu_fraction = args.gpu_frac
     config.save_model = True
+    config.bilinear = False
 
-    model = SMELinear(config)
+    model = SME(config)
     
     trainer = Trainer(model=model)
     trainer.build_model()

@@ -5,10 +5,13 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from pykg2vec.core.KGMeta import ModelMeta
+import sys
+sys.path.append("../")
+
+from core.KGMeta import ModelMeta
 import pickle
 
-class SMEBilinear(ModelMeta):
+class SME(ModelMeta):
     """
     ------------------Paper Title-----------------------------
     A Semantic Matching Energy Function for Learning with Multi-relational Data
@@ -42,22 +45,35 @@ class SMEBilinear(ModelMeta):
         self.config = config
         with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
             self.data_stats = pickle.load(f)
-        self.model_name = 'SME_Bilinear'
+        
+        if self.config.bilinear:
+            self.model_name = 'SME_Bilinear'
+        else:
+            self.model_name = 'SME_Linear'
 
         self.def_inputs()
         self.def_parameters()
         self.def_loss()
 
-    def gu(self, h, r):
+    def gu_bilinear(self, h, r):
         return tf.transpose(
             tf.multiply(tf.matmul(self.mu1, tf.transpose(h)), tf.matmul(self.mu2, tf.transpose(r))) + self.bu)
 
-    def gv(self, r, t):
+    def gv_bilinear(self, r, t):
         return tf.transpose(
             tf.multiply(tf.matmul(self.mv1, tf.transpose(r)), tf.matmul(self.mv2, tf.transpose(t))) + self.bv)
 
+    def gu_linear(self, h, r):
+        return tf.transpose(tf.matmul(self.mu1, tf.transpose(h)) + tf.matmul(self.mu2, tf.transpose(r)) + self.bu)
+
+    def gv_linear(self, r, t):
+        return tf.transpose(tf.matmul(self.mv1, tf.transpose(r)) + tf.matmul(self.mv2, tf.transpose(t)) + self.bv)
+
     def match(self, h, r, t):
-        return tf.reduce_sum(tf.multiply(self.gu(h, r), self.gv(r, t)), 1)
+        if self.config.bilinear:
+            return tf.reduce_sum(tf.multiply(self.gu_bilinear(h, r), self.gv_bilinear(r, t)), 1)
+        else:
+            return tf.reduce_sum(self.gu_linear(h, r) * self.gv_linear(r, t), 1)
 
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
@@ -130,12 +146,12 @@ class SMEBilinear(ModelMeta):
         emb_t = tf.nn.embedding_lookup(norm_ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
-    def get_embed(self, h, r, t, sess):
+    def get_embed(self, h, r, t, sess=None):
         """function to get the embedding value in numpy"""
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess):
-        """function to get the projectecd embedding value in numpy"""
+        """function to get the projected embedding value in numpy"""
         return self.get_embed(h, r, t, sess)
