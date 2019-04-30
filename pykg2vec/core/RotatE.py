@@ -8,7 +8,7 @@ import sys
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
-
+import pickle
 
 class RotatE(ModelMeta):
     """
@@ -20,9 +20,10 @@ class RotatE(ModelMeta):
     ---
     """
 
-    def __init__(self, config=None, data_handler=None):
+    def __init__(self, config=None):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'RotatE'
 
         self.def_inputs()
@@ -41,8 +42,8 @@ class RotatE(ModelMeta):
         self.test_r = tf.placeholder(tf.int32, [1])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
 
         k = self.config.hidden_size
 
@@ -74,7 +75,7 @@ class RotatE(ModelMeta):
         self.loss = tf.reduce_sum(tf.maximum(pos_score + self.config.margin - neg_score, 0))
 
     def test_step(self):
-        num_entity = self.data_handler.tot_entity
+        num_entity = self.data_stats.tot_entity
 
         (h_vec_r, h_vec_i), (r_vec_r, r_vec_i), (t_vec_r, t_vec_i) \
             = self.embed(self.test_h, self.test_r, self.test_t)

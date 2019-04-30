@@ -8,7 +8,7 @@ import sys
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
-
+import pickle
 
 class SLM(ModelMeta):
     """
@@ -20,9 +20,10 @@ class SLM(ModelMeta):
     ---
     """
 
-    def __init__(self, config=None, data_handler=None):
+    def __init__(self, config=None):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'SLM'
 
         self.def_inputs()
@@ -41,8 +42,8 @@ class SLM(ModelMeta):
         self.test_r = tf.placeholder(tf.int32, [1])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         d = self.config.ent_hidden_size
         k = self.config.rel_hidden_size
 
@@ -82,7 +83,7 @@ class SLM(ModelMeta):
         return tf.tanh(mr1h + mr2t)
 
     def test_step(self):
-        num_entity = self.data_handler.tot_entity
+        num_entity = self.data_stats.tot_entity
 
         h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
         energy_h = tf.reduce_sum(r_vec * self.layer(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t_vec), -1)

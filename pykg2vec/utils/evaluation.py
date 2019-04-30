@@ -19,6 +19,7 @@ from config.global_config import GeneratorConfig
 import pickle
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+import timeit
 
 
 class Evaluation(EvaluationMeta):
@@ -62,15 +63,19 @@ class Evaluation(EvaluationMeta):
         filter_rank_head = []
         filter_rank_tail = []
 
-        gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                         batch_size=self.model.config.batch_size))
+        gen_test = Generator(config=GeneratorConfig(data=test_data, algo=self.model.model_name,
+                                                    batch_size=self.model.config.batch_size))
         self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
-        loop_len = self.n_test // self.batch if not self.debug else 2
-        print("Testing [%d/%d] Triples" % (self.n_test, self.data_stats.tot_test_triples))
-        total_test = loop_len * self.batch
+        loop_len = self.n_test // self.batch if not self.debug else 1
+
         if self.n_test < self.batch:
             loop_len = 1
-            total_test = self.n_test
+        self.n_test = self.batch * loop_len
+
+        print("Testing [%d/%d] Triples" % (self.n_test, self.data_stats.tot_test_triples))
+
+        total_test = loop_len * self.batch
+        start_time = timeit.default_timer()
 
         for i in range(loop_len):
             data = list(next(gen_test))
@@ -93,6 +98,13 @@ class Evaluation(EvaluationMeta):
             filter_rank_head += [i for _, i in hdata]
             filter_rank_tail += [i for _, i in tdata]
 
+            tmp_mean_rank = (np.sum(rank_head, dtype=np.float32) +
+                             np.sum(rank_tail, dtype=np.float32)) / (2 * len(rank_head))
+
+            print('[%.2f sec](%d/%d): --- Test mean rank: %.5f' % (timeit.default_timer() - start_time,
+                                                                   i, loop_len,
+                                                                   tmp_mean_rank), end='\r')
+
         self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
         self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
 
@@ -113,7 +125,7 @@ class Evaluation(EvaluationMeta):
                                                         dtype=np.float32) / total_test
         gen_test.stop()
 
-    def test(self, sess=None, epoch=None, test_data='test'):
+    def test_step(self, sess=None, epoch=None, test_data='test'):
         if test_data == 'test':
             with open(self.model.config.tmp_data / 'test_triples_ids.pkl', 'rb') as f:
                 data = pickle.load(f)
@@ -134,6 +146,8 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
         loop_len = self.model.config.test_num
         total_test = loop_len
+
+        start_time = timeit.default_timer()
 
         for i in range(loop_len):
             # print("batch_id:", i)
@@ -174,6 +188,12 @@ class Evaluation(EvaluationMeta):
             rank_tail.append(trank)
             filter_rank_head.append(fhrank)
             filter_rank_tail.append(ftrank)
+            tmp_mean_rank = (np.sum(rank_head, dtype=np.float32) +
+                             np.sum(rank_tail, dtype=np.float32))/(2*len(rank_head))
+
+            print('[%.2f sec](%d/%d): --- Test mean rank: %.5f' % (timeit.default_timer() - start_time,
+                                                             i, loop_len,
+                                                             tmp_mean_rank),  end='\r')
 
         self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
         self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
@@ -232,7 +252,7 @@ class Evaluation(EvaluationMeta):
         return self.eval_batch_tail(*data)
 
     def test_conve(self, sess=None, epoch=None):
-        head_rank, tail_rank = self.model.test_step()
+        head_rank, tail_rank = self.model.test_batch()
         self.epoch.append(epoch)
         if not sess:
             raise NotImplementedError('No session found for evaluation!')
@@ -243,14 +263,15 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                         batch_size=self.model.config.batch_size))
+                                                    batch_size=self.model.config.batch_size))
         self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
         loop_len = self.n_test // self.batch if not self.debug else 2
-        print("Testing [%d/%d] Triples" % (self.n_test, self.data_stats.tot_test_triples))
-        total_test = loop_len * self.batch
+
         if self.n_test < self.batch:
             loop_len = 1
-            total_test = self.n_test
+
+        total_test = loop_len * self.batch
+        print("Testing [%d/%d] Triples" % (loop_len * self.batch, self.data_stats.tot_test_triples))
 
         for i in range(loop_len):
             data = list(next(gen_test))
@@ -273,7 +294,7 @@ class Evaluation(EvaluationMeta):
 
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
 
-            do = ThreadPool(50)
+            do = ThreadPool(20)
             hdata = do.map(self.zip_eval_batch_head, zip(id_replace_head, e1, e2, r_rev))
             tdata = do.map(self.zip_eval_batch_tail, zip(id_replace_tail, e1, r, e2))
             rank_head += [i for i, _ in hdata]

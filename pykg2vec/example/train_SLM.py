@@ -35,7 +35,7 @@ def main(_):
     config.plot_entity_only = True
     config.save_model = True
 
-    model = SLM(config, data_handler)
+    model = SLM(config)
     
     trainer = Trainer(model=model)
     trainer.build_model()

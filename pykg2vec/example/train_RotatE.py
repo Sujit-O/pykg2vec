@@ -35,7 +35,7 @@ def main(_):
     config.plot_entity_only = True
     config.save_model = True
 
-    model = RotatE(config, data_handler)
+    model = RotatE(config)
     
     trainer = Trainer(model=model)
     trainer.build_model()

@@ -11,32 +11,22 @@ import tensorflow as tf
 from core.KGMeta import ModelMeta
 import pickle
 
-class ConvE(ModelMeta):
+
+class TuckER(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-    Convolutional 2D Knowledge Graph Embeddings
+
     ------------------Paper Authors---------------------------
-    Tim Dettmers∗
-    Università della Svizzera italiana
-    tim.dettmers@gmail.com
-    Pasquale Minervini, Pontus Stenetorp, Sebastian Riedel
-    University College London
-    {p.minervini,p.stenetorp,s.riedel}@cs.ucl.ac.uk
+
     ------------------Summary---------------------------------
-    ConvE is a multi-layer convolutional network model for link prediction,
-    it is a embedding model which is highly parameter efficient.
+
     """
 
     def __init__(self, config=None):
         self.config = config
         with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
             self.data_stats = pickle.load(f)
-        self.model_name = 'ConvE'
-        self.dense_last_dim = {50: 2592, 100: 5184, 200: 10368}
-        if self.config.hidden_size not in self.dense_last_dim:
-            raise NotImplementedError("The hidden dimension is not supported!")
-        self.last_dim = self.dense_last_dim[self.config.hidden_size]
-
+        self.model_name = 'TuckER'
         self.def_inputs()
         self.def_parameters()
         self.def_layer()
@@ -57,17 +47,18 @@ class ConvE(ModelMeta):
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
         num_total_rel = self.data_stats.tot_relation
-        k = self.config.hidden_size
+        d1 = self.config.ent_hidden_size
+        d2 = self.config.rel_hidden_size
 
         with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
+            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, d1],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
+            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, d2],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        with tf.name_scope("activation_bias"):
-            self.b = tf.get_variable(name="bias", shape=[self.config.batch_size, num_total_ent],
-                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
+        with tf.name_scope("weight"):
+            self.W = tf.get_variable(name="weight", shape=[d2, d1, d1],
+                                     initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.W]
 
     def def_loss(self):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
@@ -91,9 +82,8 @@ class ConvE(ModelMeta):
 
         self.loss = loss + self.config.lmbda * regul_func
 
-
     def def_layer(self):
-        self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)
+        self.bn0 = tf.keras.layers.BatchNormalization()
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
         self.conv2d_1 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', activation=None,
                                                use_bias=True)

@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 from pykg2vec.core.KGMeta import ModelMeta
-
+import pickle
 
 class SMEBilinear(ModelMeta):
     """
@@ -38,9 +38,10 @@ class SMEBilinear(ModelMeta):
     Portion of Code Based on https://github.com/glorotxa/SME/blob/master/model.py
     """
 
-    def __init__(self, config=None, data_handler=None):
+    def __init__(self, config=None):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'SME_Bilinear'
 
         self.def_inputs()
@@ -70,8 +71,8 @@ class SMEBilinear(ModelMeta):
         self.test_r = tf.placeholder(tf.int32, [1])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -109,7 +110,7 @@ class SMEBilinear(ModelMeta):
         self.loss = tf.reduce_sum(tf.maximum(energy_neg + self.config.margin - energy_pos, 0))
 
     def test_step(self):
-        num_entity = self.data_handler.tot_entity
+        num_entity = self.data_stats.tot_entity
 
         h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
         energy_h = self.match(tf.nn.l2_normalize(self.ent_embeddings, axis=1), r_vec, t_vec)

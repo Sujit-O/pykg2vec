@@ -5,10 +5,12 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+
 sys.path.append("../")
 import tensorflow as tf
 import numpy as np
 from core.KGMeta import ModelMeta
+import pickle
 
 
 class TransR(ModelMeta):
@@ -30,11 +32,12 @@ class TransR(ModelMeta):
     Portion of Code Based on https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
     """
 
-    def __init__(self, config, data_handler, load_entity=None, load_rel=None):
+    def __init__(self, config):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
         self.model_name = 'TransR'
-        
+
         self.def_inputs()
         self.def_parameters()
         self.def_loss()
@@ -49,10 +52,13 @@ class TransR(ModelMeta):
         self.test_h = tf.placeholder(tf.int32, [1])
         self.test_t = tf.placeholder(tf.int32, [1])
         self.test_r = tf.placeholder(tf.int32, [1])
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         d = self.config.ent_hidden_size
         k = self.config.rel_hidden_size
 
@@ -65,8 +71,8 @@ class TransR(ModelMeta):
                                                   shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            rel_matrix = np.zeros([num_total_rel, d*k], dtype=np.float32)
-            
+            rel_matrix = np.zeros([num_total_rel, d * k], dtype=np.float32)
+
             for i in range(num_total_rel):
                 for j in range(k):
                     for z in range(d):
@@ -87,30 +93,55 @@ class TransR(ModelMeta):
         self.loss = tf.reduce_sum(tf.maximum(score_pos - score_neg + self.config.margin, 0))
 
     def test_step(self):
-        num_total_ent = self.data_handler.tot_entity
+        num_total_ent = self.data_stats.tot_entity
 
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
         pos_matrix = self.get_transform_matrix(self.test_r)
- 
+
         project_ent_embedding = self.transform(self.ent_embeddings, tf.transpose(tf.squeeze(pos_matrix, [0])))
         project_ent_embedding = tf.nn.l2_normalize(project_ent_embedding, axis=1)
-        
+
         score_head = self.distance(project_ent_embedding, rel_vec, tail_vec)
         score_tail = self.distance(head_vec, rel_vec, project_ent_embedding)
-        
-        _, self.head_rank = tf.nn.top_k(score_head, k=num_total_ent)
-        _, self.tail_rank = tf.nn.top_k(score_tail, k=num_total_ent)
 
-        return self.head_rank, self.tail_rank
+        _, head_rank = tf.nn.top_k(score_head, k=num_total_ent)
+        _, tail_rank = tf.nn.top_k(score_tail, k=num_total_ent)
+
+        return head_rank, tail_rank
+
+    def test_batch(self):
+        num_total_ent = self.data_stats.tot_entity
+
+        head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+
+        pos_matrix = self.get_transform_matrix(self.test_r_batch)
+        pos_matrix = tf.reshape(pos_matrix, [-1, self.config.ent_hidden_size])
+        project_ent_embedding = self.transform(self.ent_embeddings, tf.transpose(pos_matrix))
+        project_ent_embedding = tf.reshape(project_ent_embedding,
+                                           [self.config.batch_size, -1, self.config.rel_hidden_size])
+
+        project_ent_embedding = tf.nn.l2_normalize(project_ent_embedding, axis=2)
+
+        score_head = self.distance(project_ent_embedding,
+                                   tf.expand_dims(rel_vec, axis=1),
+                                   tf.expand_dims(tail_vec, axis=1), axis=2)
+        score_tail = self.distance(tf.expand_dims(head_vec, axis=1),
+                                   tf.expand_dims(rel_vec, axis=1),
+                                   project_ent_embedding, axis=2)
+
+        _, head_rank = tf.nn.top_k(score_head, k=num_total_ent)
+        _, tail_rank = tf.nn.top_k(score_tail, k=num_total_ent)
+
+        return head_rank, tail_rank
 
     def transform(self, matrix, embeddings):
         return tf.matmul(matrix, embeddings)
 
-    def distance(self, h, r, t):
-        if self.config.L1_flag: 
-            return tf.reduce_sum(tf.abs(h+r-t), axis=1) # L1 norm 
+    def distance(self, h, r, t, axis=1):
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
         else:
-            return tf.reduce_sum((h+r-t)**2, axis=1) # L2 norm
+            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
 
     def get_transform_matrix(self, r):
         d = self.config.ent_hidden_size
@@ -131,7 +162,7 @@ class TransR(ModelMeta):
         transform_t_e = self.transform(matrix, t_e)
         h_e = tf.nn.l2_normalize(tf.reshape(transform_h_e, [-1, k]), -1)
         r_e = tf.nn.l2_normalize(tf.reshape(r_e, [-1, k]), -1)
-        t_e = tf.nn.l2_normalize(tf.reshape(transform_t_e, [-1, k]), -1) 
+        t_e = tf.nn.l2_normalize(tf.reshape(transform_t_e, [-1, k]), -1)
 
         return h_e, r_e, t_e
 
@@ -145,4 +176,4 @@ class TransR(ModelMeta):
 
     def get_proj_embed(self, h, r, t, sess=None):
         """function to get the projected embedding value in numpy"""
-        return self.get_embed(h, r, t, sess) 
+        return self.get_embed(h, r, t, sess)
