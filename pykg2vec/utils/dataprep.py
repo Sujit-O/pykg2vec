@@ -18,10 +18,6 @@ import pickle
 import os
 from collections import defaultdict
 import pprint
-from scipy import sparse as sps
-
-from multiprocessing import JoinableQueue, Queue, Process
-
 
 class Triple(object):
     def __init__(self, head=None, relation=None, tail=None):
@@ -355,26 +351,6 @@ class DataPrep(object):
         self.data_stats.tot_entity = self.tot_entity
         self.data_stats.tot_relation = self.tot_relation
         self.data_stats.tot_triple = self.tot_triple
-
-    def batch_generator_train_proje(self, src_triples=None, batch_size=128):
-        batch_size = batch_size
-
-        if src_triples is None:
-            src_triples = self.train_triples_ids
-
-        array_rand_ids = np.random.permutation(len(src_triples))
-        number_of_batches = len(src_triples) // batch_size
-
-        batch_idx = 0
-        while True:
-            triples = np.asarray([[src_triples[x].h, src_triples[x].r, src_triples[x].t] for x in
-                                  array_rand_ids[batch_size * batch_idx:batch_size * (batch_idx + 1)]])
-            batch_idx += 1
-
-            yield triples
-
-            if batch_idx == number_of_batches:
-                batch_idx = 0
 
     def read_triple(self, datatype=None):
         print("Reading Triples", datatype)
