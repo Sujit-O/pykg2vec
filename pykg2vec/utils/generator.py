@@ -49,6 +49,9 @@ class Generator:
         self.raw_queue = Queue(self.config.raw_queue_size)
         self.processed_queue = Queue(self.config.processed_queue_size)
         self.process_list = []
+        self.tot_train_data = None
+        self.tot_test_data = None
+        self.tot_valid_data = None
 
         with open(self.config.data_path / 'data_stats.pkl', 'rb') as f:
             self.data_stats = pickle.load(f)
@@ -56,10 +59,13 @@ class Generator:
         if self.config.algo.lower() in ["conve", "complex", "distmult", "tucker"]:
             with open(self.config.data_path / 'train_data.pkl', 'rb') as f:
                 self.train_data = pickle.load(f)
+                self.tot_train_data = len(self.train_data)
             with open(self.config.data_path / 'test_data.pkl', 'rb') as f:
                 self.test_data = pickle.load(f)
+                self.tot_test_data = len(self.test_data)
             with open(self.config.data_path / 'valid_data.pkl', 'rb') as f:
                 self.valid_data = pickle.load(f)
+                self.tot_valid_data = len(self.valid_data)
             self.rand_ids_train = np.random.permutation(len(self.train_data))
             self.rand_ids_test = np.random.permutation(len(self.test_data))
             self.rand_ids_valid = np.random.permutation(len(self.valid_data))
@@ -67,10 +73,13 @@ class Generator:
         elif self.config.algo.lower().startswith('proje'):
             with open(self.config.data_path / 'train_triples_ids.pkl', 'rb') as f:
                 self.train_triples_ids = pickle.load(f)
+                self.tot_train_data = len(self.train_triples_ids)
             with open(self.config.data_path / 'test_triples_ids.pkl', 'rb') as f:
                 self.test_triples_ids = pickle.load(f)
+                self.tot_test_data = len(self.test_triples_ids)
             with open(self.config.data_path / 'validation_triples_ids.pkl', 'rb') as f:
                 self.valid_triples_ids = pickle.load(f)
+                self.tot_valid_data = len(self.valid_triples_ids)
             with open(self.config.data_path / 'hr_t_ids_train.pkl', 'rb') as f:
                 self.hr_t_ids_train = pickle.load(f)
             with open(self.config.data_path / 'tr_h_ids_train.pkl', 'rb') as f:
@@ -82,10 +91,13 @@ class Generator:
         else:
             with open(self.config.data_path / 'train_triples_ids.pkl', 'rb') as f:
                 self.train_triples_ids = pickle.load(f)
+                self.tot_train_data = len(self.train_triples_ids)
             with open(self.config.data_path / 'test_triples_ids.pkl', 'rb') as f:
                 self.test_triples_ids = pickle.load(f)
+                self.tot_test_data = len(self.test_triples_ids)
             with open(self.config.data_path / 'validation_triples_ids.pkl', 'rb') as f:
                 self.valid_triples_ids = pickle.load(f)
+                self.tot_valid_data = len(self.valid_triples_ids)
             self.rand_ids_train = np.random.permutation(len(self.train_triples_ids))
             self.rand_ids_test = np.random.permutation(len(self.test_triples_ids))
             self.rand_ids_valid = np.random.permutation(len(self.valid_triples_ids))

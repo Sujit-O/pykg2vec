@@ -111,8 +111,8 @@ class TuckER(ModelMeta):
         head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred_tails)
         tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred_heads)
 
-        _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(head_vec, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(tail_vec, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 

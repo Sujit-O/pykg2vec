@@ -163,8 +163,8 @@ class ConvE(ModelMeta):
         pred4head = self.forward(stacked_hr)
         pred4tail = self.forward(stacked_tr)
 
-        head_vec = -tf.keras.backend.binary_crossentropy(e2_multi1, pred4head)
-        tail_vec = -tf.keras.backend.binary_crossentropy(e2_multi2, pred4tail)
+        head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred4head)
+        tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred4tail)
 
         _, head_rank = tf.nn.top_k(head_vec, k=self.data_stats.tot_entity)
         _, tail_rank = tf.nn.top_k(tail_vec, k=self.data_stats.tot_entity)

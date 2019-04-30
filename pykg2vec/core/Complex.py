@@ -152,8 +152,8 @@ class Complex(ModelMeta):
         e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
                                   self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
 
-        head_vec = - tf.keras.backend.binary_crossentropy(e2_multi1, hr_pred)
-        tail_vec = - tf.keras.backend.binary_crossentropy(e2_multi2, tr_pred)
+        head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, hr_pred)
+        tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, tr_pred)
 
         _, head_rank = tf.nn.top_k(head_vec, k=self.data_stats.tot_entity)
         _, tail_rank = tf.nn.top_k(tail_vec, k=self.data_stats.tot_entity)

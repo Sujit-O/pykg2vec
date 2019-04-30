@@ -66,14 +66,14 @@ class Evaluation(EvaluationMeta):
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
                                                          batch_size=self.batch))
 
-        self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
+        self.n_test = min(self.n_test, gen_test.tot_test_data)
         loop_len = self.n_test // self.batch if not self.debug else 1
 
         if self.n_test < self.batch:
             loop_len = 1
         self.n_test = self.batch * loop_len
 
-        print("Testing [%d/%d] Triples" % (self.n_test, self.data_stats.tot_test_triples))
+        print("Testing [%d/%d] Triples" % (self.n_test, gen_test.tot_test_data))
 
         total_test = loop_len * self.batch
         start_time = timeit.default_timer()
@@ -265,14 +265,14 @@ class Evaluation(EvaluationMeta):
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
                                                     batch_size=self.model.config.batch_size))
-        self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
+        self.n_test = min(self.n_test, gen_test.tot_test_data)
         loop_len = self.n_test // self.batch if not self.debug else 2
 
         if self.n_test < self.batch:
             loop_len = 1
 
         total_test = loop_len * self.batch
-        print("Testing [%d/%d] Triples" % (loop_len * self.batch, self.data_stats.tot_test_triples))
+        print("Testing [%d/%d] Triples" % (loop_len * self.batch, gen_test.tot_test_data))
 
         for i in range(loop_len):
             data = list(next(gen_test))
