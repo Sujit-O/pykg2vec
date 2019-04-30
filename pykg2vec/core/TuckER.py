@@ -65,8 +65,8 @@ class TuckER(ModelMeta):
         self.hidden_dropout1 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout1)
         self.hidden_dropout2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout2)
 
-        self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)
-        self.bn1 = tf.keras.layers.BatchNormalization(trainable=True)
+        self.bn0 = tf.keras.layers.BatchNormalization(trainable=False)
+        self.bn1 = tf.keras.layers.BatchNormalization(trainable=False)
 
     def forward(self, e1, r):
         e1 = tf.nn.embedding_lookup(self.E, e1)
@@ -95,9 +95,9 @@ class TuckER(ModelMeta):
 
         loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
 
-        reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
+        # reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
 
-        self.loss = loss + self.config.lmbda * reg_losses
+        self.loss = loss #+ self.config.lmbda * reg_losses
 
     def test_batch(self):
         pred_tails = self.forward(self.test_e1, self.test_r)
