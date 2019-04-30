@@ -62,12 +62,11 @@ class TransD(ModelMeta):
             self.ent_embeddings = tf.get_variable(name="ent_embedding",
                                                   shape=[num_total_ent, d],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.ent_mappings   = tf.get_variable(name="ent_mappings",
-                                                  shape=[num_total_ent, d],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
             self.rel_embeddings = tf.get_variable(name="rel_embedding",
                                                   shape=[num_total_rel, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.ent_mappings   = tf.get_variable(name="ent_mappings",
+                                                  shape=[num_total_ent, d],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.rel_mappings   = tf.get_variable(name="rel_mappings",
                                                   shape=[num_total_rel, k],
@@ -82,28 +81,21 @@ class TransD(ModelMeta):
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
         neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
 
-        pos_h_m = tf.nn.embedding_lookup(self.ent_mappings, self.pos_h)
-        pos_r_m = tf.nn.embedding_lookup(self.rel_mappings, self.pos_r)
-        pos_t_m = tf.nn.embedding_lookup(self.ent_mappings, self.pos_t)
+        pos_h_m, pos_r_m, pos_t_m = self.get_mapping(self.pos_h, self.pos_r, self.pos_t)
+        neg_h_m, neg_r_m, neg_t_m = self.get_mapping(self.neg_h, self.neg_r, self.neg_t)
+        
+        pos_h_e = tf.nn.l2_normalize(pos_h_e + tf.reduce_sum(pos_h_e * pos_h_m, -1, keepdims=True)*pos_r_m , -1)
+        pos_r_e = tf.nn.l2_normalize(pos_r_e, -1)
+        pos_t_e = tf.nn.l2_normalize(pos_t_e + tf.reduce_sum(pos_t_e * pos_t_m, -1, keepdims=True)*pos_r_m , -1)
 
-        pos_h_e = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(pos_r_m, -1) @ tf.expand_dims(pos_h_m, -2)) + tf.eye(k, batch_shape=[tf.shape(pos_h_m)[0]], num_columns=d)) @ tf.expand_dims(pos_h_e, -1) , -1), -1)
-        pos_t_e = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(pos_r_m, -1) @ tf.expand_dims(pos_t_m, -2)) + tf.eye(k, batch_shape=[tf.shape(pos_t_m)[0]], num_columns=d)) @ tf.expand_dims(pos_t_e, -1) , -1), -1)
-
-        neg_h_m = tf.nn.embedding_lookup(self.ent_mappings, self.neg_h)
-        neg_r_m = tf.nn.embedding_lookup(self.rel_mappings, self.neg_r)
-        neg_t_m = tf.nn.embedding_lookup(self.ent_mappings, self.neg_t)
-
-        neg_h_e = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(neg_r_m, -1) @ tf.expand_dims(neg_h_m, -2)) + tf.eye(k, batch_shape=[tf.shape(neg_h_m)[0]], num_columns=d)) @ tf.expand_dims(neg_h_e, -1) , -1), -1)
-        neg_t_e = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(neg_r_m, -1) @ tf.expand_dims(neg_t_m, -2)) + tf.eye(k, batch_shape=[tf.shape(neg_t_m)[0]], num_columns=d)) @ tf.expand_dims(neg_t_e, -1) , -1), -1)
+        neg_h_e = tf.nn.l2_normalize(neg_h_e + tf.reduce_sum(neg_h_e * neg_h_m, -1, keepdims=True)*neg_r_m , -1)
+        neg_r_e = tf.nn.l2_normalize(neg_r_e, -1)
+        neg_t_e = tf.nn.l2_normalize(neg_t_e + tf.reduce_sum(neg_t_e * neg_t_m, -1, keepdims=True)*neg_r_m , -1)
 
         score_pos = self.distance(pos_h_e, pos_r_e, pos_t_e)
         score_neg = self.distance(neg_h_e, neg_r_e, neg_t_e)
 
         self.loss = tf.reduce_sum(tf.maximum(score_pos - score_neg + self.config.margin, 0))
-
-    def mapping(self, h_e, h_m, r_m):
-        # ex. projected head => wr * whT * h + h
-        return h_e + tf.matmul(r_m, h_m, transpose_b=True)
 
     def test_step(self):
         num_total_ent = self.data_stats.tot_entity
@@ -111,14 +103,15 @@ class TransD(ModelMeta):
         k = self.config.rel_hidden_size
 
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        h_m = tf.nn.embedding_lookup(self.ent_mappings, self.test_h)
-        r_m = tf.nn.embedding_lookup(self.rel_mappings, self.test_r)
-        t_m = tf.nn.embedding_lookup(self.ent_mappings, self.test_t)
+        h_m, r_m, t_m = self.get_mapping(self.test_h, self.test_r, self.test_t)
 
-        head_vec = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(r_m, -1) @ tf.expand_dims(h_m, -2)) + tf.eye(k, batch_shape=[tf.shape(h_m)[0]], num_columns=d)) @ tf.expand_dims(head_vec, -1) , -1), -1)
-        tail_vec = tf.nn.l2_normalize(tf.reduce_sum(((tf.expand_dims(r_m, -1) @ tf.expand_dims(t_m, -2)) + tf.eye(k, batch_shape=[tf.shape(t_m)[0]], num_columns=d)) @ tf.expand_dims(tail_vec, -1) , -1), -1)
+        head_vec = tf.nn.l2_normalize(head_vec + tf.reduce_sum(head_vec * h_m, -1, keepdims=True)*r_m , -1)
+        rel_vec  = tf.nn.l2_normalize(rel_vec, -1)
+        tail_vec = tf.nn.l2_normalize(tail_vec + tf.reduce_sum(tail_vec * t_m, -1, keepdims=True)*r_m , -1)
         
-        project_ent_embedding = tf.nn.l2_normalize(tf.reduce_sum(((tf.tile(tf.expand_dims(r_m, -1), [tf.shape(self.ent_mappings)[0], 1, 1]) @ tf.expand_dims(self.ent_mappings, -2)) + tf.eye(k, batch_shape=[tf.shape(self.ent_mappings)[0]], num_columns=d)) @ tf.expand_dims(self.ent_embeddings, -1) , -1), -1)
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)
+        norm_ent_mappings = tf.nn.l2_normalize(self.ent_mappings, -1)
+        project_ent_embedding = tf.nn.l2_normalize(norm_ent_embeddings + tf.reduce_sum(norm_ent_embeddings * norm_ent_mappings, -1, keepdims=True)*r_m , -1)
                
         score_head = self.distance(project_ent_embedding, rel_vec, tail_vec)
         score_tail = self.distance(head_vec, rel_vec, project_ent_embedding)
@@ -131,14 +124,28 @@ class TransD(ModelMeta):
     def test_batch(self):
         pass
 
-    def distance(self, h, r, t):    
-        return tf.reduce_sum((h+r-t)**2, axis=1) # L2 norm
+    def distance(self, h, r, t):
+        if self.config.L1_flag: 
+            return tf.reduce_sum(tf.abs(h+r-t), axis=1) # L1 norm 
+        else:
+            return tf.reduce_sum((h+r-t)**2, axis=1) # L2 norm
+
+    def get_mapping(self, h, r, t):
+        h_m = tf.nn.embedding_lookup(self.ent_mappings, h)
+        r_m = tf.nn.embedding_lookup(self.rel_mappings, r)
+        t_m = tf.nn.embedding_lookup(self.ent_mappings, t)
+
+        return h_m, r_m, t_m
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
         h_e = tf.nn.embedding_lookup(self.ent_embeddings, h)
         r_e = tf.nn.embedding_lookup(self.rel_embeddings, r)
         t_e = tf.nn.embedding_lookup(self.ent_embeddings, t)
+
+        h_e = tf.nn.l2_normalize(h_e, -1)
+        r_e = tf.nn.l2_normalize(r_e, -1)
+        t_e = tf.nn.l2_normalize(t_e, -1)
 
         return h_e, r_e, t_e
 

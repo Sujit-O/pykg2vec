@@ -27,7 +27,7 @@ class Evaluation(EvaluationMeta):
     def __init__(self, model=None, debug=False):
         self.model = model
         self.debug = debug
-        self.batch = self.model.config.batch_size
+        self.batch = 100#self.model.config.batch_size
 
         self.n_test = model.config.test_num
         self.hits = model.config.hits
@@ -63,8 +63,9 @@ class Evaluation(EvaluationMeta):
         filter_rank_head = []
         filter_rank_tail = []
 
-        gen_test = Generator(config=GeneratorConfig(data=test_data, algo=self.model.model_name,
-                                                    batch_size=self.model.config.batch_size))
+        gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
+                                                         batch_size=self.batch))
+
         self.n_test = min(self.n_test, self.data_stats.tot_test_triples)
         loop_len = self.n_test // self.batch if not self.debug else 1
 
