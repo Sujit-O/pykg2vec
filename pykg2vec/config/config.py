@@ -470,3 +470,46 @@ class DistMultConfig(BasicConfig):
         self.optimizer = optimizer
         self.sampling = sampling
 
+
+class TuckERConfig(BasicConfig):
+    def __init__(self,
+                 learning_rate=0.003,
+                 l1_flag=True,
+                 ent_hidden_size=50,
+                 rel_hidden_size=50,
+                 batch_size=128,
+                 epochs=2,
+                 input_dropout=0.2,
+                 ent_dropout=0.3,
+                 rel_dropout=0.3,
+                 feature_map_dropout=0.2,
+                 lr_decay=0.995,
+                 label_smoothing=0.1,
+                 use_bias=True,
+                 lmbda=0.1,
+                 margin=1.0,
+                 data='Freebase',
+                 optimizer='adam',
+                 sampling="uniform"):
+        BasicConfig.__init__(self)
+
+        self.rel_dropout = rel_dropout
+        self.ent_dropout = ent_dropout
+        self.rel_hidden_size = rel_hidden_size
+        self.ent_hidden_size = ent_hidden_size
+        self.lmbda = lmbda
+        self.feature_map_dropout = feature_map_dropout
+        self.hidden_dropout = hidden_dropout
+        self.input_dropout = input_dropout
+        self.use_bias = use_bias
+        self.label_smoothing = label_smoothing
+        self.lr_decay = lr_decay
+        self.learning_rate = learning_rate
+        self.L1_flag = l1_flag
+        self.hidden_size = hidden_size
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.margin = margin
+        self.data = data
+        self.optimizer = optimizer
+        self.sampling = sampling
