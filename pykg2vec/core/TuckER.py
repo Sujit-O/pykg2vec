@@ -49,18 +49,14 @@ class TuckER(ModelMeta):
         num_total_rel = self.data_stats.tot_relation
         self.d1 = self.config.ent_hidden_size
         self.d2 = self.config.rel_hidden_size
-        regularizer = tf.contrib.layers.l2_regularizer(scale=0.1)
 
         with tf.name_scope("embedding"):
             self.E = tf.get_variable(name="ent_embedding", shape=[num_total_ent, self.d1],
-                                     regularizer=regularizer,
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.R = tf.get_variable(name="rel_embedding", shape=[num_total_rel, self.d2],
-                                     regularizer=regularizer,
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         with tf.name_scope("W"):
             self.W = tf.get_variable(name="W", shape=[self.d2, self.d1, self.d1],
-                                     regularizer=regularizer,
                                      initializer=tf.initializers.random_uniform(minval=-1, maxval=1))
         self.parameter_list = [self.E, self.R, self.W]
 
@@ -74,13 +70,13 @@ class TuckER(ModelMeta):
 
     def forward(self, e1, r):
         e1 = tf.nn.embedding_lookup(self.E, e1)
-        r = tf.nn.embedding_lookup(self.R, r)
+        rel = tf.squeeze(tf.nn.embedding_lookup(self.R, r))
 
         e1 = self.bn0(e1)
         e1 = self.inp_drop(e1)
         e1 = tf.reshape(e1, [-1, 1, self.config.ent_hidden_size])
 
-        W_mat = tf.matmul(r, tf.reshape(self.W, [self.d2, -1]))
+        W_mat = tf.matmul(rel, tf.reshape(self.W, [self.d2, -1]))
         W_mat = tf.reshape(W_mat, [-1, self.d1, self.d1])
         W_mat = self.hidden_dropout1(W_mat)
 
@@ -90,9 +86,7 @@ class TuckER(ModelMeta):
         x = self.hidden_dropout2(x)
         x = tf.matmul(x, tf.transpose(self.E))
 
-        pred = tf.nn.sigmoid(x)
-
-        return pred
+        return tf.nn.sigmoid(x)
 
     def loss(self):
         pred = self.forward(self.e1, self.r)
@@ -101,7 +95,7 @@ class TuckER(ModelMeta):
 
         loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
 
-        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
 
         self.loss = loss + self.config.lmbda * reg_losses
 
@@ -143,123 +137,33 @@ class TuckER(ModelMeta):
 if __name__ == '__main__':
     # Unit Test Script with tensorflow Eager Execution
     import tensorflow as tf
+    import numpy as np
+    import sys
+
+    sys.path.append("../")
+    from config.config import TuckERConfig
 
     tf.enable_eager_execution()
     batch = 128
-    embed_dim = 100
-    tot_entity = 147000
+    d1 = 64
+    d2 = 32
+    tot_ent = 14700
+    tot_rel = 2600
     train = True
-    pos_h_e = tf.random_normal([batch // 2, embed_dim])
-    print('pos_r_e:', pos_h_e)
-    pos_r_e = tf.random_normal([batch // 2, embed_dim])
-    print('pos_r_e:', pos_r_e)
-    pos_t_e = tf.random_normal([batch // 2, embed_dim])
-    print('pos_t_e:', pos_t_e)
-    neg_h_e = tf.random_normal([batch // 2, embed_dim])
-    print('neg_h_e:', neg_h_e)
-    neg_r_e = tf.random_normal([batch // 2, embed_dim])
-    print('neg_r_e:', neg_r_e)
-    neg_t_e = tf.random_normal([batch // 2, embed_dim])
-    print('neg_t_e:', neg_t_e)
-    stacked_inputs_e = tf.concat([pos_h_e, neg_h_e], 0)
-    stacked_inputs_r = tf.concat([pos_r_e, neg_r_e], 0)
-    stacked_inputs_e = tf.reshape(stacked_inputs_e, [batch, 10, -1, 1])
-    stacked_inputs_r = tf.reshape(stacked_inputs_r, [batch, 10, -1, 1])
-    stacked_inputs = tf.concat([stacked_inputs_e, stacked_inputs_r], 1)
-    stacked_inputs_t = tf.concat([pos_t_e, neg_t_e], 0)
-    print('stacked_inputs:', stacked_inputs)
-    x = tf.layers.batch_normalization(stacked_inputs, axis=0)
-    print("x_batch normalize:", x)
-    x = tf.layers.dropout(x, rate=0.2)
-    print("x_dropped out:", x)
-    x = tf.layers.conv2d(x, 32, [3, 3], strides=(1, 1), padding='valid', activation=None)
-    print("x_conv2d:", x)
-    x = tf.layers.batch_normalization(x, axis=1)
-    print("x_batch normalize:", x)
-    x = tf.nn.relu(x)
-    print("x_relu activation:", x)
-    x = tf.layers.dropout(x, rate=0.2)
-    print("x_dropped out:", x)
-    x = tf.reshape(x, [batch, -1])
-    print("x_reshaped:", x)
-    x = tf.layers.dense(x, units=embed_dim)
-    print("x_dense:", x)
-    x = tf.layers.dropout(x, rate=0.3)
-    print("x_droppedout:", x)
-    x = tf.layers.batch_normalization(x, axis=1)
-    print("x_batch normalize:", x)
-    x = tf.nn.relu(x)
-    print("x_relu activation:", x)
-    W = tf.get_variable(name="ent_embedding", shape=[embed_dim, embed_dim],
-                        initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    print("ent_embedding:", W)
-    x = tf.matmul(x, tf.transpose(W))
-    print("x_mul with ent_embeeding:", x)
-    b = tf.get_variable(name="b", shape=[batch, tot_entity],
-                        initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    print("bias:", b)
-    x = tf.add(x, b)
-    print("x_added with bias:", x)
-    ent_embeddings = tf.get_variable(name="ent_embedding", shape=[tot_entity, embed_dim],
-                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    if train:
-        x = tf.reduce_sum(tf.matmul(x, tf.transpose(stacked_inputs_t)), 1)
-    else:
-        x = tf.reduce_sum(tf.matmul(x, tf.transpose(ent_embeddings)), 1)
-    pred = tf.nn.sigmoid(x)
-    print("prediction:", pred)
+    e1 = np.random.randint(0, tot_ent, size=(batch, 1))
+    print('pos_r_e:', e1)
+    r = np.random.randint(0, tot_rel, size=(batch, 1))
+    print('pos_r_e:', r)
+    e2 = np.random.randint(0, tot_ent, size=(batch, 1))
+    print('pos_t_e:', e2)
+    r_rev = np.random.randint(0, tot_rel, size=(batch, 1))
+    print('pos_r_e:', r_rev)
 
-    import tensorflow as tf
+    config = TuckERConfig()
 
-    tf.enable_eager_execution()
-    batch = 128
-    embed_dim = 100
-    tot_entity = 147000
-    train = False
-    input_dropout = 0.2
-    input_dropout = 0.2
-    hidden_dropout = 0.3
-    feature_map_dropout = 0.2
-    ent_embeddings = tf.get_variable(name="ent_embedding", shape=[tot_entity, embed_dim],
-                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    W = tf.get_variable(name="ent_embedding", shape=[embed_dim, embed_dim],
-                        initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    b = tf.get_variable(name="b", shape=[batch, embed_dim],
-                        initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    print("ent_embedding:", W)
-    pos_h_e = tf.random_normal([1, embed_dim])
-    print('pos_r_e:', pos_h_e)
-    pos_r_e = tf.random_normal([1, embed_dim])
-    print('pos_r_e:', pos_r_e)
-    pos_t_e = tf.random_normal([1, embed_dim])
-    stacked_inputs_h = tf.reshape(pos_h_e, [1, 10, -1, 1])
-    stacked_inputs_r = tf.reshape(pos_r_e, [1, 10, -1, 1])
-    stacked_inputs_hr = tf.concat([stacked_inputs_h, stacked_inputs_r], 1)
-    x = tf.layers.batch_normalization(stacked_inputs_hr, axis=0)
-    x = tf.layers.dropout(x, rate=input_dropout)
-    x = tf.layers.conv2d(x, 32, [3, 3], strides=(1, 1), padding='valid', activation=None)
-    x = tf.layers.batch_normalization(x, axis=1)
-    x = tf.nn.relu(x)
-    x = tf.layers.dropout(x, rate=feature_map_dropout)
-    if train:
-        x = tf.reshape(x, [batch_size, -1])
-    else:
-        x = tf.reshape(x, [1, -1])
+    model = TuckER(config=config)
+    optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
+    grads = optimizer.compute_gradients(model.loss)
 
-    x = tf.layers.dense(x, units=embed_dim)
-    x = tf.layers.dropout(x, rate=hidden_dropout)
-    x = tf.layers.batch_normalization(x, axis=1)
-    x = tf.nn.relu(x)
-    x = tf.matmul(x, W)
-    if train:
-        x = tf.add(x, b)
-    else:
-        x = tf.add(x, tf.slice(b, [0, 0], [1, embed_dim]))
-
-    if train:
-        x = tf.reduce_sum(tf.matmul(x, tf.transpose(st_inp_t)), 1)
-        x = tf.reduce_sum(tf.matmul(x, tf.transpose(ent_emb_norm)), 1)
-    else:
-        ent_emb_norm = tf.nn.l2_normalize(ent_embeddings, axis=1)
-        x = tf.matmul(x, tf.transpose(ent_emb_norm))
-    pred = tf.nn.sigmoid(x)
+    pred = model.forward(e1, r)
+    print(pred)
