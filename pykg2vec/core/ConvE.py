@@ -131,7 +131,7 @@ class ConvE(ModelMeta):
 
         loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
 
-        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        reg_losses = tf.nn.l2_loss(self.ent_embeddings) + tf.nn.l2_loss(self.rel_embeddings)
 
         self.loss = loss + self.config.lmbda * reg_losses
 

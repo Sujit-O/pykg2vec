@@ -47,16 +47,12 @@ class Complex(ModelMeta):
         k = self.config.hidden_size
         with tf.name_scope("embedding"):
             self.emb_e_real = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
-                                              regularizer=tf.contrib.layers.l2_regularizer(scale=0.1),
                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.emb_e_img = tf.get_variable(name="emb_e_img", shape=[self.tot_ent, k],
-                                             regularizer=tf.contrib.layers.l2_regularizer(scale=0.1),
                                              initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.emb_rel_real = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
-                                                regularizer=tf.contrib.layers.l2_regularizer(scale=0.1),
                                                 initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.emb_rel_img = tf.get_variable(name="emb_rel_img", shape=[self.tot_rel, k],
-                                               regularizer=tf.contrib.layers.l2_regularizer(scale=0.1),
                                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
         self.parameter_list = [self.emb_e_real, self.emb_e_img, self.emb_rel_real, self.emb_rel_img]
@@ -89,7 +85,10 @@ class Complex(ModelMeta):
 
         loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
 
-        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        reg_losses = tf.nn.l2_loss(self.emb_e_real) + \
+                     tf.nn.l2_loss(self.emb_e_img) + \
+                     tf.nn.l2_loss(self.emb_rel_real) + \
+                     tf.nn.l2_loss(self.emb_rel_img)
 
         self.loss = loss + self.config.lmbda * reg_losses
 
