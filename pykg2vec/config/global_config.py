@@ -57,11 +57,57 @@ class FreebaseFB15k(object):
             print(key, value)
 
 
+class DeepLearning50k(object):
+
+    def __init__(self):
+        self.name="dLmL50"
+        self.url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
+        self.dataset_home_path = Path('..')/'dataset'
+        self.dataset_home_path.mkdir(parents=True, exist_ok=True)
+        self.dataset_home_path = self.dataset_home_path.resolve()
+        self.root_path = self.dataset_home_path/'DeepLearning'
+        self.tar = self.root_path/'dLmL50.tgz'
+        self.downloaded_path = self.root_path/'dLmL50'/'deeplearning_dataset_50arch-'
+        self.prepared_data_path = self.root_path/'dLmL50'/'dLmL50_'
+        self.entity2idx_path = self.root_path/'dLmL50'/'dLmL50_entity2idx.pkl'
+        self.idx2entity_path = self.root_path/'dLmL50'/'dLmL50_idx2entity.pkl'
+        self.relation2idx_path = self.root_path/'dLmL50'/'dLmL50_relation2idx.pkl'
+        self.idx2relation_path = self.root_path/'dLmL50'/'dLmL50_idx2relation.pkl'
+
+        if not self.root_path.exists():
+            self.download()
+            self.extract()
+
+    def download(self):
+        ''' Download dLmL50 dataset from url'''
+        print("Downloading the dataset %s"%self.name)
+
+        self.root_path.mkdir()
+        with urllib.request.urlopen(self.url) as response, open(str(self.tar), 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
+
+    def extract(self):
+        ''' extract the downloaded tar under DeepLearning folder'''
+        print("Extracting the downloaded dataset from %s to %s"% (self.tar, self.root_path))
+
+        try:
+            extract(str(self.tar), str(self.root_path))
+        except Exception as e:
+            print("Could not extract the tgz file!")
+            print(type(e),e.args)
+
+    def dump(self):
+        for key, value in self.__dict__.items():
+            print(key, value)
+
+
 class GlobalConfig(object):
 
     def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
         if dataset == 'Freebase15k':
             self.dataset = FreebaseFB15k()
+        elif dataset == 'DeepLearning50k':
+            self.dataset = DeepLearning50k()
         else:
             raise NotImplementedError("%s dataset config not found!" % dataset)
 
@@ -126,9 +172,9 @@ class GeneratorConfig(object):
 
 
 def test_init_database():
-    global_config = GlobalConfig('Freebase15k')
+    # global_config = GlobalConfig('Freebase15k')
     # global_config = GlobalConfig('Freebase100k')
-
+    global_config = GlobalConfig('DeepLearning50k')
 
 if __name__ == "__main__":
     test_init_database()
