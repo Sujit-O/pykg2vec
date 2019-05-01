@@ -38,7 +38,7 @@ def main(_):
     config.cmax = 3.00
     config.cmin = 0.03
 
-    model = KG2E(config, data_handler)
+    model = KG2E(config)
     
     trainer = Trainer(model=model)
     trainer.build_model()
