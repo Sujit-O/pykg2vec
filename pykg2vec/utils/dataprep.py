@@ -205,13 +205,13 @@ class DataPrep(object):
                 self.hr_t_ids_train = defaultdict(set)
                 self.tr_h_ids_train = defaultdict(set)
 
-                if not os.path.exists(self.config.tmp_data / 'hr_t_ids_train.pkl'):
+                if (self.config.tmp_data / 'hr_t_ids_train.pkl').exists():
                     for t in self.train_triples_ids:
                         self.hr_t_ids_train[(t.h, t.r)].add(t.t)
                         self.tr_h_ids_train[(t.t, t.r)].add(t.h)
-                    with open(self.config.tmp_data / 'hr_t_ids_train.pkl', 'wb') as f:
+                    with open(str(self.config.tmp_data / 'hr_t_ids_train.pkl'), 'wb') as f:
                         pickle.dump(self.hr_t_ids_train, f)
-                    with open(self.config.tmp_data / 'tr_h_ids_train.pkl', 'wb') as f:
+                    with open(str(self.config.tmp_data / 'tr_h_ids_train.pkl'), 'wb') as f:
                         pickle.dump(self.tr_h_ids_train, f)
 
             if self.sampling == "bern":
@@ -228,7 +228,7 @@ class DataPrep(object):
                         len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
                                           for x in
                                           self.relation_property_head.keys()}
-                with open(self.config.tmp_data / 'relation_property.pkl', 'wb') as f:
+                with open(str(self.config.tmp_data / 'relation_property.pkl'), 'wb') as f:
                     pickle.dump(self.relation_property, f)
 
         else:
