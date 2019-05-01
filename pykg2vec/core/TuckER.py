@@ -143,30 +143,30 @@ if __name__ == '__main__':
     sys.path.append("../")
     from config.config import TuckERConfig
 
-    # tf.enable_eager_execution()
-    # batch = 128
-    # d1 = 64
-    # d2 = 32
-    # tot_ent = 14951
-    # tot_rel = 2600
-    # train = True
-    # e1 = np.random.randint(0, tot_ent, size=(batch, 1))
-    # print('pos_r_e:', e1)
-    # r = np.random.randint(0, tot_rel, size=(batch, 1))
-    # print('pos_r_e:', r)
-    # e2 = np.random.randint(0, tot_ent, size=(batch, 1))
-    # print('pos_t_e:', e2)
-    # r_rev = np.random.randint(0, tot_rel, size=(batch, 1))
-    # print('pos_r_e:', r_rev)
+    tf.enable_eager_execution()
+    batch = 128
+    d1 = 64
+    d2 = 32
+    tot_ent = 14951
+    tot_rel = 2600
+    train = True
+    e1 = np.random.randint(0, tot_ent, size=(batch, 1))
+    print('pos_r_e:', e1)
+    r = np.random.randint(0, tot_rel, size=(batch, 1))
+    print('pos_r_e:', r)
+    e2 = np.random.randint(0, tot_ent, size=(batch, 1))
+    print('pos_t_e:', e2)
+    r_rev = np.random.randint(0, tot_rel, size=(batch, 1))
+    print('pos_r_e:', r_rev)
     #
     config = TuckERConfig()
     #
     model = TuckER(config=config)
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
-    grads = optimizer.compute_gradients(model.loss)
+    # optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
+    # grads = optimizer.compute_gradients(model.loss)
     #
-    # logits = model.forward(e1, r)
-    # print("pred:",logits)
+    logits = model.forward(e1, r)
+    print("pred:",logits)
     #
     # e2_multi1 = tf.constant(np.random.randint(0,2,size=(batch, tot_ent)), dtype=tf.float32)
     # # e2_multi1 = e2_multi1 * (1.0 - 0.1) + 1.0 / tot_ent

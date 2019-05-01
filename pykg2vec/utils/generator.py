@@ -167,18 +167,20 @@ class Generator:
             elif self.config.data.startswith('test'):
                 raw_data = np.asarray([[self.test_data[x].e1,
                                         self.test_data[x].r,
-                                        self.test_data[x].e2_multi1,
+                                        # self.test_data[x].e2_multi1,
                                         self.test_data[x].e2,
-                                        self.test_data[x].r_rev,
-                                        self.test_data[x].e2_multi2] for x in
+                                        self.test_data[x].r_rev
+                                        # self.test_data[x].e2_multi2
+                                        ] for x in
                                        self.rand_ids_test[bs * batch_idx:bs * (batch_idx + 1)]])
             elif self.config.data.startswith('valid'):
                 raw_data = np.asarray([[self.valid_data[x].e1,
                                         self.valid_data[x].r,
-                                        self.valid_data[x].e2_multi1,
+                                        # self.valid_data[x].e2_multi1,
                                         self.valid_data[x].e2,
-                                        self.valid_data[x].r_rev,
-                                        self.valid_data[x].e2_multi2] for x in
+                                        self.valid_data[x].r_rev
+                                        # self.valid_data[x].e2_multi2
+                                        ] for x in
                                        self.rand_ids_valid[bs * batch_idx:bs * (batch_idx + 1)]])
             else:
                 raise NotImplementedError("The data type passed is wrong!")
@@ -418,46 +420,47 @@ class Generator:
             raw_data = self.raw_queue.get()
             e1 = raw_data[:, 0]
             r = raw_data[:, 1]
-            col = []
-            for k in raw_data[:, 2]:
-                col.append(k)
-            row = []
-            for k in range(bs):
-                if col[k]:
-                    row.append([k] * len(col[k]))
-            col_n = []
-            row_n = []
-            # TODO: Vectorize the loops
-            for i in range(bs):
-                if col[i]:
-                    for j in range(len(col[i])):
-                        col_n.append(col[i][j])
-                        row_n.append(row[i][j])
+            # col = []
+            # for k in raw_data[:, 2]:
+            #     col.append(k)
+            # row = []
+            # for k in range(bs):
+            #     if col[k]:
+            #         row.append([k] * len(col[k]))
+            # col_n = []
+            # row_n = []
+            # # TODO: Vectorize the loops
+            # for i in range(bs):
+            #     if col[i]:
+            #         for j in range(len(col[i])):
+            #             col_n.append(col[i][j])
+            #             row_n.append(row[i][j])
+            #
+            # e2_multi1 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
 
-            e2_multi1 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
+            e2 = raw_data[:, 2]
+            r_rev = raw_data[:, 3]
+            # col = []
+            # for k in raw_data[:, 5]:
+            #     col.append(k)
+            #
+            # row = []
+            # for k in range(bs):
+            #     if col[k]:
+            #         row.append([k] * len(col[k]))
+            # col_n = []
+            # row_n = []
+            # # TODO: Vectorize the loops
+            # for i in range(bs):
+            #     if col[i]:
+            #         for j in range(len(col[i])):
+            #             col_n.append(col[i][j])
+            #             row_n.append(row[i][j])
+            #
+            # e2_multi2 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
 
-            e2 = raw_data[:, 3]
-            r_rev = raw_data[:, 4]
-            col = []
-            for k in raw_data[:, 5]:
-                col.append(k)
-
-            row = []
-            for k in range(bs):
-                if col[k]:
-                    row.append([k] * len(col[k]))
-            col_n = []
-            row_n = []
-            # TODO: Vectorize the loops
-            for i in range(bs):
-                if col[i]:
-                    for j in range(len(col[i])):
-                        col_n.append(col[i][j])
-                        row_n.append(row[i][j])
-
-            e2_multi2 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
-
-            self.processed_queue.put([e1, r, np.array(e2_multi1.todense()), e2, r_rev, np.array(e2_multi2.todense())])
+            # self.processed_queue.put([e1, r, np.array(e2_multi1.todense()), e2, r_rev, np.array(e2_multi2.todense())])
+            self.processed_queue.put([e1, r,  e2, r_rev])
 
     def process_function_train_proje(self, bs, n_entity, neg_weight):
         while True:
