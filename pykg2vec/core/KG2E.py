@@ -23,11 +23,10 @@ class KG2E(ModelMeta):
     ------------------Summary---------------------------------
     """
 
-    def __init__(self, config=None, data_handler=None):
+    def __init__(self, config=None):
         self.config = config
         with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
             self.data_stats = pickle.load(f)
-        self.data_handler = data_handler
 
         if self.config.distance_measure == "expected_likelihood":
             self.model_name = 'KG2E_EL'
@@ -53,8 +52,8 @@ class KG2E(ModelMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -136,8 +135,8 @@ class KG2E(ModelMeta):
                                                       test_r_mu, test_r_sigma, \
                                                       norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
         
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
@@ -164,8 +163,8 @@ class KG2E(ModelMeta):
                                                       tf.expand_dims(test_r_mu, axis=1), tf.expand_dims(test_r_sigma, axis=1), \
                                                       norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
