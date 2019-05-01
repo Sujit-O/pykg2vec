@@ -17,6 +17,7 @@ class NTN(ModelMeta):
     ------------------Paper Authors---------------------------
     ---
     ------------------Summary---------------------------------
+    https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
     ---
     """
 

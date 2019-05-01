@@ -66,7 +66,11 @@ class Evaluation(EvaluationMeta):
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
                                                          batch_size=self.batch))
 
-        self.n_test = min(self.n_test, gen_test.tot_test_data)
+        if self.n_test == 0:
+            self.n_test = gen_test.tot_test_data
+        else:
+            self.n_test = min(self.n_test, gen_test.tot_test_data)
+
         loop_len = self.n_test // self.batch if not self.debug else 1
 
         if self.n_test < self.batch:
@@ -145,7 +149,7 @@ class Evaluation(EvaluationMeta):
         rank_tail = []
         filter_rank_head = []
         filter_rank_tail = []
-        loop_len = self.model.config.test_num
+        loop_len = len(data) if self.model.config.test_num == 0 else min(len(data), self.model.config.test_num)
         total_test = loop_len
 
         start_time = timeit.default_timer()
