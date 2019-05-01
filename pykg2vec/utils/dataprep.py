@@ -89,7 +89,7 @@ class DataPrep(object):
             self.read_triple_hr_rt(['train', 'test', 'valid'])
             self.calculate_mapping()
 
-            if not os.path.exists(self.config.tmp_data / 'train_data.pkl'):
+            if not (self.config.tmp_data / 'train_data.pkl').exists():
                 print("\nPreparing Training Data!")
                 with progressbar.ProgressBar(max_value=len(self.train_graph)) as bar:
                     for i, (e, r) in enumerate(self.train_graph):
@@ -98,14 +98,14 @@ class DataPrep(object):
                         e2_multi1 = [self.entity2idx[i] for i in list(self.train_graph[(e, r)])]
                         self.train_data.append(DataInput(e1=e1_idx, r=r_idx, e2_multi1=e2_multi1))
                         bar.update(i)
-                with open(self.config.tmp_data / 'train_data.pkl', 'wb') as f:
+                with open(str(self.config.tmp_data / 'train_data.pkl'), 'wb') as f:
                     pickle.dump(self.train_data, f)
             else:
-                with open(self.config.tmp_data / 'train_data.pkl', 'rb') as f:
+                with open(str(self.config.tmp_data / 'train_data.pkl'), 'rb') as f:
                     self.train_data=pickle.load(f)
             self.data_stats.tot_train_triples = len(self.train_data)
 
-            if not os.path.exists(self.config.tmp_data / 'test_data.pkl'):
+            if not (self.config.tmp_data / 'test_data.pkl').exists():
                 print("\nPreparing Testing Data!")
                 with progressbar.ProgressBar(max_value=len(self.test_triples_no_rev)) as bar:
                     for i, t in enumerate(self.test_triples_no_rev):
@@ -121,14 +121,14 @@ class DataPrep(object):
                                                         e2=e2_idx, r_rev=r_rev_idx,
                                                         e2_multi1=e2_multi1, e2_multi2=e2_multi2))
                         bar.update(i)
-                with open(self.config.tmp_data / 'test_data.pkl', 'wb') as f:
+                with open(str(self.config.tmp_data / 'test_data.pkl'), 'wb') as f:
                     pickle.dump(self.test_data, f)
             else:
-                with open(self.config.tmp_data / 'test_data.pkl', 'rb') as f:
+                with open(str(self.config.tmp_data / 'test_data.pkl'), 'rb') as f:
                     self.test_data = pickle.load(f)
             self.data_stats.tot_test_triples = len(self.test_data)
 
-            if not os.path.exists(self.config.tmp_data / 'valid_data.pkl'):
+            if not (self.config.tmp_data / 'valid_data.pkl').exists():
                 print("\nPreparing Validation Data!")
                 with progressbar.ProgressBar(max_value=len(self.validation_triples_no_rev)) as bar:
                     for i, t in enumerate(self.validation_triples_no_rev):
@@ -144,10 +144,10 @@ class DataPrep(object):
                                                          e2=e2_idx, r_rev=r_rev_idx,
                                                          e2_multi1=e2_multi1, e2_multi2=e2_multi2))
                         bar.update(i)
-                with open(self.config.tmp_data / 'valid_data.pkl', 'wb') as f:
+                with open(str(self.config.tmp_data / 'valid_data.pkl'), 'wb') as f:
                     pickle.dump(self.valid_data, f)
             else:
-                with open(self.config.tmp_data / 'valid_data.pkl', 'rb') as f:
+                with open(str(self.config.tmp_data / 'valid_data.pkl'), 'rb') as f:
                     self.valid_data = pickle.load(f)
             self.data_stats.tot_valid_triples = len(self.valid_data)
 
