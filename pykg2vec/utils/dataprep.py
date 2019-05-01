@@ -77,9 +77,6 @@ class DataPrep(object):
         self.hr_t = defaultdict(set)
         self.tr_h = defaultdict(set)
 
-        if not os.path.exists(self.config.tmp_data):
-            os.mkdir(self.config.tmp_data)
-
         if self.algo.lower() in ["conve", "complex", "distmult"]:
             self.label_graph = {}
             self.train_graph = {}
