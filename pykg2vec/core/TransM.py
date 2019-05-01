@@ -11,6 +11,8 @@ import tensorflow as tf
 from core.KGMeta import ModelMeta
 
 import numpy as np
+import pickle 
+
 class TransM(ModelMeta):
     """
     ------------------Paper Title-----------------------------
@@ -29,9 +31,14 @@ class TransM(ModelMeta):
     https://github.com/wencolani/TransE.git
     """
 
-    def __init__(self, config=None, data_handler=None):
+    def __init__(self, config=None):
         self.config = config
-        self.data_handler = data_handler
+        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            self.data_stats = pickle.load(f)
+
+        with open(self.config.tmp_data / 'train_triples_ids.pkl', 'rb') as f:
+            self.train_triples_ids = pickle.load(f)
+
         self.model_name = 'TransM'
 
         self.def_inputs()
@@ -53,8 +60,8 @@ class TransM(ModelMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
-        num_total_ent = self.data_handler.tot_entity
-        num_total_rel = self.data_handler.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -65,15 +72,15 @@ class TransM(ModelMeta):
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
 
-            rel__head = {x: [] for x in range(num_total_rel)}
-            rel__tail = {x: [] for x in range(num_total_rel)}
+            rel_head = {x: [] for x in range(num_total_rel)}
+            rel_tail = {x: [] for x in range(num_total_rel)}
             rel_counts = {x: 0 for x in range(num_total_rel)}
-            for t in self.data_handler.train_triples_ids:
-                rel__head[t.r].append(t.h)
-                rel__tail[t.r].append(t.t)
+            for t in self.train_triples_ids:
+                rel_head[t.r].append(t.h)
+                rel_tail[t.r].append(t.t)
                 rel_counts[t.r] += 1
 
-            theta = [1/np.log(2+rel_counts[x]/(1+len(rel__tail[x])) + rel_counts[x]/(1+len(rel__head[x]))) for x in range(num_total_rel)]
+            theta = [1/np.log(2+rel_counts[x]/(1+len(rel_tail[x])) + rel_counts[x]/(1+len(rel_head[x]))) for x in range(num_total_rel)]
             self.theta = tf.Variable(np.asarray(theta, dtype=np.float32), trainable=False)
             
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.theta]
@@ -92,14 +99,14 @@ class TransM(ModelMeta):
 
     def test_step(self):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        r_theta = tf.norm_ent_embeddings(self.theta, self.test_r)
+        r_theta = tf.nn.embedding_lookup(self.theta, self.test_r)
 
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         score_head = r_theta*self.distance(norm_ent_embeddings, rel_vec, tail_vec)
         score_tail = r_theta*self.distance(head_vec, rel_vec, norm_ent_embeddings)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
@@ -110,8 +117,8 @@ class TransM(ModelMeta):
         score_head = self.distance_batch(norm_ent_embeddings, tf.expand_dims(rel_vec,axis=1), tf.expand_dims(tail_vec,axis=1))
         score_tail = self.distance_batch(tf.expand_dims(head_vec,axis=1), tf.expand_dims(rel_vec,axis=1), norm_ent_embeddings)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_handler.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_handler.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 

@@ -21,6 +21,8 @@ class KG2E(ModelMeta):
     Chinese Academy of Sciences, Beijing, 100190, China 
     {shizhu.he, kliu, guoliang.ji, jzhao}@nlpr.ia.ac.cn
     ------------------Summary---------------------------------
+
+    Portion of the code based on https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
     """
 
     def __init__(self, config=None):
