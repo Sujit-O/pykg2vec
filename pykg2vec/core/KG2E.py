@@ -27,7 +27,7 @@ class KG2E(ModelMeta):
 
     def __init__(self, config=None):
         self.config = config
-        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+        with open(str(self.config.tmp_data / 'data_stats.pkl'), 'rb') as f:
             self.data_stats = pickle.load(f)
 
         if self.config.distance_measure == "expected_likelihood":

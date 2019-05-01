@@ -29,7 +29,7 @@ class TransD(ModelMeta):
 
     def __init__(self, config):
         self.config = config
-        with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+        with open(str(self.config.tmp_data / 'data_stats.pkl'), 'rb') as f:
             self.data_stats = pickle.load(f)
         self.model_name = 'TransD'
         
