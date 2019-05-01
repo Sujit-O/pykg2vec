@@ -44,11 +44,11 @@ class Evaluation(EvaluationMeta):
 
         self.epoch = []
 
-        with open(self.model.config.tmp_data / 'hr_t.pkl', 'rb') as f:
+        with open(str(self.model.config.tmp_data / 'hr_t.pkl'), 'rb') as f:
             self.hr_t = pickle.load(f)
-        with open(self.model.config.tmp_data / 'tr_h.pkl', 'rb') as f:
+        with open(str(self.model.config.tmp_data / 'tr_h.pkl'), 'rb') as f:
             self.tr_h = pickle.load(f)
-        with open(self.model.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+        with open(str(self.model.config.tmp_data / 'data_stats.pkl'), 'rb') as f:
             self.data_stats = pickle.load(f)
 
     def test_batch(self, sess=None, epoch=None, test_data='test'):
@@ -128,10 +128,10 @@ class Evaluation(EvaluationMeta):
 
     def test_step(self, sess=None, epoch=None, test_data='test'):
         if test_data == 'test':
-            with open(self.model.config.tmp_data / 'test_triples_ids.pkl', 'rb') as f:
+            with open(str(self.model.config.tmp_data / 'test_triples_ids.pkl'), 'rb') as f:
                 data = pickle.load(f)
         elif test_data == 'valid':
-            with open(self.model.config.tmp_data / 'validation_triples_ids.pkl', 'rb') as f:
+            with open(str(self.model.config.tmp_data / 'validation_triples_ids.pkl'), 'rb') as f:
                 data = pickle.load(f)
         else:
             raise NotImplementedError('Invalid testing data: enter test or valid!')
@@ -406,23 +406,18 @@ class Evaluation(EvaluationMeta):
                                                         dtype=np.float32) / total_test
 
     def save_training_result(self, losses):
-        if not os.path.exists(self.model.config.result):
-            os.mkdir(self.model.config.result)
-
-        files = os.listdir(self.model.config.result)
+        files = os.listdir(str(self.model.config.result))
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
         df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
-        with open(self.model.config.result / (self.model.model_name + '_Training_results_' + str(l) + '.csv'),
+        with open(str(self.model.config.result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)
 
     def save_test_summary(self):
-        if not os.path.exists(self.model.config.result):
-            os.mkdir(self.model.config.result)
 
-        files = os.listdir(self.model.config.result)
+        files = os.listdir(str(self.model.config.result))
         l = len([f for f in files if self.model.model_name in f if 'Testing' in f])
-        with open(self.model.config.result / (self.model.model_name + '_summary_' + str(l) + '.txt'), 'w') as fh:
+        with open(str(self.model.config.result / (self.model.model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
             fh.write('----------------SUMMARY----------------\n')
             for key, val in self.model.config.__dict__.items():
                 if 'gpu' in key:
@@ -457,7 +452,7 @@ class Evaluation(EvaluationMeta):
 
         df = pd.DataFrame(results, columns=columns)
         
-        with open(self.model.config.result / (self.model.model_name + '_Testing_results_' + str(l) + '.csv'),
+        with open(str(self.model.config.result / (self.model.model_name + '_Testing_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)
 

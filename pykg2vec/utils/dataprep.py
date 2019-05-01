@@ -163,40 +163,40 @@ class DataPrep(object):
             self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
             self.calculate_mapping()  # from entity and relation to indexes.
 
-            if not os.path.exists(self.config.tmp_data / 'test_triples_ids.pkl'):
+            if not (self.config.tmp_data / 'test_triples_ids.pkl').exists():
                 self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
                                                 self.entity2idx[t.t]) for t in
                                          self.test_triples]
-                with open(self.config.tmp_data / 'test_triples_ids.pkl', 'wb') as f:
+                with open(str(self.config.tmp_data / 'test_triples_ids.pkl'), 'wb') as f:
                     pickle.dump(self.test_triples_ids, f)
             else:
-                with open(self.config.tmp_data / 'test_triples_ids.pkl', 'rb') as f:
+                with open(str(self.config.tmp_data / 'test_triples_ids.pkl'), 'rb') as f:
                     self.test_triples_ids = pickle.load(f)
 
             self.data_stats.tot_test_triples = len(self.test_triples_ids)
 
-            if not os.path.exists(self.config.tmp_data / 'train_triples_ids.pkl'):
+            if not (self.config.tmp_data / 'train_triples_ids.pkl').exists():
                 self.train_triples_ids = [Triple(self.entity2idx[t.h],
                                                  self.relation2idx[t.r], self.entity2idx[t.t]) for t
                                           in
                                           self.train_triples]
-                with open(self.config.tmp_data / 'train_triples_ids.pkl', 'wb') as f:
+                with open(str(self.config.tmp_data / 'train_triples_ids.pkl'), 'wb') as f:
                     pickle.dump(self.train_triples_ids, f)
             else:
-                with open(self.config.tmp_data / 'train_triples_ids.pkl', 'rb') as f:
+                with open(str(self.config.tmp_data / 'train_triples_ids.pkl'), 'rb') as f:
                     self.train_triples_ids = pickle.load(f)
 
             self.data_stats.tot_train_triples = len(self.train_triples_ids)
 
-            if not os.path.exists(self.config.tmp_data / 'validation_triples_ids.pkl'):
+            if not (self.config.tmp_data / 'validation_triples_ids.pkl').exists():
                 self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
                                                       self.entity2idx[t.t])
                                                for t
                                                in self.validation_triples]
-                with open(self.config.tmp_data / 'validation_triples_ids.pkl', 'wb') as f:
+                with open(str(self.config.tmp_data / 'validation_triples_ids.pkl'), 'wb') as f:
                     pickle.dump(self.validation_triples_ids, f)
             else:
-                with open(self.config.tmp_data / 'validation_triples_ids.pkl', 'rb') as f:
+                with open(str(self.config.tmp_data / 'validation_triples_ids.pkl'), 'rb') as f:
                     self.validation_triples_ids = pickle.load(f)
 
             self.data_stats.tot_valid_triples = len(self.validation_triples_ids)
@@ -234,7 +234,7 @@ class DataPrep(object):
         else:
             raise NotImplementedError("Data preparation is not implemented for algorithm:", self.algo)
 
-        if not os.path.exists(self.config.tmp_data / 'hr_t.pkl'):
+        if not (self.config.tmp_data / 'hr_t.pkl').exists():
             for t in self.train_triples:
                 self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
                 self.tr_h[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
@@ -247,21 +247,21 @@ class DataPrep(object):
                 self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
                 self.tr_h[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
 
-            with open(self.config.tmp_data / 'hr_t.pkl', 'wb') as f:
+            with open(str(self.config.tmp_data / 'hr_t.pkl'), 'wb') as f:
                 pickle.dump(self.hr_t, f)
-            with open(self.config.tmp_data / 'tr_h.pkl', 'wb') as f:
+            with open(str(self.config.tmp_data / 'tr_h.pkl'), 'wb') as f:
                 pickle.dump(self.tr_h, f)
         else:
-            with open(self.config.tmp_data / 'hr_t.pkl', 'rb') as f:
+            with open(str(self.config.tmp_data / 'hr_t.pkl'), 'rb') as f:
                 self.hr_t = pickle.load(f)
-            with open(self.config.tmp_data / 'tr_h.pkl', 'rb') as f:
+            with open(str(self.config.tmp_data / 'tr_h.pkl'), 'rb') as f:
                 self.tr_h = pickle.load(f)
 
-        if not os.path.exists(self.config.tmp_data / 'data_stats.pkl'):
-            with open(self.config.tmp_data / 'data_stats.pkl', 'wb') as f:
+        if not (self.config.tmp_data / 'data_stats.pkl').exists():
+            with open(str(self.config.tmp_data / 'data_stats.pkl'), 'wb') as f:
                 pickle.dump(self.data_stats, f)
         else:
-            with open(self.config.tmp_data / 'data_stats.pkl', 'rb') as f:
+            with open(str(self.config.tmp_data / 'data_stats.pkl'), 'rb') as f:
                 self.data_stats = pickle.load(f)
 
         self.tot_triple = self.data_stats.tot_triple

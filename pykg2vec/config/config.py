@@ -39,12 +39,9 @@ class BasicConfig:
         self.tmp = tmp
         self.result = result
         self.figures = figures
-        if not os.path.exists(tmp):
-            os.mkdir(tmp)
-        if not os.path.exists(result):
-            os.mkdir(result)
-        if not os.path.exists(figures):
-            os.mkdir(figures)
+        self.tmp.mkdir(parents=True, exist_ok=True)
+        self.result.mkdir(parents=True, exist_ok=True) 
+        self.figures.mkdir(parents=True, exist_ok=True)
 
         if hits is None:
             hits = [10, 5]
