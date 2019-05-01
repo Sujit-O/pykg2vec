@@ -66,9 +66,9 @@ class GlobalConfig(object):
             raise NotImplementedError("%s dataset config not found!" % dataset)
 
         self.negative_sample = negative_sample
+        
         self.tmp_data = Path('..') / 'data'
-        if not os.path.exists(self.tmp_data):
-            os.mkdir(self.tmp_data)
+        self.tmp_data.mkdir(parents=True, exist_ok=True)
 
     def dump(self):
         for key, value in self.dataset.__dict__.items():
