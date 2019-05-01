@@ -80,10 +80,8 @@ class Trainer(TrainerMeta):
 
     def train_model_epoch_proje(self, epoch_idx):
         acc_loss = 0
-
-        tot_data = self.data_handler.data_stats.tot_train_triples
         
-        num_batch = tot_data // self.config.batch_size if not self.debug else 5
+        num_batch = self.gen_train.tot_train_data // self.config.batch_size if not self.debug else 5
 
         start_time = timeit.default_timer()
 
@@ -120,10 +118,8 @@ class Trainer(TrainerMeta):
 
     def train_model_epoch(self, epoch_idx):
         acc_loss = 0
-    
-        tot_data = self.model.data_stats.tot_train_triples
 
-        num_batch = tot_data // self.config.batch_size if not self.debug else 100
+        num_batch = self.gen_train.tot_train_data // self.config.batch_size if not self.debug else 100
 
         start_time = timeit.default_timer()
 
@@ -165,9 +161,7 @@ class Trainer(TrainerMeta):
     def train_model_epoch_conve(self, epoch_idx):
         acc_loss = 0
 
-        tot_data = self.model.data_stats.tot_train_triples
-
-        num_batch = tot_data // self.config.batch_size if not self.debug else 100
+        num_batch = self.gen_train.tot_train_data // self.config.batch_size if not self.debug else 10
 
         start_time = timeit.default_timer()
 

@@ -102,18 +102,21 @@ class DistMult(ModelMeta):
         tr_pred = tf.matmul(e2_emb * r_rev_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
         tr_pred = tf.nn.sigmoid(tr_pred)
 
-        e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi1) + (1.0 / self.data_stats.tot_entity)
-        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
-        e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
-        e2_multi2 = tf.reshape(e2_multi2, [self.config.batch_size, self.data_stats.tot_entity])
+        # e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
+        #                           self.test_e2_multi1) + (1.0 / self.data_stats.tot_entity)
+        # e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
+        # e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
+        #                           self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
+        # e2_multi2 = tf.reshape(e2_multi2, [self.config.batch_size, self.data_stats.tot_entity])
+        #
+        # head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, hr_pred)
+        # tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, tr_pred)
+        #
+        # _, head_rank = tf.nn.top_k(head_vec, k=self.data_stats.tot_entity)
+        # _, tail_rank = tf.nn.top_k(tail_vec, k=self.data_stats.tot_entity)
 
-        head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, hr_pred)
-        tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, tr_pred)
-
-        _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(-hr_pred, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(-tr_pred, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 

@@ -20,6 +20,7 @@ def main(_):
     parser.add_argument('-ts', '--test_step', default=10, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
     parser.add_argument('-gp', '--gpu_frac', default=0.8, type=float, help='GPU fraction to use')
+    parser.add_argument('-db', '--debug', default=0, type=int, help='debug')
     # parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
     args = parser.parse_args()
 
@@ -38,7 +39,7 @@ def main(_):
 
     model = TuckER(config)
 
-    trainer = Trainer(model=model, debug=False)
+    trainer = Trainer(model=model, debug=True if args.debug == 1 else False)
     trainer.build_model()
     trainer.train_model()
 

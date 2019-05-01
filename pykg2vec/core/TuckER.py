@@ -65,8 +65,8 @@ class TuckER(ModelMeta):
         self.hidden_dropout1 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout1)
         self.hidden_dropout2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout2)
 
-        self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)
-        self.bn1 = tf.keras.layers.BatchNormalization(trainable=True)
+        self.bn0 = tf.keras.layers.BatchNormalization(trainable=False)
+        self.bn1 = tf.keras.layers.BatchNormalization(trainable=False)
 
     def forward(self, e1, r):
         e1 = tf.nn.embedding_lookup(self.E, e1)
@@ -95,24 +95,24 @@ class TuckER(ModelMeta):
 
         loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
 
-        reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
+        # reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
 
-        self.loss = loss + self.config.lmbda * reg_losses
+        self.loss = loss #+ self.config.lmbda * reg_losses
 
     def test_batch(self):
         pred_tails = self.forward(self.test_e1, self.test_r)
         pred_heads = self.forward(self.test_e2, self.test_r_rev)
 
-        e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi1) + (1.0 / self.data_stats.tot_entity)
-        e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-                                  self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
+        # e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
+        #                           self.test_e2_multi1) + (1.0 / self.data_stats.tot_entity)
+        # e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
+        #                           self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
+        #
+        # head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred_tails)
+        # tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred_heads)
 
-        head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred_tails)
-        tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred_heads)
-
-        _, head_rank = tf.nn.top_k(tf.math.negative(head_vec), k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(tf.math.negative(tail_vec), k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
@@ -143,30 +143,30 @@ if __name__ == '__main__':
     sys.path.append("../")
     from config.config import TuckERConfig
 
-    # tf.enable_eager_execution()
-    # batch = 128
-    # d1 = 64
-    # d2 = 32
-    # tot_ent = 14951
-    # tot_rel = 2600
-    # train = True
-    # e1 = np.random.randint(0, tot_ent, size=(batch, 1))
-    # print('pos_r_e:', e1)
-    # r = np.random.randint(0, tot_rel, size=(batch, 1))
-    # print('pos_r_e:', r)
-    # e2 = np.random.randint(0, tot_ent, size=(batch, 1))
-    # print('pos_t_e:', e2)
-    # r_rev = np.random.randint(0, tot_rel, size=(batch, 1))
-    # print('pos_r_e:', r_rev)
+    tf.enable_eager_execution()
+    batch = 128
+    d1 = 64
+    d2 = 32
+    tot_ent = 14951
+    tot_rel = 2600
+    train = True
+    e1 = np.random.randint(0, tot_ent, size=(batch, 1))
+    print('pos_r_e:', e1)
+    r = np.random.randint(0, tot_rel, size=(batch, 1))
+    print('pos_r_e:', r)
+    e2 = np.random.randint(0, tot_ent, size=(batch, 1))
+    print('pos_t_e:', e2)
+    r_rev = np.random.randint(0, tot_rel, size=(batch, 1))
+    print('pos_r_e:', r_rev)
     #
     config = TuckERConfig()
     #
     model = TuckER(config=config)
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
-    grads = optimizer.compute_gradients(model.loss)
+    # optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
+    # grads = optimizer.compute_gradients(model.loss)
     #
-    # logits = model.forward(e1, r)
-    # print("pred:",logits)
+    logits = model.forward(e1, r)
+    print("pred:",logits)
     #
     # e2_multi1 = tf.constant(np.random.randint(0,2,size=(batch, tot_ent)), dtype=tf.float32)
     # # e2_multi1 = e2_multi1 * (1.0 - 0.1) + 1.0 / tot_ent
