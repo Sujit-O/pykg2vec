@@ -31,22 +31,11 @@ def gen_id(ids):
 
 
 def get_sparse_mat(data, bs, te):
-    col = []
-    for k in data:
-        col.append(k)
-    row = []
-    for k in range(bs):
-        row.append([k] * len(col[k]))
-    col_n = []
-    row_n = []
-
+    mat = np.zeros(shape=(bs, te), dtype=np.int16)
     for i in range(bs):
-        for j in range(len(col[i])):
-            col_n.append(col[i][j])
-            row_n.append(row[i][j])
-
-    return sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
-
+        for j in range(len(data[i])):
+            mat[i][data[i][j]] = 1
+    return mat
 
 class Generator:
     """Generator class for the embedding algorithms
