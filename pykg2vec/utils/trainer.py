@@ -9,7 +9,6 @@ from utils.evaluation import Evaluation
 from utils.visualization import Visualization
 from utils.generator import Generator
 from config.global_config import GeneratorConfig
-from utils.dataprep import DataInput, DataInputSimple, DataStats
 import numpy as np
 import pickle
 from scipy import sparse as sps

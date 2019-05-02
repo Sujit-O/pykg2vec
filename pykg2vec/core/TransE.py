@@ -11,7 +11,6 @@ import tensorflow as tf
 from core.KGMeta import ModelMeta
 import pickle
 
-
 class TransE(ModelMeta):
     """
     ------------------Paper Title-----------------------------

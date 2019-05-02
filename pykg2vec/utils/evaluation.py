@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 from core.KGMeta import EvaluationMeta
 from utils.generator import Generator
-from utils.dataprep import DataStats
 from config.global_config import GeneratorConfig
 import pickle
 from multiprocessing.pool import ThreadPool

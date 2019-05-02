@@ -154,53 +154,53 @@ class TransM(ModelMeta):
         """function to get the projected embedding value in numpy"""
         return self.get_embed(h, r, t, sess)
 
-if __name__ == "__main__":
-    import tensorflow as tf
-    from config.config import TransMConfig
-    from config.global_config import GeneratorConfig
-    from utils.dataprep import DataPrep, DataInput, DataStats
-    from utils.generator import Generator
-    sess = tf.Session()
+# if __name__ == "__main__":
+#     import tensorflow as tf
+#     from config.config import TransMConfig
+#     from config.global_config import GeneratorConfig
+#     from utils.dataprep import DataPrep, DataInput, DataStats
+#     from utils.generator import Generator
+#     sess = tf.Session()
 
-    config = TransMConfig()
+#     config = TransMConfig()
 
-    data_handler = DataPrep(name_dataset="Freebase15k", sampling="uniform", algo='TransM')
+#     data_handler = DataPrep(name_dataset="Freebase15k", sampling="uniform", algo='TransM')
 
-    model = TransM(config, data_handler)
-    import pdb
-    pdb.set_trace()
+#     model = TransM(config, data_handler)
+#     import pdb
+#     pdb.set_trace()
 
-    gen = iter(Generator(config=GeneratorConfig(data='train', algo='TransM')))
+#     gen = iter(Generator(config=GeneratorConfig(data='train', algo='TransM')))
     
-    data = list(next(gen))
+#     data = list(next(gen))
 
-    ph = data[0]
-    pr = data[1]
-    pt = data[2]
-    nh = data[3]
-    nr = data[4]
-    nt = data[5]
+#     ph = data[0]
+#     pr = data[1]
+#     pt = data[2]
+#     nh = data[3]
+#     nr = data[4]
+#     nt = data[5]
 
-    import pdb
-    pdb.set_trace()
+#     import pdb
+#     pdb.set_trace()
 
-    sess.run(tf.global_variables_initializer())
+#     sess.run(tf.global_variables_initializer())
 
-    sess.run(model.embed(ph, pr, pt))
+#     sess.run(model.embed(ph, pr, pt))
     
-    feed_dict = {
-        model.pos_h:ph, 
-        model.pos_r:pr, 
-        model.pos_t:pt, 
-        model.neg_h:nh, 
-        model.neg_r:nr, 
-        model.neg_t:nt
-    }
+#     feed_dict = {
+#         model.pos_h:ph, 
+#         model.pos_r:pr, 
+#         model.pos_t:pt, 
+#         model.neg_h:nh, 
+#         model.neg_r:nr, 
+#         model.neg_t:nt
+#     }
 
-    sess.run(model.loss, feed_dict=feed_dict)
+#     sess.run(model.loss, feed_dict=feed_dict)
 
-    # feed_dict = {
-    #     model.test_h: np.reshape(ph, [1, ]),
-    #     model.test_r: np.reshape(pr, [1, ]),
-    #     model.test_t: np.reshape(pt, [1, ])
-    # }
+#     # feed_dict = {
+#     #     model.test_h: np.reshape(ph, [1, ]),
+#     #     model.test_r: np.reshape(pr, [1, ]),
+#     #     model.test_t: np.reshape(pt, [1, ])
+#     # }

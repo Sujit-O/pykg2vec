@@ -12,7 +12,7 @@ import sys
 sys.path.append("../")
 
 from config.global_config import GeneratorConfig
-from utils.dataprep import DataPrep, DataInput, DataStats, DataInputSimple
+from utils.dataprep import DataPrep, DataInput, KGMetaData, DataInputSimple
 import numpy as np
 from scipy import sparse as sps
 from threading import Thread, currentThread

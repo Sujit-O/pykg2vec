@@ -3,15 +3,19 @@ from pathlib import Path
 import os
 import multiprocessing
 
-# TODO: to be moved to utils
+class Triple(object):
+    def __init__(self, head=None, relation=None, tail=None):
+        self.h = head
+        self.r = relation
+        self.t = tail
 
+# TODO: to be moved to utils
 def extract(tar_path, extract_path='.'):
     tar = tarfile.open(tar_path, 'r')
     for item in tar:
         tar.extract(item, extract_path)
         if item.name.find(".tgz") != -1 or item.name.find(".tar") != -1:
             extract(item.name, "./" + item.name[:item.name.rfind('/')])
-
 
 class FreebaseFB15k(object):
 
@@ -33,6 +37,12 @@ class FreebaseFB15k(object):
         if not self.root_path.exists():
             self.download()
             self.extract()
+
+        self.data_paths = {
+            'train': self.root_path / 'FB15k' / 'freebase_mtr100_mte100-train.txt',
+            'test' : self.root_path / 'FB15k' / 'freebase_mtr100_mte100-test.txt',
+            'valid': self.root_path / 'FB15k' / 'freebase_mtr100_mte100-valid.txt'
+        }
 
     def download(self):
         ''' download Freebase 15k dataset from url'''
@@ -120,6 +130,13 @@ class GlobalConfig(object):
         for key, value in self.dataset.__dict__.items():
             print(key, value)
 
+    def read_triplets(self, set_type):
+        triplets = []
+        with open(str(self.dataset.data_paths[set_type]), 'r') as file:
+            for line in file.readlines():
+                s, p, o = line.split('\t')
+                triplets.append(Triple(s.strip(), p.strip(), o.strip()))
+        return triplets
 
 class GeneratorConfig(object):
     """Configuration for Generator
