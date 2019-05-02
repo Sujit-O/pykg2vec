@@ -44,6 +44,8 @@ class Trainer(TrainerMeta):
             optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adam':
             optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
+        elif self.config.optimizer == 'adagrad':
+            optimizer = tf.train.AdagradOptimizer(learning_rate=self.config.learning_rate)
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
 
@@ -323,14 +325,14 @@ class Trainer(TrainerMeta):
         if not os.path.exists(self.config.tmp):
             os.mkdir('../intermediate')
         saver = tf.train.Saver(self.model.parameter_list)
-        saver.save(self.sess, self.config.tmp + '/%s.vec' % self.model.model_name)
+        saver.save(self.sess, str(self.config.tmp) + '/%s.vec' % self.model.model_name)
 
     def load_model(self):
         """function to load the model"""
         if not os.path.exists(self.config.tmp):
             os.mkdir('../intermediate')
         saver = tf.train.Saver(self.model.parameter_list)
-        saver.restore(self.sess, self.config.tmp + '/%s.vec' % self.model.model_name)
+        saver.restore(self.sess, str(self.config.tmp) + '/%s.vec' % self.model.model_name)
 
     def display(self):
         """function to display embedding"""
