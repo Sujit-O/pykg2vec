@@ -25,7 +25,8 @@ def main(_):
     args = parser.parse_args()
 
     # initialize and prepare the data
-    DataPrep(name_dataset=args.dataset, sampling="uniform", algo='TuckER')
+    data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='TuckER')
+    data_handler.prepare_data()
 
     config = TuckERConfig(learning_rate=args.learn_rate,
                          batch_size=args.batch,

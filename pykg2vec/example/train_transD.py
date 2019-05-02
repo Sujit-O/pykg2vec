@@ -26,7 +26,7 @@ def main(_):
     args = parser.parse_args()
 
     data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='TransD')
-    # args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
+    data_handler.prepare_data()
     
     config = TransDConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,

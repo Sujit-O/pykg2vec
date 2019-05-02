@@ -69,6 +69,7 @@ class DataPrep(object):
 
         self.data_stats = DataStats()
         self.config = GlobalConfig(dataset=name_dataset)
+        
         self.algo = algo
         self.sampling = sampling
         self.train_triples = []
@@ -88,6 +89,7 @@ class DataPrep(object):
         self.hr_t = defaultdict(set)
         self.tr_h = defaultdict(set)
 
+    def prepare_data(self):
         if self.algo.lower() in ["tucker"]:
             self.train_graph_rt = {}
             self.train_graph_hr = {}
