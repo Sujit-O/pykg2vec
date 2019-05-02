@@ -30,11 +30,19 @@ def gen_id(ids):
             i = 0
 
 
-def get_sparse_mat(data, bs, te):
+def get_sparse_mat(data, bs, te, neg_rate=1):
     mat = np.zeros(shape=(bs, te), dtype=np.int16)
     for i in range(bs):
-        for j in range(len(data[i])):
+        pos_samples = len(data[i])
+        for j in range(pos_samples):
             mat[i][data[i][j]] = 1
+        neg_samples = neg_rate * pos_samples
+        idx = list(np.random.permutation(te))
+        for val in data[i]:
+            idx.remove(val)
+        for j in range(neg_samples):
+            mat[i][idx[j]] = -1
+        # pdb.set_trace()
     return mat
 
 class Generator:
