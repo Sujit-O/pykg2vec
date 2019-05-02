@@ -23,7 +23,7 @@ def main(_):
     args = parser.parse_args()
 
     data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='TransM')
-    # args.test_num = min(len(data_handler.test_triples_ids), args.test_num)
+    data_handler.prepare_data()
     
     config = TransMConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,
@@ -35,7 +35,7 @@ def main(_):
     config.gpu_fraction = args.gpu_frac
     config.save_model = True
 
-    model = TransM(config, data_handler)
+    model = TransM(config)
     
     trainer = Trainer(model=model)
     trainer.build_model()

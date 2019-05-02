@@ -24,8 +24,8 @@ def main(_):
     args = parser.parse_args()
 
     data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='conve')
-    # args.test_num = min(len(data_handler.test_data), args.test_num)
-
+    data_handler.prepare_data()
+    
     config = ConvEConfig(learning_rate=args.learn_rate,
                          batch_size=args.batch,
                          epochs=args.epochs)

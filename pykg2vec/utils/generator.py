@@ -18,7 +18,7 @@ from scipy import sparse as sps
 from threading import Thread, currentThread
 import pickle
 from multiprocessing import Process, Queue, JoinableQueue
-from numba import jit
+# from numba import jit
 
 def gen_id(ids):
     i = 0

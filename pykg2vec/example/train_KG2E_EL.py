@@ -23,6 +23,7 @@ def main(_):
     args = parser.parse_args()
 
     data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='KG2E')
+    data_handler.prepare_data()
     
     config = KG2EConfig(learning_rate=args.learn_rate,
                         batch_size=args.batch,
