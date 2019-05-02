@@ -1,0 +1,2 @@
+Algorithm,Mean Rank,Filt Mean Rank,Norm Mean Rank,Norm Filt Mean Rank,Hits10,Filt Hits10,Norm Hits10,Norm Filt Hits10,Hits5,Filt Hits5,Norm Hits5,Norm Filt Hits5
+TransE,301.976,226.44,301.976,226.44,0.261,0.32899999999999996,0.261,0.32899999999999996,0.183,0.245,0.183,0.245
