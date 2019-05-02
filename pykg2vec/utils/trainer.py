@@ -9,8 +9,18 @@ from utils.evaluation import Evaluation
 from utils.visualization import Visualization
 from utils.generator import Generator
 from config.global_config import GeneratorConfig
-from utils.dataprep import DataInput
+from utils.dataprep import DataInput, DataInputSimple, DataStats
 import numpy as np
+import pickle
+from scipy import sparse as sps
+
+
+def get_sparse_mat(data, bs, te):
+    mat = np.zeros(shape=(bs, te), dtype=np.int16)
+    for i in range(bs):
+        for j in range(len(data[i])):
+            mat[i][j] = 1
+    return mat
 
 
 class Trainer(TrainerMeta):
@@ -48,16 +58,18 @@ class Trainer(TrainerMeta):
         if self.config.loadFromData:
             self.load_model()
         else:
-            # if self.model.model_name == "ProjE_pointwise":
-            #      self.data_handler.start_multiprocessing()
-            #
-            self.gen_train = Generator(config=GeneratorConfig(data='train', algo=self.model.model_name, batch_size=self.model.config.batch_size))
+
+            # self.gen_train = Generator(config=GeneratorConfig(data='train', algo=self.model.model_name,
+            #                                                   batch_size=self.model.config.batch_size))
 
             for n_iter in range(self.config.epochs):
                 if self.model.model_name == "ProjE_pointwise":
                     self.train_model_epoch_proje(n_iter)
                     self.tiny_test_proje(n_iter)
-                elif self.model.model_name.lower() in ['conve', 'complex', "distmult", "tucker"]:
+                elif self.model.model_name.lower() in ["tucker"]:
+                    self.train_model_epoch_simple(n_iter)
+                    self.tiny_test_simple(n_iter)
+                elif self.model.model_name.lower() in ['conve', 'complex', "distmult"]:
                     self.train_model_epoch_conve(n_iter)
                     self.tiny_test_conve(n_iter)
                 else:
@@ -76,18 +88,18 @@ class Trainer(TrainerMeta):
             self.display()
 
         if self.config.disp_summary:
-            self.summary()       
+            self.summary()
 
     def train_model_epoch_proje(self, epoch_idx):
         acc_loss = 0
-        
+
         num_batch = self.gen_train.tot_train_data // self.config.batch_size if not self.debug else 5
 
         start_time = timeit.default_timer()
 
         # gen_train = self.data_handler.batch_generator_train_proje(batch_size=self.config.batch_size)
         batch_counts = 0
-        
+
         for batch_idx in range(num_batch):
             data = list(next(self.gen_train))
             hr_hr = data[0]
@@ -110,7 +122,7 @@ class Trainer(TrainerMeta):
 
             print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
                                                         batch_counts, num_batch, loss), end='\r')
-            batch_counts+=1
+            batch_counts += 1
         print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
             epoch_idx, acc_loss, timeit.default_timer() - start_time))
 
@@ -158,6 +170,55 @@ class Trainer(TrainerMeta):
 
         self.training_results.append([epoch_idx, acc_loss])
 
+    def train_model_epoch_simple(self, epoch_idx):
+        acc_loss = 0
+
+        with open(str(self.config.tmp_data / 'data_stats.pkl'), 'rb') as f:
+            data_stats = pickle.load(f)
+
+        with open(str(self.config.tmp_data / 'train_data.pkl'), 'rb') as f:
+            train_data = pickle.load(f)
+            rand_ids_train = np.random.permutation(len(train_data))
+
+        # num_batch = self.gen_train.tot_train_data // self.config.batch_size if not self.debug else 10
+        num_batch = len(train_data) // self.config.batch_size if not self.debug else 10
+        start_time = timeit.default_timer()
+
+        for batch_idx in range(num_batch):
+            data = np.asarray([[train_data[x].h,
+                                train_data[x].r,
+                                train_data[x].t,
+                                train_data[x].hr_t
+                                ] for x in
+                               rand_ids_train[
+                               self.config.batch_size * batch_idx: self.config.batch_size * (batch_idx + 1)]])
+
+            h = data[:, 0]
+            r = data[:, 1]
+            t = data[:, 2]
+            hr_t = get_sparse_mat(data[:, 3], self.config.batch_size, data_stats.tot_entity)
+            # rt_h = data[4]
+
+            feed_dict = {
+                self.model.h: h,
+                self.model.r: r,
+                self.model.t: t,
+                self.model.hr_t: hr_t
+                # self.model.rt_h: rt_h
+            }
+
+            _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
+
+            acc_loss += loss
+
+            print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
+                                                        batch_idx, num_batch, loss), end='\r')
+
+        print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
+            epoch_idx, acc_loss, timeit.default_timer() - start_time))
+
+        self.training_results.append([epoch_idx, acc_loss])
+
     def train_model_epoch_conve(self, epoch_idx):
         acc_loss = 0
 
@@ -190,7 +251,7 @@ class Trainer(TrainerMeta):
             epoch_idx, acc_loss, timeit.default_timer() - start_time))
 
         self.training_results.append([epoch_idx, acc_loss])
-    
+
     ''' Testing related functions:'''
 
     def tiny_test(self, curr_epoch):
@@ -204,6 +265,20 @@ class Trainer(TrainerMeta):
                 curr_epoch == self.config.epochs - 1:
             # self.evaluator.test(self.sess, curr_epoch)
             self.evaluator.test_step(self.sess, curr_epoch)
+            self.evaluator.print_test_summary(curr_epoch)
+
+            print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
+
+    def tiny_test_simple(self, curr_epoch):
+        start_time = timeit.default_timer()
+
+        if self.config.test_step == 0:
+            return
+
+        if curr_epoch % self.config.test_step == 0 or \
+                curr_epoch == 0 or \
+                curr_epoch == self.config.epochs - 1:
+            self.evaluator.test_simple(self.sess, curr_epoch)
             self.evaluator.print_test_summary(curr_epoch)
 
             print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))

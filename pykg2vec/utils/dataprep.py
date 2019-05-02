@@ -19,6 +19,7 @@ import os
 from collections import defaultdict
 import pprint
 
+
 class Triple(object):
     def __init__(self, head=None, relation=None, tail=None):
         self.h = head
@@ -34,6 +35,15 @@ class DataInput(object):
         self.r_rev = r_rev
         self.e2_multi1 = e2_multi1
         self.e2_multi2 = e2_multi2
+
+
+class DataInputSimple(object):
+    def __init__(self, h=None, r=None, t=None, hr_t=None, rt_h=None):
+        self.h = h
+        self.r = r
+        self.t = t
+        self.hr_t = hr_t
+        self.rt_h = rt_h
 
 
 class DataStats(object):
@@ -56,6 +66,7 @@ class DataPrep(object):
 
     def __init__(self, name_dataset='Freebase15k', sampling="uniform", algo='ConvE'):
         '''store the information of database'''
+
         self.data_stats = DataStats()
         self.config = GlobalConfig(dataset=name_dataset)
         self.algo = algo
@@ -77,7 +88,74 @@ class DataPrep(object):
         self.hr_t = defaultdict(set)
         self.tr_h = defaultdict(set)
 
-        if self.algo.lower() in ["conve", "complex", "distmult"]:
+        if self.algo.lower() in ["tucker"]:
+            self.train_graph_rt = {}
+            self.train_graph_hr = {}
+            self.label_graph_rt = {}
+            self.label_graph_hr = {}
+            self.train_data = []
+            self.test_data = []
+            self.valid_data = []
+
+            self.read_triple_hr_rt_simple(['train', 'test', 'valid'])
+            self.calculate_mapping()
+
+            if not (self.config.tmp_data / 'train_data.pkl').exists():
+                print("\nPreparing Training Data!")
+                with progressbar.ProgressBar(max_value=len(self.train_triples)) as bar:
+                    for i, t in enumerate(self.train_triples):
+                        h_idx = self.entity2idx[t.h]
+                        r_idx = self.relation2idx[t.r]
+                        t_idx = self.entity2idx[t.t]
+                        hr_t_idxs = [self.entity2idx[i] for i in list(self.train_graph_hr[(t.h, t.r)])]
+                        rt_h_idxs = [self.entity2idx[i] for i in list(self.train_graph_rt[(t.r, t.t)])]
+                        self.train_data.append(DataInputSimple(h=h_idx, r=r_idx, t=t_idx, hr_t=hr_t_idxs, rt_h=rt_h_idxs))
+                        bar.update(i)
+                with open(str(self.config.tmp_data / 'train_data.pkl'), 'wb') as f:
+                    pickle.dump(self.train_data, f)
+            else:
+                with open(str(self.config.tmp_data / 'train_data.pkl'), 'rb') as f:
+                    self.train_data = pickle.load(f)
+            self.data_stats.tot_train_triples = len(self.train_data)
+
+            if not (self.config.tmp_data / 'test_data.pkl').exists():
+                print("\nPreparing Testing Data!")
+                with progressbar.ProgressBar(max_value=len(self.test_triples)) as bar:
+                    for i, t in enumerate(self.test_triples):
+                        h_idx = self.entity2idx[t.h]
+                        r_idx = self.relation2idx[t.r]
+                        t_idx = self.entity2idx[t.t]
+                        self.test_data.append(DataInputSimple(h=h_idx, r=r_idx, t=t_idx))
+                        bar.update(i)
+                with open(str(self.config.tmp_data / 'test_data.pkl'), 'wb') as f:
+                    pickle.dump(self.test_data, f)
+            else:
+                with open(str(self.config.tmp_data / 'test_data.pkl'), 'rb') as f:
+                    self.test_data = pickle.load(f)
+            self.data_stats.tot_test_triples = len(self.test_data)
+
+            if not (self.config.tmp_data / 'valid_data.pkl').exists():
+                print("\nPreparing Validation Data!")
+                with progressbar.ProgressBar(max_value=len(self.validation_triples)) as bar:
+                    for i, t in enumerate(self.validation_triples):
+                        h_idx = self.entity2idx[t.h]
+                        r_idx = self.relation2idx[t.r]
+                        t_idx = self.entity2idx[t.t]
+                        self.valid_data.append(DataInputSimple(h=h_idx, r=r_idx, t=t_idx))
+                        bar.update(i)
+                with open(str(self.config.tmp_data / 'valid_data.pkl'), 'wb') as f:
+                    pickle.dump(self.valid_data, f)
+            else:
+                with open(str(self.config.tmp_data / 'valid_data.pkl'), 'rb') as f:
+                    self.valid_data = pickle.load(f)
+            self.data_stats.tot_valid_triples = len(self.valid_data)
+
+            self.validation_triples_ids = [
+                Triple(self.entity2idx[t.h], self.relation2idx[t.r], self.entity2idx[t.t])
+                for t
+                in self.validation_triples]
+
+        elif self.algo.lower() in ["conve", "complex", "distmult"]:
             self.label_graph = {}
             self.train_graph = {}
             self.train_data = []
@@ -102,7 +180,7 @@ class DataPrep(object):
                     pickle.dump(self.train_data, f)
             else:
                 with open(str(self.config.tmp_data / 'train_data.pkl'), 'rb') as f:
-                    self.train_data=pickle.load(f)
+                    self.train_data = pickle.load(f)
             self.data_stats.tot_train_triples = len(self.train_data)
 
             if not (self.config.tmp_data / 'test_data.pkl').exists():
@@ -156,9 +234,7 @@ class DataPrep(object):
                 for t
                 in self.validation_triples]
 
-        elif any(self.algo.lower().startswith(x) for x in ['transe', 'transr', 'transh', 'transd', 'transm', 'kg2e',
-                                                           'proje', 'rescal',
-                                                           'slm', 'sme_bilinear', 'sme_linear', 'ntn', 'rotate']):
+        elif any(self.algo.lower().startswith(x) for x in ['transe', 'transr', 'transh', 'transd', 'transm', 'kg2e', 'proje', 'rescal','slm', 'sme_bilinear', 'sme_linear', 'ntn', 'rotate']):
 
             self.read_triple(['train', 'test', 'valid'])  # TODO: save the triples to prevent parsing everytime
             self.calculate_mapping()  # from entity and relation to indexes.
@@ -367,6 +443,38 @@ class DataPrep(object):
                     else:
                         continue
 
+    def read_triple_hr_rt_simple(self, datatype=None):
+        print("Reading Triples", datatype)
+
+        for data in datatype:
+            with open(str(self.config.dataset.downloaded_path) + data + '.txt', 'r') as f:
+                for l in f.readlines():
+                    h, r, t = l.split('\t')
+                    h = h.strip()
+                    r = r.strip()
+                    t = t.strip()
+
+                    triple = Triple(h, r, t)
+
+                    if data == 'train':
+                        self.train_triples.append(triple)
+                        if (h, r) not in self.train_graph_hr:
+                            self.train_graph_hr[(h, r)] = set()
+                        if (r, t) not in self.train_graph_rt:
+                            self.train_graph_rt[(r, t)] = set()
+
+                        self.train_graph_hr[(h, r)].add(t)
+                        self.train_graph_rt[(r, t)].add(h)
+
+                    elif data == 'test':
+                        self.test_triples.append(triple)
+
+                    elif data == 'valid':
+                        self.validation_triples.append(triple)
+
+                    else:
+                        continue
+
     def read_triple_hr_rt(self, datatype=None, reverse_r=True):
         print("Reading Triples", datatype)
 
@@ -440,6 +548,7 @@ class DataPrep(object):
             print(idx, triple.h, triple.r, triple.t)
         for idx, triple in enumerate(self.validation_triples):
             print(idx, triple.h, triple.r, triple.t)
+
 
 def test_data_prep():
     data_handler = DataPrep('Freebase15k')

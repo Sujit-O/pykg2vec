@@ -33,16 +33,16 @@ class TuckER(ModelMeta):
         self.def_loss()
 
     def def_inputs(self):
-        self.e1 = tf.placeholder(tf.int32, [None])
+        self.h = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
-        self.e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.t = tf.placeholder(tf.int32, [None])
+        self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        # self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
-        self.test_e1 = tf.placeholder(tf.int32, [None])
-        self.test_e2 = tf.placeholder(tf.int32, [None])
+        self.test_h = tf.placeholder(tf.int32, [None])
         self.test_r = tf.placeholder(tf.int32, [None])
-        self.test_r_rev = tf.placeholder(tf.int32, [None])
-        self.test_e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-        self.test_e2_multi2 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.test_t = tf.placeholder(tf.int32, [None])
+
 
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
@@ -69,8 +69,11 @@ class TuckER(ModelMeta):
         self.bn1 = tf.keras.layers.BatchNormalization(trainable=False)
 
     def forward(self, e1, r):
-        e1 = tf.nn.embedding_lookup(self.E, e1)
-        rel = tf.squeeze(tf.nn.embedding_lookup(self.R, r))
+        norm_E = tf.nn.l2_normalize(self.E, axis=1)
+        norm_R = tf.nn.l2_normalize(self.R, axis=1)
+
+        e1 = tf.nn.embedding_lookup(norm_E, e1)
+        rel = tf.squeeze(tf.nn.embedding_lookup(norm_R, r))
 
         e1 = self.bn0(e1)
         e1 = self.inp_drop(e1)
@@ -84,37 +87,29 @@ class TuckER(ModelMeta):
         x = tf.reshape(x, [-1, self.d1])
         x = self.bn1(x)
         x = self.hidden_dropout2(x)
-        x = tf.matmul(x, tf.transpose(self.E))
+        x = tf.matmul(x, tf.transpose(norm_E))
 
         return tf.nn.sigmoid(x)
 
     def def_loss(self):
-        pred = self.forward(self.e1, self.r)
+        pred = self.forward(self.h, self.r)
 
-        e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        # hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
 
-        loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
+        loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(self.hr_t, pred))
 
         # reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
 
-        self.loss = loss #+ self.config.lmbda * reg_losses
+        self.loss = loss# + self.config.lmbda * reg_losses
 
     def test_batch(self):
-        pred_tails = self.forward(self.test_e1, self.test_r)
-        pred_heads = self.forward(self.test_e2, self.test_r_rev)
-
-        # e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-        #                           self.test_e2_multi1) + (1.0 / self.data_stats.tot_entity)
-        # e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-        #                           self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
-        #
-        # head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, pred_tails)
-        # tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, pred_heads)
+        pred_tails = self.forward(self.test_h, self.test_r)
+        # pred_heads = self.forward(self.test_e2, self.test_r_rev)
 
         _, head_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
+        # _, tail_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
 
-        return head_rank, tail_rank
+        return head_rank #, tail_rank
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
