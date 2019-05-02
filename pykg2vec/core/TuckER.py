@@ -92,11 +92,10 @@ class TuckER(ModelMeta):
         return tf.nn.sigmoid(x)
 
     def def_loss(self):
-        pred = self.forward(self.h, self.r)
+        self.pred = self.forward(self.h, self.r)
 
         # hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-
-        loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(self.hr_t, pred))
+        loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(self.hr_t, self.pred))
 
         # reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
 

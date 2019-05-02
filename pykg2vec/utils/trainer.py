@@ -18,7 +18,7 @@ def get_sparse_mat(data, bs, te):
     mat = np.zeros(shape=(bs, te), dtype=np.int16)
     for i in range(bs):
         for j in range(len(data[i])):
-            mat[i][j] = 1
+            mat[i][data[i][j]] = 1
     return mat
 
 
@@ -208,7 +208,11 @@ class Trainer(TrainerMeta):
                 # self.model.rt_h: rt_h
             }
 
-            _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
+            _, step, loss, hr_t, pred = self.sess.run([self.op_train, self.global_step,
+                                                       self.model.loss,self.model.hr_t,
+                                                       self.model.pred], feed_dict)
+            # import pdb
+            # pdb.set_trace()
 
             acc_loss += loss
 
