@@ -21,14 +21,6 @@ from pathlib import Path
 import timeit
 
 
-def get_sparse_mat(data, bs, te):
-    mat = np.zeros(shape=(bs, te), dtype=np.int16)
-    for i in range(bs):
-        for j in range(len(data[i])):
-            mat[i][j] = 1
-    return mat
-
-
 class Evaluation(EvaluationMeta):
 
     def __init__(self, model=None, debug=False):
@@ -226,18 +218,18 @@ class Evaluation(EvaluationMeta):
             self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
                                                         dtype=np.float32) / total_test
 
-    def eval_batch_head(self, id_replace_head, e1, e2, r_rev):
+    def eval_batch_head(self, id_replace_head, h, r, t):
         hrank = 0
         fhrank = 0
 
         for j in range(len(id_replace_head)):
             val = id_replace_head[-j - 1]
-            if val == e1:
+            if val == h:
                 break
             else:
                 hrank += 1
                 fhrank += 1
-                if val in self.tr_h[(e2, r_rev)]:
+                if val in self.tr_h[(t, r)]:
                     fhrank -= 1
 
         return hrank, fhrank
@@ -262,6 +254,70 @@ class Evaluation(EvaluationMeta):
 
     def zip_eval_batch_tail(self, data):
         return self.eval_batch_tail(*data)
+
+    def test_tucker_v2(self, sess=None, epoch=None):
+        head_rank, tail_rank = self.model.test_batch()
+        self.epoch.append(epoch)
+        if not sess:
+            raise NotImplementedError('No session found for evaluation!')
+
+        rank_head = []
+        rank_tail = []
+        filter_rank_head = []
+        filter_rank_tail = []
+
+        gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
+                                                    batch_size=self.batch))
+
+        self.n_test = min(self.n_test, gen_test.tot_test_data)
+        loop_len = self.n_test // self.batch if not self.debug else 2
+
+        if self.n_test < self.batch:
+            loop_len = 1
+
+        total_test = loop_len * self.batch
+        print("Testing [%d/%d] Triples" % (loop_len * self.batch, gen_test.tot_test_data))
+
+        for i in range(loop_len):
+            data = list(next(gen_test))
+            h = data[0]
+            rel = data[1]
+            t = data[2]
+
+            feed_dict = {
+                self.model.test_h: h,
+                self.model.test_r: rel,
+                self.model.test_t: t
+            }
+
+            id_replace_head, id_replace_tail = np.squeeze(sess.run([head_rank], feed_dict))
+
+            for i in range(self.model.config.batch_size):
+                tranks, f_trank = self.eval_batch_tail(id_replace_tail[i], h[i], rel[i], t[i])
+                hranks, f_hrank = self.eval_batch_head(id_replace_head[i], h[i], rel[i], t[i])
+                rank_head.append(hranks)
+                filter_rank_head.append(f_hrank)
+                rank_tail.append(tranks)
+                filter_rank_tail.append(f_trank)
+
+        gen_test.stop()
+        self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
+        self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
+
+        self.filter_mean_rank_head[epoch] = np.sum(filter_rank_head,
+                                                   dtype=np.float32) / total_test
+        self.filter_mean_rank_tail[epoch] = np.sum(filter_rank_tail,
+                                                   dtype=np.float32) / total_test
+
+        for hit in self.hits:
+            self.hit_head[(epoch, hit)] = np.sum(np.asarray(rank_head) < hit,
+                                                 dtype=np.float32) / total_test
+            self.hit_tail[(epoch, hit)] = np.sum(np.asarray(rank_tail) < hit,
+                                                 dtype=np.float32) / total_test
+            self.filter_hit_head[(epoch, hit)] = np.sum(np.asarray(filter_rank_head) < hit,
+                                                        dtype=np.float32) / total_test
+            self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
+                                                        dtype=np.float32) / total_test
 
     def test_simple(self, sess=None, epoch=None):
         head_rank = self.model.test_batch()

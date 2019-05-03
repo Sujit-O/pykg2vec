@@ -163,10 +163,12 @@ class GeneratorConfig(object):
                  queue_size=50,
                  raw_queue_size=50,
                  processed_queue_size=50,
-                 process_num=4,
+                 process_num=2,
                  data='train', 
-                 algo ='ConvE'
+                 algo ='ConvE',
+                 neg_rate=1
                  ):
+        self.neg_rate = neg_rate
         self.process_num = process_num
         self.raw_queue_size = raw_queue_size
         self.processed_queue_size = processed_queue_size

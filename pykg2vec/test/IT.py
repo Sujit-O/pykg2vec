@@ -219,7 +219,8 @@ class Pykg2vecIT(unittest.TestCase):
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
-        config.save_model = False
+        config.loadFromData = True
+        config.save_model = True
         config.disp_result= False
         config.bilinear = True
 
