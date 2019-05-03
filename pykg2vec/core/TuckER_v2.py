@@ -65,8 +65,8 @@ class TuckER_v2(ModelMeta):
         self.hidden_dropout1 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout1)
         self.hidden_dropout2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout2)
 
-        self.bn0 = tf.keras.layers.BatchNormalization(trainable=False)
-        self.bn1 = tf.keras.layers.BatchNormalization(trainable=False)
+        self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)
+        self.bn1 = tf.keras.layers.BatchNormalization(trainable=True)
 
     def forward(self, e1, r):
         norm_E = tf.nn.l2_normalize(self.E, axis=1)

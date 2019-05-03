@@ -31,19 +31,22 @@ def gen_id(ids):
 
 
 def get_label_mat(data, bs, te, neg_rate=1):
-    mat = np.zeros(shape=(bs, te), dtype=np.int16)
+    mat = np.zeros(shape=(bs, te), dtype=np.int8)
     for i in range(bs):
         pos_samples = len(data[i])
         for j in range(pos_samples):
             mat[i][data[i][j]] = 1
         neg_samples = neg_rate * pos_samples
-        idx = list(np.random.permutation(te))
-        for val in data[i]:
-            idx.remove(val)
+        idx = list(range(te))
+        arr = list(data[i])
+        arr.sort(reverse=True)
+        for k in arr:
+            del idx[k]
+        np.random.shuffle(idx)
         for j in range(neg_samples):
             mat[i][idx[j]] = -1
-        # pdb.set_trace()
     return mat
+
 
 class Generator:
     """Generator class for the embedding algorithms
@@ -171,6 +174,7 @@ class Generator:
         worker.daemon = True
         self.process_list.append(worker)
         worker.start()
+
         self.pool_process_simple()
 
     def gen_batch_proje(self, n_entity=None, neg_weight=0.5):
@@ -387,8 +391,8 @@ class Generator:
             h = raw_data[:, 0]
             r = raw_data[:, 1]
             t = raw_data[:, 2]
-            hr_t = get_label_mat(raw_data[:, 3], bs, te)
-            rt_h = get_label_mat(raw_data[:, 4], bs, te)
+            hr_t = get_label_mat(raw_data[:, 3], bs, te, neg_rate=self.config.neg_rate)
+            rt_h = get_label_mat(raw_data[:, 4], bs, te, neg_rate=self.config.neg_rate)
             self.processed_queue.put([h, r, t, hr_t, rt_h])
 
     def process_function_test_simple(self):
@@ -663,8 +667,30 @@ def test_generator_trans():
         # print("nt:", nt)
     gen.stop()
 
+def test_generator_simple():
+    import timeit
+    start_time = timeit.default_timer()
+    gen = Generator(config=GeneratorConfig(data='train', algo='tucker_v2'))
+    print("----init time:", timeit.default_timer() - start_time)
+    for i in range(10):
+        start_time_batch = timeit.default_timer()
+        data = list(next(gen))
+        h = data[0]
+        r = data[1]
+        r = data[2]
+        hr_t = data[3]
+        tr_h = data[4]
+        print("----batch:", i, "----time:",timeit.default_timer() - start_time_batch)
+        # time.sleep(0.05)
+        # print("hr_hr:", hr_hr)
+        # print("hr_t:", hr_t)
+        # print("tr_tr:", tr_tr)
+        # print("tr_h:", tr_h)
+    print("total time:", timeit.default_timer() - start_time)
+    gen.stop()
+
 
 if __name__ == '__main__':
     # test_generator_proje()
     # test_generator_conve()
-    test_generator_trans()
+    test_generator_simple()
