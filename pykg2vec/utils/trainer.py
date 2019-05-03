@@ -69,8 +69,8 @@ class Trainer(TrainerMeta):
             self.load_model()
         else:
 
-            # self.gen_train = Generator(config=GeneratorConfig(data='train', algo=self.model.model_name,
-            #                                                   batch_size=self.model.config.batch_size))
+            self.gen_train = Generator(config=GeneratorConfig(data='train', algo=self.model.model_name,
+                                                              batch_size=self.model.config.batch_size))
 
             for n_iter in range(self.config.epochs):
                 if self.model.model_name == "ProjE_pointwise":
@@ -79,6 +79,9 @@ class Trainer(TrainerMeta):
                 elif self.model.model_name.lower() in ["tucker"]:
                     self.train_model_epoch_simple(n_iter)
                     self.tiny_test_simple(n_iter)
+                elif self.model.model_name.lower() in ["tucker_v2"]:
+                    self.train_model_epoch_tucker_v2(n_iter)
+                    self.tiny_test_tucker_v2(n_iter)
                 elif self.model.model_name.lower() in ['conve', 'complex', "distmult"]:
                     self.train_model_epoch_conve(n_iter)
                     self.tiny_test_conve(n_iter)
@@ -233,6 +236,45 @@ class Trainer(TrainerMeta):
 
         self.training_results.append([epoch_idx, acc_loss])
 
+    def train_model_epoch_tucker_v2(self, epoch_idx):
+        acc_loss = 0
+
+        num_batch = self.gen_train.tot_train_data // self.config.batch_size if not self.debug else 10
+        start_time = timeit.default_timer()
+
+        for batch_idx in range(num_batch):
+            data = list(next(self.gen_train))
+
+            h = data[0]
+            r = data[1]
+            t = data[2]
+            hr_t = data[3]
+            rt_h = data[4]
+
+            feed_dict = {
+                self.model.h: h,
+                self.model.r: r,
+                self.model.t: t,
+                self.model.hr_t: hr_t,
+                self.model.rt_h: rt_h
+
+            }
+
+            _, step, loss = self.sess.run([self.op_train, self.global_step,
+                                                       self.model.loss], feed_dict)
+            # import pdb
+            # pdb.set_trace()
+
+            acc_loss += loss
+
+            print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
+                                                        batch_idx, num_batch, loss), end='\r')
+
+        print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
+            epoch_idx, acc_loss, timeit.default_timer() - start_time))
+
+        self.training_results.append([epoch_idx, acc_loss])
+
     def train_model_epoch_conve(self, epoch_idx):
         acc_loss = 0
 
@@ -279,6 +321,20 @@ class Trainer(TrainerMeta):
                 curr_epoch == self.config.epochs - 1:
             # self.evaluator.test(self.sess, curr_epoch)
             self.evaluator.test_step(self.sess, curr_epoch)
+            self.evaluator.print_test_summary(curr_epoch)
+
+            print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
+
+    def tiny_test_tucker_v2(self, curr_epoch):
+        start_time = timeit.default_timer()
+
+        if self.config.test_step == 0:
+            return
+
+        if curr_epoch % self.config.test_step == 0 or \
+                curr_epoch == 0 or \
+                curr_epoch == self.config.epochs - 1:
+            self.evaluator.test_tucker_v2(self.sess, curr_epoch)
             self.evaluator.print_test_summary(curr_epoch)
 
             print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))

@@ -146,7 +146,7 @@ class GeneratorConfig(object):
                  queue_size=50,
                  raw_queue_size=50,
                  processed_queue_size=50,
-                 process_num=4,
+                 process_num=1,
                  data='train', 
                  algo ='ConvE'
                  ):

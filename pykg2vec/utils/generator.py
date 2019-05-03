@@ -30,7 +30,7 @@ def gen_id(ids):
             i = 0
 
 
-def get_sparse_mat(data, bs, te, neg_rate=1):
+def get_label_mat(data, bs, te, neg_rate=1):
     mat = np.zeros(shape=(bs, te), dtype=np.int16)
     for i in range(bs):
         pos_samples = len(data[i])
@@ -71,7 +71,7 @@ class Generator:
         with open(str(self.config.data_path / 'data_stats.pkl'), 'rb') as f:
             self.data_stats = pickle.load(f)
 
-        if self.config.algo.lower() in ["tucker"]:
+        if self.config.algo.lower() in ["tucker","tucker_v2"]:
             with open(str(self.config.data_path / 'train_data.pkl'), 'rb') as f:
                 self.train_data = pickle.load(f)
                 self.tot_train_data = len(self.train_data)
@@ -248,7 +248,8 @@ class Generator:
             raw_data = np.asarray([[self.train_data[x].h,
                                     self.train_data[x].r,
                                     self.train_data[x].t,
-                                    self.train_data[x].hr_t
+                                    self.train_data[x].hr_t,
+                                    self.train_data[x].rt_h
                                     ] for x in
                                    self.rand_ids_train[bs * batch_idx: bs * (batch_idx + 1)]])
 
@@ -378,8 +379,6 @@ class Generator:
             p.daemon = True
             p.start()
 
-    # @jit(nopython=True, parallel=True)
-
     def process_function_train_simple(self):
         bs = self.config.batch_size
         te = self.data_stats.tot_entity
@@ -388,40 +387,9 @@ class Generator:
             h = raw_data[:, 0]
             r = raw_data[:, 1]
             t = raw_data[:, 2]
-            hr_t = get_sparse_mat(raw_data[:,3], bs, te)
-            # col = []
-            # for k in raw_data[:, 3]:
-            #     col.append(k)
-            # row = []
-            # for k in range(bs):
-            #     row.append([k] * len(col[k]))
-            # col_n = []
-            # row_n = []
-            # # TODO: Vectorize the loops
-            # for i in range(bs):
-            #     for j in range(len(col[i])):
-            #         col_n.append(col[i][j])
-            #         row_n.append(row[i][j])
-            #
-            # hr_t = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
-
-            # col = []
-            # for k in raw_data[:, 4]:
-            #     col.append(k)
-            # row = []
-            # for k in range(bs):
-            #     row.append([k] * len(col[k]))
-            # col_n = []
-            # row_n = []
-            # # TODO: Vectorize the loops
-            # for i in range(bs):
-            #     for j in range(len(col[i])):
-            #         col_n.append(col[i][j])
-            #         row_n.append(row[i][j])
-            #
-            # rt_h = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
-            # rt_h = self.get_sparse_mat(raw_data[:, 4], bs, te)
-            self.processed_queue.put([h, r, t, hr_t])
+            hr_t = get_label_mat(raw_data[:, 3], bs, te)
+            rt_h = get_label_mat(raw_data[:, 4], bs, te)
+            self.processed_queue.put([h, r, t, hr_t, rt_h])
 
     def process_function_test_simple(self):
         while True:
