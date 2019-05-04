@@ -58,7 +58,6 @@ class KGMetaData(object):
         self.tot_test_triples = tot_test_triples
         self.tot_train_triples = tot_train_triples
         self.tot_relation = tot_relation
-        self.tot_relation = tot_relation
         self.tot_entity = tot_entity
 
 
@@ -77,10 +76,6 @@ class DataPrep(object):
         self.test_triples = []
         self.validation_triples = []
 
-        self.tot_relation = 0
-        self.tot_triple = 0
-        self.tot_entity = 0
-
         self.entity2idx = {}
         self.idx2entity = {}
 
@@ -90,6 +85,26 @@ class DataPrep(object):
         self.hr_t = defaultdict(set)
         self.tr_h = defaultdict(set)
 
+
+    def init_variables(self):
+        self.train_triples = None
+        self.test_triples = None
+        self.validation_triples = None
+        self.entities = None 
+        self.relations = None
+
+        self.entity2idx = None
+        self.idx2entity = None
+        self.relation2idx = None
+        self.idx2relation = None
+
+        self.test_triples_ids = None
+        self.train_triples_ids = None
+        self.validation_triples_ids = None
+
+        self.hr_t = None
+        self.tr_h = None
+
     def prepare_data(self):
         '''the ways to prepare data are different across algorithms.'''
         tucker_series = ["tucker"]
@@ -98,10 +113,13 @@ class DataPrep(object):
         'kg2e', 'proje', 'rescal','slm', 'sme_bilinear', 'sme_linear', 'ntn', 'rotate']
 
         if self.algo.lower() in tucker_series:
+            self.init_variables()
             self.prepare_data_tucker()
         elif self.algo.lower() in conve_series:
+            self.init_variables()
             self.prepare_data_conve()
         elif self.algo.lower() in other_algorithms:
+            self.init_variables()
             self.prepare_data_others()
         else:
             raise NotImplementedError("Data preparation is not implemented for algorithm:", self.algo)
@@ -256,116 +274,91 @@ class DataPrep(object):
             for t
             in self.validation_triples]
     
+    def read_from_raw(self):
+        ''' '''
+        import timeit 
+        start_time = timeit.default_timer()
+        
+        if self.train_triples is None: 
+            self.train_triples      = self.config.read_triplets('train')
+        if self.test_triples is None:
+            self.test_triples       = self.config.read_triplets('test')
+        if self.validation_triples is None:
+            self.validation_triples = self.config.read_triplets('valid')
+        
+        if self.entities is None:
+            self.entities  = set()
+
+            all_triples = self.train_triples + self.test_triples + self.validation_triples
+            
+            for triplet in all_triples:
+                self.entities.add(triplet.h)
+                self.entities.add(triplet.t)
+
+        if self.relations is None:
+            self.relations = set()
+
+            all_triples = self.train_triples + self.test_triples + self.validation_triples
+
+            for triplet in all_triples:
+                self.relations.add(triplet.r)
+        
+        print('[%.2f sec]' % (timeit.default_timer() - start_time))
+ 
     def prepare_data_others(self):
 
-        self.train_triples      = self.config.read_triplets('train')
-        self.test_triples       = self.config.read_triplets('test')
-        self.validation_triples = self.config.read_triplets('valid')
+        self.read_from_raw()      
 
-        self.calculate_mapping()  # from entity and relation to indexes.
+        self.entity2idx   = self.get_entity2idx()
+        self.idx2entity   = self.get_idx2entity()
+        self.relation2idx = self.get_relation2idx() 
+        self.idx2relation = self.get_idx2relation()
+        self.test_triples_ids       = self.get_test_triples_ids()
+        self.train_triples_ids      = self.get_train_triples_ids()
+        self.validation_triples_ids = self.get_validation_triples_ids()
 
-        if not (self.config.tmp_data / 'test_triples_ids.pkl').exists():
-            self.test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
-                                            self.entity2idx[t.t]) for t in
-                                     self.test_triples]
-            with open(str(self.config.tmp_data / 'test_triples_ids.pkl'), 'wb') as f:
-                pickle.dump(self.test_triples_ids, f)
-        else:
-            with open(str(self.config.tmp_data / 'test_triples_ids.pkl'), 'rb') as f:
-                self.test_triples_ids = pickle.load(f)
-
+        self.data_stats.tot_entity   = len(self.entity2idx)
+        self.data_stats.tot_relation = len(self.relation2idx)
+        self.data_stats.tot_triple   = len(self.test_triples) + len(self.train_triples) + len(self.validation_triples)
         self.data_stats.tot_test_triples = len(self.test_triples_ids)
-
-        if not (self.config.tmp_data / 'train_triples_ids.pkl').exists():
-            self.train_triples_ids = [Triple(self.entity2idx[t.h],
-                                             self.relation2idx[t.r], self.entity2idx[t.t]) for t
-                                      in
-                                      self.train_triples]
-            with open(str(self.config.tmp_data / 'train_triples_ids.pkl'), 'wb') as f:
-                pickle.dump(self.train_triples_ids, f)
-        else:
-            with open(str(self.config.tmp_data / 'train_triples_ids.pkl'), 'rb') as f:
-                self.train_triples_ids = pickle.load(f)
-
         self.data_stats.tot_train_triples = len(self.train_triples_ids)
-
-        if not (self.config.tmp_data / 'validation_triples_ids.pkl').exists():
-            self.validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
-                                                  self.entity2idx[t.t])
-                                           for t
-                                           in self.validation_triples]
-            with open(str(self.config.tmp_data / 'validation_triples_ids.pkl'), 'wb') as f:
-                pickle.dump(self.validation_triples_ids, f)
-        else:
-            with open(str(self.config.tmp_data / 'validation_triples_ids.pkl'), 'rb') as f:
-                self.validation_triples_ids = pickle.load(f)
-
         self.data_stats.tot_valid_triples = len(self.validation_triples_ids)
 
-        if self.algo.lower().startswith('proje'):
-            self.hr_t_ids_train = defaultdict(set)
-            self.tr_h_ids_train = defaultdict(set)
+        self.backup_metadata()
+        
+        # if self.algo.lower().startswith('proje'):
+        #     self.hr_t_ids_train = defaultdict(set)
+        #     self.tr_h_ids_train = defaultdict(set)
 
-            if (self.config.tmp_data / 'hr_t_ids_train.pkl').exists():
-                for t in self.train_triples_ids:
-                    self.hr_t_ids_train[(t.h, t.r)].add(t.t)
-                    self.tr_h_ids_train[(t.t, t.r)].add(t.h)
-                with open(str(self.config.tmp_data / 'hr_t_ids_train.pkl'), 'wb') as f:
-                    pickle.dump(self.hr_t_ids_train, f)
-                with open(str(self.config.tmp_data / 'tr_h_ids_train.pkl'), 'wb') as f:
-                    pickle.dump(self.tr_h_ids_train, f)
+        #     if (self.config.tmp_data / 'hr_t_ids_train.pkl').exists():
+        #         for t in self.train_triples_ids:
+        #             self.hr_t_ids_train[(t.h, t.r)].add(t.t)
+        #             self.tr_h_ids_train[(t.t, t.r)].add(t.h)
+        #         with open(str(self.config.tmp_data / 'hr_t_ids_train.pkl'), 'wb') as f:
+        #             pickle.dump(self.hr_t_ids_train, f)
+        #         with open(str(self.config.tmp_data / 'tr_h_ids_train.pkl'), 'wb') as f:
+        #             pickle.dump(self.tr_h_ids_train, f)
 
-        if self.sampling == "bern":
-            import pdb
-            pdb.set_trace()
-            self.relation_property_head = {x: [] for x in range(self.tot_relation)}
-            self.relation_property_tail = {x: [] for x in
-                                           range(self.tot_relation)}
-            for t in self.train_triples_ids:
-                self.relation_property_head[t.r].append(t.h)
-                self.relation_property_tail[t.r].append(t.t)
+        # if self.sampling == "bern":
+        #     import pdb
+        #     pdb.set_trace()
+        #     self.relation_property_head = {x: [] for x in range(self.tot_relation)}
+        #     self.relation_property_tail = {x: [] for x in
+        #                                    range(self.tot_relation)}
+        #     for t in self.train_triples_ids:
+        #         self.relation_property_head[t.r].append(t.h)
+        #         self.relation_property_tail[t.r].append(t.t)
 
-            self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
-                    len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
-                                      for x in
-                                      self.relation_property_head.keys()}
-            with open(str(self.config.tmp_data / 'relation_property.pkl'), 'wb') as f:
-                pickle.dump(self.relation_property, f)
+        #     self.relation_property = {x: (len(set(self.relation_property_tail[x]))) / (
+        #             len(set(self.relation_property_head[x])) + len(set(self.relation_property_tail[x]))) \
+        #                               for x in
+        #                               self.relation_property_head.keys()}
+        #     with open(str(self.config.tmp_data / 'relation_property.pkl'), 'wb') as f:
+        #         pickle.dump(self.relation_property, f)
 
     def prepare_data_evaluation(self):
-        if not (self.config.tmp_data / 'hr_t.pkl').exists():
-            for t in self.train_triples:
-                self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-                self.tr_h[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
-
-            for t in self.test_triples:
-                self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-                self.tr_h[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
-
-            for t in self.validation_triples:
-                self.hr_t[(self.entity2idx[t.h], self.relation2idx[t.r])].add(self.entity2idx[t.t])
-                self.tr_h[(self.entity2idx[t.t], self.relation2idx[t.r])].add(self.entity2idx[t.h])
-
-            with open(str(self.config.tmp_data / 'hr_t.pkl'), 'wb') as f:
-                pickle.dump(self.hr_t, f)
-            with open(str(self.config.tmp_data / 'tr_h.pkl'), 'wb') as f:
-                pickle.dump(self.tr_h, f)
-        else:
-            with open(str(self.config.tmp_data / 'hr_t.pkl'), 'rb') as f:
-                self.hr_t = pickle.load(f)
-            with open(str(self.config.tmp_data / 'tr_h.pkl'), 'rb') as f:
-                self.tr_h = pickle.load(f)
-
-        if not (self.config.tmp_data / 'data_stats.pkl').exists():
-            with open(str(self.config.tmp_data / 'data_stats.pkl'), 'wb') as f:
-                pickle.dump(self.data_stats, f)
-        else:
-            with open(str(self.config.tmp_data / 'data_stats.pkl'), 'rb') as f:
-                self.data_stats = pickle.load(f)
-
-        self.tot_triple = self.data_stats.tot_triple
-        self.tot_entity = self.data_stats.tot_entity
-        self.tot_relation = self.data_stats.tot_relation
+        self.hr_t = self.get_hr_t()
+        self.tr_h = self.get_tr_h()
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
@@ -527,6 +520,218 @@ class DataPrep(object):
                     else:
                         continue
 
+    def get_entity2idx(self):
+        ''' entity2idx should be backup in dataset folder'''
+        if self.entity2idx: 
+            return self.entity2idx
+
+        entity2idx = None 
+        entity2idx_path = self.config.dataset.entity2idx_path
+
+        if entity2idx_path.exists():
+            with open(str(entity2idx_path), 'rb') as f:
+                entity2idx = pickle.load(f)
+            return entity2idx
+
+        self.read_from_raw()
+        self.entities = np.sort(list(self.entities))
+        entity2idx = {v: k for k, v in enumerate(self.entities)} ##
+       
+        with open(str(entity2idx_path), 'wb') as f:
+            pickle.dump(entity2idx, f)
+
+        return entity2idx
+
+    def get_idx2entity(self):
+        ''' idx2entity should be backup in dataset folder'''
+        if self.idx2entity: 
+            return self.idx2entity
+
+        idx2entity = None 
+        idx2entity_path = self.config.dataset.idx2entity_path
+
+        if idx2entity_path.exists():
+            with open(str(idx2entity_path), 'rb') as f:
+                idx2entity = pickle.load(f)
+            return idx2entity
+
+        idx2entity = {v: k for k, v in self.get_entity2idx().items()} ##
+       
+        with open(str(idx2entity_path), 'wb') as f:
+            pickle.dump(idx2entity, f)
+
+        return idx2entity
+
+    def get_relation2idx(self):
+        ''' relation2idx should be backup in dataset folder'''
+        if self.relation2idx: 
+            return self.relation2idx
+
+        relation2idx = None 
+        relation2idx_path = self.config.dataset.relation2idx_path
+
+        if relation2idx_path.exists():
+            with open(str(relation2idx_path), 'rb') as f:
+                relation2idx = pickle.load(f)
+            return relation2idx
+
+        self.read_from_raw()
+        self.relations = np.sort(list(self.relations))
+        relation2idx = {v: k for k, v in enumerate(self.relations)} ##
+       
+        with open(str(relation2idx_path), 'wb') as f:
+            pickle.dump(relation2idx, f)
+
+        return relation2idx
+
+    def get_idx2relation(self):
+        ''' relation2idx should be backup in dataset folder'''
+        if self.idx2relation: 
+            return self.idx2relation
+
+        idx2relation = None 
+        idx2relation_path = self.config.dataset.idx2relation_path
+
+        if idx2relation_path.exists():
+            with open(str(idx2relation_path), 'rb') as f:
+                idx2relation = pickle.load(f)
+            return idx2relation
+        
+        idx2relation = {v: k for k, v in self.get_relation2idx().items()} ##
+
+        with open(str(idx2relation_path), 'wb') as f:
+            pickle.dump(idx2relation, f)
+
+        return idx2relation
+
+    def get_test_triples_ids(self):
+        if self.test_triples_ids: 
+            return self.test_triples_ids
+
+        test_triples_ids = [] 
+        test_triples_ids_path = self.config.dataset.testing_triples_id_path
+
+        if test_triples_ids_path.exists(): 
+            with open(str(test_triples_ids_path), 'rb') as f:
+                test_triples_ids = pickle.load(f)
+            return test_triples_ids
+
+        self.read_from_raw()
+        test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
+                                   self.entity2idx[t.t]) for t in self.test_triples]
+
+        with open(str(test_triples_ids_path), 'wb') as f:
+            pickle.dump(test_triples_ids, f)
+        
+        return test_triples_ids
+
+    def get_train_triples_ids(self):
+        if self.train_triples_ids: 
+            return self.train_triples_ids
+
+        train_triples_ids = [] 
+        train_triples_ids_path = self.config.dataset.training_triples_id_path
+
+        if train_triples_ids_path.exists(): 
+            with open(str(train_triples_ids_path), 'rb') as f:
+                train_triples_ids = pickle.load(f)
+            return train_triples_ids
+
+        self.read_from_raw()
+        train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
+                                   self.entity2idx[t.t]) for t in self.train_triples]
+
+        with open(str(train_triples_ids_path), 'wb') as f:
+            pickle.dump(train_triples_ids, f)
+        
+        return train_triples_ids
+
+    def get_validation_triples_ids(self):
+        if self.validation_triples_ids: 
+            return self.validation_triples_ids
+
+        validation_triples_ids = [] 
+        validation_triples_ids_path = self.config.dataset.validating_triples_id_path
+
+        if validation_triples_ids_path.exists(): 
+            with open(str(validation_triples_ids_path), 'rb') as f:
+                validation_triples_ids = pickle.load(f)
+            return validation_triples_ids
+
+        self.read_from_raw()
+        validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
+                                   self.entity2idx[t.t]) for t in self.validation_triples]
+
+        with open(str(validation_triples_ids_path), 'wb') as f:
+            pickle.dump(validation_triples_ids, f)
+        
+        return validation_triples_ids
+    
+    def get_hr_t(self):
+        if self.hr_t is not None:
+            return self.hr_t
+
+        hr_t = defaultdict(set)
+        hrt_path = self.config.dataset.hrt_path
+
+        if hrt_path.exists():
+            with open(str(hrt_path), 'rb') as f:
+                hr_t = pickle.load(f) 
+            return hr_t
+
+        for t in self.get_test_triples_ids():
+            hr_t[(t.h, t.r)].add(t.t)
+
+        for t in self.get_train_triples_ids():
+            hr_t[(t.h, t.r)].add(t.t)
+
+        for t in self.get_validation_triples_ids():
+            hr_t[(t.h, t.r)].add(t.t)
+
+        with open(str(hrt_path), 'wb') as f:
+            pickle.dump(hr_t, f)
+
+        return hr_t
+
+    def get_tr_h(self):
+        if self.tr_h is not None:
+            return self.tr_h
+
+        tr_h = defaultdict(set)
+        trh_path = self.config.dataset.trh_path
+
+        if trh_path.exists():
+            with open(str(trh_path), 'rb') as f:
+                tr_h = pickle.load(f) 
+            return tr_h
+
+        for t in self.get_test_triples_ids():
+            tr_h[(t.t, t.r)].add(t.h)
+
+        for t in self.get_train_triples_ids():
+            tr_h[(t.t, t.r)].add(t.h)
+
+        for t in self.get_validation_triples_ids():
+            tr_h[(t.t, t.r)].add(t.h)
+
+        with open(str(trh_path), 'wb') as f:
+            pickle.dump(tr_h, f)
+
+        return tr_h
+
+    def backup_metadata(self):
+        kg_meta = self.data_stats
+
+        kg_meta.tot_entity   = len(self.entity2idx)
+        kg_meta.tot_relation = len(self.relation2idx)
+        kg_meta.tot_triple   = len(self.test_triples) + len(self.train_triples) + len(self.validation_triples)
+        kg_meta.tot_test_triples = len(self.test_triples_ids)
+        kg_meta.tot_train_triples = len(self.train_triples_ids)
+        kg_meta.tot_valid_triples = len(self.validation_triples_ids)
+
+        with open(str(self.config.dataset.metadata_path), 'wb') as f:
+            pickle.dump(self.data_stats, f)
+
     def dump(self):
         ''' dump key information'''
         print("\n----------Relation to Indexes--------------")
@@ -538,11 +743,11 @@ class DataPrep(object):
         print("---------------------------------------------")
 
         print("\n----------Train Triple Stats---------------")
-        print("Total Training Triples   :", len(self.train_triples))
-        print("Total Testing Triples    :", len(self.test_triples))
-        print("Total validation Triples :", len(self.validation_triples))
-        print("Total Entities           :", self.tot_entity)
-        print("Total Relations          :", self.tot_relation)
+        print("Total Training Triples   :", len(self.train_triples_ids))
+        print("Total Testing Triples    :", len(self.test_triples_ids))
+        print("Total validation Triples :", len(self.validation_triples_ids))
+        print("Total Entities           :", self.data_stats.tot_entity)
+        print("Total Relations          :", self.data_stats.tot_relation)
         print("---------------------------------------------")
 
     def dump_triples(self):
@@ -556,10 +761,10 @@ class DataPrep(object):
 
 
 def test_data_prep():
-    data_handler = DataPrep('Freebase15k')
+    data_handler = DataPrep('Freebase15k', sampling="uniform", algo='transe')
+    data_handler.prepare_data()
     data_handler.dump()
 
 
 if __name__ == '__main__':
-    # test_data_prep()
-    pass
+    test_data_prep()

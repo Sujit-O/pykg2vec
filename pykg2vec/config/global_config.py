@@ -44,6 +44,13 @@ class FreebaseFB15k(object):
             'valid': self.root_path / 'FB15k' / 'freebase_mtr100_mte100-valid.txt'
         }
 
+        self.testing_triples_id_path = self.root_path / 'FB15k' / 'test_triples_ids.pkl'
+        self.training_triples_id_path = self.root_path / 'FB15k' / 'training_triples_ids.pkl'
+        self.validating_triples_id_path = self.root_path / 'FB15k' / 'validating_triples_ids.pkl'
+        self.hrt_path = self.root_path / 'FB15k' / 'hr_t.pkl'
+        self.trh_path = self.root_path / 'FB15k' / 'tr_h.pkl'
+        self.metadata_path = self.root_path / 'FB15k' / 'metadata.pkl'
+
     def download(self):
         ''' download Freebase 15k dataset from url'''
         print("Downloading the dataset %s" % self.name)
@@ -137,6 +144,17 @@ class GlobalConfig(object):
                 s, p, o = line.split('\t')
                 triplets.append(Triple(s.strip(), p.strip(), o.strip()))
         return triplets
+
+    def read_triplets_with_reverse_rel(self, set_type):
+        '''used in conv and tucker algorithms'''
+        triplets = []
+        with open(str(self.dataset.data_paths[set_type]), 'r') as file:
+            for line in file.readlines():
+                s, p, o = line.split('\t')
+                triplets.append(Triple(s.strip(), p.strip(), o.strip()))
+                triplets.append(Triple(o.strip(), p.strip()+'_reverse', s.strip()))
+        return triplets
+
 
 class GeneratorConfig(object):
     """Configuration for Generator

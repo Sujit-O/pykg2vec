@@ -21,8 +21,9 @@ from core.SLM import SLM
 
 from config.config import *
 from utils.dataprep import DataPrep
+# from utils.dataprep import Triple
 from utils.trainer import Trainer
-
+import pickle
 import tensorflow as tf
 
 class Pykg2vecIT(unittest.TestCase):
@@ -30,8 +31,8 @@ class Pykg2vecIT(unittest.TestCase):
     def setUp(self):
         print('setup')
         DataPrep("Freebase15k", sampling="uniform", algo='TransE').prepare_data()
-        DataPrep("Freebase15k", sampling="uniform", algo='ConvE').prepare_data()
-        DataPrep("Freebase15k", sampling="uniform", algo='ProjE').prepare_data()
+        # DataPrep("Freebase15k", sampling="uniform", algo='ConvE').prepare_data()
+        # DataPrep("Freebase15k", sampling="uniform", algo='ProjE').prepare_data()
        
     def test_Complex(self):   
 
