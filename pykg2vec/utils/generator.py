@@ -88,7 +88,7 @@ class Generator:
             self.rand_ids_test = np.random.permutation(len(self.test_data))
             self.rand_ids_valid = np.random.permutation(len(self.valid_data))
 
-            self.gen_batch_simple()
+            self.gen_batch()
 
         elif self.config.algo.lower() in ["conve", "complex", "distmult"]:
             with open(str(self.config.data_path / 'train_data.pkl'), 'rb') as f:
@@ -155,7 +155,7 @@ class Generator:
         for p in self.process_list:
             p.terminate()
 
-    def gen_batch_simple(self):
+    def gen_batch(self):
         bs = self.config.batch_size
         te = self.data_stats.tot_entity
         if self.config.data.startswith('train'):
@@ -170,12 +170,12 @@ class Generator:
 
         ids = np.random.permutation(number_of_batches)
 
-        worker = Process(target=self.raw_data_generator_simple, args=(ids,))
+        worker = Process(target=self.raw_data_generator, args=(ids,))
         worker.daemon = True
         self.process_list.append(worker)
         worker.start()
 
-        self.pool_process_simple()
+        self.pool_process()
 
     def gen_batch_proje(self, n_entity=None, neg_weight=0.5):
         bs = self.config.batch_size
@@ -244,7 +244,7 @@ class Generator:
         worker.start()
         self.pool_process_trans()
 
-    def raw_data_generator_simple(self, ids):
+    def raw_data_generator(self, ids):
         gen = iter(gen_id(ids))
         bs = self.config.batch_size
         while True:
@@ -353,12 +353,9 @@ class Generator:
             p.daemon = True
             p.start()
 
-    def pool_process_simple(self):
+    def pool_process(self):
         for i in range(self.config.process_num):
-            if self.config.data.startswith('train'):
-                p = Process(target=self.process_function_train_simple, args=())
-            else:
-                p = Process(target=self.process_function_test_simple, args=())
+            p = Process(target=self.process_function, args=())
             self.process_list.append(p)
             p.daemon = True
             p.start()
@@ -383,7 +380,7 @@ class Generator:
             p.daemon = True
             p.start()
 
-    def process_function_train_simple(self):
+    def process_function(self):
         bs = self.config.batch_size
         te = self.data_stats.tot_entity
         while True:
@@ -391,17 +388,14 @@ class Generator:
             h = raw_data[:, 0]
             r = raw_data[:, 1]
             t = raw_data[:, 2]
-            hr_t = get_label_mat(raw_data[:, 3], bs, te, neg_rate=self.config.neg_rate)
-            rt_h = get_label_mat(raw_data[:, 4], bs, te, neg_rate=self.config.neg_rate)
-            self.processed_queue.put([h, r, t, hr_t, rt_h])
-
-    def process_function_test_simple(self):
-        while True:
-            raw_data = self.raw_queue.get()
-            h = raw_data[:, 0]
-            r = raw_data[:, 1]
-            t = raw_data[:, 2]
-            self.processed_queue.put([h, r, t])
+            if self.config.data.startswith('train'):
+                hr_t = get_label_mat(raw_data[:, 3], bs, te, neg_rate=self.config.neg_rate)
+                rt_h = get_label_mat(raw_data[:, 4], bs, te, neg_rate=self.config.neg_rate)
+                self.processed_queue.put([h, r, t, hr_t, rt_h])
+            elif self.config.data.startswith('test'):
+                self.processed_queue.put([h, r, t])
+            else:
+                pass
 
     def process_function_train_trans(self):
         te = self.data_stats.tot_entity
