@@ -43,16 +43,15 @@ class ConvE(ModelMeta):
         self.def_loss()
 
     def def_inputs(self):
-        self.e1 = tf.placeholder(tf.int32, [None])
+        self.h = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
-        self.e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.t = tf.placeholder(tf.int32, [None])
+        self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
-        self.test_e1 = tf.placeholder(tf.int32, [None])
-        self.test_e2 = tf.placeholder(tf.int32, [None])
+        self.test_h = tf.placeholder(tf.int32, [None])
         self.test_r = tf.placeholder(tf.int32, [None])
-        self.test_r_rev = tf.placeholder(tf.int32, [None])
-        self.test_e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-        self.test_e2_multi2 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.test_t = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
@@ -117,49 +116,53 @@ class ConvE(ModelMeta):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        e1 = tf.nn.embedding_lookup(ent_emb_norm, self.e1)
-        r = tf.nn.embedding_lookup(rel_emb_norm, self.r)
+        h_emb = tf.nn.embedding_lookup(ent_emb_norm, self.h)
+        r_emb = tf.nn.embedding_lookup(rel_emb_norm, self.r)
+        t_emb = tf.nn.embedding_lookup(ent_emb_norm, self.t)
 
-        stacked_e = tf.reshape(e1, [-1, 10, 20, 1])
-        stacked_r = tf.reshape(r, [-1, 10, 20, 1])
+        hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        rt_h = self.rt_h * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
 
-        stacked_er = tf.concat([stacked_e, stacked_r], 1)
+        stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
+        stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
+        stacked_t = tf.reshape(t_emb, [-1, 10, 20, 1])
 
-        e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        # e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
-        pred = self.forward(stacked_er)
+        stacked_hr = tf.concat([stacked_h, stacked_r], 1)
+        stacked_tr = tf.concat([stacked_t, stacked_r], 1)
 
-        loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
+        # TODO make two different forward layers for head and tail
+        pred_tails = self.forward(stacked_hr)
+        pred_heads = self.forward(stacked_rt)
 
-        reg_losses = tf.nn.l2_loss(self.ent_embeddings) + tf.nn.l2_loss(self.rel_embeddings)
+        loss_tail_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
+        loss_head_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
 
-        self.loss = loss + self.config.lmbda * reg_losses
+        reg_losses = tf.nn.l2_loss(h_emb) + tf.nn.l2_loss(r_emb) +tf.nn.l2_loss(t_emb)
+
+        self.loss = loss_tail_pred+loss_head_pred + self.config.lmbda * reg_losses
 
 
     def test_batch(self):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        e1 = tf.nn.embedding_lookup(ent_emb_norm, self.test_e1)
-        e2 = tf.nn.embedding_lookup(ent_emb_norm, self.test_e2)
+        h_emb = tf.nn.embedding_lookup(ent_emb_norm, self.test_h)
+        r_emb = tf.nn.embedding_lookup(rel_emb_norm, self.test_r)
+        t_emb = tf.nn.embedding_lookup(ent_emb_norm, self.test_t)
 
-        r = tf.nn.embedding_lookup(rel_emb_norm, self.test_r)
-        r_rev = tf.nn.embedding_lookup(rel_emb_norm, self.test_r_rev)
+        stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
+        stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
+        stacked_t = tf.reshape(t_emb, [-1, 10, 20, 1])
 
-        stacked_head_e = tf.reshape(e1, [-1, 10, 20, 1])
-        stacked_head_r = tf.reshape(r, [-1, 10, 20, 1])
+        stacked_hr = tf.concat([stacked_h, stacked_r], 1)
+        stacked_tr = tf.concat([stacked_t, stacked_r], 1)
 
-        stacked_tail_e = tf.reshape(e2, [-1, 10, 20, 1])
-        stacked_tail_r = tf.reshape(r_rev, [-1, 10, 20, 1])
+        # TODO make two different forward layers for head and tail
+        pred_tails = self.forward(stacked_hr)
+        pred_heads = self.forward(stacked_rt)
 
-        stacked_hr = tf.concat([stacked_head_e, stacked_head_r], 1)
-        stacked_tr = tf.concat([stacked_tail_e, stacked_tail_r], 1)
-
-        pred4head = self.forward(stacked_hr)
-        pred4tail = self.forward(stacked_tr)
-
-        _, head_rank = tf.nn.top_k(-pred4head, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(-pred4tail, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
