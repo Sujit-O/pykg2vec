@@ -120,11 +120,18 @@ class DataPrep(object):
             self.prepare_data_conve()
         elif self.algo.lower() in other_algorithms:
             self.init_variables()
-            self.prepare_data_others()
+            self.entity2idx   = self.get_entity2idx()
+            self.idx2entity   = self.get_idx2entity()
+            self.relation2idx = self.get_relation2idx() 
+            self.idx2relation = self.get_idx2relation()
+            self.test_triples_ids       = self.get_test_triples_ids()
+            self.train_triples_ids      = self.get_train_triples_ids()
+            self.validation_triples_ids = self.get_validation_triples_ids()
+            self.hr_t = self.get_hr_t()
+            self.tr_h = self.get_tr_h()
+            self.backup_metadata()
         else:
             raise NotImplementedError("Data preparation is not implemented for algorithm:", self.algo)
-        
-        self.prepare_data_evaluation()
 
     def prepare_data_tucker(self):
         
@@ -274,40 +281,53 @@ class DataPrep(object):
             for t
             in self.validation_triples]
     
-    def read_from_raw(self):
-        ''' '''
-        import timeit 
-        start_time = timeit.default_timer()
-        
+    def read_train_triples(self):
         if self.train_triples is None: 
-            self.train_triples      = self.config.read_triplets('train')
+            train_triples = self.config.read_triplets('train')
+            return train_triples
+        return self.train_triples
+
+    def read_test_triples(self):
         if self.test_triples is None:
-            self.test_triples       = self.config.read_triplets('test')
+            test_triples = self.config.read_triplets('test')
+            return test_triples
+        return self.test_triples
+
+    def read_valid_triples(self):
         if self.validation_triples is None:
-            self.validation_triples = self.config.read_triplets('valid')
-        
-        if self.entities is None:
-            self.entities  = set()
+            validation_triples = self.config.read_triplets('valid')
+            return validation_triples
+        return self.validation_triples
 
-            all_triples = self.train_triples + self.test_triples + self.validation_triples
+    def get_entities(self):
+        if self.entities is not None:
+            return self.entities
+
+        entities  = set()
+
+        all_triples = self.read_train_triples() + self.read_test_triples() + self.read_valid_triples()
             
-            for triplet in all_triples:
-                self.entities.add(triplet.h)
-                self.entities.add(triplet.t)
-
-        if self.relations is None:
-            self.relations = set()
-
-            all_triples = self.train_triples + self.test_triples + self.validation_triples
-
-            for triplet in all_triples:
-                self.relations.add(triplet.r)
+        for triplet in all_triples:
+            entities.add(triplet.h)
+            entities.add(triplet.t)
         
-        print('[%.2f sec]' % (timeit.default_timer() - start_time))
- 
-    def prepare_data_others(self):
+        return np.sort(list(entities))
 
-        self.read_from_raw()      
+    def get_relations(self):
+        if self.relations is not None:
+            return self.relations
+
+        relations  = set()
+
+        all_triples = self.read_train_triples() + self.read_test_triples() + self.read_valid_triples()
+            
+        for triplet in all_triples:
+            relations.add(triplet.h)
+            relations.add(triplet.t)
+        
+        return np.sort(list(relations))
+
+    def prepare_data_others(self):
 
         self.entity2idx   = self.get_entity2idx()
         self.idx2entity   = self.get_idx2entity()
@@ -316,13 +336,6 @@ class DataPrep(object):
         self.test_triples_ids       = self.get_test_triples_ids()
         self.train_triples_ids      = self.get_train_triples_ids()
         self.validation_triples_ids = self.get_validation_triples_ids()
-
-        self.data_stats.tot_entity   = len(self.entity2idx)
-        self.data_stats.tot_relation = len(self.relation2idx)
-        self.data_stats.tot_triple   = len(self.test_triples) + len(self.train_triples) + len(self.validation_triples)
-        self.data_stats.tot_test_triples = len(self.test_triples_ids)
-        self.data_stats.tot_train_triples = len(self.train_triples_ids)
-        self.data_stats.tot_valid_triples = len(self.validation_triples_ids)
 
         self.backup_metadata()
         
@@ -355,10 +368,6 @@ class DataPrep(object):
         #                               self.relation_property_head.keys()}
         #     with open(str(self.config.tmp_data / 'relation_property.pkl'), 'wb') as f:
         #         pickle.dump(self.relation_property, f)
-
-    def prepare_data_evaluation(self):
-        self.hr_t = self.get_hr_t()
-        self.tr_h = self.get_tr_h()
 
     def calculate_mapping(self):
         print("Calculating entity2idx & idx2entity & relation2idx & idx2relation.")
@@ -533,9 +542,7 @@ class DataPrep(object):
                 entity2idx = pickle.load(f)
             return entity2idx
 
-        self.read_from_raw()
-        self.entities = np.sort(list(self.entities))
-        entity2idx = {v: k for k, v in enumerate(self.entities)} ##
+        entity2idx = {v: k for k, v in enumerate(self.get_entities())} ##
        
         with open(str(entity2idx_path), 'wb') as f:
             pickle.dump(entity2idx, f)
@@ -574,10 +581,8 @@ class DataPrep(object):
             with open(str(relation2idx_path), 'rb') as f:
                 relation2idx = pickle.load(f)
             return relation2idx
-
-        self.read_from_raw()
-        self.relations = np.sort(list(self.relations))
-        relation2idx = {v: k for k, v in enumerate(self.relations)} ##
+       
+        relation2idx = {v: k for k, v in enumerate(self.get_relations())} ##
        
         with open(str(relation2idx_path), 'wb') as f:
             pickle.dump(relation2idx, f)
@@ -616,9 +621,8 @@ class DataPrep(object):
                 test_triples_ids = pickle.load(f)
             return test_triples_ids
 
-        self.read_from_raw()
-        test_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
-                                   self.entity2idx[t.t]) for t in self.test_triples]
+        test_triples_ids = [Triple(self.get_entity2idx()[t.h], self.get_relation2idx()[t.r],
+                                   self.get_entity2idx()[t.t]) for t in self.read_test_triples()]
 
         with open(str(test_triples_ids_path), 'wb') as f:
             pickle.dump(test_triples_ids, f)
@@ -637,9 +641,8 @@ class DataPrep(object):
                 train_triples_ids = pickle.load(f)
             return train_triples_ids
 
-        self.read_from_raw()
-        train_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
-                                   self.entity2idx[t.t]) for t in self.train_triples]
+        train_triples_ids = [Triple(self.get_entity2idx()[t.h], self.get_relation2idx()[t.r],
+                                   self.get_entity2idx()[t.t]) for t in self.read_train_triples()]
 
         with open(str(train_triples_ids_path), 'wb') as f:
             pickle.dump(train_triples_ids, f)
@@ -658,9 +661,8 @@ class DataPrep(object):
                 validation_triples_ids = pickle.load(f)
             return validation_triples_ids
 
-        self.read_from_raw()
-        validation_triples_ids = [Triple(self.entity2idx[t.h], self.relation2idx[t.r],
-                                   self.entity2idx[t.t]) for t in self.validation_triples]
+        validation_triples_ids = [Triple(self.get_entity2idx()[t.h], self.get_relation2idx()[t.r],
+                                   self.get_entity2idx()[t.t]) for t in self.read_valid_triples()]
 
         with open(str(validation_triples_ids_path), 'wb') as f:
             pickle.dump(validation_triples_ids, f)
@@ -724,10 +726,10 @@ class DataPrep(object):
 
         kg_meta.tot_entity   = len(self.entity2idx)
         kg_meta.tot_relation = len(self.relation2idx)
-        kg_meta.tot_triple   = len(self.test_triples) + len(self.train_triples) + len(self.validation_triples)
         kg_meta.tot_test_triples = len(self.test_triples_ids)
         kg_meta.tot_train_triples = len(self.train_triples_ids)
         kg_meta.tot_valid_triples = len(self.validation_triples_ids)
+        kg_meta.tot_triple   = kg_meta.tot_test_triples + kg_meta.tot_train_triples + kg_meta.tot_valid_triples
 
         with open(str(self.config.dataset.metadata_path), 'wb') as f:
             pickle.dump(self.data_stats, f)
