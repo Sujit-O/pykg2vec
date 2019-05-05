@@ -56,12 +56,14 @@ class Generator:
           batch for training algorithms
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, model_config=None):
 
         if not config:
             self.config = GeneratorConfig()
         else:
             self.config = config
+
+        self.model_config = model_config
 
         self.queue = Queue(self.config.queue_size)
         self.raw_queue = Queue(self.config.raw_queue_size)
@@ -71,9 +73,8 @@ class Generator:
         self.tot_test_data = None
         self.tot_valid_data = None
 
-        with open(str(self.config.data_path / 'data_stats.pkl'), 'rb') as f:
-            self.data_stats = pickle.load(f)
-
+        self.data_stats = self.model_config.kg_meta
+        
         if self.config.algo.lower() in ["tucker","tucker_v2","conve", "complex", "distmult"]:
             with open(str(self.config.data_path / 'train_data.pkl'), 'rb') as f:
                 self.train_data = pickle.load(f)
@@ -110,15 +111,13 @@ class Generator:
             self.gen_batch_proje()
 
         else:
-            with open(str(self.config.data_path / 'train_triples_ids.pkl'), 'rb') as f:
-                self.train_triples_ids = pickle.load(f)
-                self.tot_train_data = len(self.train_triples_ids)
-            with open(str(self.config.data_path / 'test_triples_ids.pkl'), 'rb') as f:
-                self.test_triples_ids = pickle.load(f)
-                self.tot_test_data = len(self.test_triples_ids)
-            with open(str(self.config.data_path / 'validation_triples_ids.pkl'), 'rb') as f:
-                self.valid_triples_ids = pickle.load(f)
-                self.tot_valid_data = len(self.valid_triples_ids)
+            
+            self.train_triples_ids = self.model_config.read_train_triples_ids() 
+            self.test_triples_ids  = self.model_config.read_test_triples_ids() 
+            self.valid_triples_ids = self.model_config.read_valid_triples_ids()
+            self.tot_train_data = len(self.train_triples_ids)
+            self.tot_test_data = len(self.test_triples_ids)
+            self.tot_valid_data = len(self.valid_triples_ids)
             self.rand_ids_train = np.random.permutation(len(self.train_triples_ids))
             self.rand_ids_test = np.random.permutation(len(self.test_triples_ids))
             self.rand_ids_valid = np.random.permutation(len(self.valid_triples_ids))
@@ -314,7 +313,7 @@ class Generator:
             else:
                 pass
 
-    def process_function_trans(self):
+    def process_function_train_trans(self):
         te = self.data_stats.tot_entity
         bs = self.config.batch_size
         while True:

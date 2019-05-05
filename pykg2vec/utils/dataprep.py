@@ -322,8 +322,7 @@ class DataPrep(object):
         all_triples = self.read_train_triples() + self.read_test_triples() + self.read_valid_triples()
             
         for triplet in all_triples:
-            relations.add(triplet.h)
-            relations.add(triplet.t)
+            relations.add(triplet.r)
         
         return np.sort(list(relations))
 
@@ -620,9 +619,9 @@ class DataPrep(object):
             with open(str(test_triples_ids_path), 'rb') as f:
                 test_triples_ids = pickle.load(f)
             return test_triples_ids
-
-        test_triples_ids = [Triple(self.get_entity2idx()[t.h], self.get_relation2idx()[t.r],
-                                   self.get_entity2idx()[t.t]) for t in self.read_test_triples()]
+        e2i = self.get_entity2idx()
+        r2i = self.get_relation2idx()
+        test_triples_ids = [Triple(e2i[t.h], r2i[t.r], e2i[t.t]) for t in self.read_test_triples()]
 
         with open(str(test_triples_ids_path), 'wb') as f:
             pickle.dump(test_triples_ids, f)

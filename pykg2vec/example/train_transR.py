@@ -30,6 +30,8 @@ def main(_):
     config = TransRConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,
                           epochs=args.epochs)
+    
+    config.set_dataset(args.dataset)
 
     config.test_step = args.test_step
     config.test_num  = args.test_num

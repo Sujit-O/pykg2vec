@@ -31,6 +31,8 @@ def main(_):
     config = TransDConfig(learning_rate=args.learn_rate,
                           batch_size=args.batch,
                           epochs=args.epochs)
+    
+    config.set_dataset(args.dataset)
 
     config.ent_hidden_size = args.embed_ent
     config.rel_hidden_size = args.embed_rel

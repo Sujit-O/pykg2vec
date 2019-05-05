@@ -29,6 +29,8 @@ def main(_):
                        batch_size=args.batch,
                        epochs=args.epochs, hidden_size=args.embed, margin=24)
 
+    config.set_dataset(args.dataset)
+    
     config.test_step = args.test_step
     config.test_num  = args.test_num
     config.gpu_fraction = args.gpu_frac

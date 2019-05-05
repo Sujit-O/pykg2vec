@@ -69,7 +69,7 @@ class Trainer(TrainerMeta):
         else:
 
             self.gen_train = Generator(config=GeneratorConfig(data='train', algo=self.model.model_name,
-                                                              batch_size=self.model.config.batch_size))
+                                                              batch_size=self.model.config.batch_size), model_config = self.model.config)
 
             for n_iter in range(self.config.epochs):
                 if self.model.model_name == "ProjE_pointwise":
