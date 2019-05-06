@@ -54,7 +54,8 @@ class FreebaseFB15k(object):
         self.trh_train_path = self.root_path / 'FB15k' / 'tr_h_train.pkl'
 
         self.metadata_path = self.root_path / 'FB15k' / 'metadata.pkl'
-
+        self.relation_property_path = self.root_path / 'FB15k' / 'relation_property_train.pkl'
+        
     def download(self):
         ''' download Freebase 15k dataset from url'''
         print("Downloading the dataset %s" % self.name)

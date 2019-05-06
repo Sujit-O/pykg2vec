@@ -23,6 +23,7 @@ from config.config import *
 from utils.dataprep import DataPrep
 # from utils.dataprep import Triple
 from utils.trainer import Trainer
+import pickle
 import tensorflow as tf
 
 class Pykg2vecIT(unittest.TestCase):
@@ -30,6 +31,7 @@ class Pykg2vecIT(unittest.TestCase):
     def setUp(self):
         print('setup')
         DataPrep("Freebase15k", sampling="uniform", algo='TransE').prepare_data()
+        DataPrep("Freebase15k", sampling="bern", algo='TransH').prepare_data()
         # DataPrep("Freebase15k", sampling="uniform", algo='ConvE').prepare_data()
         DataPrep("Freebase15k", sampling="uniform", algo='ProjE').prepare_data()
        
@@ -269,6 +271,7 @@ class Pykg2vecIT(unittest.TestCase):
         config.save_model = False
         config.disp_result= False
         config.C = 0.125
+        config.sampling = "bern"
 
         model = TransH(config)
         

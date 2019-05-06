@@ -114,6 +114,8 @@ class Generator:
             self.rand_ids_train = np.random.permutation(self.tot_train_data)
             self.rand_ids_test = np.random.permutation(self.tot_test_data)
             self.rand_ids_valid = np.random.permutation(self.tot_valid_data)
+            if self.model_config.sampling == "bern":
+                self.relation_property = self.model_config.read_relation_property()
             self.lh = None
             self.lr = None
             self.lt = None

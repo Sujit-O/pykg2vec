@@ -107,6 +107,8 @@ class DataPrep(object):
         self.hr_t_train = None
         self.tr_h_train = None
 
+        self.relation_property = None
+
     def prepare_data(self):
         '''the ways to prepare data are different across algorithms.'''
         tucker_series = ["tucker"]
@@ -141,6 +143,9 @@ class DataPrep(object):
                 self.hr_t_train = self.get_hr_t(train_only=True)
                 self.tr_h_train = self.get_tr_h(train_only=True) 
         
+            if self.sampling == "bern":
+                self.relation_property = self.get_relation_property()
+                
             self.backup_metadata()
         else:
             raise NotImplementedError("Data preparation is not implemented for algorithm:", self.algo)
@@ -748,6 +753,27 @@ class DataPrep(object):
             pickle.dump(tr_h, f)
 
         return tr_h
+
+    def get_relation_property(self):
+        if self.relation_property is not None: 
+            return self.relation_property
+        
+        relation_property_path = self.config.dataset.relation_property_path
+        relation_property_head = {x: [] for x in range(len(self.get_relations()))}
+        relation_property_tail = {x: [] for x in range(len(self.get_relations()))}
+
+        for t in self.get_train_triples_ids():
+            relation_property_head[t.r].append(t.h)
+            relation_property_tail[t.r].append(t.t)
+
+        relation_property = {x: (len(set(relation_property_tail[x]))) / ( \
+                len(set(relation_property_head[x])) + len(set(relation_property_tail[x]))) \
+                                  for x in relation_property_head.keys()}
+
+        with open(str(relation_property_path), 'wb') as f:
+            pickle.dump(relation_property, f)
+
+        return relation_property
 
     def backup_metadata(self):
         kg_meta = self.data_stats
