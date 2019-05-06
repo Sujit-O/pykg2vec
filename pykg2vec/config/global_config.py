@@ -3,15 +3,19 @@ from pathlib import Path
 import os
 import multiprocessing
 
-# TODO: to be moved to utils
+class Triple(object):
+    def __init__(self, head=None, relation=None, tail=None):
+        self.h = head
+        self.r = relation
+        self.t = tail
 
+# TODO: to be moved to utils
 def extract(tar_path, extract_path='.'):
     tar = tarfile.open(tar_path, 'r')
     for item in tar:
         tar.extract(item, extract_path)
         if item.name.find(".tgz") != -1 or item.name.find(".tar") != -1:
             extract(item.name, "./" + item.name[:item.name.rfind('/')])
-
 
 class FreebaseFB15k(object):
 
@@ -34,6 +38,24 @@ class FreebaseFB15k(object):
             self.download()
             self.extract()
 
+        self.data_paths = {
+            'train': self.root_path / 'FB15k' / 'freebase_mtr100_mte100-train.txt',
+            'test' : self.root_path / 'FB15k' / 'freebase_mtr100_mte100-test.txt',
+            'valid': self.root_path / 'FB15k' / 'freebase_mtr100_mte100-valid.txt'
+        }
+
+        self.testing_triples_id_path = self.root_path / 'FB15k' / 'test_triples_ids.pkl'
+        self.training_triples_id_path = self.root_path / 'FB15k' / 'training_triples_ids.pkl'
+        self.validating_triples_id_path = self.root_path / 'FB15k' / 'validating_triples_ids.pkl'
+        self.hrt_path = self.root_path / 'FB15k' / 'hr_t.pkl'
+        self.trh_path = self.root_path / 'FB15k' / 'tr_h.pkl'
+        
+        self.hrt_train_path = self.root_path / 'FB15k' / 'hr_t_train.pkl'
+        self.trh_train_path = self.root_path / 'FB15k' / 'tr_h_train.pkl'
+
+        self.metadata_path = self.root_path / 'FB15k' / 'metadata.pkl'
+        self.relation_property_path = self.root_path / 'FB15k' / 'relation_property_train.pkl'
+        
     def download(self):
         ''' download Freebase 15k dataset from url'''
         print("Downloading the dataset %s" % self.name)
@@ -120,6 +142,24 @@ class GlobalConfig(object):
         for key, value in self.dataset.__dict__.items():
             print(key, value)
 
+    def read_triplets(self, set_type):
+        triplets = []
+        with open(str(self.dataset.data_paths[set_type]), 'r') as file:
+            for line in file.readlines():
+                s, p, o = line.split('\t')
+                triplets.append(Triple(s.strip(), p.strip(), o.strip()))
+        return triplets
+
+    def read_triplets_with_reverse_rel(self, set_type):
+        '''used in conv and tucker algorithms'''
+        triplets = []
+        with open(str(self.dataset.data_paths[set_type]), 'r') as file:
+            for line in file.readlines():
+                s, p, o = line.split('\t')
+                triplets.append(Triple(s.strip(), p.strip(), o.strip()))
+                triplets.append(Triple(o.strip(), p.strip()+'_reverse', s.strip()))
+        return triplets
+
 
 class GeneratorConfig(object):
     """Configuration for Generator
@@ -146,7 +186,7 @@ class GeneratorConfig(object):
                  queue_size=50,
                  raw_queue_size=50,
                  processed_queue_size=50,
-                 process_num=4,
+                 process_num=2,
                  data='train', 
                  algo ='ConvE',
                  neg_rate=2

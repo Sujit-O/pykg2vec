@@ -12,7 +12,7 @@ import sys
 sys.path.append("../")
 
 from config.global_config import GeneratorConfig
-from utils.dataprep import DataPrep, DataInput, DataStats, DataInputSimple
+from utils.dataprep import DataPrep, DataInput, KGMetaData, DataInputSimple
 import numpy as np
 from scipy import sparse as sps
 from threading import Thread, currentThread
@@ -56,12 +56,14 @@ class Generator:
           batch for training algorithms
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, model_config=None):
 
         if not config:
             self.config = GeneratorConfig()
         else:
             self.config = config
+
+        self.model_config = model_config
 
         self.queue = Queue(self.config.queue_size)
         self.raw_queue = Queue(self.config.raw_queue_size)
@@ -71,10 +73,9 @@ class Generator:
         self.tot_test_data = None
         self.tot_valid_data = None
 
-        with open(str(self.config.data_path / 'data_stats.pkl'), 'rb') as f:
-            self.data_stats = pickle.load(f)
-
-        if self.config.algo.lower() in ["tucker","tucker_v2"]:
+        self.data_stats = self.model_config.kg_meta
+        
+        if self.config.algo.lower() in ["tucker","tucker_v2","conve", "complex", "distmult"]:
             with open(str(self.config.data_path / 'train_data.pkl'), 'rb') as f:
                 self.train_data = pickle.load(f)
                 self.tot_train_data = len(self.train_data)
@@ -88,60 +89,37 @@ class Generator:
             self.rand_ids_test = np.random.permutation(len(self.test_data))
             self.rand_ids_valid = np.random.permutation(len(self.valid_data))
 
-            self.gen_batch_simple()
-
-        elif self.config.algo.lower() in ["conve", "complex", "distmult"]:
-            with open(str(self.config.data_path / 'train_data.pkl'), 'rb') as f:
-                self.train_data = pickle.load(f)
-                self.tot_train_data = len(self.train_data)
-            with open(str(self.config.data_path / 'test_data.pkl'), 'rb') as f:
-                self.test_data = pickle.load(f)
-                self.tot_test_data = len(self.test_data)
-            with open(str(self.config.data_path / 'valid_data.pkl'), 'rb') as f:
-                self.valid_data = pickle.load(f)
-                self.tot_valid_data = len(self.valid_data)
-            self.rand_ids_train = np.random.permutation(len(self.train_data))
-            self.rand_ids_test = np.random.permutation(len(self.test_data))
-            self.rand_ids_valid = np.random.permutation(len(self.valid_data))
-            self.gen_batch_conve()
+            self.gen_batch()
 
         elif self.config.algo.lower().startswith('proje'):
-            with open(str(self.config.data_path / 'train_triples_ids.pkl'), 'rb') as f:
-                self.train_triples_ids = pickle.load(f)
-                self.tot_train_data = len(self.train_triples_ids)
-            with open(str(self.config.data_path / 'test_triples_ids.pkl'), 'rb') as f:
-                self.test_triples_ids = pickle.load(f)
-                self.tot_test_data = len(self.test_triples_ids)
-            with open(str(self.config.data_path / 'validation_triples_ids.pkl'), 'rb') as f:
-                self.valid_triples_ids = pickle.load(f)
-                self.tot_valid_data = len(self.valid_triples_ids)
-            with open(str(self.config.data_path / 'hr_t_ids_train.pkl'), 'rb') as f:
-                self.hr_t_ids_train = pickle.load(f)
-            with open(str(self.config.data_path / 'tr_h_ids_train.pkl'), 'rb') as f:
-                self.tr_h_ids_train = pickle.load(f)
-            self.rand_ids_train = np.random.permutation(len(self.train_triples_ids))
-            self.rand_ids_test = np.random.permutation(len(self.test_triples_ids))
-            self.rand_ids_valid = np.random.permutation(len(self.valid_triples_ids))
+            self.train_triples_ids = self.model_config.read_train_triples_ids() 
+            self.test_triples_ids  = self.model_config.read_test_triples_ids() 
+            self.valid_triples_ids = self.model_config.read_valid_triples_ids()
+            self.hr_t_ids_train = self.model_config.read_hr_t_train()
+            self.tr_h_ids_train = self.model_config.read_tr_h_train()
+            self.tot_train_data = len(self.train_triples_ids)
+            self.tot_test_data = len(self.test_triples_ids)
+            self.tot_valid_data = len(self.valid_triples_ids)
+            self.rand_ids_train = np.random.permutation(self.tot_train_data)
+            self.rand_ids_test = np.random.permutation(self.tot_test_data)
+            self.rand_ids_valid = np.random.permutation(self.tot_valid_data)
             self.gen_batch_proje()
-
         else:
-            with open(str(self.config.data_path / 'train_triples_ids.pkl'), 'rb') as f:
-                self.train_triples_ids = pickle.load(f)
-                self.tot_train_data = len(self.train_triples_ids)
-            with open(str(self.config.data_path / 'test_triples_ids.pkl'), 'rb') as f:
-                self.test_triples_ids = pickle.load(f)
-                self.tot_test_data = len(self.test_triples_ids)
-            with open(str(self.config.data_path / 'validation_triples_ids.pkl'), 'rb') as f:
-                self.valid_triples_ids = pickle.load(f)
-                self.tot_valid_data = len(self.valid_triples_ids)
-            self.rand_ids_train = np.random.permutation(len(self.train_triples_ids))
-            self.rand_ids_test = np.random.permutation(len(self.test_triples_ids))
-            self.rand_ids_valid = np.random.permutation(len(self.valid_triples_ids))
+            self.train_triples_ids = self.model_config.read_train_triples_ids() 
+            self.test_triples_ids  = self.model_config.read_test_triples_ids() 
+            self.valid_triples_ids = self.model_config.read_valid_triples_ids()
+            self.tot_train_data = len(self.train_triples_ids)
+            self.tot_test_data = len(self.test_triples_ids)
+            self.tot_valid_data = len(self.valid_triples_ids)
+            self.rand_ids_train = np.random.permutation(self.tot_train_data)
+            self.rand_ids_test = np.random.permutation(self.tot_test_data)
+            self.rand_ids_valid = np.random.permutation(self.tot_valid_data)
+            if self.model_config.sampling == "bern":
+                self.relation_property = self.model_config.read_relation_property()
             self.lh = None
             self.lr = None
             self.lt = None
             self.observed_triples = None
-
             self.gen_batch_trans()
 
     def __iter__(self):
@@ -155,7 +133,7 @@ class Generator:
         for p in self.process_list:
             p.terminate()
 
-    def gen_batch_simple(self):
+    def gen_batch(self):
         bs = self.config.batch_size
         te = self.data_stats.tot_entity
         if self.config.data.startswith('train'):
@@ -170,12 +148,12 @@ class Generator:
 
         ids = np.random.permutation(number_of_batches)
 
-        worker = Process(target=self.raw_data_generator_simple, args=(ids,))
+        worker = Process(target=self.raw_data_generator, args=(ids,))
         worker.daemon = True
         self.process_list.append(worker)
         worker.start()
 
-        self.pool_process_simple()
+        self.pool_process()
 
     def gen_batch_proje(self, n_entity=None, neg_weight=0.5):
         bs = self.config.batch_size
@@ -198,27 +176,6 @@ class Generator:
         self.process_list.append(worker)
         worker.start()
         self.pool_process_proje(bs=self.config.batch_size, n_entity=n_entity, neg_weight=neg_weight)
-
-    def gen_batch_conve(self):
-        bs = self.config.batch_size
-        te = self.data_stats.tot_entity
-        if self.config.data.startswith('train'):
-            number_of_batches = len(self.train_data) // bs
-        elif self.config.data.startswith('test'):
-            number_of_batches = len(self.test_data) // bs
-        elif self.config.data.startswith('valid'):
-            number_of_batches = len(self.valid_data) // bs
-        else:
-            raise NotImplementedError("The data type passed is wrong!")
-        print("Number_of_batches:", number_of_batches)
-
-        ids = np.random.permutation(number_of_batches)
-
-        worker = Process(target=self.raw_data_generator_conve, args=(ids,))
-        worker.daemon = True
-        self.process_list.append(worker)
-        worker.start()
-        self.pool_process_conve()
 
     def gen_batch_trans(self):
         bs = self.config.batch_size
@@ -244,7 +201,7 @@ class Generator:
         worker.start()
         self.pool_process_trans()
 
-    def raw_data_generator_simple(self, ids):
+    def raw_data_generator(self, ids):
         gen = iter(gen_id(ids))
         bs = self.config.batch_size
         while True:
@@ -285,39 +242,6 @@ class Generator:
             self.raw_queue.put(raw_data)
             # print("raw_producer", thread.name, self.raw_queue.qsize())
 
-    def raw_data_generator_conve(self, ids):
-        gen = iter(gen_id(ids))
-        bs = self.config.batch_size
-        while True:
-            batch_idx = next(gen)
-            if self.config.data.startswith('train'):
-                raw_data = np.asarray([[self.train_data[x].e1,
-                                        self.train_data[x].r,
-                                        self.train_data[x].e2_multi1] for x in
-                                       self.rand_ids_train[bs * batch_idx: bs * (batch_idx + 1)]])
-            elif self.config.data.startswith('test'):
-                raw_data = np.asarray([[self.test_data[x].e1,
-                                        self.test_data[x].r,
-                                        # self.test_data[x].e2_multi1,
-                                        self.test_data[x].e2,
-                                        self.test_data[x].r_rev
-                                        # self.test_data[x].e2_multi2
-                                        ] for x in
-                                       self.rand_ids_test[bs * batch_idx:bs * (batch_idx + 1)]])
-            elif self.config.data.startswith('valid'):
-                raw_data = np.asarray([[self.valid_data[x].e1,
-                                        self.valid_data[x].r,
-                                        # self.valid_data[x].e2_multi1,
-                                        self.valid_data[x].e2,
-                                        self.valid_data[x].r_rev
-                                        # self.valid_data[x].e2_multi2
-                                        ] for x in
-                                       self.rand_ids_valid[bs * batch_idx:bs * (batch_idx + 1)]])
-            else:
-                raise NotImplementedError("The data type passed is wrong!")
-
-            self.raw_queue.put(raw_data)
-
     def raw_data_generator_trans(self, ids):
         gen = iter(gen_id(ids))
         bs = self.config.batch_size
@@ -346,44 +270,28 @@ class Generator:
     def pool_process_proje(self, bs=None, n_entity=None, neg_weight=None):
         for i in range(self.config.process_num):
             if self.config.data.startswith('train'):
-                p = Process(target=self.process_function_train_proje, args=(bs, n_entity, neg_weight,))
+                p = Process(target=self.process_function_train_proje, args=(bs, n_entity, neg_weight))
             else:
-                p = Process(target=self.process_function_test_proje, args=(bs, n_entity, neg_weight,))
+                p = Process(target=self.process_function_test_proje, args=())
             self.process_list.append(p)
             p.daemon = True
             p.start()
 
-    def pool_process_simple(self):
+    def pool_process(self):
         for i in range(self.config.process_num):
-            if self.config.data.startswith('train'):
-                p = Process(target=self.process_function_train_simple, args=())
-            else:
-                p = Process(target=self.process_function_test_simple, args=())
-            self.process_list.append(p)
-            p.daemon = True
-            p.start()
-
-    def pool_process_conve(self):
-        for i in range(self.config.process_num):
-            if self.config.data.startswith('train'):
-                p = Process(target=self.process_function_train_conve, args=())
-            else:
-                p = Process(target=self.process_function_test_conve, args=())
+            p = Process(target=self.process_function, args=())
             self.process_list.append(p)
             p.daemon = True
             p.start()
 
     def pool_process_trans(self):
         for i in range(self.config.process_num):
-            if self.config.data.startswith('train'):
-                p = Process(target=self.process_function_train_trans, args=())
-            else:
-                p = Process(target=self.process_function_test_trans, args=())
+            p = Process(target=self.process_function_train_trans, args=())
             self.process_list.append(p)
             p.daemon = True
             p.start()
 
-    def process_function_train_simple(self):
+    def process_function(self):
         bs = self.config.batch_size
         te = self.data_stats.tot_entity
         while True:
@@ -391,17 +299,14 @@ class Generator:
             h = raw_data[:, 0]
             r = raw_data[:, 1]
             t = raw_data[:, 2]
-            hr_t = get_label_mat(raw_data[:, 3], bs, te, neg_rate=self.config.neg_rate)
-            rt_h = get_label_mat(raw_data[:, 4], bs, te, neg_rate=self.config.neg_rate)
-            self.processed_queue.put([h, r, t, hr_t, rt_h])
-
-    def process_function_test_simple(self):
-        while True:
-            raw_data = self.raw_queue.get()
-            h = raw_data[:, 0]
-            r = raw_data[:, 1]
-            t = raw_data[:, 2]
-            self.processed_queue.put([h, r, t])
+            if self.config.data.startswith('train'):
+                hr_t = get_label_mat(raw_data[:, 3], bs, te, neg_rate=self.config.neg_rate)
+                rt_h = get_label_mat(raw_data[:, 4], bs, te, neg_rate=self.config.neg_rate)
+                self.processed_queue.put([h, r, t, hr_t, rt_h])
+            elif self.config.data.startswith('test'):
+                self.processed_queue.put([h, r, t])
+            else:
+                pass
 
     def process_function_train_trans(self):
         te = self.data_stats.tot_entity
@@ -411,150 +316,70 @@ class Generator:
             ph = pos_triples[:, 0]
             pr = pos_triples[:, 1]
             pt = pos_triples[:, 2]
-            nh = []
-            nr = []
-            nt = []
+            if self.config.data.startswith('test'):
+                self.processed_queue.put([ph, pr, pt])
+            else:
+                nh = []
+                nr = []
+                nt = []
 
-            for t in pos_triples:
-                if self.config.sampling == 'uniform':
-                    prob = 0.5
-                elif self.config.sampling == 'bern':
-                    prob = self.relation_property[t[1]]
-                else:
-                    raise NotImplementedError("%s sampling not supported!" % self.config.negative_sample)
+                for t in pos_triples:
+                    if self.config.sampling == 'uniform':
+                        prob = 0.5
+                    elif self.config.sampling == 'bern':
+                        prob = self.relation_property[t[1]]
+                    else:
+                        raise NotImplementedError("%s sampling not supported!" % self.config.negative_sample)
 
-                if np.random.random() > prob:
-                    idx_replace_tail = np.random.randint(te)
-
-                    break_cnt = 0
-                    while (t[0], t[1], idx_replace_tail) in self.observed_triples:
+                    if np.random.random() > prob:
                         idx_replace_tail = np.random.randint(te)
-                        break_cnt += 1
-                        if break_cnt >= 100:
-                            break
 
-                    if break_cnt >= 100:  # can not find new negative triple.
-                        nh.append(self.lh)
-                        nr.append(self.lr)
-                        nt.append(self.lt)
+                        break_cnt = 0
+                        while (t[0], t[1], idx_replace_tail) in self.observed_triples:
+                            idx_replace_tail = np.random.randint(te)
+                            break_cnt += 1
+                            if break_cnt >= 100:
+                                break
+
+                        if break_cnt >= 100:  # can not find new negative triple.
+                            nh.append(self.lh)
+                            nr.append(self.lr)
+                            nt.append(self.lt)
+                        else:
+                            nh.append(t[0])
+                            nr.append(t[1])
+                            nt.append(idx_replace_tail)
+                            self.lh = t[0]
+                            self.lr = t[1]
+                            self.lt = idx_replace_tail
+
+                            self.observed_triples[(t[0], t[1], idx_replace_tail)] = 0
+
                     else:
-                        nh.append(t[0])
-                        nr.append(t[1])
-                        nt.append(idx_replace_tail)
-                        self.lh = t[0]
-                        self.lr = t[1]
-                        self.lt = idx_replace_tail
-
-                        self.observed_triples[(t[0], t[1], idx_replace_tail)] = 0
-
-                else:
-                    idx_replace_head = np.random.randint(te)
-                    break_cnt = 0
-                    while ((idx_replace_head, t[1], t[2]) in self.observed_triples
-                           or (idx_replace_head, t[1], t[2]) in self.observed_triples):
                         idx_replace_head = np.random.randint(te)
-                        break_cnt += 1
-                        if break_cnt >= 100:
-                            break
+                        break_cnt = 0
+                        while ((idx_replace_head, t[1], t[2]) in self.observed_triples
+                               or (idx_replace_head, t[1], t[2]) in self.observed_triples):
+                            idx_replace_head = np.random.randint(te)
+                            break_cnt += 1
+                            if break_cnt >= 100:
+                                break
 
-                    if break_cnt >= 100:  # can not find new negative triple.
-                        nh.append(self.lh)
-                        nr.append(self.lr)
-                        nt.append(self.lt)
-                    else:
-                        nh.append(idx_replace_head)
-                        nr.append(t[1])
-                        nt.append(t[2])
-                        self.lh = idx_replace_head
-                        self.lr = t[1]
-                        self.lt = t[2]
+                        if break_cnt >= 100:  # can not find new negative triple.
+                            nh.append(self.lh)
+                            nr.append(self.lr)
+                            nt.append(self.lt)
+                        else:
+                            nh.append(idx_replace_head)
+                            nr.append(t[1])
+                            nt.append(t[2])
+                            self.lh = idx_replace_head
+                            self.lr = t[1]
+                            self.lt = t[2]
 
-                        self.observed_triples[(idx_replace_head, t[1], t[2])] = 0
+                            self.observed_triples[(idx_replace_head, t[1], t[2])] = 0
 
-            self.processed_queue.put([ph, pr, pt, nh, nr, nt])
-
-    def process_function_test_trans(self):
-        while True:
-            pos_triples = self.raw_queue.get()
-            ph = pos_triples[:, 0]
-            pr = pos_triples[:, 1]
-            pt = pos_triples[:, 2]
-
-            self.processed_queue.put([ph, pr, pt])
-
-    def process_function_train_conve(self):
-        bs = self.config.batch_size
-        te = self.data_stats.tot_entity
-        while True:
-            raw_data = self.raw_queue.get()
-            e1 = raw_data[:, 0]
-            r = raw_data[:, 1]
-            col = []
-            for k in raw_data[:, 2]:
-                col.append(k)
-            row = []
-            for k in range(bs):
-                row.append([k] * len(col[k]))
-            col_n = []
-            row_n = []
-            # TODO: Vectorize the loops
-            for i in range(bs):
-                for j in range(len(col[i])):
-                    col_n.append(col[i][j])
-                    row_n.append(row[i][j])
-
-            e2_multi1 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
-            self.processed_queue.put([e1, r, np.array(e2_multi1.todense())])
-
-    def process_function_test_conve(self):
-        # read the batch
-        bs = self.config.batch_size
-        te = self.data_stats.tot_entity
-        while True:
-            raw_data = self.raw_queue.get()
-            e1 = raw_data[:, 0]
-            r = raw_data[:, 1]
-            # col = []
-            # for k in raw_data[:, 2]:
-            #     col.append(k)
-            # row = []
-            # for k in range(bs):
-            #     if col[k]:
-            #         row.append([k] * len(col[k]))
-            # col_n = []
-            # row_n = []
-            # # TODO: Vectorize the loops
-            # for i in range(bs):
-            #     if col[i]:
-            #         for j in range(len(col[i])):
-            #             col_n.append(col[i][j])
-            #             row_n.append(row[i][j])
-            #
-            # e2_multi1 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
-
-            e2 = raw_data[:, 2]
-            r_rev = raw_data[:, 3]
-            # col = []
-            # for k in raw_data[:, 5]:
-            #     col.append(k)
-            #
-            # row = []
-            # for k in range(bs):
-            #     if col[k]:
-            #         row.append([k] * len(col[k]))
-            # col_n = []
-            # row_n = []
-            # # TODO: Vectorize the loops
-            # for i in range(bs):
-            #     if col[i]:
-            #         for j in range(len(col[i])):
-            #             col_n.append(col[i][j])
-            #             row_n.append(row[i][j])
-            #
-            # e2_multi2 = sps.csr_matrix(([1] * len(row_n), (row_n, col_n)), shape=(bs, te))
-
-            # self.processed_queue.put([e1, r, np.array(e2_multi1.todense()), e2, r_rev, np.array(e2_multi2.todense())])
-            self.processed_queue.put([e1, r, e2, r_rev])
+                self.processed_queue.put([ph, pr, pt, nh, nr, nt])
 
     def process_function_train_proje(self, bs, n_entity, neg_weight):
         while True:
@@ -608,25 +433,6 @@ class Generator:
             t = raw_data[:, 2]
 
             self.processed_queue.put([h, r, t])
-
-
-def test_generator_conve():
-    gen = iter(Generator(config=GeneratorConfig(data='test', algo='ConvE')))
-    for i in range(5000):
-        data = list(next(gen))
-        e1 = data[0]
-        r = data[1]
-        e2_multi1 = data[2]
-        e2 = data[3]
-        r_rev = data[4]
-        e2_multi2 = data[5]
-        print("----batch:", i)
-        # print("e1:", e1)
-        # print("r:", r)
-        # print("e2_multi1:", e2_multi1)
-        # print("e2:", e2)
-        # print("r_rev:", r_rev)
-        # print("e2_multi2:", e2_multi2)
 
 
 def test_generator_proje():

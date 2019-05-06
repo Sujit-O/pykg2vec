@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 from core.KGMeta import EvaluationMeta
 from utils.generator import Generator
-from utils.dataprep import DataStats
 from config.global_config import GeneratorConfig
 import pickle
 from multiprocessing.pool import ThreadPool
@@ -44,13 +43,10 @@ class Evaluation(EvaluationMeta):
 
         self.epoch = []
 
-        with open(str(self.model.config.tmp_data / 'hr_t.pkl'), 'rb') as f:
-            self.hr_t = pickle.load(f)
-        with open(str(self.model.config.tmp_data / 'tr_h.pkl'), 'rb') as f:
-            self.tr_h = pickle.load(f)
-        with open(str(self.model.config.tmp_data / 'data_stats.pkl'), 'rb') as f:
-            self.data_stats = pickle.load(f)
-
+        self.hr_t = self.model.config.read_hr_t() 
+        self.tr_h = self.model.config.read_tr_h()
+        self.data_stats = self.model.config.kg_meta
+        
     def test_batch(self, sess=None, epoch=None, test_data='test'):
 
         head_rank, tail_rank = self.model.test_batch()
@@ -64,7 +60,7 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                    batch_size=self.batch))
+                                                    batch_size=self.batch), model_config=self.model.config)
 
         if self.n_test == 0:
             self.n_test = gen_test.tot_test_data
@@ -132,11 +128,9 @@ class Evaluation(EvaluationMeta):
 
     def test_step(self, sess=None, epoch=None, test_data='test'):
         if test_data == 'test':
-            with open(str(self.model.config.tmp_data / 'test_triples_ids.pkl'), 'rb') as f:
-                data = pickle.load(f)
+            data = self.model.config.read_test_triples_ids() 
         elif test_data == 'valid':
-            with open(str(self.model.config.tmp_data / 'validation_triples_ids.pkl'), 'rb') as f:
-                data = pickle.load(f)
+            data = self.model.config.read_valid_triples_ids()
         else:
             raise NotImplementedError('Invalid testing data: enter test or valid!')
 
@@ -268,7 +262,7 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                    batch_size=self.batch))
+                                                    batch_size=self.batch), model_config=self.model.config)
 
         self.n_test = min(self.n_test, gen_test.tot_test_data)
         loop_len = self.n_test // self.batch if not self.debug else 2
@@ -410,7 +404,7 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                    batch_size=self.batch))
+                                                    batch_size=self.batch), model_config=self.model.config)
         self.n_test = min(self.n_test, gen_test.tot_test_data)
         loop_len = self.n_test // self.batch if not self.debug else 2
 
@@ -483,7 +477,7 @@ class Evaluation(EvaluationMeta):
         filter_rank_head = []
         filter_rank_tail = []
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name, \
-                                                    batch_size=self.model.config.batch_size))
+                                                    batch_size=self.model.config.batch_size), model_config=self.model.config)
         loop_len = self.n_test // self.batch if not self.debug else 100
         total_test = loop_len * self.batch
 

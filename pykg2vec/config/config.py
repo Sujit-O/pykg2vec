@@ -7,6 +7,10 @@ import tensorflow as tf
 import os
 from pathlib import Path
 
+import sys
+sys.path.append("../")
+from config.global_config import GlobalConfig
+import pickle 
 
 class BasicConfig:
     def __init__(self,
@@ -62,6 +66,60 @@ class BasicConfig:
         self.log_device_placement = log_device_placement
         self.plot_training_result = plot_training_result
         self.plot_testing_result = plot_testing_result
+        self.knowledge_graph = None
+
+    def set_dataset(self, dataset_name):
+        self.knowledge_graph = GlobalConfig(dataset=dataset_name)
+        with open(str(self.knowledge_graph.dataset.metadata_path), 'rb') as f:
+            self.kg_meta = pickle.load(f)
+
+    def read_hr_t(self):
+        if not self.knowledge_graph:
+            raise Exception("not initialized!")
+        
+        with open(str(self.knowledge_graph.dataset.hrt_path), 'rb') as f:
+            hr_t = pickle.load(f)
+            return hr_t
+
+    def read_tr_h(self):
+        if not self.knowledge_graph:
+            raise Exception("not initialized!")
+        
+        with open(str(self.knowledge_graph.dataset.trh_path), 'rb') as f:
+            tr_h = pickle.load(f)
+            return tr_h
+
+    def read_train_triples_ids(self):
+        if not self.knowledge_graph:
+            raise Exception("not initialized!")
+        
+        with open(str(self.knowledge_graph.dataset.training_triples_id_path), 'rb') as f:
+            train_triples_ids = pickle.load(f)
+            return train_triples_ids
+
+    def read_test_triples_ids(self):
+        if not self.knowledge_graph:
+            raise Exception("not initialized!")
+                
+        with open(str(self.knowledge_graph.dataset.testing_triples_id_path), 'rb') as f:
+            test_triples_ids = pickle.load(f)
+            return test_triples_ids
+
+    def read_valid_triples_ids(self):
+        if not self.knowledge_graph:
+            raise Exception("not initialized!")
+
+        with open(str(self.knowledge_graph.dataset.validating_triples_id_path), 'rb') as f:
+            valid_triples_ids = pickle.load(f)
+            return valid_triples_ids
+
+    def read_relation_property(self):
+        if not self.knowledge_graph:
+            raise Exception("not initialized!")
+
+        with open(str(self.knowledge_graph.dataset.relation_property_path), 'rb') as f:
+            relation_property = pickle.load(f)
+            return relation_property
 
 
 class TransRConfig(BasicConfig):
@@ -139,6 +197,8 @@ class TransEConfig(BasicConfig):
         self.optimizer = optimizer
         self.sampling = sampling
 
+
+
 class TransMConfig(BasicConfig):
 
     def __init__(self,
@@ -215,7 +275,7 @@ class RescalConfig(BasicConfig):
         self.sampling = sampling
 
 
-class SMEConfig(object):
+class SMEConfig(BasicConfig):
 
     def __init__(self,
                  learning_rate=0.001,

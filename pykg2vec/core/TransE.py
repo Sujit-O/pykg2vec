@@ -11,7 +11,6 @@ import tensorflow as tf
 from core.KGMeta import ModelMeta
 import pickle
 
-
 class TransE(ModelMeta):
     """
     ------------------Paper Title-----------------------------
@@ -45,10 +44,8 @@ class TransE(ModelMeta):
 
     def __init__(self, config=None):
         self.config = config
-        with open(str(self.config.tmp_data / 'data_stats.pkl'), 'rb') as f:
-            self.data_stats = pickle.load(f)
         self.model_name = 'TransE'
-
+        
         self.def_inputs()
         self.def_parameters()
         self.def_loss()
@@ -68,8 +65,8 @@ class TransE(ModelMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
-        num_total_ent = self.data_stats.tot_entity
-        num_total_rel = self.data_stats.tot_relation
+        num_total_ent = self.config.kg_meta.tot_entity
+        num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -97,8 +94,8 @@ class TransE(ModelMeta):
         score_head = self.distance(norm_ent_embeddings, rel_vec, tail_vec)
         score_tail = self.distance(head_vec, rel_vec, norm_ent_embeddings)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
 
         return head_rank, tail_rank
 
@@ -113,8 +110,8 @@ class TransE(ModelMeta):
                                    tf.expand_dims(rel_vec, axis=1),
                                    norm_ent_embeddings, axis=2)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
 
         return head_rank, tail_rank
 
