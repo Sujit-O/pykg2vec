@@ -321,15 +321,11 @@ class Trainer(TrainerMeta):
 
     def save_model(self):
         """function to save the model"""
-        if not os.path.exists(self.config.tmp):
-            os.mkdir('../intermediate')
         saver = tf.train.Saver(self.model.parameter_list)
         saver.save(self.sess, str(self.config.tmp) + '/%s.vec' % self.model.model_name)
 
     def load_model(self):
         """function to load the model"""
-        if not os.path.exists(self.config.tmp):
-            os.mkdir('../intermediate')
         saver = tf.train.Saver(self.model.parameter_list)
         saver.restore(self.sess, str(self.config.tmp) + '/%s.vec' % self.model.model_name)
 
