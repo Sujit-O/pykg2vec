@@ -92,35 +92,28 @@ class Generator:
             self.gen_batch()
 
         elif self.config.algo.lower().startswith('proje'):
-            with open(str(self.config.data_path / 'train_triples_ids.pkl'), 'rb') as f:
-                self.train_triples_ids = pickle.load(f)
-                self.tot_train_data = len(self.train_triples_ids)
-            with open(str(self.config.data_path / 'test_triples_ids.pkl'), 'rb') as f:
-                self.test_triples_ids = pickle.load(f)
-                self.tot_test_data = len(self.test_triples_ids)
-            with open(str(self.config.data_path / 'validation_triples_ids.pkl'), 'rb') as f:
-                self.valid_triples_ids = pickle.load(f)
-                self.tot_valid_data = len(self.valid_triples_ids)
-            with open(str(self.config.data_path / 'hr_t_ids_train.pkl'), 'rb') as f:
-                self.hr_t_ids_train = pickle.load(f)
-            with open(str(self.config.data_path / 'tr_h_ids_train.pkl'), 'rb') as f:
-                self.tr_h_ids_train = pickle.load(f)
-            self.rand_ids_train = np.random.permutation(len(self.train_triples_ids))
-            self.rand_ids_test = np.random.permutation(len(self.test_triples_ids))
-            self.rand_ids_valid = np.random.permutation(len(self.valid_triples_ids))
+            self.train_triples_ids = self.model_config.read_train_triples_ids() 
+            self.test_triples_ids  = self.model_config.read_test_triples_ids() 
+            self.valid_triples_ids = self.model_config.read_valid_triples_ids()
+            self.hr_t_ids_train = self.model_config.read_hr_t_train()
+            self.tr_h_ids_train = self.model_config.read_tr_h_train()
+            self.tot_train_data = len(self.train_triples_ids)
+            self.tot_test_data = len(self.test_triples_ids)
+            self.tot_valid_data = len(self.valid_triples_ids)
+            self.rand_ids_train = np.random.permutation(self.tot_train_data)
+            self.rand_ids_test = np.random.permutation(self.tot_test_data)
+            self.rand_ids_valid = np.random.permutation(self.tot_valid_data)
             self.gen_batch_proje()
-
         else:
-            
             self.train_triples_ids = self.model_config.read_train_triples_ids() 
             self.test_triples_ids  = self.model_config.read_test_triples_ids() 
             self.valid_triples_ids = self.model_config.read_valid_triples_ids()
             self.tot_train_data = len(self.train_triples_ids)
             self.tot_test_data = len(self.test_triples_ids)
             self.tot_valid_data = len(self.valid_triples_ids)
-            self.rand_ids_train = np.random.permutation(len(self.train_triples_ids))
-            self.rand_ids_test = np.random.permutation(len(self.test_triples_ids))
-            self.rand_ids_valid = np.random.permutation(len(self.valid_triples_ids))
+            self.rand_ids_train = np.random.permutation(self.tot_train_data)
+            self.rand_ids_test = np.random.permutation(self.tot_test_data)
+            self.rand_ids_valid = np.random.permutation(self.tot_valid_data)
             self.lh = None
             self.lr = None
             self.lt = None
@@ -275,9 +268,9 @@ class Generator:
     def pool_process_proje(self, bs=None, n_entity=None, neg_weight=None):
         for i in range(self.config.process_num):
             if self.config.data.startswith('train'):
-                p = Process(target=self.process_function_train_proje, args=(bs, n_entity, neg_weight,))
+                p = Process(target=self.process_function_train_proje, args=(bs, n_entity, neg_weight))
             else:
-                p = Process(target=self.process_function_test_proje, args=(bs, n_entity, neg_weight,))
+                p = Process(target=self.process_function_test_proje, args=())
             self.process_list.append(p)
             p.daemon = True
             p.start()

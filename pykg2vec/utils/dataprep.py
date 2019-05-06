@@ -85,7 +85,6 @@ class DataPrep(object):
         self.hr_t = defaultdict(set)
         self.tr_h = defaultdict(set)
 
-
     def init_variables(self):
         self.train_triples = None
         self.test_triples = None
@@ -105,6 +104,9 @@ class DataPrep(object):
         self.hr_t = None
         self.tr_h = None
 
+        self.hr_t_train = None
+        self.tr_h_train = None
+
     def prepare_data(self):
         '''the ways to prepare data are different across algorithms.'''
         tucker_series = ["tucker"]
@@ -115,11 +117,14 @@ class DataPrep(object):
         if self.algo.lower() in tucker_series:
             self.init_variables()
             self.prepare_data_tucker()
+        
         elif self.algo.lower() in conve_series:
             self.init_variables()
             self.prepare_data_conve()
+        
         elif self.algo.lower() in other_algorithms:
             self.init_variables()
+            
             self.entity2idx   = self.get_entity2idx()
             self.idx2entity   = self.get_idx2entity()
             self.relation2idx = self.get_relation2idx() 
@@ -127,8 +132,15 @@ class DataPrep(object):
             self.test_triples_ids       = self.get_test_triples_ids()
             self.train_triples_ids      = self.get_train_triples_ids()
             self.validation_triples_ids = self.get_validation_triples_ids()
-            self.hr_t = self.get_hr_t()
-            self.tr_h = self.get_tr_h()
+            
+            self.hr_t = self.get_hr_t(train_only=False)
+            self.tr_h = self.get_tr_h(train_only=False)
+
+            if self.algo.lower().startswith('proje'):
+
+                self.hr_t_train = self.get_hr_t(train_only=True)
+                self.tr_h_train = self.get_tr_h(train_only=True) 
+        
             self.backup_metadata()
         else:
             raise NotImplementedError("Data preparation is not implemented for algorithm:", self.algo)
@@ -668,38 +680,54 @@ class DataPrep(object):
         
         return validation_triples_ids
     
-    def get_hr_t(self):
-        if self.hr_t is not None:
-            return self.hr_t
+    def get_hr_t(self, train_only=False):
+        if train_only:
+            if self.hr_t_train is not None:
+                return self.hr_t_train
+        else:
+            if self.hr_t is not None:
+                return self.hr_t
 
         hr_t = defaultdict(set)
-        hrt_path = self.config.dataset.hrt_path
+        
+        if train_only:
+            hrt_path = self.config.dataset.hrt_train_path
+        else:
+            hrt_path = self.config.dataset.hrt_path
 
         if hrt_path.exists():
             with open(str(hrt_path), 'rb') as f:
-                hr_t = pickle.load(f) 
+                hr_t = pickle.load(f)
             return hr_t
 
         for t in self.get_test_triples_ids():
             hr_t[(t.h, t.r)].add(t.t)
 
-        for t in self.get_train_triples_ids():
-            hr_t[(t.h, t.r)].add(t.t)
+        if not train_only:
+            for t in self.get_train_triples_ids():
+                hr_t[(t.h, t.r)].add(t.t)
 
-        for t in self.get_validation_triples_ids():
-            hr_t[(t.h, t.r)].add(t.t)
+            for t in self.get_validation_triples_ids():
+                hr_t[(t.h, t.r)].add(t.t)
 
         with open(str(hrt_path), 'wb') as f:
             pickle.dump(hr_t, f)
 
         return hr_t
 
-    def get_tr_h(self):
-        if self.tr_h is not None:
-            return self.tr_h
+    def get_tr_h(self, train_only=False):
+        if train_only:
+            if self.tr_h_train is not None:
+                return self.tr_h_train
+        else:
+            if self.tr_h is not None:
+                return self.tr_h
 
         tr_h = defaultdict(set)
-        trh_path = self.config.dataset.trh_path
+        if train_only:
+            trh_path = self.config.dataset.trh_train_path
+        else:
+            trh_path = self.config.dataset.trh_path
 
         if trh_path.exists():
             with open(str(trh_path), 'rb') as f:
@@ -709,11 +737,12 @@ class DataPrep(object):
         for t in self.get_test_triples_ids():
             tr_h[(t.t, t.r)].add(t.h)
 
-        for t in self.get_train_triples_ids():
-            tr_h[(t.t, t.r)].add(t.h)
+        if not train_only:
+            for t in self.get_train_triples_ids():
+                tr_h[(t.t, t.r)].add(t.h)
 
-        for t in self.get_validation_triples_ids():
-            tr_h[(t.t, t.r)].add(t.h)
+            for t in self.get_validation_triples_ids():
+                tr_h[(t.t, t.r)].add(t.h)
 
         with open(str(trh_path), 'wb') as f:
             pickle.dump(tr_h, f)

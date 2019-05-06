@@ -60,7 +60,7 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                    batch_size=self.batch))
+                                                    batch_size=self.batch), model_config=self.model.config)
 
         if self.n_test == 0:
             self.n_test = gen_test.tot_test_data
@@ -262,7 +262,7 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                    batch_size=self.batch))
+                                                    batch_size=self.batch), model_config=self.model.config)
 
         self.n_test = min(self.n_test, gen_test.tot_test_data)
         loop_len = self.n_test // self.batch if not self.debug else 2
@@ -404,7 +404,7 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                    batch_size=self.batch))
+                                                    batch_size=self.batch), model_config=self.model.config)
         self.n_test = min(self.n_test, gen_test.tot_test_data)
         loop_len = self.n_test // self.batch if not self.debug else 2
 
@@ -477,7 +477,7 @@ class Evaluation(EvaluationMeta):
         filter_rank_head = []
         filter_rank_tail = []
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name, \
-                                                    batch_size=self.model.config.batch_size))
+                                                    batch_size=self.model.config.batch_size), model_config=self.model.config)
         loop_len = self.n_test // self.batch if not self.debug else 100
         total_test = loop_len * self.batch
 

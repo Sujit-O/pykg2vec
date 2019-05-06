@@ -89,6 +89,22 @@ class BasicConfig:
             tr_h = pickle.load(f)
             return tr_h
 
+    def read_hr_t_train(self):
+        if not self.knowledge_graph:
+            raise Exception("not initialized!")
+        
+        with open(str(self.knowledge_graph.dataset.hrt_train_path), 'rb') as f:
+            hr_t = pickle.load(f)
+            return hr_t
+
+    def read_tr_h_train(self):
+        if not self.knowledge_graph:
+            raise Exception("not initialized!")
+        
+        with open(str(self.knowledge_graph.dataset.trh_train_path), 'rb') as f:
+            tr_h = pickle.load(f)
+            return tr_h
+
     def read_train_triples_ids(self):
         if not self.knowledge_graph:
             raise Exception("not initialized!")
@@ -112,6 +128,7 @@ class BasicConfig:
         with open(str(self.knowledge_graph.dataset.validating_triples_id_path), 'rb') as f:
             valid_triples_ids = pickle.load(f)
             return valid_triples_ids
+
 
 class TransRConfig(BasicConfig):
     def __init__(self,

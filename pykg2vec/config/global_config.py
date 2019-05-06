@@ -49,6 +49,10 @@ class FreebaseFB15k(object):
         self.validating_triples_id_path = self.root_path / 'FB15k' / 'validating_triples_ids.pkl'
         self.hrt_path = self.root_path / 'FB15k' / 'hr_t.pkl'
         self.trh_path = self.root_path / 'FB15k' / 'tr_h.pkl'
+        
+        self.hrt_train_path = self.root_path / 'FB15k' / 'hr_t_train.pkl'
+        self.trh_train_path = self.root_path / 'FB15k' / 'tr_h_train.pkl'
+
         self.metadata_path = self.root_path / 'FB15k' / 'metadata.pkl'
 
     def download(self):
