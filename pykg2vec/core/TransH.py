@@ -33,8 +33,6 @@ class TransH(ModelMeta):
 
     def __init__(self, config):
         self.config = config
-        with open(str(self.config.tmp_data / 'data_stats.pkl'), 'rb') as f:
-            self.data_stats = pickle.load(f)
         self.model_name = 'TransH'
 
         self.def_inputs()
@@ -56,8 +54,8 @@ class TransH(ModelMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
-        num_total_ent = self.data_stats.tot_entity
-        num_total_rel = self.data_stats.tot_relation
+        num_total_ent = self.config.kg_meta.tot_entity
+        num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -93,7 +91,7 @@ class TransH(ModelMeta):
         return self.config.C * (term1 + term2)
 
     def test_step(self):
-        num_entity = self.data_stats.tot_entity
+        num_entity = self.config.kg_meta.tot_entity
 
         head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
         pos_norm = self.get_proj(self.test_r)
@@ -109,7 +107,7 @@ class TransH(ModelMeta):
         return head_rank, tail_rank
 
     def test_batch(self):
-        num_entity = self.data_stats.tot_entity
+        num_entity = self.config.kg_meta.tot_entity
 
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
         pos_norm = self.get_proj(self.test_r_batch)

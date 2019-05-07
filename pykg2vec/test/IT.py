@@ -21,22 +21,25 @@ from core.SLM import SLM
 
 from config.config import *
 from utils.dataprep import DataPrep
+# from utils.dataprep import Triple
 from utils.trainer import Trainer
-
+import pickle
 import tensorflow as tf
 
 class Pykg2vecIT(unittest.TestCase):
     
     def setUp(self):
         print('setup')
-        
-
-    def test_Complex(self):
-
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='complex')
+        DataPrep("Freebase15k", sampling="uniform", algo='TransE').prepare_data()
+        DataPrep("Freebase15k", sampling="bern", algo='TransH').prepare_data()
+        # DataPrep("Freebase15k", sampling="uniform", algo='ConvE').prepare_data()
+        DataPrep("Freebase15k", sampling="uniform", algo='ProjE').prepare_data()
+       
+    def test_Complex(self):   
 
         config = ComplexConfig(batch_size=512, epochs=1, hidden_size=8)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
@@ -49,19 +52,16 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def test_ConvE(self):
-
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='ConvE')
-
+        
         config = ConvEConfig(batch_size=512, epochs=1)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
         config.save_model = False
         config.disp_result= False
-
 
         model = ConvE(config)
         
@@ -69,13 +69,11 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def test_DistMult(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='DistMult')
-
         config = DistMultConfig(batch_size=512, epochs=1)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
@@ -89,13 +87,11 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def test_KG2E_EL(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='KG2E')
-
         config = KG2EConfig(batch_size=512, epochs=1, distance_measure="expected_likelihood")
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
@@ -108,20 +104,17 @@ class Pykg2vecIT(unittest.TestCase):
         trainer = Trainer(model=model)
         trainer.build_model()
         trainer.train_model()
-
     
     def test_KG2E_KL(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='KG2E')
-
         config = KG2EConfig(batch_size=512, epochs=1, distance_measure="kl_divergence")
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
         config.save_model = False
         config.disp_result= False
-
 
         model = KG2E(config)
         
@@ -129,39 +122,33 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def test_NTN(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='NTN')
-
         config = NTNConfig(batch_size=512, epochs=1)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
         config.save_model = False
         config.disp_result= False
-
 
         model = NTN(config)
         
         trainer = Trainer(model=model)
         trainer.build_model()
         trainer.train_model()
-
     
     def test_ProjE(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='ProjE')
-
         config = ProjE_pointwiseConfig(learning_rate=0.01, batch_size=512, epochs=1)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
         config.save_model = False
         config.disp_result= False
-
 
         model = ProjE_pointwise(config)
         
@@ -169,39 +156,33 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def test_RESCAL(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='Rescal')
-
         config = RescalConfig(batch_size=512, epochs=1)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
         config.save_model = False
         config.disp_result= False
-
 
         model = Rescal(config)
         
         trainer = Trainer(model=model)
         trainer.build_model()
         trainer.train_model()
-
     
     def test_RotatE(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='RotatE')
-
         config = RotatEConfig(batch_size=512, epochs=1)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
         config.save_model = False
         config.disp_result= False
-
 
         model = RotatE(config)
         
@@ -209,19 +190,16 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def test_SLM(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='SLM')
-
         config = SLMConfig(batch_size=512, epochs=1)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
         config.save_model = False
         config.disp_result= False
-
 
         model = SLM(config)
         
@@ -229,17 +207,15 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def test_SMEL(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='SME_Linear')
-
         config = SMEConfig(batch_size=512, epochs=1, hidden_size=8)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
-        config.save_model = False
+        config.save_model = True
         config.disp_result= False
         config.bilinear = False
 
@@ -249,17 +225,14 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def test_SMEB(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='SME_Bilinear')
-
         config = SMEConfig(batch_size=512, epochs=1, hidden_size=8)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
-        config.loadFromData = True
         config.save_model = True
         config.disp_result= False
         config.bilinear = True
@@ -270,12 +243,10 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def test_transE(self):
-        
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='TransE')
 
         config = TransEConfig(batch_size=512, epochs=1, hidden_size=16)
+        config.set_dataset("Freebase15k")
 
         config.test_step = 1
         config.test_num  = 10
@@ -288,13 +259,11 @@ class Pykg2vecIT(unittest.TestCase):
         trainer = Trainer(model=model)
         trainer.build_model()
         trainer.train_model()
-
     
     def test_transH(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='TransH')
-
         config = TransHConfig(batch_size=512, epochs=1, hidden_size=16)
+        config.set_dataset("Freebase15k")
 
         config.test_step = 1
         config.test_num  = 10
@@ -302,20 +271,19 @@ class Pykg2vecIT(unittest.TestCase):
         config.save_model = False
         config.disp_result= False
         config.C = 0.125
+        config.sampling = "bern"
 
         model = TransH(config)
         
         trainer = Trainer(model=model)
         trainer.build_model()
         trainer.train_model()
-
     
     def test_transR(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='TransR')
-
         config = TransRConfig(batch_size=512, epochs=1, ent_hidden_size=8, rel_hidden_size=4)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
@@ -331,10 +299,9 @@ class Pykg2vecIT(unittest.TestCase):
     
     def test_TransD(self):
 
-        self.data_handler = DataPrep("Freebase15k", sampling="uniform", algo='TransD')
-
         config = TransDConfig(batch_size=512, epochs=1, ent_hidden_size=8, rel_hidden_size=8)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
@@ -347,13 +314,11 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def test_TransM(self):
 
-        DataPrep("Freebase15k", sampling="uniform", algo='TransM')
-
         config = TransMConfig(batch_size=512, epochs=1, hidden_size=8)
-
+        config.set_dataset("Freebase15k")
+        
         config.test_step = 1
         config.test_num  = 10
         config.gpu_fraction = 0.4
@@ -366,7 +331,6 @@ class Pykg2vecIT(unittest.TestCase):
         trainer.build_model()
         trainer.train_model()
 
-
     def tearDown(self):
         print('teardown')
         tf.reset_default_graph()
@@ -375,9 +339,9 @@ class Pykg2vecIT(unittest.TestCase):
 def suite():
     suite = unittest.TestSuite()
 
-    suite.addTest(Pykg2vecIT('test_Complex'))
-    suite.addTest(Pykg2vecIT('test_ConvE'))
-    suite.addTest(Pykg2vecIT('test_DistMult'))
+    # suite.addTest(Pykg2vecIT('test_Complex'))
+    # suite.addTest(Pykg2vecIT('test_ConvE'))
+    # suite.addTest(Pykg2vecIT('test_DistMult'))
     suite.addTest(Pykg2vecIT('test_KG2E_EL'))
     suite.addTest(Pykg2vecIT('test_KG2E_KL'))
     suite.addTest(Pykg2vecIT('test_NTN'))
