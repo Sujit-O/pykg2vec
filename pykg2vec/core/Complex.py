@@ -32,16 +32,15 @@ class Complex(ModelMeta):
         self.def_loss()
 
     def def_inputs(self):
-        self.e1 = tf.placeholder(tf.int32, [None])
+        self.h = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
-        self.e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.t = tf.placeholder(tf.int32, [None])
+        self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
-        self.test_e1 = tf.placeholder(tf.int32, [None])
-        self.test_e2 = tf.placeholder(tf.int32, [None])
+        self.test_h = tf.placeholder(tf.int32, [None])
         self.test_r = tf.placeholder(tf.int32, [None])
-        self.test_r_rev = tf.placeholder(tf.int32, [None])
-        self.test_e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-        self.test_e2_multi2 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.test_t = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         k = self.config.hidden_size
@@ -58,15 +57,18 @@ class Complex(ModelMeta):
         self.parameter_list = [self.emb_e_real, self.emb_e_img, self.emb_rel_real, self.emb_rel_img]
 
     def def_loss(self):
-        e1_embedded_real, rel_embedded_real, e1_embedded_img, rel_embedded_img = self.embed(self.e1, self.r)
+        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(self.h, self.r, self.t)
 
-        e1_embedded_real, rel_embedded_real = self.layer(e1_embedded_real, rel_embedded_real)
-        e1_embedded_img, rel_embedded_img = self.layer(e1_embedded_img, rel_embedded_img)
+        h_emb_real, r_emb_real, t_emb_real = self.layer(h_emb_real, r_emb_real, t_emb_real)
+        h_emb_img, r_emb_img, t_emb_img = self.layer(h_emb_img, r_emb_img, t_emb_img)
 
-        e1_embedded_real = tf.squeeze(e1_embedded_real)
-        rel_embedded_real = tf.squeeze(rel_embedded_real)
-        e1_embedded_img = tf.squeeze(e1_embedded_img)
-        rel_embedded_img = tf.squeeze(rel_embedded_img)
+        h_emb_real = tf.squeeze(h_emb_real)
+        r_emb_real = tf.squeeze(r_emb_real)
+        r_emb_real = tf.squeeze(r_emb_real)
+        h_emb_img = tf.squeeze(h_emb_img)
+        r_emb_img = tf.squeeze(r_emb_img)
+        t_emb_img = tf.squeeze(t_emb_img)
+        # TODO : finished upto here!! continue later
 
         realrealreal = tf.matmul(e1_embedded_real * rel_embedded_real,
                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
@@ -95,12 +97,16 @@ class Complex(ModelMeta):
     def def_layer(self):
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
 
-    def layer(self, e1, rel):
-        e1 = tf.squeeze(e1)
-        rel = tf.squeeze(rel)
-        e1 = self.inp_drop(e1)
-        rel = self.inp_drop(rel)
-        return e1, rel
+    def layer(self, h, r, t):
+        h = tf.squeeze(h)
+        r = tf.squeeze(r)
+        t = tf.squeeze(t)
+
+        h = self.inp_drop(h)
+        r = self.inp_drop(r)
+        t = self.inp_drop(t)
+
+        return h,r,t
 
     def test_batch(self):
         e1_embedded_real, rel_embedded_real, e1_embedded_img, rel_embedded_img = self.embed(self.test_e1, self.test_r)
@@ -147,35 +153,29 @@ class Complex(ModelMeta):
         tr_pred = tr_realrealreal + tr_realimgimg + tr_imgrealimg - tr_imgimgreal
         tr_pred = tf.nn.sigmoid(tr_pred)
 
-        # e2_multi1 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-        #                           self.test_e2_multi1) + (1.0 / self.data_stats.tot_entity)
-        # e2_multi2 = tf.scalar_mul((1.0 - self.config.label_smoothing),
-        #                           self.test_e2_multi2) + (1.0 / self.data_stats.tot_entity)
-        #
-        # head_vec = tf.keras.backend.binary_crossentropy(e2_multi1, hr_pred)
-        # tail_vec = tf.keras.backend.binary_crossentropy(e2_multi2, tr_pred)
-        #
-        # _, head_rank = tf.nn.top_k(head_vec, k=self.data_stats.tot_entity)
-        # _, tail_rank = tf.nn.top_k(tail_vec, k=self.data_stats.tot_entity)
 
         _, head_rank = tf.nn.top_k(-hr_pred, k=self.data_stats.tot_entity)
         _, tail_rank = tf.nn.top_k(-tr_pred, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
-    def embed(self, e1, r):
+    def embed(self, h,r,t):
         """function to get the embedding value"""
         norm_emb_e_real = tf.nn.l2_normalize(self.emb_e_real, axis=1)
         norm_emb_e_img = tf.nn.l2_normalize(self.emb_e_img, axis=1)
         norm_emb_rel_real = tf.nn.l2_normalize(self.emb_rel_real, axis=1)
         norm_emb_rel_img = tf.nn.l2_normalize(self.emb_rel_img, axis=1)
 
-        emb_e1_real = tf.nn.embedding_lookup(norm_emb_e_real, e1)
-        rel_emb_real = tf.nn.embedding_lookup(norm_emb_rel_real, r)
-        emb_e1_img = tf.nn.embedding_lookup(norm_emb_e_img, e1)
-        rel_emb_img = tf.nn.embedding_lookup(norm_emb_rel_img, r)
+        h_emb_real = tf.nn.embedding_lookup(norm_emb_e_real, h)
+        t_emb_real = tf.nn.embedding_lookup(norm_emb_e_real, t)
 
-        return emb_e1_real, rel_emb_real, emb_e1_img, rel_emb_img
+        h_emb_img = tf.nn.embedding_lookup(norm_emb_e_img, h)
+        t_emb_img = tf.nn.embedding_lookup(norm_emb_e_img, t)
+
+        r_emb_real = tf.nn.embedding_lookup(norm_emb_rel_real, r)
+        r_emb_img = tf.nn.embedding_lookup(norm_emb_rel_img, r)
+
+        return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img 
 
     def get_embed(self, e, r, sess=None):
         """function to get the embedding value in numpy"""
