@@ -11,6 +11,7 @@ import tensorflow as tf
 from core.KGMeta import ModelMeta
 import pickle
 
+
 class ConvE(ModelMeta):
     """
     ------------------Paper Title-----------------------------
@@ -131,15 +132,14 @@ class ConvE(ModelMeta):
 
         # TODO make two different forward layers for head and tail
         pred_tails = self.forward(stacked_hr)
-        pred_heads = self.forward(stacked_rt)
+        pred_heads = self.forward(stacked_tr)
 
         loss_tail_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
         loss_head_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
 
-        reg_losses = tf.nn.l2_loss(h_emb) + tf.nn.l2_loss(r_emb) +tf.nn.l2_loss(t_emb)
+        reg_losses = tf.nn.l2_loss(h_emb) + tf.nn.l2_loss(r_emb) + tf.nn.l2_loss(t_emb)
 
-        self.loss = loss_tail_pred+loss_head_pred + self.config.lmbda * reg_losses
-
+        self.loss = loss_tail_pred + loss_head_pred + self.config.lmbda * reg_losses
 
     def test_batch(self):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
