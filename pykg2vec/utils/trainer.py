@@ -136,11 +136,6 @@ class Trainer(TrainerMeta):
 
         start_time = timeit.default_timer()
 
-        # if self.config.sampling == "uniform":
-        #     gen_train = self.data_handler.batch_generator_train(batch_size=self.config.batch_size)
-        # elif self.config.sampling == "bern":
-        #     gen_train = self.data_handler.batch_generator_bern(batch_size=self.config.batch_size)
-
         for batch_idx in range(num_batch):
             data = list(next(self.gen_train))
             ph = data[0]

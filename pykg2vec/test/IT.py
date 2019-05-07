@@ -32,7 +32,7 @@ class Pykg2vecIT(unittest.TestCase):
         print('setup')
         DataPrep("Freebase15k", sampling="uniform", algo='TransE').prepare_data()
         DataPrep("Freebase15k", sampling="bern", algo='TransH').prepare_data()
-        # DataPrep("Freebase15k", sampling="uniform", algo='ConvE').prepare_data()
+        DataPrep("Freebase15k", sampling="uniform", algo='ConvE').prepare_data()
         DataPrep("Freebase15k", sampling="uniform", algo='ProjE').prepare_data()
        
     def test_Complex(self):   
@@ -48,7 +48,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = Complex(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -65,7 +65,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = ConvE(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -83,7 +83,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = DistMult(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -101,7 +101,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = KG2E(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
     
@@ -118,7 +118,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = KG2E(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -135,7 +135,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = NTN(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
     
@@ -152,7 +152,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = ProjE_pointwise(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -169,7 +169,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = Rescal(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
     
@@ -186,7 +186,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = RotatE(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -203,7 +203,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = SLM(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -221,7 +221,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = SME(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -239,7 +239,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = SME(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -256,7 +256,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = TransE(config)
 
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
     
@@ -275,7 +275,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = TransH(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
     
@@ -292,7 +292,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = TransR(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -310,7 +310,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = TransD(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -327,7 +327,7 @@ class Pykg2vecIT(unittest.TestCase):
 
         model = TransM(config)
         
-        trainer = Trainer(model=model)
+        trainer = Trainer(model=model, debug=True)
         trainer.build_model()
         trainer.train_model()
 
@@ -339,23 +339,23 @@ class Pykg2vecIT(unittest.TestCase):
 def suite():
     suite = unittest.TestSuite()
 
-    # suite.addTest(Pykg2vecIT('test_Complex'))
-    # suite.addTest(Pykg2vecIT('test_ConvE'))
-    # suite.addTest(Pykg2vecIT('test_DistMult'))
-    suite.addTest(Pykg2vecIT('test_KG2E_EL'))
-    suite.addTest(Pykg2vecIT('test_KG2E_KL'))
-    suite.addTest(Pykg2vecIT('test_NTN'))
+    suite.addTest(Pykg2vecIT('test_Complex'))
+    suite.addTest(Pykg2vecIT('test_ConvE'))
+    suite.addTest(Pykg2vecIT('test_DistMult'))
+    # suite.addTest(Pykg2vecIT('test_KG2E_EL'))
+    # suite.addTest(Pykg2vecIT('test_KG2E_KL'))
+    # suite.addTest(Pykg2vecIT('test_NTN'))
     suite.addTest(Pykg2vecIT('test_ProjE'))
-    suite.addTest(Pykg2vecIT('test_RESCAL'))
-    suite.addTest(Pykg2vecIT('test_RotatE'))
-    suite.addTest(Pykg2vecIT('test_SLM'))
-    suite.addTest(Pykg2vecIT('test_SMEL'))
-    suite.addTest(Pykg2vecIT('test_SMEB'))
-    suite.addTest(Pykg2vecIT('test_transE'))
-    suite.addTest(Pykg2vecIT('test_transH'))
-    suite.addTest(Pykg2vecIT('test_transR'))
-    suite.addTest(Pykg2vecIT('test_TransD'))
-    suite.addTest(Pykg2vecIT('test_TransM'))
+    # suite.addTest(Pykg2vecIT('test_RESCAL'))
+    # suite.addTest(Pykg2vecIT('test_RotatE'))
+    # suite.addTest(Pykg2vecIT('test_SLM'))
+    # suite.addTest(Pykg2vecIT('test_SMEL'))
+    # suite.addTest(Pykg2vecIT('test_SMEB'))
+    # suite.addTest(Pykg2vecIT('test_transE'))
+    # suite.addTest(Pykg2vecIT('test_transH'))
+    # suite.addTest(Pykg2vecIT('test_transR'))
+    # suite.addTest(Pykg2vecIT('test_TransD'))
+    # suite.addTest(Pykg2vecIT('test_TransM'))
     
     return suite
 
