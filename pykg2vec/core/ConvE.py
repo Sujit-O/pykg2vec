@@ -158,7 +158,7 @@ class ConvE(ModelMeta):
 
         # TODO make two different forward layers for head and tail
         pred_tails = self.forward(stacked_hr)
-        pred_heads = self.forward(stacked_rt)
+        pred_heads = self.forward(stacked_tr)
 
         _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
         _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)

@@ -63,19 +63,19 @@ class Complex(ModelMeta):
 
         h_emb_real = tf.squeeze(h_emb_real)
         r_emb_real = tf.squeeze(r_emb_real)
-        r_emb_real = tf.squeeze(r_emb_real)
+        t_emb_real = tf.squeeze(t_emb_real)
         h_emb_img = tf.squeeze(h_emb_img)
         r_emb_img = tf.squeeze(r_emb_img)
         t_emb_img = tf.squeeze(t_emb_img)
         # TODO : finished upto here!! continue later
 
-        realrealreal = tf.matmul(e1_embedded_real * rel_embedded_real,
+        realrealreal = tf.matmul(h_emb_real * r_emb_real,
                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
-        realimgimg = tf.matmul(e1_embedded_real * rel_embedded_img,
+        realimgimg = tf.matmul(h_emb_real * r_emb_img,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        imgrealimg = tf.matmul(e1_embedded_img * rel_embedded_real,
+        imgrealimg = tf.matmul(h_emb_img * r_emb_real,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        imgimgreal = tf.matmul(e1_embedded_img * rel_embedded_img,
+        imgimgreal = tf.matmul(h_emb_img * r_emb_img,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
 
         pred = realrealreal + realimgimg + imgrealimg - imgimgreal
