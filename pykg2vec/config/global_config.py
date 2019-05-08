@@ -1,24 +1,8 @@
 import shutil, tarfile, urllib.request
 from pathlib import Path
 
+
 class Triple(object):
-    def __init__(self, head=None, relation=None, tail=None):
-        self.h = head
-        self.r = relation
-        self.t = tail
-
-
-class DataInput(object):
-    def __init__(self, e1=None, r=None, e2=None, r_rev=None, e2_multi1=None, e2_multi2=None):
-        self.e1 = e1
-        self.r = r
-        self.e2 = e2
-        self.r_rev = r_rev
-        self.e2_multi1 = e2_multi1
-        self.e2_multi2 = e2_multi2
-
-
-class DataInputSimple(object):
     def __init__(self, h=None, r=None, t=None, hr_t=None, rt_h=None):
         self.h = h
         self.r = r
@@ -60,38 +44,39 @@ class FreebaseFB15k(object):
         self.dataset_home_path = self.dataset_home_path.resolve()
         self.root_path = self.dataset_home_path / 'Freebase'
         self.tar = self.root_path / 'FB15k.tgz'
-        self.downloaded_path = self.root_path / 'FB15k' / 'freebase_mtr100_mte100-'
-        self.prepared_data_path = self.root_path / 'FB15k' / 'FB15k_'
-        self.entity2idx_path = self.root_path / 'FB15k' / 'FB15k_entity2idx.pkl'
-        self.idx2entity_path = self.root_path / 'FB15k' / 'FB15k_idx2entity.pkl'
-        self.relation2idx_path = self.root_path / 'FB15k' / 'FB15k_relation2idx.pkl'
-        self.idx2relation_path = self.root_path / 'FB15k' / 'FB15k_idx2relation.pkl'
 
         if not self.root_path.exists():
             self.download()
             self.extract()
 
+        self.root_path = self.root_path / 'FB15k'
+        self.downloaded_path    = self.root_path / 'freebase_mtr100_mte100-'
+
         self.data_paths = {
-            'train': self.root_path / 'FB15k' / 'freebase_mtr100_mte100-train.txt',
-            'test' : self.root_path / 'FB15k' / 'freebase_mtr100_mte100-test.txt',
-            'valid': self.root_path / 'FB15k' / 'freebase_mtr100_mte100-valid.txt'
+            'train': self.root_path / 'freebase_mtr100_mte100-train.txt',
+            'test' : self.root_path / 'freebase_mtr100_mte100-test.txt',
+            'valid': self.root_path / 'freebase_mtr100_mte100-valid.txt'
         }
 
-        self.testing_triples_id_path = self.root_path / 'FB15k' / 'test_triples_ids.pkl'
-        self.training_triples_id_path = self.root_path / 'FB15k' / 'training_triples_ids.pkl'
-        self.validating_triples_id_path = self.root_path / 'FB15k' / 'validating_triples_ids.pkl'
+        self.entity2idx_path            = self.root_path / 'FB15k_entity2idx.pkl'
+        self.idx2entity_path            = self.root_path / 'FB15k_idx2entity.pkl'
+        self.relation2idx_path          = self.root_path / 'FB15k_relation2idx.pkl'
+        self.idx2relation_path          = self.root_path / 'FB15k_idx2relation.pkl'
+        self.testing_triples_id_path    = self.root_path / 'test_triples_ids.pkl'
+        self.training_triples_id_path   = self.root_path / 'training_triples_ids.pkl'
+        self.validating_triples_id_path = self.root_path / 'validating_triples_ids.pkl'
         
-        self.hrt_path = self.root_path / 'FB15k' / 'hr_t.pkl'
-        self.trh_path = self.root_path / 'FB15k' / 'tr_h.pkl'
+        self.hrt_path                   = self.root_path / 'hr_t.pkl'
+        self.trh_path                   = self.root_path / 'tr_h.pkl'
         
-        self.hrt_train_path = self.root_path / 'FB15k' / 'hr_t_train.pkl'
-        self.trh_train_path = self.root_path / 'FB15k' / 'tr_h_train.pkl'
+        self.hrt_train_path             = self.root_path / 'hr_t_train.pkl'
+        self.trh_train_path             = self.root_path / 'tr_h_train.pkl'
 
-        self.hrt_hr_rt_train = self.root_path / 'FB15k' / 'hrt_hr_rt_train.pkl'
+        self.hrt_hr_rt_train            = self.root_path / 'hrt_hr_rt_train.pkl'
         
-        self.metadata_path = self.root_path / 'FB15k' / 'metadata.pkl'
-        self.relation_property_path = self.root_path / 'FB15k' / 'relation_property_train.pkl'
-        
+        self.metadata_path              = self.root_path / 'metadata.pkl'
+        self.relation_property_path     = self.root_path / 'relation_property_train.pkl'
+       
     def download(self):
         ''' download Freebase 15k dataset from url'''
         print("Downloading the dataset %s" % self.name)
@@ -180,19 +165,8 @@ class GlobalConfig(object):
         with open(str(self.dataset.data_paths[set_type]), 'r') as file:
             for line in file.readlines():
                 s, p, o = line.split('\t')
-                triplets.append(Triple(s.strip(), p.strip(), o.strip()))
+                triplets.append(Triple(h=s.strip(), r=p.strip(), t=o.strip()))
         return triplets
-
-    def read_triplets_with_reverse_rel(self, set_type):
-        '''used in conv and tucker algorithms'''
-        triplets = []
-        with open(str(self.dataset.data_paths[set_type]), 'r') as file:
-            for line in file.readlines():
-                s, p, o = line.split('\t')
-                triplets.append(Triple(s.strip(), p.strip(), o.strip()))
-                triplets.append(Triple(o.strip(), p.strip()+'_reverse', s.strip()))
-        return triplets
-
 
 class GeneratorConfig(object):
     """Configuration for Generator

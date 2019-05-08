@@ -12,7 +12,7 @@ import progressbar
 
 sys.path.append("../")
 
-from config.global_config import GlobalConfig, Triple, DataInputSimple, KGMetaData
+from config.global_config import GlobalConfig, Triple, KGMetaData
 import numpy as np
 import pickle
 from collections import defaultdict
