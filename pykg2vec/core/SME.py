@@ -9,7 +9,7 @@ import sys
 sys.path.append("../")
 
 from core.KGMeta import ModelMeta
-import pickle
+
 
 class SME(ModelMeta):
     """

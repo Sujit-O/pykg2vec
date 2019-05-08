@@ -12,25 +12,13 @@ import progressbar
 
 sys.path.append("../")
 
-from config.global_config import GlobalConfig, Triple, DataInputSimple
+from config.global_config import GlobalConfig, Triple, DataInputSimple, KGMetaData
 import numpy as np
 import pickle
 from collections import defaultdict
 import pprint
 
-class KGMetaData(object):
-    def __init__(self, tot_entity=None,
-                 tot_relation=None,
-                 tot_triple=None,
-                 tot_train_triples=None,
-                 tot_test_triples=None,
-                 tot_valid_triples=None):
-        self.tot_triple = tot_triple
-        self.tot_valid_triples = tot_valid_triples
-        self.tot_test_triples = tot_test_triples
-        self.tot_train_triples = tot_train_triples
-        self.tot_relation = tot_relation
-        self.tot_entity = tot_entity
+
 
 class DataPrep(object):
 

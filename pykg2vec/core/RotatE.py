@@ -8,7 +8,7 @@ import sys
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
-import pickle
+
 
 class RotatE(ModelMeta):
     """

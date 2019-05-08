@@ -27,6 +27,20 @@ class DataInputSimple(object):
         self.rt_h = rt_h
 
 
+class KGMetaData(object):
+    def __init__(self, tot_entity=None,
+                 tot_relation=None,
+                 tot_triple=None,
+                 tot_train_triples=None,
+                 tot_test_triples=None,
+                 tot_valid_triples=None):
+        self.tot_triple = tot_triple
+        self.tot_valid_triples = tot_valid_triples
+        self.tot_test_triples = tot_test_triples
+        self.tot_train_triples = tot_train_triples
+        self.tot_relation = tot_relation
+        self.tot_entity = tot_entity
+        
 # TODO: to be moved to utils
 def extract(tar_path, extract_path='.'):
     tar = tarfile.open(tar_path, 'r')

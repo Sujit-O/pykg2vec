@@ -10,7 +10,6 @@ sys.path.append("../")
 import tensorflow as tf
 import numpy as np
 from core.KGMeta import ModelMeta
-import pickle
 
 
 class TransR(ModelMeta):

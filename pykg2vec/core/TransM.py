@@ -11,7 +11,7 @@ import tensorflow as tf
 from core.KGMeta import ModelMeta
 
 import numpy as np
-import pickle 
+
 
 class TransM(ModelMeta):
     """

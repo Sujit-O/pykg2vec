@@ -7,9 +7,8 @@ from __future__ import print_function
 import sys
 sys.path.append("../")
 import tensorflow as tf
-import numpy as np
 from core.KGMeta import ModelMeta
-import pickle
+
 
 class TransD(ModelMeta):
     """
