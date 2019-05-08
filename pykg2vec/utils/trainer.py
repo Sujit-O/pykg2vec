@@ -9,7 +9,6 @@ from utils.visualization import Visualization
 from utils.generator import Generator
 from config.global_config import GeneratorConfig
 import numpy as np
-import pickle
 
 
 def get_sparse_mat(data, bs, te):
@@ -75,12 +74,14 @@ class Trainer(TrainerMeta):
                     self.tiny_test(n_iter)
 
             self.gen_train.stop()
-
-            self.evaluator.save_test_summary()
+           
             self.evaluator.save_training_result(self.training_results)
 
             if self.config.save_model:
                 self.save_model()
+
+        self.full_test()
+        self.evaluator.save_test_summary()
 
         if self.config.disp_result:
             self.display()
@@ -165,13 +166,9 @@ class Trainer(TrainerMeta):
 
     def train_model_epoch_simple(self, epoch_idx):
         acc_loss = 0
-
-        with open(str(self.config.tmp_data / 'data_stats.pkl'), 'rb') as f:
-            data_stats = pickle.load(f)
-
-        with open(str(self.config.tmp_data / 'train_data.pkl'), 'rb') as f:
-            train_data = pickle.load(f)
-            rand_ids_train = np.random.permutation(len(train_data))
+        train_data = self.model.config.read_train_data()
+        rand_ids_train = np.random.permutation(len(train_data))
+        data_stats = self.model.config.kg_meta 
 
         # num_batch = self.gen_train.tot_train_data // self.config.batch_size if not self.debug else 10
         num_batch = len(train_data) // self.config.batch_size if not self.debug else 10
@@ -257,7 +254,7 @@ class Trainer(TrainerMeta):
                 curr_epoch == 0 or \
                 curr_epoch == self.config.epochs - 1:
             # self.evaluator.test(self.sess, curr_epoch)
-            self.evaluator.test_step(self.sess, curr_epoch)
+            self.evaluator.test_batch(self.sess, curr_epoch)
             self.evaluator.print_test_summary(curr_epoch)
 
             print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
@@ -305,9 +302,9 @@ class Trainer(TrainerMeta):
             print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
 
     def full_test(self):
-        self.evaluator.test(self.sess, self.config.epochs)
+        self.evaluator.test_batch(self.sess, self.config.epochs)
         self.evaluator.print_test_summary(self.config.epochs)
-        self.evaluator.save_test_summary(algo=self.model.model_name)
+        self.evaluator.save_test_summary()
 
     ''' Procedural functions:'''
 

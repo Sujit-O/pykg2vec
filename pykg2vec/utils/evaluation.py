@@ -124,6 +124,7 @@ class Evaluation(EvaluationMeta):
             self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
                                                         dtype=np.float32) / total_test
         gen_test.stop()
+        print()
 
     def test_step(self, sess=None, epoch=None, test_data='test'):
         if test_data == 'test':
