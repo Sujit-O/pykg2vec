@@ -23,7 +23,6 @@ from config.config import *
 from utils.dataprep import DataPrep
 # from utils.dataprep import Triple
 from utils.trainer import Trainer
-import pickle
 import tensorflow as tf
 
 class Pykg2vecIT(unittest.TestCase):
@@ -31,9 +30,9 @@ class Pykg2vecIT(unittest.TestCase):
     def setUp(self):
         print('setup')
         DataPrep("Freebase15k", sampling="uniform", algo='TransE').prepare_data()
-        DataPrep("Freebase15k", sampling="bern", algo='TransH').prepare_data()
-        DataPrep("Freebase15k", sampling="uniform", algo='ConvE').prepare_data()
-        DataPrep("Freebase15k", sampling="uniform", algo='ProjE').prepare_data()
+        # DataPrep("Freebase15k", sampling="bern", algo='TransH').prepare_data()
+        # DataPrep("Freebase15k", sampling="uniform", algo='ConvE').prepare_data()
+        # DataPrep("Freebase15k", sampling="uniform", algo='ProjE').prepare_data()
        
     def test_Complex(self):   
 
@@ -339,13 +338,13 @@ class Pykg2vecIT(unittest.TestCase):
 def suite():
     suite = unittest.TestSuite()
 
-    suite.addTest(Pykg2vecIT('test_Complex'))
-    suite.addTest(Pykg2vecIT('test_ConvE'))
-    suite.addTest(Pykg2vecIT('test_DistMult'))
-    # suite.addTest(Pykg2vecIT('test_KG2E_EL'))
-    # suite.addTest(Pykg2vecIT('test_KG2E_KL'))
+    # suite.addTest(Pykg2vecIT('test_Complex'))
+    # suite.addTest(Pykg2vecIT('test_ConvE'))
+    # suite.addTest(Pykg2vecIT('test_DistMult'))
+    suite.addTest(Pykg2vecIT('test_KG2E_EL'))
+    suite.addTest(Pykg2vecIT('test_KG2E_KL'))
     # suite.addTest(Pykg2vecIT('test_NTN'))
-    suite.addTest(Pykg2vecIT('test_ProjE'))
+    # suite.addTest(Pykg2vecIT('test_ProjE'))
     # suite.addTest(Pykg2vecIT('test_RESCAL'))
     # suite.addTest(Pykg2vecIT('test_RotatE'))
     # suite.addTest(Pykg2vecIT('test_SLM'))

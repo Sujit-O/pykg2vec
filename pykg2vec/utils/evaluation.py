@@ -487,11 +487,11 @@ class Evaluation(EvaluationMeta):
             # import pdb
             # pdb.set_trace()
             feed_dict = {
-                self.model.test_h: data[:, 0],
-                self.model.test_r: data[:, 1],
-                self.model.test_t: data[:, 2]
+                self.model.test_h: data[0],
+                self.model.test_r: data[1],
+                self.model.test_t: data[2]
             }
-
+            
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
 
             for b in range(self.batch):
@@ -500,12 +500,12 @@ class Evaluation(EvaluationMeta):
 
                 for j in range(len(id_replace_head[b])):
                     val = id_replace_head[b, -j - 1]
-                    if val == data[:, 0][b]:
+                    if val == data[0][b]:
                         break
                     else:
                         hrank += 1
                         fhrank += 1
-                        if val in self.tr_h[(data[:, 2][b], data[:, 1][b])]:
+                        if val in self.tr_h[(data[2][b], data[1][b])]:
                             fhrank -= 1
 
                 trank = 0
@@ -513,18 +513,19 @@ class Evaluation(EvaluationMeta):
 
                 for j in range(len(id_replace_tail[b])):
                     val = id_replace_tail[b, -j - 1]
-                    if val == data[:, 2][b]:
+                    if val == data[2][b]:
                         break
                     else:
                         trank += 1
                         ftrank += 1
-                        if val in self.hr_t[(data[:, 0][b], data[:, 1][b])]:
+                        if val in self.hr_t[(data[0][b], data[1][b])]:
                             ftrank -= 1
 
                 rank_head.append(hrank)
                 rank_tail.append(trank)
                 filter_rank_head.append(fhrank)
                 filter_rank_tail.append(ftrank)
+            
         gen_test.stop()
         self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
         self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test

@@ -47,11 +47,16 @@ class FreebaseFB15k(object):
         self.testing_triples_id_path = self.root_path / 'FB15k' / 'test_triples_ids.pkl'
         self.training_triples_id_path = self.root_path / 'FB15k' / 'training_triples_ids.pkl'
         self.validating_triples_id_path = self.root_path / 'FB15k' / 'validating_triples_ids.pkl'
+        
         self.hrt_path = self.root_path / 'FB15k' / 'hr_t.pkl'
         self.trh_path = self.root_path / 'FB15k' / 'tr_h.pkl'
         
         self.hrt_train_path = self.root_path / 'FB15k' / 'hr_t_train.pkl'
         self.trh_train_path = self.root_path / 'FB15k' / 'tr_h_train.pkl'
+
+        self.hrt_hr_rt_train = self.root_path / 'FB15k' / 'hrt_hr_rt_train.pkl'
+        self.hrt_hr_rt_test = self.root_path / 'FB15k' / 'hrt_hr_rt_test.pkl'
+        self.hrt_hr_rt_valid = self.root_path / 'FB15k' / 'hrt_hr_rt_valid.pkl'        
 
         self.metadata_path = self.root_path / 'FB15k' / 'metadata.pkl'
         self.relation_property_path = self.root_path / 'FB15k' / 'relation_property_train.pkl'

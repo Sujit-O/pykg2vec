@@ -75,16 +75,13 @@ class Generator:
 
         self.data_stats = self.model_config.kg_meta
         
-        if self.config.algo.lower() in ["tucker","tucker_v2","conve", "complex", "distmult"]:
-            with open(str(self.config.data_path / 'train_data.pkl'), 'rb') as f:
-                self.train_data = pickle.load(f)
-                self.tot_train_data = len(self.train_data)
-            with open(str(self.config.data_path / 'test_data.pkl'), 'rb') as f:
-                self.test_data = pickle.load(f)
-                self.tot_test_data = len(self.test_data)
-            with open(str(self.config.data_path / 'valid_data.pkl'), 'rb') as f:
-                self.valid_data = pickle.load(f)
-                self.tot_valid_data = len(self.valid_data)
+        if self.config.algo.lower() in ["tucker","tucker_v2","conve", "complex", "distmult"]:    
+            self.train_data = self.model_config.read_train_data()
+            self.test_data = self.model_config.read_test_triples_ids()
+            self.valid_data = self.model_config.read_valid_triples_ids()
+            self.tot_train_data = len(self.train_data)
+            self.tot_test_data = len(self.test_data)
+            self.tot_valid_data = len(self.valid_data)
             self.rand_ids_train = np.random.permutation(len(self.train_data))
             self.rand_ids_test = np.random.permutation(len(self.test_data))
             self.rand_ids_valid = np.random.permutation(len(self.valid_data))
@@ -95,8 +92,8 @@ class Generator:
             self.train_triples_ids = self.model_config.read_train_triples_ids() 
             self.test_triples_ids  = self.model_config.read_test_triples_ids() 
             self.valid_triples_ids = self.model_config.read_valid_triples_ids()
-            self.hr_t_ids_train = self.model_config.read_hr_t_train()
-            self.tr_h_ids_train = self.model_config.read_tr_h_train()
+            self.hr_t_ids_train = self.model_config.read_hr_t(train_only=True)
+            self.tr_h_ids_train = self.model_config.read_tr_h(train_only=True)
             self.tot_train_data = len(self.train_triples_ids)
             self.tot_test_data = len(self.test_triples_ids)
             self.tot_valid_data = len(self.valid_triples_ids)
@@ -437,7 +434,10 @@ class Generator:
 
 def test_generator_proje():
     import time
-    gen = iter(Generator(config=GeneratorConfig(data='train', algo='ProjE')))
+    from config.config import ProjE_pointwiseConfig
+    config = ProjE_pointwiseConfig()
+    config.set_dataset("Freebase15k")
+    gen = iter(Generator(config=GeneratorConfig(data='train', algo='ProjE'), model_config=config))
     for i in range(1000):
         data = list(next(gen))
         print("----batch:", i)
@@ -446,16 +446,17 @@ def test_generator_proje():
         tr_tr = data[2]
         tr_h = data[3]
         # time.sleep(0.05)
-        # print("hr_hr:", hr_hr)
-        # print("hr_t:", hr_t)
-        # print("tr_tr:", tr_tr)
-        # print("tr_h:", tr_h)
+        print("hr_hr:", hr_hr)
+        print("hr_t:", hr_t)
+        print("tr_tr:", tr_tr)
+        print("tr_h:", tr_h)
     # gen.stop()
 
 
 def test_generator_trans():
-    import time
+    
     gen = Generator(config=GeneratorConfig(data='test', algo='TransE'))
+
     for i in range(1000):
         data = list(next(gen))
         print("----batch:", i)
@@ -465,9 +466,9 @@ def test_generator_trans():
         # nh = data[3]
         # nr = data[4]
         # nt = data[5]
-        # print("ph:", ph)
-        # print("pr:", pr)
-        # print("pt:", pt)
+        print("ph:", ph)
+        print("pr:", pr)
+        print("pt:", pt)
         # print("nh:", nh)
         # print("nr:", nr)
         # print("nt:", nt)
@@ -497,6 +498,6 @@ def test_generator_simple():
 
 
 if __name__ == '__main__':
-    # test_generator_proje()
+    test_generator_proje()
     # test_generator_conve()
-    test_generator_simple()
+    # test_generator_simple()

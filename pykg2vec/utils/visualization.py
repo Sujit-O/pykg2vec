@@ -69,7 +69,8 @@ def draw_embedding(embs, names, resultpath, algos, show_label):
     files = os.listdir(resultpath)
     file_no = len(
         [c for c in files if algos + '_embedding_plot' in c])
-    plt.savefig(resultpath + '/' + algos + '_embedding_plot_' + str(file_no) + '.png', bbox_inches='tight', dpi=300)
+    filename = algos + '_embedding_plot_' + str(file_no) + '.png'
+    plt.savefig(str(resultpath / filename), bbox_inches='tight', dpi=300)
     plt.show()
 
 
