@@ -25,7 +25,7 @@ class Evaluation(EvaluationMeta):
     def __init__(self, model=None, debug=False):
         self.model = model
         self.debug = debug
-        self.batch = self.model.config.batch_size
+        self.size_per_batch = self.model.config.batch_size_testing
 
         self.n_test = model.config.test_num
         self.hits = model.config.hits
@@ -59,22 +59,22 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                    batch_size=self.batch), model_config=self.model.config)
+                                                    batch_size=self.size_per_batch), model_config=self.model.config)
 
         if self.n_test == 0:
             self.n_test = gen_test.tot_test_data
         else:
             self.n_test = min(self.n_test, gen_test.tot_test_data)
 
-        loop_len = self.n_test // self.batch if not self.debug else 1
+        loop_len = self.n_test // self.size_per_batch if not self.debug else 1
 
-        if self.n_test < self.batch:
+        if self.n_test < self.size_per_batch:
             loop_len = 1
-        self.n_test = self.batch * loop_len
+        self.n_test = self.size_per_batch * loop_len
 
         print("Testing [%d/%d] Triples" % (self.n_test, gen_test.tot_test_data))
 
-        total_test = loop_len * self.batch
+        total_test = loop_len * self.size_per_batch
         start_time = timeit.default_timer()
 
         for i in range(loop_len):
@@ -126,93 +126,6 @@ class Evaluation(EvaluationMeta):
         gen_test.stop()
         print()
 
-    def test_step(self, sess=None, epoch=None, test_data='test'):
-        if test_data == 'test':
-            data = self.model.config.read_test_triples_ids() 
-        elif test_data == 'valid':
-            data = self.model.config.read_valid_triples_ids()
-        else:
-            raise NotImplementedError('Invalid testing data: enter test or valid!')
-
-        head_rank, tail_rank = self.model.test_step()
-        self.epoch.append(epoch)
-        if not sess:
-            raise NotImplementedError('No session found for evaluation!')
-
-        rank_head = []
-        rank_tail = []
-        filter_rank_head = []
-        filter_rank_tail = []
-        loop_len = len(data) if self.model.config.test_num == 0 else min(len(data), self.model.config.test_num)
-        total_test = loop_len
-
-        start_time = timeit.default_timer()
-
-        for i in range(loop_len):
-            # print("batch_id:", i)
-            t = data[i]
-            feed_dict = {
-                self.model.test_h: np.reshape(t.h, [1, ]),
-                self.model.test_r: np.reshape(t.r, [1, ]),
-                self.model.test_t: np.reshape(t.t, [1, ])
-            }
-
-            id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
-
-            hrank = 0
-            fhrank = 0
-            for j in range(len(id_replace_head)):
-                val = id_replace_head[-j - 1]
-                if val == t.h:
-                    break
-                else:
-                    hrank += 1
-                    fhrank += 1
-                    if val in self.tr_h[(t.t, t.r)]:
-                        fhrank -= 1
-
-            trank = 0
-            ftrank = 0
-            for j in range(len(id_replace_tail)):
-                val = id_replace_tail[-j - 1]
-                if val == t.t:
-                    break
-                else:
-                    trank += 1
-                    ftrank += 1
-                    if val in self.hr_t[(t.h, t.r)]:
-                        ftrank -= 1
-
-            rank_head.append(hrank)
-            rank_tail.append(trank)
-            filter_rank_head.append(fhrank)
-            filter_rank_tail.append(ftrank)
-            tmp_mean_rank = (np.sum(rank_head, dtype=np.float32) +
-                             np.sum(rank_tail, dtype=np.float32)) / (2 * len(rank_head))
-
-            print('[%.2f sec](%d/%d): --- Test mean rank: %.5f' % (timeit.default_timer() - start_time,
-                                                                   i, loop_len,
-                                                                   tmp_mean_rank), end='\r')
-
-        self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
-        self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
-
-        self.filter_mean_rank_head[epoch] = np.sum(filter_rank_head,
-                                                   dtype=np.float32) / total_test
-        self.filter_mean_rank_tail[epoch] = np.sum(filter_rank_tail,
-                                                   dtype=np.float32) / total_test
-
-        for hit in self.hits:
-            self.hit_head[(epoch, hit)] = np.sum(np.asarray(rank_head) < hit,
-
-                                                 dtype=np.float32) / total_test
-            self.hit_tail[(epoch, hit)] = np.sum(np.asarray(rank_tail) < hit,
-                                                 dtype=np.float32) / total_test
-            self.filter_hit_head[(epoch, hit)] = np.sum(np.asarray(filter_rank_head) < hit,
-                                                        dtype=np.float32) / total_test
-            self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
-                                                        dtype=np.float32) / total_test
-
     def eval_batch_head(self, id_replace_head, h, r, t):
         hrank = 0
         fhrank = 0
@@ -262,16 +175,16 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                    batch_size=self.batch), model_config=self.model.config)
+                                                    batch_size=self.size_per_batch), model_config=self.model.config)
 
         self.n_test = min(self.n_test, gen_test.tot_test_data)
-        loop_len = self.n_test // self.batch if not self.debug else 2
+        loop_len = self.n_test // self.size_per_batch if not self.debug else 2
 
-        if self.n_test < self.batch:
+        if self.n_test < self.size_per_batch:
             loop_len = 1
 
-        total_test = loop_len * self.batch
-        print("Testing [%d/%d] Triples" % (loop_len * self.batch, gen_test.tot_test_data))
+        total_test = loop_len * self.size_per_batch
+        print("Testing [%d/%d] Triples" % (loop_len * self.size_per_batch, gen_test.tot_test_data))
 
         for i in range(loop_len):
             data = list(next(gen_test))
@@ -326,19 +239,19 @@ class Evaluation(EvaluationMeta):
         # filter_rank_tail = []
 
         # gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-        #                                             batch_size=self.batch))
+        #                                             batch_size=self.size_per_batch))
 
         with open(str(self.model.config.tmp_data / 'test_data.pkl'), 'rb') as f:
             test_data = pickle.load(f)
             rand_ids_test = np.random.permutation(len(test_data))
 
-        loop_len = self.n_test // self.batch if not self.debug else 2
+        loop_len = self.n_test // self.size_per_batch if not self.debug else 2
 
-        if self.n_test < self.batch:
+        if self.n_test < self.size_per_batch:
             loop_len = 1
 
-        total_test = loop_len * self.batch
-        print("Testing [%d/%d] Triples" % (loop_len * self.batch, len(test_data)))
+        total_test = loop_len * self.size_per_batch
+        print("Testing [%d/%d] Triples" % (loop_len * self.size_per_batch, len(test_data)))
 
         for i in range(loop_len):
             # data = list(next(gen_test))
@@ -404,15 +317,15 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                    batch_size=self.batch), model_config=self.model.config)
+                                                    batch_size=self.size_per_batch), model_config=self.model.config)
         self.n_test = min(self.n_test, gen_test.tot_test_data)
-        loop_len = self.n_test // self.batch if not self.debug else 2
+        loop_len = self.n_test // self.size_per_batch if not self.debug else 2
 
-        if self.n_test < self.batch:
+        if self.n_test < self.size_per_batch:
             loop_len = 1
 
-        total_test = loop_len * self.batch
-        print("Testing [%d/%d] Triples" % (loop_len * self.batch, gen_test.tot_test_data))
+        total_test = loop_len * self.size_per_batch
+        print("Testing [%d/%d] Triples" % (loop_len * self.size_per_batch, gen_test.tot_test_data))
 
         for i in range(loop_len):
             data = list(next(gen_test))
@@ -478,8 +391,8 @@ class Evaluation(EvaluationMeta):
         filter_rank_tail = []
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name, \
                                                     batch_size=self.model.config.batch_size), model_config=self.model.config)
-        loop_len = self.n_test // self.batch if not self.debug else 100
-        total_test = loop_len * self.batch
+        loop_len = self.n_test // self.size_per_batch if not self.debug else 100
+        total_test = loop_len * self.size_per_batch
 
         for i in range(loop_len):
             # print("batch_id:", i)
@@ -494,7 +407,7 @@ class Evaluation(EvaluationMeta):
             
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
 
-            for b in range(self.batch):
+            for b in range(self.size_per_batch):
                 hrank = 0
                 fhrank = 0
 

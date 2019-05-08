@@ -64,6 +64,7 @@ class BasicConfig:
         self.plot_training_result = plot_training_result
         self.plot_testing_result = plot_testing_result
         self.knowledge_graph = None
+        self.batch_size_testing = 16
 
     def set_dataset(self, dataset_name):
         self.knowledge_graph = GlobalConfig(dataset=dataset_name)
