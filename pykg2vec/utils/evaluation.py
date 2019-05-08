@@ -17,7 +17,6 @@ from utils.generator import Generator
 from config.global_config import GeneratorConfig
 import pickle
 from multiprocessing.pool import ThreadPool
-from pathlib import Path
 import timeit
 
 

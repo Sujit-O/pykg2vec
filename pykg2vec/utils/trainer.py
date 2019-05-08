@@ -1,6 +1,5 @@
 import tensorflow as tf
 import timeit
-import os
 import sys
 
 sys.path.append("../")
@@ -11,7 +10,6 @@ from utils.generator import Generator
 from config.global_config import GeneratorConfig
 import numpy as np
 import pickle
-from scipy import sparse as sps
 
 
 def get_sparse_mat(data, bs, te):
@@ -59,9 +57,8 @@ class Trainer(TrainerMeta):
         if self.config.loadFromData:
             self.load_model()
         else:
-
-            self.gen_train = Generator(config=GeneratorConfig(data='train', algo=self.model.model_name,
-                                                              batch_size=self.model.config.batch_size), model_config=self.model.config)
+            generator_config = GeneratorConfig(data='train', algo=self.model.model_name, batch_size=self.model.config.batch_size)
+            self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
             for n_iter in range(self.config.epochs):
                 if self.model.model_name == "ProjE_pointwise":

@@ -12,39 +12,11 @@ import progressbar
 
 sys.path.append("../")
 
-from config.global_config import GlobalConfig
+from config.global_config import GlobalConfig, Triple, DataInputSimple
 import numpy as np
 import pickle
-import os
 from collections import defaultdict
 import pprint
-
-
-class Triple(object):
-    def __init__(self, head=None, relation=None, tail=None):
-        self.h = head
-        self.r = relation
-        self.t = tail
-
-
-class DataInput(object):
-    def __init__(self, e1=None, r=None, e2=None, r_rev=None, e2_multi1=None, e2_multi2=None):
-        self.e1 = e1
-        self.r = r
-        self.e2 = e2
-        self.r_rev = r_rev
-        self.e2_multi1 = e2_multi1
-        self.e2_multi2 = e2_multi2
-
-
-class DataInputSimple(object):
-    def __init__(self, h=None, r=None, t=None, hr_t=None, rt_h=None):
-        self.h = h
-        self.r = r
-        self.t = t
-        self.hr_t = hr_t
-        self.rt_h = rt_h
-
 
 class KGMetaData(object):
     def __init__(self, tot_entity=None,

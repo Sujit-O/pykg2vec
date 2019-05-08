@@ -12,12 +12,8 @@ import sys
 sys.path.append("../")
 
 from config.global_config import GeneratorConfig
-from utils.dataprep import DataPrep, DataInput, KGMetaData, DataInputSimple
 import numpy as np
-from scipy import sparse as sps
-from threading import Thread, currentThread
-import pickle
-from multiprocessing import Process, Queue, JoinableQueue
+from multiprocessing import Process, Queue
 # from numba import jit
 
 def gen_id(ids):
@@ -433,7 +429,6 @@ class Generator:
 
 
 def test_generator_proje():
-    import time
     from config.config import ProjE_pointwiseConfig
     config = ProjE_pointwiseConfig()
     config.set_dataset("Freebase15k")
@@ -441,11 +436,12 @@ def test_generator_proje():
     for i in range(1000):
         data = list(next(gen))
         print("----batch:", i)
+        
         hr_hr = data[0]
         hr_t = data[1]
         tr_tr = data[2]
         tr_h = data[3]
-        # time.sleep(0.05)
+
         print("hr_hr:", hr_hr)
         print("hr_t:", hr_t)
         print("tr_tr:", tr_tr)

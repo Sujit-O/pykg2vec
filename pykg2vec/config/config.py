@@ -4,7 +4,6 @@
 We store the base configuration of the models here
 """
 import tensorflow as tf
-import os
 from pathlib import Path
 
 import sys
@@ -20,7 +19,6 @@ class BasicConfig:
                  tmp=Path('..') / 'intermediate',
                  result=Path('..') / 'results',
                  figures=Path('..') / 'figures',
-                 tmp_data=Path('..') / 'data',
                  gpu_fraction=0.8,
                  hits=None,
                  gpu_allow_growth=True,
@@ -34,7 +32,6 @@ class BasicConfig:
                  plot_testing_result=False,
                  plot_entity_only=False):
 
-        self.tmp_data = tmp_data
         self.plot_entity_only = plot_entity_only
         self.test_step = test_step
         self.test_num = test_num
@@ -130,6 +127,7 @@ class BasicConfig:
         with open(str(self.knowledge_graph.dataset.hrt_hr_rt_train), 'rb') as f:
             train_data = pickle.load(f)
             return train_data
+
     def read_relation_property(self):
         if not self.knowledge_graph:
             raise Exception("not initialized!")

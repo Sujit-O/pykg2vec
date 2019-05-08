@@ -1,13 +1,31 @@
 import shutil, tarfile, urllib.request
 from pathlib import Path
-import os
-import multiprocessing
 
 class Triple(object):
     def __init__(self, head=None, relation=None, tail=None):
         self.h = head
         self.r = relation
         self.t = tail
+
+
+class DataInput(object):
+    def __init__(self, e1=None, r=None, e2=None, r_rev=None, e2_multi1=None, e2_multi2=None):
+        self.e1 = e1
+        self.r = r
+        self.e2 = e2
+        self.r_rev = r_rev
+        self.e2_multi1 = e2_multi1
+        self.e2_multi2 = e2_multi2
+
+
+class DataInputSimple(object):
+    def __init__(self, h=None, r=None, t=None, hr_t=None, rt_h=None):
+        self.h = h
+        self.r = r
+        self.t = t
+        self.hr_t = hr_t
+        self.rt_h = rt_h
+
 
 # TODO: to be moved to utils
 def extract(tar_path, extract_path='.'):
@@ -16,6 +34,7 @@ def extract(tar_path, extract_path='.'):
         tar.extract(item, extract_path)
         if item.name.find(".tgz") != -1 or item.name.find(".tar") != -1:
             extract(item.name, "./" + item.name[:item.name.rfind('/')])
+
 
 class FreebaseFB15k(object):
 
@@ -55,9 +74,7 @@ class FreebaseFB15k(object):
         self.trh_train_path = self.root_path / 'FB15k' / 'tr_h_train.pkl'
 
         self.hrt_hr_rt_train = self.root_path / 'FB15k' / 'hrt_hr_rt_train.pkl'
-        self.hrt_hr_rt_test = self.root_path / 'FB15k' / 'hrt_hr_rt_test.pkl'
-        self.hrt_hr_rt_valid = self.root_path / 'FB15k' / 'hrt_hr_rt_valid.pkl'        
-
+        
         self.metadata_path = self.root_path / 'FB15k' / 'metadata.pkl'
         self.relation_property_path = self.root_path / 'FB15k' / 'relation_property_train.pkl'
         
@@ -140,9 +157,6 @@ class GlobalConfig(object):
 
         self.negative_sample = negative_sample
         
-        self.tmp_data = Path('..') / 'data'
-        self.tmp_data.mkdir(parents=True, exist_ok=True)
-
     def dump(self):
         for key, value in self.dataset.__dict__.items():
             print(key, value)
@@ -207,15 +221,6 @@ class GeneratorConfig(object):
         self.data_path = data_path
         self.loss_type = loss_type
         self.batch_size = batch_size
-
-
-
-# valid_keys = ['batch_size', 'loss_type',
-#               'data_path', 'sampling',
-#               'queue_size', 'process_num',
-#               'total_data']
-# for key in valid_keys:
-#     self.__dict__[key] = kwargs.get(key)
 
 
 def test_init_database():
