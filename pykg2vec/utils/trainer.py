@@ -313,13 +313,18 @@ class Trainer(TrainerMeta):
 
     def save_model(self):
         """function to save the model"""
+        saved_path = self.config.tmp / self.model.model_name
+        saved_path.mkdir(parents=True, exist_ok=True)
+
         saver = tf.train.Saver(self.model.parameter_list)
-        saver.save(self.sess, str(self.config.tmp) + '/%s.vec' % self.model.model_name)
+        saver.save(self.sess, str(saved_path / 'model.vec'))
 
     def load_model(self):
         """function to load the model"""
-        saver = tf.train.Saver(self.model.parameter_list)
-        saver.restore(self.sess, str(self.config.tmp) + '/%s.vec' % self.model.model_name)
+        saved_path = self.config.tmp / self.model.model_name
+        if saved_path.exists():
+            saver = tf.train.Saver(self.model.parameter_list)
+            saver.restore(self.sess, str(saved_path / 'model.vec'))
 
     def display(self):
         """function to display embedding"""

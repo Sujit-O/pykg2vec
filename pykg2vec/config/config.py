@@ -136,6 +136,21 @@ class BasicConfig:
             relation_property = pickle.load(f)
             return relation_property
 
+    def read_idx2entity(self):
+        if not self.knowledge_graph:
+            raise Exception("not initialized!")
+
+        with open(str(self.knowledge_graph.dataset.idx2entity_path), 'rb') as f:
+            idx2entity = pickle.load(f)
+            return idx2entity
+
+    def read_idx2relation(self):
+        if not self.knowledge_graph:
+            raise Exception("not initialized!")
+
+        with open(str(self.knowledge_graph.dataset.idx2relation_path), 'rb') as f:
+            idx2relation = pickle.load(f)
+            return idx2relation
 
 class TransRConfig(BasicConfig):
     def __init__(self,

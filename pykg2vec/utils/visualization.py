@@ -169,7 +169,7 @@ def draw_embedding_rel_space(h_emb,
     files = os.listdir(resultpath)
     file_no = len(
         [c for c in files if algos + '_embedding_plot' in c])
-    plt.savefig(resultpath + '/' + algos + '_embedding_plot_' + str(file_no) + '.png', bbox_inches='tight', dpi=300)
+    plt.savefig(str(resultpath / (algos + '_embedding_plot_' + str(file_no) + '.png')), bbox_inches='tight', dpi=300)
     plt.show()
 
 
@@ -197,21 +197,22 @@ class Visualization(object):
         self.r_proj_emb = []
         self.t_proj_emb = []
 
+        self.validation_triples_ids = self.model.config.read_valid_triples_ids()
+        self.idx2entity = self.model.config.read_idx2entity()
+        self.idx2relation = self.model.config.read_idx2relation()
+
     def get_idx_n_emb(self, sess=None):
         if not sess:
             raise NotImplementedError('No tf Session found!')
-        idx = np.random.choice(len(self.model.data_handler.validation_triples_ids), self.model.config.disp_triple_num)
+        idx = np.random.choice(len(self.validation_triples_ids), self.model.config.disp_triple_num)
         triples = []
         for i in range(len(idx)):
-            triples.append(self.model.data_handler.validation_triples_ids[idx[i]])
-
-        idx2entity = self.model.data_handler.idx2entity
-        idx2relation = self.model.data_handler.idx2relation
+            triples.append(self.validation_triples_ids[idx[i]])
 
         for t in triples:
-            self.h_name.append(idx2entity[t.h])
-            self.r_name.append(idx2relation[t.r])
-            self.t_name.append(idx2entity[t.t])
+            self.h_name.append(self.idx2entity[t.h])
+            self.r_name.append(self.idx2relation[t.r])
+            self.t_name.append(self.idx2entity[t.t])
 
             emb_h, emb_r, emb_t = self.model.get_embed(t.h, t.r, t.t, sess)
 
