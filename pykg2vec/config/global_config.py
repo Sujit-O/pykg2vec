@@ -168,7 +168,7 @@ class DeepLearning50k(object):
             print(key, value)
 
 
-class GlobalConfig(object):
+class KnowledgeGraph(object):
 
     def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
         if dataset == 'Freebase15k':
@@ -214,7 +214,7 @@ class GlobalConfig(object):
         
         self.read_hr_tr_train()
 
-        if self.negative_sample == 'negative_sample':
+        if self.negative_sample == 'bern':
             self.read_relation_property()
 
         self.kg_meta.tot_relation = len(self.relations)
@@ -427,9 +427,9 @@ class GeneratorConfig(object):
 
 
 def test_init_database():
-    # global_config = GlobalConfig('Freebase15k')
-    # global_config = GlobalConfig('Freebase100k')
-    global_config = GlobalConfig('DeepLearning50k')
+    # global_config = KnowledgeGraph('Freebase15k')
+    # global_config = KnowledgeGraph('Freebase100k')
+    global_config = KnowledgeGraph('DeepLearning50k')
 
 if __name__ == "__main__":
     test_init_database()

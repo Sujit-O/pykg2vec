@@ -134,9 +134,6 @@ class Generator:
 
     def __init__(self, config=None, model_config=None):
         
-        if os.name != "nt":
-            multiprocessing.set_start_method('spawn')
-        
         if not config:
             config = GeneratorConfig()
         else:
@@ -200,13 +197,7 @@ class Generator:
         elif config.algo.lower().startswith('proje'):
             self.gen_batch_proje()
         else:
-            self.lh = None
-            self.lr = None
-            self.lt = None
-            # self.observed_triples = None
             self.gen_batch_trans(model_config.kg_meta.tot_entity, data, ids, bs, number_of_batches, config.process_num, observed_triples, test_flag)
-
-        
 
         del model_config, data_stats, knowledge_graph, train_data, test_data, valid_data, tot_train_data, tot_test_data, tot_valid_data, hr_t_ids_train, tr_h_ids_train, rand_ids_train, rand_ids_test, rand_ids_valid, relation_property
 

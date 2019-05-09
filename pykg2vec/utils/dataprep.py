@@ -10,7 +10,7 @@ from __future__ import print_function
 import sys
 sys.path.append("../")
 
-from config.global_config import GlobalConfig
+from config.global_config import KnowledgeGraph
 
 
 class DataPrep(object):
@@ -18,7 +18,7 @@ class DataPrep(object):
     def __init__(self, name_dataset='Freebase15k', sampling="uniform", algo='ConvE'):
         '''store the information of database'''
        
-        self.knowledge_graph = GlobalConfig(dataset=name_dataset, negative_sample=sampling)
+        self.knowledge_graph = KnowledgeGraph(dataset=name_dataset, negative_sample=sampling)
 
         self.algo = algo
         self.sampling = sampling

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import sys
 sys.path.append("../")
-from config.global_config import GlobalConfig
+from config.global_config import KnowledgeGraph
 
 class BasicConfig:
     def __init__(self,
@@ -66,7 +66,7 @@ class BasicConfig:
         self.batch_size_testing = 16
 
     def set_dataset(self, dataset_name):
-        self.knowledge_graph = GlobalConfig(dataset=dataset_name)
+        self.knowledge_graph = KnowledgeGraph(dataset=dataset_name)
         if self.knowledge_graph.is_cache_exists():
             self.knowledge_graph = self.knowledge_graph.dataset.read_data()
             self.kg_meta = self.knowledge_graph.kg_meta
