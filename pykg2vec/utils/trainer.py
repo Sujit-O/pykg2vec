@@ -56,7 +56,8 @@ class Trainer(TrainerMeta):
         if self.config.loadFromData:
             self.load_model()
         else:
-            generator_config = GeneratorConfig(data='train', algo=self.model.model_name, batch_size=self.model.config.batch_size)
+            generator_config = GeneratorConfig(data='train', algo=self.model.model_name,
+                                               batch_size=self.model.config.batch_size)
             self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
             for n_iter in range(self.config.epochs):
@@ -68,17 +69,15 @@ class Trainer(TrainerMeta):
                     self.train_model_epoch_conve(n_iter)
                 else:
                     self.train_model_epoch(n_iter)
-                self.tiny_test(n_iter)
+                self.test(n_iter)
 
             self.gen_train.stop()
 
             self.evaluator.save_training_result(self.training_results)
+            self.evaluator.save_test_summary()
 
             if self.config.save_model:
                 self.save_model()
-
-        self.full_test()
-        self.evaluator.save_test_summary()
 
         if self.config.disp_result:
             self.display()
@@ -115,7 +114,7 @@ class Trainer(TrainerMeta):
             _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
 
             acc_loss += loss
-            
+
             print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
                                                         batch_counts, num_batch, loss), end='\r')
             batch_counts += 1
@@ -165,7 +164,7 @@ class Trainer(TrainerMeta):
         acc_loss = 0
         train_data = self.model.config.read_train_data()
         rand_ids_train = np.random.permutation(len(train_data))
-        data_stats = self.model.config.kg_meta 
+        data_stats = self.model.config.kg_meta
 
         # num_batch = self.gen_train.tot_train_data // self.config.batch_size if not self.debug else 10
         num_batch = len(train_data) // self.config.batch_size if not self.debug else 10
@@ -241,19 +240,17 @@ class Trainer(TrainerMeta):
 
     ''' Testing related functions:'''
 
-    def tiny_test(self, curr_epoch):
+    def test(self, curr_epoch):
         if self.config.test_step == 0:
             return
 
         if curr_epoch % self.config.test_step == 0 or \
                 curr_epoch == 0 or \
-                curr_epoch == self.config.epochs - 1:
-            self.evaluator.test_batch(self.sess, curr_epoch)
-
-    def full_test(self):
-        self.evaluator.test_batch(self.sess, self.config.epochs)
-        self.evaluator.print_test_summary(self.config.epochs)
-        self.evaluator.save_test_summary()
+                curr_epoch == self.config.epochs-1:
+            if curr_epoch == self.config.epochs-1:
+                self.evaluator.test_batch(self.sess, curr_epoch, join_Flag=True)
+            else:
+                self.evaluator.test_batch(self.sess, curr_epoch, join_Flag=False)
 
     ''' Procedural functions:'''
 

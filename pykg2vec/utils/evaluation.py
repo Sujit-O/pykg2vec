@@ -146,7 +146,7 @@ class Evaluation(EvaluationMeta):
 
         self.data_stats = self.model.config.kg_meta
 
-    def test_batch(self, sess=None, epoch=None, test_data='test'):
+    def test_batch(self, sess=None, epoch=None, test_data='test', join_Flag=False):
 
         head_rank, tail_rank = self.model.test_batch()
         self.epoch.append(epoch)
@@ -185,8 +185,8 @@ class Evaluation(EvaluationMeta):
 
         id_replace_head = np.zeros(shape=(self.n_test, self.model.config.kg_meta.tot_entity), dtype=np.int32)
         id_replace_tail = np.zeros(shape=(self.n_test, self.model.config.kg_meta.tot_entity), dtype=np.int32)
-        widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), progressbar.Percentage(),
-                   ' ETA: ', progressbar.AdaptiveETA()]
+        widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), " Done:",
+                   progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
         with progressbar.ProgressBar(max_value=loop_len, widgets=widgets) as bar:
             for i in range(loop_len):
                 data = np.asarray([[eval_data[x].h, eval_data[x].r, eval_data[x].t]
@@ -215,15 +215,18 @@ class Evaluation(EvaluationMeta):
                           self.mean_rank_head, self.mean_rank_tail, self.filter_mean_rank_head,
                           self.filter_mean_rank_tail, self.hit_head, self.hit_tail,
                           self.filter_hit_head, self.filter_hit_tail, epoch, self.hits))
-        p.start()
         del id_replace_tail, id_replace_head, h_list, r_list, t_list
+        p.start()
+        if join_Flag:
+            p.join()
 
     def save_training_result(self, losses):
+        if not os.path.exists(self.model.config.result):
+            os.mkdir(self.model.config.result)
         files = os.listdir(str(self.model.config.result))
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
         df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
-        if not os.path.exists(self.model.config.result):
-            os.mkdir(self.model.config.result)
+
         with open(str(self.model.config.result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)
@@ -271,26 +274,6 @@ class Evaluation(EvaluationMeta):
         with open(str(self.model.config.result / (self.model.model_name + '_Testing_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)
-
-    def display_summary(self, epoch):
-        print("---------------Test Results: Epoch: %d----------------" % epoch)
-        print('--mean rank          : %.4f' % ((self.mean_rank_head[epoch] +
-                                                self.mean_rank_tail[epoch]) / 2))
-        print('--filtered mean rank : %.4f' % ((self.filter_mean_rank_head[epoch] +
-                                                self.filter_mean_rank_tail[epoch]) / 2))
-        for hit in self.hits:
-            print('--hits%d             : %.4f ' % (hit, (self.hit_head[(epoch, hit)] +
-                                                          self.hit_tail[(epoch, hit)]) / 2))
-            print('--filter hits%d      : %.4f ' % (hit, (self.filter_hit_head[(epoch, hit)] +
-                                                          self.filter_hit_tail[(epoch, hit)]) / 2))
-        print("-----------------------------------------------------")
-
-    def print_test_summary(self, epoch=None):
-        if epoch:
-            self.display_summary(epoch)
-        else:
-            for epoch in self.epoch:
-                self.display_summary(epoch)
 
 
 if __name__ == '__main__':

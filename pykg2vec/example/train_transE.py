@@ -21,7 +21,7 @@ def main(_):
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
     parser.add_argument('-gp', '--gpu_frac', default=0.8, type=float, help='GPU fraction to use')
     parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
-    parser.add_argument('-db', '--debug', default=0, type=int, help='debug')
+    parser.add_argument('-db', '--debug', default=False, type=bool, help='debug')
     args = parser.parse_args()
 
     data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='TransE')
@@ -41,7 +41,7 @@ def main(_):
 
     model = TransE(config)
 
-    trainer = Trainer(model=model, debug=True if args.debug == 1 else False)
+    trainer = Trainer(model=model, debug=args.debug)
     trainer.build_model()
     trainer.train_model()
 
