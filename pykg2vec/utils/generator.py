@@ -16,6 +16,8 @@ import numpy as np
 from multiprocessing import Process, Queue, Manager, Value
 import multiprocessing
 import os
+
+
 # from numba import jit
 def gen_id(ids):
     i = 0
@@ -44,21 +46,21 @@ def get_label_mat(data, bs, te, neg_rate=1):
             mat[i][idx[j]] = -1
     return mat
 
-def raw_data_generator_trans(data, bs, number_of_batches, ids, raw_queue, processed_queue):
 
+def raw_data_generator_trans(data, bs, number_of_batches, ids, raw_queue, processed_queue):
     batch_idx = 0
     while True:
         raw_data = np.asarray([[data[x].h,
-                                    data[x].r,
-                                    data[x].t] for x in
-                                   ids[bs * batch_idx:bs * (batch_idx + 1)]])
+                                data[x].r,
+                                data[x].t] for x in
+                               ids[bs * batch_idx:bs * (batch_idx + 1)]])
         raw_queue.put(raw_data)
-        batch_idx +=1
+        batch_idx += 1
         if batch_idx >= number_of_batches:
             batch_idx = 0
 
-def process_function_trans(te, bs, raw_queue, processed_queue, observed_triples, test_flag, lh, lr, lt):
 
+def process_function_trans(te, bs, raw_queue, processed_queue, observed_triples, test_flag, lh, lr, lt):
     while True:
         pos_triples = raw_queue.get()
         ph = pos_triples[:, 0]
@@ -73,7 +75,7 @@ def process_function_trans(te, bs, raw_queue, processed_queue, observed_triples,
 
             for t in pos_triples:
                 prob = 0.5
-                
+
                 if np.random.random() > prob:
                     idx_replace_tail = np.random.randint(te)
 
@@ -124,6 +126,7 @@ def process_function_trans(te, bs, raw_queue, processed_queue, observed_triples,
 
             processed_queue.put([ph, pr, pt, nh, nr, nt])
 
+
 class Generator:
     """Generator class for the embedding algorithms
         Args:
@@ -133,7 +136,7 @@ class Generator:
     """
 
     def __init__(self, config=None, model_config=None):
-        
+
         if not config:
             config = GeneratorConfig()
         else:
@@ -143,26 +146,25 @@ class Generator:
 
         data_stats = model_config.kg_meta
         knowledge_graph = model_config.knowledge_graph
-        
+
         train_data = knowledge_graph.triplets['train']
-        test_data  = knowledge_graph.triplets['test']
+        test_data = knowledge_graph.triplets['test']
         valid_data = knowledge_graph.triplets['valid']
-        
+
         tot_train_data = len(train_data)
-        tot_test_data  = len(test_data)
+        tot_test_data = len(test_data)
         tot_valid_data = len(valid_data)
 
         hr_t_ids_train = knowledge_graph.hr_t_train
         tr_h_ids_train = knowledge_graph.tr_h_train
 
         rand_ids_train = np.random.permutation(tot_train_data)
-        rand_ids_test  = np.random.permutation(tot_test_data)
+        rand_ids_test = np.random.permutation(tot_test_data)
         rand_ids_valid = np.random.permutation(tot_valid_data)
-        
+
         # if model_config.sampling == "bern":
         relation_property = knowledge_graph.relation_property
 
-    
         self.process_list = []
         test_flag = False
         bs = config.batch_size
@@ -170,12 +172,12 @@ class Generator:
             number_of_batches = tot_train_data // bs
             observed_triples = {(t.h, t.r, t.t): 1 for t in train_data}
             data = train_data
-            ids= rand_ids_train
+            ids = rand_ids_train
         elif config.data.startswith('test'):
             number_of_batches = tot_test_data // bs
             observed_triples = {(t.h, t.r, t.t): 1 for t in test_data}
-            data= test_data
-            ids= rand_ids_test
+            data = test_data
+            ids = rand_ids_test
             test_flag = True
         elif config.data.startswith('valid'):
             number_of_batches = tot_valid_data // bs
@@ -192,26 +194,29 @@ class Generator:
         self.raw_queue = Queue(config.raw_queue_size)
         self.processed_queue = Queue(config.processed_queue_size)
 
-        if config.algo.lower() in ["tucker","tucker_v2","conve", "complex", "distmult"]:    
+        if config.algo.lower() in ["tucker", "tucker_v2", "conve", "complex", "distmult"]:
             self.gen_batch()
         elif config.algo.lower().startswith('proje'):
             self.gen_batch_proje()
         else:
-            self.gen_batch_trans(model_config.kg_meta.tot_entity, data, ids, bs, number_of_batches, config.process_num, observed_triples, test_flag)
+            self.gen_batch_trans(model_config.kg_meta.tot_entity, data, ids, bs, number_of_batches, config.process_num,
+                                 observed_triples, test_flag)
 
         del model_config, data_stats, knowledge_graph, train_data, test_data, valid_data, tot_train_data, tot_test_data, tot_valid_data, hr_t_ids_train, tr_h_ids_train, rand_ids_train, rand_ids_test, rand_ids_valid, relation_property
 
     def gen_batch_trans(self, te, data, ids, bs, number_of_batches, process_num, observed_triples, test_flag):
-        
-        worker = Process(target=raw_data_generator_trans, args=(data, bs, number_of_batches,ids, self.raw_queue, self.processed_queue))
-        worker.daemon = True
-        self.process_list.append(worker)
-        worker.start()
+
+        raw_worker = Process(target=raw_data_generator_trans,
+                         args=(data, bs, number_of_batches, ids, self.raw_queue, self.processed_queue))
+        raw_worker.daemon = True
+        self.process_list.append(raw_worker)
+        raw_worker.start()
         lh = Value('i', 0)
         lr = Value('i', 0)
         lt = Value('i', 0)
         for i in range(process_num):
-            p = Process(target=process_function_trans, args=(te, bs, self.raw_queue, self.processed_queue, observed_triples, test_flag, lh, lr, lt,))
+            p = Process(target=process_function_trans,
+                        args=(te, bs, self.raw_queue, self.processed_queue, observed_triples, test_flag, lh, lr, lt,))
             self.process_list.append(p)
             p.daemon = True
             p.start()
@@ -257,8 +262,6 @@ class Generator:
             self.raw_queue.put(raw_data)
             # print("raw_producer", thread.name, self.raw_queue.qsize())
 
-    
-
     def pool_process_proje(self, bs=None, n_entity=None, neg_weight=None):
         for i in range(self.config.process_num):
             if self.config.data.startswith('train'):
@@ -292,8 +295,6 @@ class Generator:
                 self.processed_queue.put([h, r, t])
             else:
                 pass
-
-    
 
     def process_function_train_proje(self, bs, n_entity, neg_weight):
         while True:
@@ -353,9 +354,9 @@ class Generator:
 
     def __next__(self):
         return self.processed_queue.get()
-        
+
     def stop(self):
-        
+
         for p in self.process_list:
             p.terminate()
 
@@ -403,6 +404,7 @@ class Generator:
         worker.start()
         self.pool_process_proje(bs=self.config.batch_size, n_entity=n_entity, neg_weight=neg_weight)
 
+
 def test_generator_proje():
     from config.config import ProjE_pointwiseConfig
     config = ProjE_pointwiseConfig()
@@ -411,7 +413,7 @@ def test_generator_proje():
     for i in range(1000):
         data = list(next(gen))
         print("----batch:", i)
-        
+
         hr_hr = data[0]
         hr_t = data[1]
         tr_tr = data[2]
@@ -425,7 +427,6 @@ def test_generator_proje():
 
 
 def test_generator_trans():
-    
     gen = Generator(config=GeneratorConfig(data='test', algo='TransE'))
 
     for i in range(1000):
@@ -444,6 +445,7 @@ def test_generator_trans():
         # print("nr:", nr)
         # print("nt:", nt)
     gen.stop()
+
 
 def test_generator():
     import timeit
@@ -465,7 +467,7 @@ def test_generator():
         t = data[2]
         # hr_t = data[3]
         # tr_h = data[4]
-        print("----batch:", i, "----time:",timeit.default_timer() - start_time_batch)
+        print("----batch:", i, "----time:", timeit.default_timer() - start_time_batch)
         # print(h,r,t)# time.sleep(0.05)
         # print("hr_hr:", hr_hr)
         # print("hr_t:", hr_t)
@@ -474,24 +476,25 @@ def test_generator():
     print("total time:", timeit.default_timer() - start_time)
     gen.stop()
 
+
 def worker(ns):
     print(ns.config.hidden_size)
 
+
 from config.config import TransEConfig
 
+
 def test_manager():
-    
     manager = Manager()
 
     ns = manager.Namespace()
 
-    ns.config = TransEConfig() 
+    ns.config = TransEConfig()
     ns.config.set_dataset("Freebase15k")
 
     p = Process(target=worker, args=(ns,))
     p.start()
     p.join()
-
 
 
 if __name__ == '__main__':

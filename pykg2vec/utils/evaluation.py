@@ -18,6 +18,105 @@ from config.global_config import GeneratorConfig
 import pickle
 from multiprocessing.pool import ThreadPool
 import timeit
+from multiprocessing import Process, Manager, current_process
+import progressbar
+
+
+def eval_batch_head(id_replace_head, h, r, t, tr_h):
+    hrank = 0
+    fhrank = 0
+
+    for j in range(len(id_replace_head)):
+        val = id_replace_head[-j - 1]
+        if val == h:
+            break
+        else:
+            hrank += 1
+            fhrank += 1
+            if val in tr_h[(t, r)]:
+                fhrank -= 1
+
+    return hrank, fhrank
+
+
+def eval_batch_tail(id_replace_tail, h, r, t, hr_t):
+    trank = 0
+    ftrank = 0
+
+    for j in range(len(id_replace_tail)):
+        val = id_replace_tail[-j - 1]
+        if val == t:
+            break
+        else:
+            trank += 1
+            ftrank += 1
+            if val in hr_t[(h, r)]:
+                ftrank -= 1
+    return trank, ftrank
+
+
+def display_summary(epoch, hits, mean_rank_head, mean_rank_tail,
+                    filter_mean_rank_head, filter_mean_rank_tail,
+                    hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time):
+    print("------Test Results: Epoch: %d --- Time Taken: %.2f--------" % (epoch, timeit.default_timer() - start_time))
+    print('--mean rank          : %.4f' % ((mean_rank_head[epoch] +
+                                            mean_rank_tail[epoch]) / 2))
+    print('--filtered mean rank : %.4f' % ((filter_mean_rank_head[epoch] +
+                                            filter_mean_rank_tail[epoch]) / 2))
+    for hit in hits:
+        print('--hits%d             : %.4f ' % (hit, (hit_head[(epoch, hit)] +
+                                                      hit_tail[(epoch, hit)]) / 2))
+        print('--filter hits%d      : %.4f ' % (hit, (filter_hit_head[(epoch, hit)] +
+                                                      filter_hit_tail[(epoch, hit)]) / 2))
+    print("---------------------------------------------------------")
+
+
+def evaluation_process(id_replace_tail, id_replace_head, h_list,
+                       r_list, t_list, tr_h, hr_t,
+                       mean_rank_head, mean_rank_tail, filter_mean_rank_head,
+                       filter_mean_rank_tail, hit_head, hit_tail,
+                       filter_hit_head, filter_hit_tail, epoch, hits):
+    rank_head = []
+    rank_tail = []
+    filter_rank_head = []
+    filter_rank_tail = []
+    total_test = len(h_list)
+    start_time = timeit.default_timer()
+    for triple_id in range(total_test):
+        t_rank, fil_t_rank = eval_batch_tail(id_replace_tail[triple_id], h_list[triple_id],
+                                             r_list[triple_id], t_list[triple_id], hr_t)
+        h_rank, fil_h_rank = eval_batch_head(id_replace_head[triple_id], h_list[triple_id],
+                                             r_list[triple_id], t_list[triple_id], tr_h)
+        rank_head.append(h_rank)
+        filter_rank_head.append(fil_h_rank)
+        rank_tail.append(t_rank)
+        filter_rank_tail.append(fil_t_rank)
+
+    mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
+    mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
+
+    filter_mean_rank_head[epoch] = np.sum(filter_rank_head,
+                                          dtype=np.float32) / total_test
+    filter_mean_rank_tail[epoch] = np.sum(filter_rank_tail,
+                                          dtype=np.float32) / total_test
+
+    for hit in hits:
+        hit_head[(epoch, hit)] = np.sum(np.asarray(rank_head) < hit,
+
+                                        dtype=np.float32) / total_test
+        hit_tail[(epoch, hit)] = np.sum(np.asarray(rank_tail) < hit,
+                                        dtype=np.float32) / total_test
+        filter_hit_head[(epoch, hit)] = np.sum(np.asarray(filter_rank_head) < hit,
+                                               dtype=np.float32) / total_test
+        filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
+                                               dtype=np.float32) / total_test
+    del rank_head, rank_tail, filter_rank_head, filter_rank_tail
+
+    display_summary(epoch, hits, mean_rank_head, mean_rank_tail,
+                    filter_mean_rank_head, filter_mean_rank_tail,
+                    hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time)
+
+    return 0
 
 
 class Evaluation(EvaluationMeta):
@@ -30,23 +129,27 @@ class Evaluation(EvaluationMeta):
         self.n_test = model.config.test_num
         self.hits = model.config.hits
 
-        self.mean_rank_head = {}
-        self.mean_rank_tail = {}
-        self.filter_mean_rank_head = {}
-        self.filter_mean_rank_tail = {}
+        manager = Manager()
 
-        self.hit_head = {}
-        self.hit_tail = {}
-        self.filter_hit_head = {}
-        self.filter_hit_tail = {}
+        self.mean_rank_head = manager.dict()
+        self.mean_rank_tail = manager.dict()
+        self.filter_mean_rank_head = manager.dict()
+        self.filter_mean_rank_tail = manager.dict()
+
+        self.hit_head = manager.dict()
+        self.hit_tail = manager.dict()
+        self.filter_hit_head = manager.dict()
+        self.filter_hit_tail = manager.dict()
 
         self.epoch = []
+        self.hr_t = manager.dict()
+        self.tr_h = manager.dict()
 
         self.hr_t = self.model.config.knowledge_graph.hr_t
         self.tr_h = self.model.config.knowledge_graph.tr_h
 
         self.data_stats = self.model.config.kg_meta
-        
+
     def test_batch(self, sess=None, epoch=None, test_data='test'):
 
         head_rank, tail_rank = self.model.test_batch()
@@ -54,18 +157,23 @@ class Evaluation(EvaluationMeta):
         if not sess:
             raise NotImplementedError('No session found for evaluation!')
 
-        rank_head = []
-        rank_tail = []
-        filter_rank_head = []
-        filter_rank_tail = []
+        knowledge_graph = self.model.config.knowledge_graph
 
-        gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
-                                                    batch_size=self.size_per_batch), model_config=self.model.config)
-        # TODO differentiate test_data 
-        if self.n_test == 0:
-            self.n_test = self.model.config.kg_meta.tot_test_triples
+        if test_data == 'test':
+            eval_data = knowledge_graph.triplets['test']
+        elif test_data == 'valid':
+            eval_data = knowledge_graph.triplets['valid']
         else:
-            self.n_test = min(self.n_test, self.model.config.kg_meta.tot_test_triples)
+            raise NotImplementedError("%s datatype is not available!" % test_data)
+
+        del knowledge_graph
+
+        tot_data = len(eval_data)
+
+        if self.n_test == 0:
+            self.n_test = tot_data
+        else:
+            self.n_test = min(self.n_test, tot_data)
 
         loop_len = self.n_test // self.size_per_batch if not self.debug else 1
 
@@ -73,107 +181,49 @@ class Evaluation(EvaluationMeta):
             loop_len = 1
         self.n_test = self.size_per_batch * loop_len
 
-        print("Testing [%d/%d] Triples" % (self.n_test, self.model.config.kg_meta.tot_test_triples))
+        print("Testing [%d/%d] Triples" % (self.n_test, tot_data))
 
-        total_test = loop_len * self.size_per_batch
-        start_time = timeit.default_timer()
+        h_list = []
+        r_list = []
+        t_list = []
 
-        for i in range(loop_len):
-            data = list(next(gen_test))
-            ph = data[0]
-            pr = data[1]
-            pt = data[2]
-            feed_dict = {
-                self.model.test_h_batch: ph,
-                self.model.test_r_batch: pr,
-                self.model.test_t_batch: pt}
+        id_replace_head = []
+        id_replace_tail = []
+        with progressbar.ProgressBar(max_value=loop_len) as bar:
+            for i in range(loop_len):
+                data = np.asarray([[eval_data[x].h, eval_data[x].r, eval_data[x].t]
+                                   for x in range(self.size_per_batch * i, self.size_per_batch * (i + 1))])
+                h = data[:, 0]
+                r = data[:, 1]
+                t = data[:, 2]
 
-            # id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
-            # do = ThreadPool(20)
+                feed_dict = {
+                    self.model.test_h_batch: h,
+                    self.model.test_r_batch: r,
+                    self.model.test_t_batch: t}
 
-            # hdata = do.map(self.zip_eval_batch_head, zip(id_replace_head, ph, pt, pr))
-            # tdata = do.map(self.zip_eval_batch_tail, zip(id_replace_tail, ph, pr, pt))
+                head_tmp, tail_tmp = np.squeeze(sess.run([head_rank, tail_rank], feed_dict))
 
-            # rank_head += [i for i, _ in hdata]
-            # rank_tail += [i for i, _ in tdata]
-            # filter_rank_head += [i for _, i in hdata]
-            # filter_rank_tail += [i for _, i in tdata]
+                h_list.extend(h)
+                r_list.extend(r)
+                t_list.extend(t)
 
-            id_replace_head, id_replace_tail = np.squeeze(sess.run([head_rank, tail_rank], feed_dict))
+                if i == 0:
+                    id_replace_head = head_tmp
+                    id_replace_tail = tail_tmp
+                else:
+                    id_replace_head = np.concatenate((id_replace_head, head_tmp), axis=0)
+                    id_replace_tail = np.concatenate((id_replace_tail, tail_tmp), axis=0)
 
-            for triple_id in range(self.model.config.batch_size_testing):
-                tranks, f_trank = self.eval_batch_tail(id_replace_tail[triple_id], ph[triple_id], pr[triple_id], pt[triple_id])
-                hranks, f_hrank = self.eval_batch_head(id_replace_head[triple_id], ph[triple_id], pr[triple_id], pt[triple_id])
-                rank_head.append(hranks)
-                filter_rank_head.append(f_hrank)
-                rank_tail.append(tranks)
-                filter_rank_tail.append(f_trank)
+                bar.update(i)
 
-
-            tmp_mean_rank = (np.sum(rank_head, dtype=np.float32) +
-                             np.sum(rank_tail, dtype=np.float32)) / (2 * len(rank_head))
-
-            print('[%.2f sec](%d/%d): --- Test mean rank: %.5f' % (timeit.default_timer() - start_time,
-                                                                   i, loop_len,
-                                                                   tmp_mean_rank), end='\r')
-
-        self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
-        self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
-
-        self.filter_mean_rank_head[epoch] = np.sum(filter_rank_head,
-                                                   dtype=np.float32) / total_test
-        self.filter_mean_rank_tail[epoch] = np.sum(filter_rank_tail,
-                                                   dtype=np.float32) / total_test
-
-        for hit in self.hits:
-            self.hit_head[(epoch, hit)] = np.sum(np.asarray(rank_head) < hit,
-
-                                                 dtype=np.float32) / total_test
-            self.hit_tail[(epoch, hit)] = np.sum(np.asarray(rank_tail) < hit,
-                                                 dtype=np.float32) / total_test
-            self.filter_hit_head[(epoch, hit)] = np.sum(np.asarray(filter_rank_head) < hit,
-                                                        dtype=np.float32) / total_test
-            self.filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
-                                                        dtype=np.float32) / total_test
-        gen_test.stop()
-        print()
-
-    def eval_batch_head(self, id_replace_head, h, r, t):
-        hrank = 0
-        fhrank = 0
-
-        for j in range(len(id_replace_head)):
-            val = id_replace_head[-j - 1]
-            if val == h:
-                break
-            else:
-                hrank += 1
-                fhrank += 1
-                if val in self.tr_h[(t, r)]:
-                    fhrank -= 1
-
-        return hrank, fhrank
-
-    def zip_eval_batch_head(self, data):
-        return self.eval_batch_head(*data)
-
-    def eval_batch_tail(self, id_replace_tail, h, r, t):
-        trank = 0
-        ftrank = 0
-
-        for j in range(len(id_replace_tail)):
-            val = id_replace_tail[-j - 1]
-            if val == t:
-                break
-            else:
-                trank += 1
-                ftrank += 1
-                if val in self.hr_t[(h, r)]:
-                    ftrank -= 1
-        return trank, ftrank
-
-    def zip_eval_batch_tail(self, data):
-        return self.eval_batch_tail(*data)
+        p = Process(target=evaluation_process,
+                    args=(id_replace_tail, id_replace_head, h_list, r_list, t_list, self.tr_h, self.hr_t,
+                          self.mean_rank_head, self.mean_rank_tail, self.filter_mean_rank_head,
+                          self.filter_mean_rank_tail, self.hit_head, self.hit_tail,
+                          self.filter_hit_head, self.filter_hit_tail, epoch, self.hits))
+        p.start()
+        del id_replace_tail, id_replace_head, h_list, r_list, t_list
 
     def test_tucker_v2(self, sess=None, epoch=None):
         head_rank, tail_rank = self.model.test_batch()
@@ -402,7 +452,8 @@ class Evaluation(EvaluationMeta):
         filter_rank_head = []
         filter_rank_tail = []
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name, \
-                                                    batch_size=self.model.config.batch_size), model_config=self.model.config)
+                                                    batch_size=self.model.config.batch_size),
+                             model_config=self.model.config)
         loop_len = self.n_test // self.size_per_batch if not self.debug else 100
         total_test = loop_len * self.size_per_batch
 
@@ -416,7 +467,7 @@ class Evaluation(EvaluationMeta):
                 self.model.test_r: data[1],
                 self.model.test_t: data[2]
             }
-            
+
             id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
 
             for b in range(self.size_per_batch):
@@ -450,7 +501,7 @@ class Evaluation(EvaluationMeta):
                 rank_tail.append(trank)
                 filter_rank_head.append(fhrank)
                 filter_rank_tail.append(ftrank)
-            
+
         gen_test.stop()
         self.mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
         self.mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test

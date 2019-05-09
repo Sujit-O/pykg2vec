@@ -255,9 +255,9 @@ class Trainer(TrainerMeta):
                 curr_epoch == self.config.epochs - 1:
             # self.evaluator.test(self.sess, curr_epoch)
             self.evaluator.test_batch(self.sess, curr_epoch)
-            self.evaluator.print_test_summary(curr_epoch)
+            # self.evaluator.print_test_summary(curr_epoch)
 
-            print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
+            # print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
 
     def tiny_test_simple(self, curr_epoch):
         start_time = timeit.default_timer()
