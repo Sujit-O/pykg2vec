@@ -44,85 +44,106 @@ def get_label_mat(data, bs, te, neg_rate=1):
             mat[i][idx[j]] = -1
     return mat
 
-def raw_data_generator_trans(data, bs, number_of_batches, ids, raw_queue, processed_queue):
 
+def raw_data_generator_trans(raw_queue, processed_queue, data, batch_size, number_of_batch):
+    ''' worker process that feeds raw data to raw queues.''' 
+    random_ids = np.random.permutation(len(data))
+    
     batch_idx = 0
     while True:
-        raw_data = np.asarray([[data[x].h,
-                                    data[x].r,
-                                    data[x].t] for x in
-                                   ids[bs * batch_idx:bs * (batch_idx + 1)]])
+        pos_start = batch_size * batch_idx
+        pos_end   = batch_size * (batch_idx+1)
+        
+        raw_data = np.asarray(
+            [[data[x].h, data[x].r, data[x].t] for x in random_ids[pos_start:pos_end]]
+        )
         raw_queue.put(raw_data)
-        batch_idx +=1
-        if batch_idx >= number_of_batches:
+
+        batch_idx += 1
+        if batch_idx >= number_of_batch:
             batch_idx = 0
 
-def process_function_trans(te, bs, raw_queue, processed_queue, observed_triples, test_flag, lh, lr, lt):
 
+def process_function_trans(raw_queue, processed_queue, te, bs, observed_triples, lh, lr, lt):
+    ''' worker process that gets data from raw queue then processes and saves to processed queue.''' 
     while True:
+
         pos_triples = raw_queue.get()
+        
         ph = pos_triples[:, 0]
         pr = pos_triples[:, 1]
         pt = pos_triples[:, 2]
-        if test_flag:
-            processed_queue.put([ph, pr, pt])
-        else:
-            nh = []
-            nr = []
-            nt = []
+        
+        nh = []
+        nr = []
+        nt = []
 
-            for t in pos_triples:
-                prob = 0.5
-                
-                if np.random.random() > prob:
+        for t in pos_triples:
+            prob = 0.5
+            
+            if np.random.random() > prob:
+                idx_replace_tail = np.random.randint(te)
+
+                break_cnt = 0
+                while (t[0], t[1], idx_replace_tail) in observed_triples:
                     idx_replace_tail = np.random.randint(te)
+                    break_cnt += 1
+                    if break_cnt >= 100:
+                        break
 
-                    break_cnt = 0
-                    while (t[0], t[1], idx_replace_tail) in observed_triples:
-                        idx_replace_tail = np.random.randint(te)
-                        break_cnt += 1
-                        if break_cnt >= 100:
-                            break
-
-                    if break_cnt >= 100:  # can not find new negative triple.
-                        nh.append(lh)
-                        nr.append(lr)
-                        nt.append(lt)
-                    else:
-                        nh.append(t[0])
-                        nr.append(t[1])
-                        nt.append(idx_replace_tail)
-                        lh = t[0]
-                        lr = t[1]
-                        lt = idx_replace_tail
-
-                        observed_triples[(t[0], t[1], idx_replace_tail)] = 0
-
+                if break_cnt >= 100:  # can not find new negative triple.
+                    nh.append(lh)
+                    nr.append(lr)
+                    nt.append(lt)
                 else:
+                    nh.append(t[0])
+                    nr.append(t[1])
+                    nt.append(idx_replace_tail)
+                    lh = t[0]
+                    lr = t[1]
+                    lt = idx_replace_tail
+
+                    observed_triples[(t[0], t[1], idx_replace_tail)] = 0
+
+            else:
+                idx_replace_head = np.random.randint(te)
+                break_cnt = 0
+                while ((idx_replace_head, t[1], t[2]) in observed_triples
+                       or (idx_replace_head, t[1], t[2]) in observed_triples):
                     idx_replace_head = np.random.randint(te)
-                    break_cnt = 0
-                    while ((idx_replace_head, t[1], t[2]) in observed_triples
-                           or (idx_replace_head, t[1], t[2]) in observed_triples):
-                        idx_replace_head = np.random.randint(te)
-                        break_cnt += 1
-                        if break_cnt >= 100:
-                            break
+                    break_cnt += 1
+                    if break_cnt >= 100:
+                        break
 
-                    if break_cnt >= 100:  # can not find new negative triple.
-                        nh.append(lh)
-                        nr.append(lr)
-                        nt.append(lt)
-                    else:
-                        nh.append(idx_replace_head)
-                        nr.append(t[1])
-                        nt.append(t[2])
-                        lh = idx_replace_head
-                        lr = t[1]
-                        lt = t[2]
+                if break_cnt >= 100:  # can not find new negative triple.
+                    nh.append(lh)
+                    nr.append(lr)
+                    nt.append(lt)
+                else:
+                    nh.append(idx_replace_head)
+                    nr.append(t[1])
+                    nt.append(t[2])
+                    lh = idx_replace_head
+                    lr = t[1]
+                    lt = t[2]
 
-                        observed_triples[(idx_replace_head, t[1], t[2])] = 0
+                    observed_triples[(idx_replace_head, t[1], t[2])] = 0
 
-            processed_queue.put([ph, pr, pt, nh, nr, nt])
+        processed_queue.put([ph, pr, pt, nh, nr, nt])
+
+def worker_process_raw_data_testing(raw_queue, processed_queue):
+    ''' 
+    worker process that gets data from raw queue then processes and saves to processed queue.
+    especially for testing data.
+    ''' 
+    while True:
+        pos_triples = raw_queue.get()
+
+        ph = pos_triples[:, 0]
+        pr = pos_triples[:, 1]
+        pt = pos_triples[:, 2]
+        
+        processed_queue.put([ph, pr, pt])
 
 class Generator:
     """Generator class for the embedding algorithms
@@ -132,89 +153,82 @@ class Generator:
           batch for training algorithms
     """
 
-    def __init__(self, config=None, model_config=None):
-        
-        if not config:
-            config = GeneratorConfig()
-        else:
-            config = config
+    def __init__(self, config, model_config):
 
-        model_config = model_config
-
-        data_stats = model_config.kg_meta
-        knowledge_graph = model_config.knowledge_graph
-        
-        train_data = knowledge_graph.triplets['train']
-        test_data  = knowledge_graph.triplets['test']
-        valid_data = knowledge_graph.triplets['valid']
-        
-        tot_train_data = len(train_data)
-        tot_test_data  = len(test_data)
-        tot_valid_data = len(valid_data)
-
-        hr_t_ids_train = knowledge_graph.hr_t_train
-        tr_h_ids_train = knowledge_graph.tr_h_train
-
-        rand_ids_train = np.random.permutation(tot_train_data)
-        rand_ids_test  = np.random.permutation(tot_test_data)
-        rand_ids_valid = np.random.permutation(tot_valid_data)
-        
-        # if model_config.sampling == "bern":
-        relation_property = knowledge_graph.relation_property
-
-    
         self.process_list = []
-        test_flag = False
-        bs = config.batch_size
-        if config.data.startswith('train'):
-            number_of_batches = tot_train_data // bs
-            observed_triples = {(t.h, t.r, t.t): 1 for t in train_data}
-            data = train_data
-            ids= rand_ids_train
-        elif config.data.startswith('test'):
-            number_of_batches = tot_test_data // bs
-            observed_triples = {(t.h, t.r, t.t): 1 for t in test_data}
-            data= test_data
-            ids= rand_ids_test
-            test_flag = True
-        elif config.data.startswith('valid'):
-            number_of_batches = tot_valid_data // bs
-            observed_triples = {(t.h, t.r, t.t): 1 for t in valid_data}
-            data = valid_data
-            ids = rand_ids_valid
-            test_flag = True
-        else:
-            raise NotImplementedError("The data type passed is wrong!")
-        # print("Number_of_batches:", number_of_batches)
-
-        # ids = np.random.permutation(number_of_batches)
-
         self.raw_queue = Queue(config.raw_queue_size)
         self.processed_queue = Queue(config.processed_queue_size)
 
+        data = None 
+        if   config.data == 'train':
+            data = model_config.knowledge_graph.triplets['train']
+        elif config.data == 'test':
+            data = model_config.knowledge_graph.triplets['test']
+        elif config.data == 'valid':
+            data = model_config.knowledge_graph.triplets['valid']
+        else:
+            raise NotImplementedError("The data type passed is wrong!")
+
+        hr_t_ids_train = model_config.knowledge_graph.hr_t_train
+        tr_h_ids_train = model_config.knowledge_graph.tr_h_train
+        
+        # if model_config.sampling == "bern":
+        relation_property = model_config.knowledge_graph.relation_property
+        
+        observed_triples = {(t.h, t.r, t.t): 1 for t in data}
+        number_of_batches = len(data) // config.batch_size
+         
+        # TODO to be optimized. 
         if config.algo.lower() in ["tucker","tucker_v2","conve", "complex", "distmult"]:    
             self.gen_batch()
         elif config.algo.lower().startswith('proje'):
             self.gen_batch_proje()
         else:
-            self.gen_batch_trans(model_config.kg_meta.tot_entity, data, ids, bs, number_of_batches, config.process_num, observed_triples, test_flag)
+            self.create_feeder_process(data, config.batch_size, number_of_batches)
+            if config.data == 'test' or config.data == 'valid':
+                self.create_test_processer_process(config.process_num)
+            else:
+                self.create_train_processor_process_trans(config.process_num, data, model_config.kg_meta.tot_entity, config.batch_size, observed_triples)
 
-        del model_config, data_stats, knowledge_graph, train_data, test_data, valid_data, tot_train_data, tot_test_data, tot_valid_data, hr_t_ids_train, tr_h_ids_train, rand_ids_train, rand_ids_test, rand_ids_valid, relation_property
+        del model_config, hr_t_ids_train, tr_h_ids_train, relation_property
+    
+    def __iter__(self):
+        return self
 
-    def gen_batch_trans(self, te, data, ids, bs, number_of_batches, process_num, observed_triples, test_flag):
+    def __next__(self):
+        return self.processed_queue.get()
         
-        worker = Process(target=raw_data_generator_trans, args=(data, bs, number_of_batches,ids, self.raw_queue, self.processed_queue))
-        worker.daemon = True
-        self.process_list.append(worker)
-        worker.start()
+    def stop(self):
+        for worker_process in self.process_list:
+            worker_process.terminate()
+
+    def create_feeder_process(self, data, batch_size, number_of_batch):
+        feeder_worker = Process(target=raw_data_generator_trans, \
+                                args=(self.raw_queue, self.processed_queue, data, batch_size, number_of_batch))
+        feeder_worker.daemon = True
+        self.process_list.append(feeder_worker)
+        feeder_worker.start()
+    
+    def create_test_processer_process(self, process_num):
+        ''' shared among algorithms '''
+        for i in range(process_num):
+            process_worker = Process(target=worker_process_raw_data_testing, \
+                                     args=(self.raw_queue, self.processed_queue))
+            self.process_list.append(process_worker)
+            process_worker.daemon = True
+            process_worker.start()
+
+    def create_train_processor_process_trans(self, process_num, data, te, bs, observed_triples):
+        ''' special for trans-series algorithms '''
         lh = Value('i', 0)
         lr = Value('i', 0)
         lt = Value('i', 0)
         for i in range(process_num):
-            p = Process(target=process_function_trans, args=(te, bs, self.raw_queue, self.processed_queue, observed_triples, test_flag, lh, lr, lt,))
-            self.process_list.append(p)
-            p.daemon = True
-            p.start()
+            process_worker = Process(target=process_function_trans, \
+                                     args=(self.raw_queue, self.processed_queue, te, bs, observed_triples, lh, lr, lt))
+            self.process_list.append(process_worker)
+            process_worker.daemon = True
+            process_worker.start()
 
     def raw_data_generator(self, ids):
         gen = iter(gen_id(ids))
@@ -256,9 +270,7 @@ class Generator:
 
             self.raw_queue.put(raw_data)
             # print("raw_producer", thread.name, self.raw_queue.qsize())
-
     
-
     def pool_process_proje(self, bs=None, n_entity=None, neg_weight=None):
         for i in range(self.config.process_num):
             if self.config.data.startswith('train'):
@@ -292,8 +304,6 @@ class Generator:
                 self.processed_queue.put([h, r, t])
             else:
                 pass
-
-    
 
     def process_function_train_proje(self, bs, n_entity, neg_weight):
         while True:
@@ -347,17 +357,6 @@ class Generator:
             t = raw_data[:, 2]
 
             self.processed_queue.put([h, r, t])
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return self.processed_queue.get()
-        
-    def stop(self):
-        
-        for p in self.process_list:
-            p.terminate()
 
     def gen_batch(self):
         bs = self.config.batch_size
@@ -474,30 +473,8 @@ def test_generator():
     print("total time:", timeit.default_timer() - start_time)
     gen.stop()
 
-def worker(ns):
-    print(ns.config.hidden_size)
-
-from config.config import TransEConfig
-
-def test_manager():
-    
-    manager = Manager()
-
-    ns = manager.Namespace()
-
-    ns.config = TransEConfig() 
-    ns.config.set_dataset("Freebase15k")
-
-    p = Process(target=worker, args=(ns,))
-    p.start()
-    p.join()
-
-
-
 if __name__ == '__main__':
     # test_generator_proje()
-
     test_generator()
-    # test_manager()
     # test_generator_conve()
     # test_generator_simple()
