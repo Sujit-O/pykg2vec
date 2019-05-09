@@ -58,7 +58,7 @@ def eval_batch_tail(id_replace_tail, h, r, t, hr_t):
 def display_summary(epoch, hits, mean_rank_head, mean_rank_tail,
                     filter_mean_rank_head, filter_mean_rank_tail,
                     hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time):
-    print("------Test Results: Epoch: %d --- Time Taken: %.2f--------" % (epoch, timeit.default_timer() - start_time))
+    print("------Test Results: Epoch: %d --- time: %.2f----------" % (epoch, timeit.default_timer() - start_time))
     print('--mean rank          : %.4f' % ((mean_rank_head[epoch] +
                                             mean_rank_tail[epoch]) / 2))
     print('--filtered mean rank : %.4f' % ((filter_mean_rank_head[epoch] +
@@ -183,13 +183,14 @@ class Evaluation(EvaluationMeta):
 
         print("Testing [%d/%d] Triples" % (self.n_test, tot_data))
 
-        h_list = []
-        r_list = []
-        t_list = []
+        h_list = np.zeros(shape=(self.n_test,), dtype=np.int32)
+        r_list = np.zeros(shape=(self.n_test,), dtype=np.int32)
+        t_list = np.zeros(shape=(self.n_test,), dtype=np.int32)
 
-        id_replace_head = []
-        id_replace_tail = []
-        with progressbar.ProgressBar(max_value=loop_len) as bar:
+        id_replace_head = np.zeros(shape=(self.n_test, self.model.config.kg_meta.tot_entity), dtype=np.int32)
+        id_replace_tail = np.zeros(shape=(self.n_test, self.model.config.kg_meta.tot_entity), dtype=np.int32)
+        widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), progressbar.Percentage()]
+        with progressbar.ProgressBar(max_value=loop_len, widgets=widgets) as bar:
             for i in range(loop_len):
                 data = np.asarray([[eval_data[x].h, eval_data[x].r, eval_data[x].t]
                                    for x in range(self.size_per_batch * i, self.size_per_batch * (i + 1))])
@@ -204,19 +205,14 @@ class Evaluation(EvaluationMeta):
 
                 head_tmp, tail_tmp = np.squeeze(sess.run([head_rank, tail_rank], feed_dict))
 
-                h_list.extend(h)
-                r_list.extend(r)
-                t_list.extend(t)
+                h_list[self.size_per_batch * i: self.size_per_batch * (i + 1)] = h
+                r_list[self.size_per_batch * i: self.size_per_batch * (i + 1)] = r
+                t_list[self.size_per_batch * i: self.size_per_batch * (i + 1)] = t
 
-                if i == 0:
-                    id_replace_head = head_tmp
-                    id_replace_tail = tail_tmp
-                else:
-                    id_replace_head = np.concatenate((id_replace_head, head_tmp), axis=0)
-                    id_replace_tail = np.concatenate((id_replace_tail, tail_tmp), axis=0)
-
+                id_replace_head[self.size_per_batch * i: self.size_per_batch * (i + 1), :] = head_tmp
+                id_replace_tail[self.size_per_batch * i: self.size_per_batch * (i + 1), :] = tail_tmp
                 bar.update(i)
-
+        print("Assigned a process for evaluation!")
         p = Process(target=evaluation_process,
                     args=(id_replace_tail, id_replace_head, h_list, r_list, t_list, self.tr_h, self.hr_t,
                           self.mean_rank_head, self.mean_rank_tail, self.filter_mean_rank_head,
