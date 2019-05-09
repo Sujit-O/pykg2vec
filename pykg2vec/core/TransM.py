@@ -97,8 +97,8 @@ class TransM(ModelMeta):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        score_head = self.distance_batch(norm_ent_embeddings, tf.expand_dims(rel_vec,axis=1), tf.expand_dims(tail_vec,axis=1))
-        score_tail = self.distance_batch(tf.expand_dims(head_vec,axis=1), tf.expand_dims(rel_vec,axis=1), norm_ent_embeddings)
+        score_head = self.distance(norm_ent_embeddings, tf.expand_dims(rel_vec, 1), tf.expand_dims(tail_vec, 1))
+        score_tail = self.distance(tf.expand_dims(head_vec, 1), tf.expand_dims(rel_vec, 1), norm_ent_embeddings)
 
         _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
         _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
@@ -107,15 +107,9 @@ class TransM(ModelMeta):
 
     def distance(self, h, r, t):
         if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
+            return tf.reduce_sum(tf.abs(h + r - t), axis=-1)  # L1 norm
         else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
-
-    def distance_batch(self, h, r, t):
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=2)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=2)  # L2 norm
+            return tf.reduce_sum((h + r - t) ** 2, axis=-1)  # L2 norm
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
@@ -136,54 +130,3 @@ class TransM(ModelMeta):
     def get_proj_embed(self, h, r, t, sess=None):
         """function to get the projected embedding value in numpy"""
         return self.get_embed(h, r, t, sess)
-
-# if __name__ == "__main__":
-#     import tensorflow as tf
-#     from config.config import TransMConfig
-#     from config.global_config import GeneratorConfig
-#     from utils.dataprep import DataPrep, DataInput, DataStats
-#     from utils.generator import Generator
-#     sess = tf.Session()
-
-#     config = TransMConfig()
-
-#     data_handler = DataPrep(name_dataset="Freebase15k", sampling="uniform", algo='TransM')
-
-#     model = TransM(config, data_handler)
-#     import pdb
-#     pdb.set_trace()
-
-#     gen = iter(Generator(config=GeneratorConfig(data='train', algo='TransM')))
-    
-#     data = list(next(gen))
-
-#     ph = data[0]
-#     pr = data[1]
-#     pt = data[2]
-#     nh = data[3]
-#     nr = data[4]
-#     nt = data[5]
-
-#     import pdb
-#     pdb.set_trace()
-
-#     sess.run(tf.global_variables_initializer())
-
-#     sess.run(model.embed(ph, pr, pt))
-    
-#     feed_dict = {
-#         model.pos_h:ph, 
-#         model.pos_r:pr, 
-#         model.pos_t:pt, 
-#         model.neg_h:nh, 
-#         model.neg_r:nr, 
-#         model.neg_t:nt
-#     }
-
-#     sess.run(model.loss, feed_dict=feed_dict)
-
-#     # feed_dict = {
-#     #     model.test_h: np.reshape(ph, [1, ]),
-#     #     model.test_r: np.reshape(pr, [1, ]),
-#     #     model.test_t: np.reshape(pt, [1, ])
-#     # }
