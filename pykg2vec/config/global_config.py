@@ -89,6 +89,16 @@ class FreebaseFB15k(object):
         }
 
         self.cache_path = self.root_path / 'all.pkl'
+        self.cache_metadata_path = self.root_path / 'metadata.pkl'
+
+        self.cache_triplet_paths = {
+            'train': self.root_path / 'triplets_train.pkl',
+            'test' : self.root_path / 'triplets_test.pkl',
+            'valid': self.root_path / 'triplets_valid.pkl'
+        }
+        
+        self.cache_hr_t_path = self.root_path / 'hr_t.pkl'
+        self.cache_tr_h_path = self.root_path / 'tr_h.pkl'
 
        
     def download(self):
@@ -121,8 +131,14 @@ class FreebaseFB15k(object):
             return knowledge_graph
         return None
     
-    def is_cache_exists(self):
-        return self.cache_path.exists()
+    def read_metadata(self):
+        with open(str(self.cache_metadata_path), 'rb') as f:
+            meta = pickle.load(f)
+
+            return meta
+
+    def is_meta_cache_exists(self):
+        return self.cache_metadata_path.exists()
 
 class DeepLearning50k(object):
 
@@ -198,9 +214,15 @@ class KnowledgeGraph(object):
 
         self.relation_property = []
 
-        self.kg_meta = KGMetaData()
+        if self.dataset.is_meta_cache_exists():
+            self.kg_meta = self.dataset.read_metadata()
+        else:
+            self.kg_meta = KGMetaData()
 
     def prepare_data(self):
+        if self.dataset.is_meta_cache_exists():
+            return
+            
         self.read_entities()
         self.read_relations()
         self.read_mappings()
@@ -227,11 +249,53 @@ class KnowledgeGraph(object):
                                   self.kg_meta.tot_train_triples
         
     def cache_data(self):
-        with open(str(self.dataset.cache_path), 'wb') as f:
-            pickle.dump(self, f)
-    
+        # with open(str(self.dataset.cache_path), 'wb') as f:
+        #     pickle.dump(self, f)
+
+        with open(str(self.dataset.cache_metadata_path), 'wb') as f:
+            pickle.dump(self.kg_meta, f)
+        with open(str(self.dataset.cache_triplet_paths['train']), 'wb') as f:
+            pickle.dump(self.triplets['train'], f)
+        with open(str(self.dataset.cache_triplet_paths['test']), 'wb') as f:
+            pickle.dump(self.triplets['test'], f)
+        with open(str(self.dataset.cache_triplet_paths['valid']), 'wb') as f:
+            pickle.dump(self.triplets['valid'], f)
+        with open(str(self.dataset.cache_hr_t_path), 'wb') as f:
+            pickle.dump(self.hr_t, f)
+        with open(str(self.dataset.cache_tr_h_path), 'wb') as f:
+            pickle.dump(self.tr_h, f)
+
+    def read_cache_data(self, key):
+        if key == 'triplets_train':
+            with open(str(self.dataset.cache_triplet_paths['train']), 'rb') as f:
+                triplets = pickle.load(f)
+
+                return triplets
+        elif key == 'triplets_test':
+            with open(str(self.dataset.cache_triplet_paths['test']), 'rb') as f:
+                triplets = pickle.load(f)
+
+                return triplets
+        elif key == 'triplets_valid':
+            with open(str(self.dataset.cache_triplet_paths['valid']), 'rb') as f:
+                triplets = pickle.load(f)
+
+                return triplets
+
+        elif key == 'hr_t':
+            with open(str(self.dataset.cache_hr_t_path), 'rb') as f:
+                hr_t = pickle.load(f) 
+
+                return hr_t
+
+        elif key == 'tr_h':
+            with open(str(self.dataset.cache_tr_h_path), 'rb') as f:
+                tr_h = pickle.load(f) 
+
+                return tr_h
+
     def is_cache_exists(self):
-        return self.dataset.is_cache_exists()
+        return self.dataset.is_meta_cache_exists()
 
     def read_triplets(self, set_type):
         '''

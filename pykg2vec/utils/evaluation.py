@@ -153,8 +153,8 @@ class Evaluation(EvaluationMeta):
         self.hr_t = manager.dict()
         self.tr_h = manager.dict()
 
-        self.hr_t = self.model.config.knowledge_graph.hr_t
-        self.tr_h = self.model.config.knowledge_graph.tr_h
+        self.hr_t = self.model.config.knowledge_graph.read_cache_data('hr_t')
+        self.tr_h = self.model.config.knowledge_graph.read_cache_data('tr_h')
 
         self.data_stats = self.model.config.kg_meta
         self.result_queue = Queue()
@@ -162,9 +162,9 @@ class Evaluation(EvaluationMeta):
         knowledge_graph = self.model.config.knowledge_graph
 
         if test_data == 'test':
-            self.eval_data = knowledge_graph.triplets['test']
+            self.eval_data = knowledge_graph.read_cache_data('triplets_test')
         elif test_data == 'valid':
-            self.eval_data = knowledge_graph.triplets['valid']
+            self.eval_data = knowledge_graph.read_cache_data('triplets_valid')
         else:
             raise NotImplementedError("%s datatype is not available!" % test_data)
 

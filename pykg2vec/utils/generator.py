@@ -13,9 +13,10 @@ sys.path.append("../")
 
 from config.global_config import GeneratorConfig
 import numpy as np
-from multiprocessing import Process, Queue, Manager, Value
+from multiprocessing import Process, Queue, Value, current_process
 import multiprocessing
 import os
+import sys
 # from numba import jit
 def gen_id(ids):
     i = 0
@@ -104,13 +105,12 @@ def process_function_trans(raw_queue, processed_queue, te, bs, observed_triples,
                     lr = t[1]
                     lt = idx_replace_tail
 
-                    observed_triples[(t[0], t[1], idx_replace_tail)] = 0
+                    # observed_triples[(t[0], t[1], idx_replace_tail)] = 0
 
             else:
                 idx_replace_head = np.random.randint(te)
                 break_cnt = 0
-                while ((idx_replace_head, t[1], t[2]) in observed_triples
-                       or (idx_replace_head, t[1], t[2]) in observed_triples):
+                while ((idx_replace_head, t[1], t[2]) in observed_triples):
                     idx_replace_head = np.random.randint(te)
                     break_cnt += 1
                     if break_cnt >= 100:
@@ -128,7 +128,7 @@ def process_function_trans(raw_queue, processed_queue, te, bs, observed_triples,
                     lr = t[1]
                     lt = t[2]
 
-                    observed_triples[(idx_replace_head, t[1], t[2])] = 0
+                    # observed_triples[(idx_replace_head, t[1], t[2])] = 0
 
         processed_queue.put([ph, pr, pt, nh, nr, nt])
 
@@ -161,6 +161,7 @@ def worker_process_raw_data_testing(raw_queue, processed_queue):
         
         processed_queue.put([ph, pr, pt])
 
+
 class Generator:
     """Generator class for the embedding algorithms
         Args:
@@ -177,11 +178,11 @@ class Generator:
 
         data = None 
         if   config.data == 'train':
-            data = model_config.knowledge_graph.triplets['train']
+            data = model_config.knowledge_graph.read_cache_data('triplets_train')
         elif config.data == 'test':
-            data = model_config.knowledge_graph.triplets['test']
+            data = model_config.knowledge_graph.read_cache_data('triplets_test')
         elif config.data == 'valid':
-            data = model_config.knowledge_graph.triplets['valid']
+            data = model_config.knowledge_graph.read_cache_data('triplets_valid')
         else:
             raise NotImplementedError("The data type passed is wrong!")
 
@@ -292,6 +293,7 @@ def test_generator_trans():
         # print("nr:", nr)
         # print("nt:", nt)
     gen.stop()
+
 
 def test_generator():
     import timeit

@@ -67,9 +67,7 @@ class BasicConfig:
 
     def set_dataset(self, dataset_name):
         self.knowledge_graph = KnowledgeGraph(dataset=dataset_name)
-        if self.knowledge_graph.is_cache_exists():
-            self.knowledge_graph = self.knowledge_graph.dataset.read_data()
-            self.kg_meta = self.knowledge_graph.kg_meta
+        self.kg_meta = self.knowledge_graph.kg_meta
 
 class TransRConfig(BasicConfig):
     def __init__(self,
