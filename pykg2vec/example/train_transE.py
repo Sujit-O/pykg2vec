@@ -15,7 +15,7 @@ def main(_):
     parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
     parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
     parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
-    parser.add_argument('-l', '--epochs', default=1000, type=int, help='Number of Epochs')
+    parser.add_argument('-l', '--epochs', default=2, type=int, help='Number of Epochs')
     parser.add_argument('-tn', '--test_num', default=10000, type=int, help='Number of test triples')
     parser.add_argument('-ts', '--test_step', default=2, type=int, help='Test every _ epochs')
     parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')

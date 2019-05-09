@@ -62,19 +62,16 @@ class Trainer(TrainerMeta):
             for n_iter in range(self.config.epochs):
                 if self.model.model_name == "ProjE_pointwise":
                     self.train_model_epoch_proje(n_iter)
-                    self.tiny_test_proje(n_iter)
                 elif self.model.model_name.lower() in ["tucker"]:
                     self.train_model_epoch_simple(n_iter)
-                    self.tiny_test_simple(n_iter)
                 elif self.model.model_name.lower() in ['conve', 'complex', "distmult"]:
                     self.train_model_epoch_conve(n_iter)
-                    self.tiny_test_conve(n_iter)
                 else:
                     self.train_model_epoch(n_iter)
-                    self.tiny_test(n_iter)
+                self.tiny_test(n_iter)
 
             self.gen_train.stop()
-           
+
             self.evaluator.save_training_result(self.training_results)
 
             if self.config.save_model:
@@ -245,61 +242,13 @@ class Trainer(TrainerMeta):
     ''' Testing related functions:'''
 
     def tiny_test(self, curr_epoch):
-        start_time = timeit.default_timer()
-
         if self.config.test_step == 0:
             return
 
         if curr_epoch % self.config.test_step == 0 or \
                 curr_epoch == 0 or \
                 curr_epoch == self.config.epochs - 1:
-            # self.evaluator.test(self.sess, curr_epoch)
             self.evaluator.test_batch(self.sess, curr_epoch)
-            # self.evaluator.print_test_summary(curr_epoch)
-
-            # print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
-
-    def tiny_test_simple(self, curr_epoch):
-        start_time = timeit.default_timer()
-
-        if self.config.test_step == 0:
-            return
-
-        if curr_epoch % self.config.test_step == 0 or \
-                curr_epoch == 0 or \
-                curr_epoch == self.config.epochs - 1:
-            self.evaluator.test_simple(self.sess, curr_epoch)
-            self.evaluator.print_test_summary(curr_epoch)
-
-            print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
-
-    def tiny_test_conve(self, curr_epoch):
-        start_time = timeit.default_timer()
-
-        if self.config.test_step == 0:
-            return
-
-        if curr_epoch % self.config.test_step == 0 or \
-                curr_epoch == 0 or \
-                curr_epoch == self.config.epochs - 1:
-            self.evaluator.test_conve(self.sess, curr_epoch)
-            self.evaluator.print_test_summary(curr_epoch)
-
-            print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
-
-    def tiny_test_proje(self, curr_epoch):
-        start_time = timeit.default_timer()
-
-        if self.config.test_step == 0:
-            return
-
-        if curr_epoch % self.config.test_step == 0 or \
-                curr_epoch == 0 or \
-                curr_epoch == self.config.epochs - 1:
-            self.evaluator.test_proje(self.sess, curr_epoch)
-            self.evaluator.print_test_summary(curr_epoch)
-
-            print('iter[%d] ---Testing ---time: %.2f' % (curr_epoch, timeit.default_timer() - start_time))
 
     def full_test(self):
         self.evaluator.test_batch(self.sess, self.config.epochs)
