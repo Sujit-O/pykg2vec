@@ -92,7 +92,7 @@ class Trainer(TrainerMeta):
     def train_model_epoch_proje(self, epoch_idx):
         acc_loss = 0
 
-        num_batch = self.gen_train.tot_train_data // self.config.batch_size if not self.debug else 5
+        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 5
 
         start_time = timeit.default_timer()
 
@@ -130,7 +130,7 @@ class Trainer(TrainerMeta):
     def train_model_epoch(self, epoch_idx):
         acc_loss = 0
 
-        num_batch = self.gen_train.tot_train_data // self.config.batch_size if not self.debug else 100
+        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 100
 
         start_time = timeit.default_timer()
 

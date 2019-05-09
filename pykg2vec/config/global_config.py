@@ -1,15 +1,45 @@
 import shutil, tarfile, urllib.request
 from pathlib import Path
-
+from collections import defaultdict
+import numpy as np
+import pickle
 
 class Triple(object):
-    def __init__(self, h=None, r=None, t=None, hr_t=None, rt_h=None):
-        self.h = h
+    
+    def __init__(self, h, r, t):
+        self.h = None
+        self.r = None
+        self.t = None
+        self.h_string = None
+        self.r_string = None
+        self.t_string = None
+
+        if type(h) is int and type(r) is int and type(t) is int:
+            self.h = h
+            self.r = r
+            self.t = t
+        
+        else:
+            self.h_string = h
+            self.r_string = r
+            self.t_string = t
+        
+        self.hr_t = None
+        self.tr_h = None
+
+    def set_ids(self, h, r, t):
+        self.h = h 
         self.r = r
         self.t = t
-        self.hr_t = hr_t
-        self.rt_h = rt_h
 
+    def set_strings(self, h, r, t):
+        pass
+
+    def set_hr_t(self, hr_t):
+        self.hr_t = hr_t
+
+    def set_tr_h(self, tr_h):
+        self.tr_h = tr_h
 
 class KGMetaData(object):
     def __init__(self, tot_entity=None,
@@ -58,24 +88,8 @@ class FreebaseFB15k(object):
             'valid': self.root_path / 'freebase_mtr100_mte100-valid.txt'
         }
 
-        self.entity2idx_path            = self.root_path / 'FB15k_entity2idx.pkl'
-        self.idx2entity_path            = self.root_path / 'FB15k_idx2entity.pkl'
-        self.relation2idx_path          = self.root_path / 'FB15k_relation2idx.pkl'
-        self.idx2relation_path          = self.root_path / 'FB15k_idx2relation.pkl'
-        self.testing_triples_id_path    = self.root_path / 'test_triples_ids.pkl'
-        self.training_triples_id_path   = self.root_path / 'training_triples_ids.pkl'
-        self.validating_triples_id_path = self.root_path / 'validating_triples_ids.pkl'
-        
-        self.hrt_path                   = self.root_path / 'hr_t.pkl'
-        self.trh_path                   = self.root_path / 'tr_h.pkl'
-        
-        self.hrt_train_path             = self.root_path / 'hr_t_train.pkl'
-        self.trh_train_path             = self.root_path / 'tr_h_train.pkl'
+        self.cache_path = self.root_path / 'all.pkl'
 
-        self.hrt_hr_rt_train            = self.root_path / 'hrt_hr_rt_train.pkl'
-        
-        self.metadata_path              = self.root_path / 'metadata.pkl'
-        self.relation_property_path     = self.root_path / 'relation_property_train.pkl'
        
     def download(self):
         ''' download Freebase 15k dataset from url'''
@@ -99,6 +113,16 @@ class FreebaseFB15k(object):
         for key, value in self.__dict__.items():
             print(key, value)
 
+    def read_data(self):
+        if self.cache_path.exists():
+            with open(str(self.cache_path), 'rb') as f:
+                knowledge_graph = pickle.load(f)
+
+            return knowledge_graph
+        return None
+    
+    def is_cache_exists(self):
+        return self.cache_path.exists()
 
 class DeepLearning50k(object):
 
@@ -156,17 +180,208 @@ class GlobalConfig(object):
 
         self.negative_sample = negative_sample
         
-    def dump(self):
-        for key, value in self.dataset.__dict__.items():
-            print(key, value)
+        self.triplets = {'train': [], 'test' : [], 'valid': []}
+
+        self.relations = [] 
+        self.entities = []
+
+        self.entity2idx = {} 
+        self.idx2entity = {}
+        self.relation2idx = {}
+        self.idx2relation = {}
+
+        self.hr_t = defaultdict(set)
+        self.tr_h = defaultdict(set)
+
+        self.hr_t_train = defaultdict(set)
+        self.tr_h_train = defaultdict(set)
+
+        self.relation_property = []
+
+        self.kg_meta = KGMetaData()
+
+    def prepare_data(self):
+        self.read_entities()
+        self.read_relations()
+        self.read_mappings()
+        self.read_triple_ids('train')
+        self.read_triple_ids('test')
+        self.read_triple_ids('valid')
+        self.read_hr_t()
+        self.read_tr_h()
+        self.read_hr_t_train()
+        self.read_tr_h_train()
+        
+        self.read_hr_tr_train()
+
+        if self.negative_sample == 'negative_sample':
+            self.read_relation_property()
+
+        self.kg_meta.tot_relation = len(self.relations)
+        self.kg_meta.tot_entity   = len(self.entities)
+        self.kg_meta.tot_valid_triples = len(self.triplets['valid'])
+        self.kg_meta.tot_test_triples  = len(self.triplets['test'])
+        self.kg_meta.tot_train_triples = len(self.triplets['train'])
+        self.kg_meta.tot_triple = self.kg_meta.tot_valid_triples + \
+                                  self.kg_meta.tot_test_triples  + \
+                                  self.kg_meta.tot_train_triples
+        
+    def cache_data(self):
+        with open(str(self.dataset.cache_path), 'wb') as f:
+            pickle.dump(self, f)
+    
+    def is_cache_exists(self):
+        return self.dataset.is_cache_exists()
 
     def read_triplets(self, set_type):
-        triplets = []
-        with open(str(self.dataset.data_paths[set_type]), 'r') as file:
-            for line in file.readlines():
-                s, p, o = line.split('\t')
-                triplets.append(Triple(h=s.strip(), r=p.strip(), t=o.strip()))
+        '''
+            read triplets from txt files in dataset folder.
+            (in string format)
+        '''
+        triplets = self.triplets[set_type]
+        
+        if len(triplets) == 0:
+            with open(str(self.dataset.data_paths[set_type]), 'r') as file:
+                for line in file.readlines():
+                    s, p, o = line.split('\t')
+                    triplets.append(Triple(s.strip(), p.strip(), o.strip()))
+
         return triplets
+        
+    def read_entities(self):
+        ''' ensure '''
+        if len(self.entities) == 0:
+            entities = set()
+
+            all_triplets = self.read_triplets('train') +\
+                           self.read_triplets('valid') +\
+                           self.read_triplets('test')
+
+            for triplet in all_triplets:
+                entities.add(triplet.h_string)
+                entities.add(triplet.t_string)
+
+            self.entities = np.sort(list(entities))
+
+        return self.entities
+
+    def read_relations(self):
+        if len(self.relations) == 0:
+            relations = set()
+
+            all_triplets = self.read_triplets('train') +\
+                           self.read_triplets('valid') +\
+                           self.read_triplets('test')
+
+            for triplet in all_triplets:
+                relations.add(triplet.r_string)
+
+            self.relations = np.sort(list(relations))
+
+        return self.relations
+
+    def read_mappings(self):
+        self.entity2idx = {v: k for k, v in enumerate(self.read_entities())} ##
+        self.idx2entity = {v: k for k, v in self.entity2idx.items()}
+        self.relation2idx = {v: k for k, v in enumerate(self.read_relations())} ##
+        self.idx2relation = {v: k for k, v in self.relation2idx.items()}
+
+    def read_triple_ids(self, set_type):
+        # assert entities can not be none
+        # assert relations can not be none
+        triplets = self.triplets[set_type]
+        
+        entity2idx = self.entity2idx
+        relation2idx = self.relation2idx
+
+        if len(triplets) != 0:
+            for t in triplets:
+                t.set_ids(entity2idx[t.h_string], relation2idx[t.r_string], entity2idx[t.t_string])
+
+        return triplets
+
+    def read_hr_t(self):
+        for set_type in self.triplets:
+            triplets = self.triplets[set_type]
+
+            for t in triplets:
+                self.hr_t[(t.h, t.r)].add(t.t)
+
+        return self.hr_t
+
+    def read_tr_h(self):
+        for set_type in self.triplets:
+            triplets = self.triplets[set_type]
+
+            for t in triplets:
+                self.tr_h[(t.t, t.r)].add(t.h)
+
+        return self.tr_h
+
+    def read_hr_t_train(self):
+        triplets = self.triplets['train']
+
+        for t in triplets:
+            self.hr_t_train[(t.h, t.r)].add(t.t)
+
+        return self.hr_t_train
+
+    def read_tr_h_train(self):
+        triplets = self.triplets['train']
+
+        for t in triplets:
+            self.tr_h_train[(t.t, t.r)].add(t.h)
+
+        return self.tr_h_train
+    
+    def read_hr_tr_train(self):
+        for t in self.triplets['train']:
+            t.set_hr_t(self.hr_t_train[(t.h, t.r)])
+            t.set_tr_h(self.tr_h_train[(t.t, t.r)])
+
+        return self.triplets['train']
+
+    def read_relation_property(self):
+        relation_property_head = {x: [] for x in range(len(self.relations))}
+        relation_property_tail = {x: [] for x in range(len(self.relations))}
+
+        for t in self.triplets['train']:
+            relation_property_head[t.r].append(t.h)
+            relation_property_tail[t.r].append(t.t)
+
+        self.relation_property = {x: (len(set(relation_property_tail[x]))) / ( \
+                len(set(relation_property_head[x])) + len(set(relation_property_tail[x]))) \
+                                  for x in relation_property_head.keys()}
+
+        return self.relation_property
+
+    ''' reserved for debugging '''
+    # def dump(self):
+    #     ''' dump key information'''
+    #     print("\n----------Relation to Indexes--------------")
+    #     pprint.pprint(self.relation2idx)
+    #     print("---------------------------------------------")
+
+    #     print("\n----------Relation to Indexes--------------")
+    #     pprint.pprint(self.idx2relation)
+    #     print("---------------------------------------------")
+
+    #     print("\n----------Train Triple Stats---------------")
+    #     print("Total Training Triples   :", len(self.train_triples_ids))
+    #     print("Total Testing Triples    :", len(self.test_triples_ids))
+    #     print("Total validation Triples :", len(self.validation_triples_ids))
+    #     print("Total Entities           :", self.data_stats.tot_entity)
+    #     print("Total Relations          :", self.data_stats.tot_relation)
+    #     print("---------------------------------------------")
+
+    # def dump_triples(self):
+    #     '''dump all the triples'''
+    #     for idx, triple in enumerate(self.train_triples):
+    #         print(idx, triple.h, triple.r, triple.t)
+    #     for idx, triple in enumerate(self.test_triples):
+    #         print(idx, triple.h, triple.r, triple.t)
+    #     for idx, triple in enumerate(self.validation_triples):
+    #         print(idx, triple.h, triple.r, triple.t)
 
 class GeneratorConfig(object):
     """Configuration for Generator
@@ -193,7 +408,7 @@ class GeneratorConfig(object):
                  queue_size=50,
                  raw_queue_size=50,
                  processed_queue_size=50,
-                 process_num=2,
+                 process_num=8,
                  data='train', 
                  algo ='ConvE',
                  neg_rate=2

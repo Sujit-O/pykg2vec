@@ -42,8 +42,9 @@ class Evaluation(EvaluationMeta):
 
         self.epoch = []
 
-        self.hr_t = self.model.config.read_hr_t() 
-        self.tr_h = self.model.config.read_tr_h()
+        self.hr_t = self.model.config.knowledge_graph.hr_t
+        self.tr_h = self.model.config.knowledge_graph.tr_h
+
         self.data_stats = self.model.config.kg_meta
         
     def test_batch(self, sess=None, epoch=None, test_data='test'):
@@ -60,11 +61,11 @@ class Evaluation(EvaluationMeta):
 
         gen_test = Generator(config=GeneratorConfig(data='test', algo=self.model.model_name,
                                                     batch_size=self.size_per_batch), model_config=self.model.config)
-
+        # TODO differentiate test_data 
         if self.n_test == 0:
-            self.n_test = gen_test.tot_test_data
+            self.n_test = self.model.config.kg_meta.tot_test_triples
         else:
-            self.n_test = min(self.n_test, gen_test.tot_test_data)
+            self.n_test = min(self.n_test, self.model.config.kg_meta.tot_test_triples)
 
         loop_len = self.n_test // self.size_per_batch if not self.debug else 1
 
@@ -72,7 +73,7 @@ class Evaluation(EvaluationMeta):
             loop_len = 1
         self.n_test = self.size_per_batch * loop_len
 
-        print("Testing [%d/%d] Triples" % (self.n_test, gen_test.tot_test_data))
+        print("Testing [%d/%d] Triples" % (self.n_test, self.model.config.kg_meta.tot_test_triples))
 
         total_test = loop_len * self.size_per_batch
         start_time = timeit.default_timer()
@@ -87,16 +88,27 @@ class Evaluation(EvaluationMeta):
                 self.model.test_r_batch: pr,
                 self.model.test_t_batch: pt}
 
-            id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
-            do = ThreadPool(20)
+            # id_replace_head, id_replace_tail = sess.run([head_rank, tail_rank], feed_dict)
+            # do = ThreadPool(20)
 
-            hdata = do.map(self.zip_eval_batch_head, zip(id_replace_head, ph, pt, pr))
-            tdata = do.map(self.zip_eval_batch_tail, zip(id_replace_tail, ph, pr, pt))
+            # hdata = do.map(self.zip_eval_batch_head, zip(id_replace_head, ph, pt, pr))
+            # tdata = do.map(self.zip_eval_batch_tail, zip(id_replace_tail, ph, pr, pt))
 
-            rank_head += [i for i, _ in hdata]
-            rank_tail += [i for i, _ in tdata]
-            filter_rank_head += [i for _, i in hdata]
-            filter_rank_tail += [i for _, i in tdata]
+            # rank_head += [i for i, _ in hdata]
+            # rank_tail += [i for i, _ in tdata]
+            # filter_rank_head += [i for _, i in hdata]
+            # filter_rank_tail += [i for _, i in tdata]
+
+            id_replace_head, id_replace_tail = np.squeeze(sess.run([head_rank, tail_rank], feed_dict))
+
+            for triple_id in range(self.model.config.batch_size_testing):
+                tranks, f_trank = self.eval_batch_tail(id_replace_tail[triple_id], ph[triple_id], pr[triple_id], pt[triple_id])
+                hranks, f_hrank = self.eval_batch_head(id_replace_head[triple_id], ph[triple_id], pr[triple_id], pt[triple_id])
+                rank_head.append(hranks)
+                filter_rank_head.append(f_hrank)
+                rank_tail.append(tranks)
+                filter_rank_tail.append(f_trank)
+
 
             tmp_mean_rank = (np.sum(rank_head, dtype=np.float32) +
                              np.sum(rank_tail, dtype=np.float32)) / (2 * len(rank_head))
