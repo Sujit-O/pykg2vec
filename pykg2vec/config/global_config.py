@@ -408,7 +408,7 @@ class GeneratorConfig(object):
                  queue_size=50,
                  raw_queue_size=50,
                  processed_queue_size=50,
-                 process_num=8,
+                 process_num=2,
                  data='train', 
                  algo ='ConvE',
                  neg_rate=2
