@@ -34,7 +34,6 @@ class TransM(ModelMeta):
     def __init__(self, config=None):
         self.config = config
         self.data_stats = self.config.kg_meta
-        self.train_triples_ids = self.config.read_train_triples_ids()
         self.model_name = 'TransM'
 
         self.def_inputs()
@@ -71,7 +70,8 @@ class TransM(ModelMeta):
             rel_head = {x: [] for x in range(num_total_rel)}
             rel_tail = {x: [] for x in range(num_total_rel)}
             rel_counts = {x: 0 for x in range(num_total_rel)}
-            for t in self.train_triples_ids:
+            train_triples_ids = self.config.knowledge_graph.read_cache_data('triplets_train')
+            for t in train_triples_ids:
                 rel_head[t.r].append(t.h)
                 rel_tail[t.r].append(t.t)
                 rel_counts[t.r] += 1
@@ -92,19 +92,6 @@ class TransM(ModelMeta):
         score_neg = neg_r_theta*self.distance(neg_h_e, neg_r_e, neg_t_e)
 
         self.loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
-
-    def test_step(self):
-        head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        r_theta = tf.nn.embedding_lookup(self.theta, self.test_r)
-
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        score_head = r_theta*self.distance(norm_ent_embeddings, rel_vec, tail_vec)
-        score_tail = r_theta*self.distance(head_vec, rel_vec, norm_ent_embeddings)
-
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
-
-        return head_rank, tail_rank
 
     def test_batch(self):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
