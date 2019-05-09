@@ -75,6 +75,7 @@ class Trainer(TrainerMeta):
 
             self.evaluator.save_training_result(self.training_results)
             self.evaluator.save_test_summary()
+            self.evaluator.stop()
 
             if self.config.save_model:
                 self.save_model()
@@ -247,10 +248,7 @@ class Trainer(TrainerMeta):
         if curr_epoch % self.config.test_step == 0 or \
                 curr_epoch == 0 or \
                 curr_epoch == self.config.epochs-1:
-            if curr_epoch == self.config.epochs-1:
-                self.evaluator.test_batch(self.sess, curr_epoch, join_Flag=True)
-            else:
-                self.evaluator.test_batch(self.sess, curr_epoch, join_Flag=False)
+            self.evaluator.test_batch(self.sess, curr_epoch)
 
     ''' Procedural functions:'''
 
