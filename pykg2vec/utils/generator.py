@@ -59,19 +59,24 @@ def raw_data_generator_trans(raw_queue, processed_queue, data, batch_size, numbe
         raw_data = np.asarray(
             [[data[x].h, data[x].r, data[x].t, data[x].hr_t, data[x].tr_h] for x in random_ids[pos_start:pos_end]]
         )
-        raw_queue.put(raw_data)
+        raw_queue.put((batch_idx, raw_data))
 
         batch_idx += 1
         if batch_idx >= number_of_batch:
             batch_idx = 0
 
 
-def process_function_trans(raw_queue, processed_queue, te, bs, observed_triples, lh, lr, lt):
+def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets, lh, lr, lt):
     ''' worker process that gets data from raw queue then processes and saves to processed queue.''' 
+    negative_triplets = {}
+
     while True:
 
-        pos_triples = raw_queue.get()
+        idx, pos_triples = raw_queue.get()
         
+        if idx == 0:
+            negative_triplets = {}
+
         ph = pos_triples[:, 0]
         pr = pos_triples[:, 1]
         pt = pos_triples[:, 2]
@@ -87,7 +92,7 @@ def process_function_trans(raw_queue, processed_queue, te, bs, observed_triples,
                 idx_replace_tail = np.random.randint(te)
 
                 break_cnt = 0
-                while (t[0], t[1], idx_replace_tail) in observed_triples:
+                while (t[0], t[1], idx_replace_tail) in positive_triplets or (t[0], t[1], idx_replace_tail) in negative_triplets:
                     idx_replace_tail = np.random.randint(te)
                     break_cnt += 1
                     if break_cnt >= 100:
@@ -105,12 +110,12 @@ def process_function_trans(raw_queue, processed_queue, te, bs, observed_triples,
                     lr = t[1]
                     lt = idx_replace_tail
 
-                    # observed_triples[(t[0], t[1], idx_replace_tail)] = 0
+                    negative_triplets[(t[0], t[1], idx_replace_tail)] = 1
 
             else:
                 idx_replace_head = np.random.randint(te)
                 break_cnt = 0
-                while ((idx_replace_head, t[1], t[2]) in observed_triples):
+                while ((idx_replace_head, t[1], t[2]) in positive_triplets) or (idx_replace_head, t[1], t[2]) in negative_triplets:
                     idx_replace_head = np.random.randint(te)
                     break_cnt += 1
                     if break_cnt >= 100:
@@ -128,7 +133,7 @@ def process_function_trans(raw_queue, processed_queue, te, bs, observed_triples,
                     lr = t[1]
                     lt = t[2]
 
-                    # observed_triples[(idx_replace_head, t[1], t[2])] = 0
+                    negative_triplets[(idx_replace_head, t[1], t[2])] = 1
 
         processed_queue.put([ph, pr, pt, nh, nr, nt])
 
