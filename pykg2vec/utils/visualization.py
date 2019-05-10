@@ -7,14 +7,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-disp_avlbl = True
-from os import environ
-
-if 'DISPLAY' not in environ:
-    disp_avlbl = False
-    import matplotlib
-
-    matplotlib.use('Agg')
 from sklearn.manifold import TSNE
 import numpy as np
 import matplotlib.pyplot as plt
