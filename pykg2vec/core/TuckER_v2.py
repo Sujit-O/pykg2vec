@@ -41,6 +41,9 @@ class TuckER_v2(ModelMeta):
         self.test_r = tf.placeholder(tf.int32, [None])
         self.test_t = tf.placeholder(tf.int32, [None])
 
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
@@ -100,11 +103,11 @@ class TuckER_v2(ModelMeta):
 
         reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
 
-        self.loss = loss_heads+ loss_tails + self.config.lmbda * reg_losses
+        self.loss = loss_heads + loss_tails + self.config.lmbda * reg_losses
 
     def test_batch(self):
-        pred_tails = self.forward(self.test_h, self.test_r)
-        pred_heads = self.forward(self.test_t, self.test_r)
+        pred_tails = self.forward(self.test_h_batch, self.test_r_batch)
+        pred_heads = self.forward(self.test_t_batch, self.test_r_batch)
 
         _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
         _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
@@ -161,7 +164,7 @@ if __name__ == '__main__':
     # grads = optimizer.compute_gradients(model.loss)
     #
     logits = model.forward(e1, r)
-    print("pred:",logits)
+    print("pred:", logits)
     #
     # e2_multi1 = tf.constant(np.random.randint(0,2,size=(batch, tot_ent)), dtype=tf.float32)
     # # e2_multi1 = e2_multi1 * (1.0 - 0.1) + 1.0 / tot_ent

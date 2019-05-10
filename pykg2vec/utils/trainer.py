@@ -81,25 +81,25 @@ class Trainer(TrainerMeta):
     def train_model_epoch(self, epoch_idx):
         acc_loss = 0
 
-        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 100
+        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 10
 
         start_time = timeit.default_timer()
 
         for batch_idx in range(num_batch):
             data = list(next(self.gen_train))
-            if self.model.model_name in ["tucker", "tucker_v2", "conve", "complex", "distmult", "proje"]:
+            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "complex", "distmult", "proje"]:
                 h = data[0]
                 r = data[1]
                 t = data[2]
                 hr_t = data[3]
-                # rt_h = data[4]
+                rt_h = data[4]
 
                 feed_dict = {
                     self.model.h: h,
                     self.model.r: r,
                     self.model.t: t,
-                    self.model.hr_t: hr_t
-                    # self.model.rt_h: rt_h
+                    self.model.hr_t: hr_t,
+                    self.model.rt_h: rt_h
                 }
             else:
                 ph = data[0]

@@ -35,11 +35,15 @@ class TuckER(ModelMeta):
         self.r = tf.placeholder(tf.int32, [None])
         self.t = tf.placeholder(tf.int32, [None])
         self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-        # self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
         self.test_h = tf.placeholder(tf.int32, [None])
         self.test_r = tf.placeholder(tf.int32, [None])
         self.test_t = tf.placeholder(tf.int32, [None])
+
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
 
 
     def def_parameters(self):
@@ -92,7 +96,7 @@ class TuckER(ModelMeta):
     def def_loss(self):
         self.pred = self.forward(self.h, self.r)
 
-        # hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
         loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(self.hr_t, self.pred))
 
         # reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
@@ -100,13 +104,13 @@ class TuckER(ModelMeta):
         self.loss = loss# + self.config.lmbda * reg_losses
 
     def test_batch(self):
-        pred_tails = self.forward(self.test_h, self.test_r)
+        pred_tails = self.forward(self.test_h_batch, self.test_r_batch)
         # pred_heads = self.forward(self.test_e2, self.test_r_rev)
 
         _, head_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
         # _, tail_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
 
-        return head_rank #, tail_rank
+        return head_rank
 
     def embed(self, h, r, t):
         """function to get the embedding value"""

@@ -140,7 +140,7 @@ def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets
 
 def process_function(raw_queue, processed_queue, te, bs, neg_rate):
     while True:
-        raw_data = raw_queue.get()
+        idx, raw_data = raw_queue.get()
         
         h = raw_data[:, 0]
         r = raw_data[:, 1]
