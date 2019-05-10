@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from core.KGMeta import EvaluationMeta
 import timeit
-from multiprocessing import Process, Manager, Queue, Value
+from multiprocessing import Process, Queue
 import progressbar
 
 
@@ -186,7 +186,6 @@ def evaluation_process(result_queue, tr_h, hr_t, hits,
                               filter_mean_rank_tail, hit_head,
                               hit_tail, filter_hit_head, filter_hit_tail, config)
             break
-    return 0
 
 
 class Evaluation(EvaluationMeta):
@@ -239,6 +238,7 @@ class Evaluation(EvaluationMeta):
         self.rank_calculator.start()
 
     def stop(self):
+        self.rank_calculator.join()
         self.rank_calculator.terminate()
 
     def test_batch(self, sess=None, epoch=None):

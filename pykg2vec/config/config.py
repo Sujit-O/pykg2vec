@@ -7,8 +7,10 @@ import tensorflow as tf
 from pathlib import Path
 
 import sys
+
 sys.path.append("../")
 from config.global_config import KnowledgeGraph
+
 
 class BasicConfig:
     def __init__(self,
@@ -29,8 +31,9 @@ class BasicConfig:
                  log_device_placement=False,
                  plot_training_result=False,
                  plot_testing_result=False,
-                 plot_entity_only=False):
-
+                 plot_entity_only=False,
+                 full_test_flag=False):
+        self.full_test_flag = full_test_flag
         self.plot_entity_only = plot_entity_only
         self.test_step = test_step
         self.test_num = test_num
@@ -40,7 +43,7 @@ class BasicConfig:
         self.result = result
         self.figures = figures
         self.tmp.mkdir(parents=True, exist_ok=True)
-        self.result.mkdir(parents=True, exist_ok=True) 
+        self.result.mkdir(parents=True, exist_ok=True)
         self.figures.mkdir(parents=True, exist_ok=True)
 
         if hits is None:
@@ -69,6 +72,7 @@ class BasicConfig:
         self.knowledge_graph = KnowledgeGraph(dataset=dataset_name)
         self.kg_meta = self.knowledge_graph.kg_meta
 
+
 class TransRConfig(BasicConfig):
     def __init__(self,
                  learning_rate=0.01,
@@ -93,6 +97,7 @@ class TransRConfig(BasicConfig):
         self.data = data
         self.optimizer = optimizer
         self.sampling = sampling
+
 
 class TransDConfig(BasicConfig):
     def __init__(self,
@@ -145,7 +150,6 @@ class TransEConfig(BasicConfig):
         self.sampling = sampling
 
 
-
 class TransMConfig(BasicConfig):
 
     def __init__(self,
@@ -169,6 +173,7 @@ class TransMConfig(BasicConfig):
         self.data = data
         self.optimizer = optimizer
         self.sampling = sampling
+
 
 class TransHConfig(BasicConfig):
 
@@ -233,7 +238,7 @@ class SMEConfig(BasicConfig):
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam',
-                 sampling="uniform", 
+                 sampling="uniform",
                  bilinear=False):
         BasicConfig.__init__(self)
 
@@ -403,7 +408,7 @@ class ProjE_pointwiseConfig(BasicConfig):
 
 class KG2EConfig(BasicConfig):
 
-     def __init__(self,
+    def __init__(self,
                  learning_rate=0.001,
                  l1_flag=True,
                  hidden_size=50,
@@ -412,7 +417,7 @@ class KG2EConfig(BasicConfig):
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam',
-                 sampling="uniform", 
+                 sampling="uniform",
                  distance_measure="kl_divergence",
                  cmax=0.05,
                  cmin=5.00
@@ -482,7 +487,7 @@ class DistMultConfig(BasicConfig):
                  hidden_dropout=0.3,
                  feature_map_dropout=0.2,
                  lr_decay=0.995,
-                 lmbda = 0.1,
+                 lmbda=0.1,
                  label_smoothing=0.1,
                  use_bias=True,
                  margin=1.0,
