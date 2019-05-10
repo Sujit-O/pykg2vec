@@ -99,6 +99,8 @@ class FreebaseFB15k(object):
         
         self.cache_hr_t_path = self.root_path / 'hr_t.pkl'
         self.cache_tr_h_path = self.root_path / 'tr_h.pkl'
+        self.cache_idx2entity_path = self.root_path / 'idx2entity.pkl'
+        self.cache_idx2relation_path = self.root_path / 'idx2relation.pkl'
 
        
     def download(self):
@@ -264,6 +266,10 @@ class KnowledgeGraph(object):
             pickle.dump(self.hr_t, f)
         with open(str(self.dataset.cache_tr_h_path), 'wb') as f:
             pickle.dump(self.tr_h, f)
+        with open(str(self.dataset.cache_idx2entity_path), 'wb') as f:
+            pickle.dump(self.idx2entity, f)
+        with open(str(self.dataset.cache_idx2relation_path), 'wb') as f:
+            pickle.dump(self.idx2relation, f)
 
     def read_cache_data(self, key):
         if key == 'triplets_train':
@@ -293,6 +299,18 @@ class KnowledgeGraph(object):
                 tr_h = pickle.load(f) 
 
                 return tr_h
+
+        elif key == 'idx2entity':
+            with open(str(self.dataset.cache_idx2entity_path), 'rb') as f:
+                idx2entity = pickle.load(f)
+
+                return idx2entity
+        
+        elif key == 'idx2relation':
+            with open(str(self.dataset.cache_idx2relation_path), 'rb') as f:
+                idx2relation = pickle.load(f)
+
+                return idx2relation
 
     def is_cache_exists(self):
         return self.dataset.is_meta_cache_exists()

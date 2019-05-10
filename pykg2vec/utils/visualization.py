@@ -198,8 +198,8 @@ class Visualization(object):
         self.t_proj_emb = []
 
         self.validation_triples_ids = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
-        self.idx2entity = self.model.config.knowledge_graph.idx2entity
-        self.idx2relation = self.model.config.knowledge_graph.idx2relation
+        self.idx2entity = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        self.idx2relation = self.model.config.knowledge_graph.read_cache_data('idx2relation')
 
     def get_idx_n_emb(self, sess=None):
         if not sess:
