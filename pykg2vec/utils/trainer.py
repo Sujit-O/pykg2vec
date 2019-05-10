@@ -74,7 +74,6 @@ class Trainer(TrainerMeta):
             self.gen_train.stop()
 
             self.evaluator.save_training_result(self.training_results)
-            self.evaluator.save_test_summary()
             self.evaluator.stop()
 
             if self.config.save_model:

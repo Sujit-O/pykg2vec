@@ -67,11 +67,69 @@ def display_summary(epoch, hits, mean_rank_head, mean_rank_tail,
     print("---------------------------------------------------------")
 
 
-def evaluation_process(result_queue, tr_h, hr_t,
-                       mean_rank_head, mean_rank_tail, filter_mean_rank_head,
-                       filter_mean_rank_tail, hit_head, hit_tail,
-                       filter_hit_head, filter_hit_tail, hits, processed_epoch, total_epoch):
+def save_test_summary(result_path, model_name, hits,
+                      mean_rank_head, mean_rank_tail,
+                      filter_mean_rank_head,
+                      filter_mean_rank_tail, hit_head,
+                      hit_tail, filter_hit_head, filter_hit_tail, config):
+    if not os.path.exists(result_path):
+        os.mkdir(result_path)
+    files = os.listdir(str(result_path))
+    l = len([f for f in files if model_name in f if 'Testing' in f])
+    with open(str(result_path / (model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
+        fh.write('----------------SUMMARY----------------\n')
+        for key, val in config.__dict__.items():
+            if 'gpu' in key:
+                continue
+            if not isinstance(val, str):
+                if isinstance(val, list):
+                    v_tmp = '['
+                    for i, v in enumerate(val):
+                        if i == 0:
+                            v_tmp += str(v)
+                        else:
+                            v_tmp += ',' + str(v)
+                    v_tmp += ']'
+                    val = v_tmp
+                else:
+                    val = str(val)
+            fh.write(key + ':' + val + '\n')
+        fh.write('-----------------------------------------\n')
+    columns = ['Epoch', 'mean_rank', 'filter_mean_rank']
+    for hit in hits:
+        columns += ['hits' + str(hit), 'filter_hits' + str(hit)]
+
+    results = []
+    for epoch in mean_rank_head.keys():
+        res_tmp = [epoch, (mean_rank_head[epoch] + mean_rank_tail[epoch]) / 2,
+                   (filter_mean_rank_head[epoch] + filter_mean_rank_tail[epoch]) / 2]
+
+        for hit in hits:
+            res_tmp.append((hit_head[(epoch, hit)] + hit_tail[(epoch, hit)]) / 2)
+            res_tmp.append((filter_hit_head[(epoch, hit)] + filter_hit_tail[(epoch, hit)]) / 2)
+        results.append(res_tmp)
+
+    df = pd.DataFrame(results, columns=columns)
+
+    with open(str(result_path / (model_name + '_Testing_results_' + str(l) + '.csv')),
+              'a') as fh:
+        df.to_csv(fh)
+
+
+def evaluation_process(result_queue, tr_h, hr_t, hits,
+                       total_epoch, result_path, model_name,
+                       config):
     epoch = 0
+    mean_rank_head = {}
+    mean_rank_tail = {}
+    filter_mean_rank_head = {}
+    filter_mean_rank_tail = {}
+
+    hit_head = {}
+    hit_tail = {}
+    filter_hit_head = {}
+    filter_hit_tail = {}
+
     while True:
         if not result_queue.empty():
             result = result_queue.get()
@@ -123,8 +181,12 @@ def evaluation_process(result_queue, tr_h, hr_t,
                             filter_mean_rank_head, filter_mean_rank_tail,
                             hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time)
 
-            processed_epoch.value = int(epoch)
         if epoch >= total_epoch - 1:
+            save_test_summary(result_path, model_name, hits,
+                              mean_rank_head, mean_rank_tail,
+                              filter_mean_rank_head,
+                              filter_mean_rank_tail, hit_head,
+                              hit_tail, filter_hit_head, filter_hit_tail, config)
             break
 
 
@@ -136,28 +198,13 @@ class Evaluation(EvaluationMeta):
         self.size_per_batch = self.model.config.batch_size_testing
 
         self.n_test = model.config.test_num
-        self.hits = model.config.hits
+        hits = model.config.hits
         self.eval_process_list = []
 
-        manager = Manager()
-
-        self.mean_rank_head = manager.dict()
-        self.mean_rank_tail = manager.dict()
-        self.filter_mean_rank_head = manager.dict()
-        self.filter_mean_rank_tail = manager.dict()
-
-        self.hit_head = manager.dict()
-        self.hit_tail = manager.dict()
-        self.filter_hit_head = manager.dict()
-        self.filter_hit_tail = manager.dict()
-
         self.epoch = []
-        self.hr_t = manager.dict()
-        self.tr_h = manager.dict()
-        self.processed_epoch = manager.Value('i', 0)
 
-        self.hr_t = self.model.config.knowledge_graph.read_cache_data('hr_t')
-        self.tr_h = self.model.config.knowledge_graph.read_cache_data('tr_h')
+        hr_t = self.model.config.knowledge_graph.read_cache_data('hr_t')
+        tr_h = self.model.config.knowledge_graph.read_cache_data('tr_h')
 
         self.data_stats = self.model.config.kg_meta
         self.result_queue = Queue()
@@ -185,13 +232,11 @@ class Evaluation(EvaluationMeta):
         self.n_test = self.size_per_batch * self.loop_len
 
         self.rank_calculator = Process(target=evaluation_process,
-                                       args=(self.result_queue, self.tr_h, self.hr_t,
-                                             self.mean_rank_head, self.mean_rank_tail,
-                                             self.filter_mean_rank_head,
-                                             self.filter_mean_rank_tail, self.hit_head,
-                                             self.hit_tail,
-                                             self.filter_hit_head, self.filter_hit_tail,
-                                             self.hits, self.processed_epoch, self.model.config.epochs))
+                                       args=(self.result_queue, tr_h, hr_t,
+                                             hits, self.model.config.epochs,
+                                             self.model.config.result,
+                                             self.model.model_name,
+                                             self.model.config))
         self.rank_calculator.start()
 
     def stop(self):
@@ -250,52 +295,6 @@ class Evaluation(EvaluationMeta):
         df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
 
         with open(str(self.model.config.result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
-                  'w') as fh:
-            df.to_csv(fh)
-
-    def save_test_summary(self):
-        # wait for all the results to be processed
-        self.rank_calculator.join(timeout=60)
-        if not os.path.exists(self.model.config.result):
-            os.mkdir(self.model.config.result)
-        files = os.listdir(str(self.model.config.result))
-        l = len([f for f in files if self.model.model_name in f if 'Testing' in f])
-        with open(str(self.model.config.result / (self.model.model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
-            fh.write('----------------SUMMARY----------------\n')
-            for key, val in self.model.config.__dict__.items():
-                if 'gpu' in key:
-                    continue
-                if not isinstance(val, str):
-                    if isinstance(val, list):
-                        v_tmp = '['
-                        for i, v in enumerate(val):
-                            if i == 0:
-                                v_tmp += str(v)
-                            else:
-                                v_tmp += ',' + str(v)
-                        v_tmp += ']'
-                        val = v_tmp
-                    else:
-                        val = str(val)
-                fh.write(key + ':' + val + '\n')
-            fh.write('-----------------------------------------\n')
-        columns = ['Epoch', 'mean_rank', 'filter_mean_rank']
-        for hit in self.hits:
-            columns += ['hits' + str(hit), 'filter_hits' + str(hit)]
-
-        results = []
-        for epoch in self.mean_rank_head.keys():
-            res_tmp = [epoch, (self.mean_rank_head[epoch] + self.mean_rank_tail[epoch]) / 2,
-                       (self.filter_mean_rank_head[epoch] + self.filter_mean_rank_tail[epoch]) / 2]
-
-            for hit in self.hits:
-                res_tmp.append((self.hit_head[(epoch, hit)] + self.hit_tail[(epoch, hit)]) / 2)
-                res_tmp.append((self.filter_hit_head[(epoch, hit)] + self.filter_hit_tail[(epoch, hit)]) / 2)
-            results.append(res_tmp)
-
-        df = pd.DataFrame(results, columns=columns)
-
-        with open(str(self.model.config.result / (self.model.model_name + '_Testing_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)
 
