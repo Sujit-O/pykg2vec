@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from core.KGMeta import EvaluationMeta
 import timeit
-from multiprocessing import Process, Manager, Queue
+from multiprocessing import Process, Manager, Queue, Value
 import progressbar
 
 
@@ -70,7 +70,8 @@ def display_summary(epoch, hits, mean_rank_head, mean_rank_tail,
 def evaluation_process(result_queue, tr_h, hr_t,
                        mean_rank_head, mean_rank_tail, filter_mean_rank_head,
                        filter_mean_rank_tail, hit_head, hit_tail,
-                       filter_hit_head, filter_hit_tail, hits, total_epoch):
+                       filter_hit_head, filter_hit_tail, hits, processed_epoch, total_epoch):
+    epoch = 0
     while True:
         if not result_queue.empty():
             result = result_queue.get()
@@ -122,8 +123,9 @@ def evaluation_process(result_queue, tr_h, hr_t,
                             filter_mean_rank_head, filter_mean_rank_tail,
                             hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time)
 
-            if epoch == total_epoch - 1:
-                return
+            processed_epoch.value = int(epoch)
+        if epoch >= total_epoch - 1:
+            break
 
 
 class Evaluation(EvaluationMeta):
@@ -152,6 +154,7 @@ class Evaluation(EvaluationMeta):
         self.epoch = []
         self.hr_t = manager.dict()
         self.tr_h = manager.dict()
+        self.processed_epoch = manager.Value('i', 0)
 
         self.hr_t = self.model.config.knowledge_graph.read_cache_data('hr_t')
         self.tr_h = self.model.config.knowledge_graph.read_cache_data('tr_h')
@@ -181,22 +184,18 @@ class Evaluation(EvaluationMeta):
             self.loop_len = 1
         self.n_test = self.size_per_batch * self.loop_len
 
-        rank_calculator = Process(target=evaluation_process,
-                                  args=(self.result_queue, self.tr_h, self.hr_t,
-                                        self.mean_rank_head, self.mean_rank_tail,
-                                        self.filter_mean_rank_head,
-                                        self.filter_mean_rank_tail, self.hit_head,
-                                        self.hit_tail,
-                                        self.filter_hit_head, self.filter_hit_tail,
-                                        self.hits, self.loop_len))
-
-        rank_calculator.daemon = True
-        self.eval_process_list.append(rank_calculator)
-        rank_calculator.start()
+        self.rank_calculator = Process(target=evaluation_process,
+                                       args=(self.result_queue, self.tr_h, self.hr_t,
+                                             self.mean_rank_head, self.mean_rank_tail,
+                                             self.filter_mean_rank_head,
+                                             self.filter_mean_rank_tail, self.hit_head,
+                                             self.hit_tail,
+                                             self.filter_hit_head, self.filter_hit_tail,
+                                             self.hits, self.processed_epoch, self.model.config.epochs))
+        self.rank_calculator.start()
 
     def stop(self):
-        for p in self.eval_process_list:
-            p.terminate()
+        self.rank_calculator.terminate()
 
     def test_batch(self, sess=None, epoch=None):
 
@@ -217,7 +216,7 @@ class Evaluation(EvaluationMeta):
                    progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
         with progressbar.ProgressBar(max_value=self.loop_len, widgets=widgets) as bar:
             for i in range(self.loop_len):
-                data = np.asarray([[self.eval_data[x].h, self.eval_data [x].r, self.eval_data[x].t]
+                data = np.asarray([[self.eval_data[x].h, self.eval_data[x].r, self.eval_data[x].t]
                                    for x in range(self.size_per_batch * i, self.size_per_batch * (i + 1))])
                 h = data[:, 0]
                 r = data[:, 1]
@@ -256,7 +255,7 @@ class Evaluation(EvaluationMeta):
 
     def save_test_summary(self):
         # wait for all the results to be processed
-        self.eval_process_list[-1].join()
+        self.rank_calculator.join(timeout=60)
         if not os.path.exists(self.model.config.result):
             os.mkdir(self.model.config.result)
         files = os.listdir(str(self.model.config.result))
@@ -285,7 +284,7 @@ class Evaluation(EvaluationMeta):
             columns += ['hits' + str(hit), 'filter_hits' + str(hit)]
 
         results = []
-        for epoch in self.epoch:
+        for epoch in self.mean_rank_head.keys():
             res_tmp = [epoch, (self.mean_rank_head[epoch] + self.mean_rank_tail[epoch]) / 2,
                        (self.filter_mean_rank_head[epoch] + self.filter_mean_rank_tail[epoch]) / 2]
 
