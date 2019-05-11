@@ -7,8 +7,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import importlib
-from argparse import ArgumentParser
-import json
+from hyperopt import hp
 
 import sys
 
@@ -88,27 +87,19 @@ class BaysOptimizer(object):
         model_name = model_name.lower()
         self.args = args
         self.knowledge_graph = KnowledgeGraph(dataset=name_dataset, negative_sample=sampling)
+        hyper_params = None
         try:
             self.model_obj = getattr(importlib.import_module(model_path + ".%s" % modelMap[model_name]),
                                      modelMap[model_name])
             self.config_obj = getattr(importlib.import_module(config_path), configMap[model_name])
-            self.hyper_params = getattr(importlib.import_module(hyper_param_path), hypMap[model_name])
+            hyper_params = getattr(importlib.import_module(hyper_param_path), hypMap[model_name])()
 
         except ModuleNotFoundError:
             print("%s not implemented! Select from: %s" % (model_name,
                                                            ' '.join(map(str, modelMap.values()))))
+        config = self.config_obj()
+        config.set_dataset(name_dataset)
+        self.trainer = Trainer(model=self.model_obj(config), debug=False)
 
-        self.trainer = Trainer(model=self.model_obj(self.config_obj()), debug=False)
-
-
-def main():
-    parser = ArgumentParser(description='Bayesian HyperParameter Optimizer')
-    parser.add_argument('-l', '--epochs', default=100, type=int, help='Number of Epochs')
-    parser.add_argument('-dim', '--dimensions', help='embedding dimensions list(default: 2^1 to 2^8)')
-    args = parser.parse_args()
-
-    bays_opt = BaysOptimizer(args=args)
-
-
-if __name__ == "__main__":
-    main()
+        self.space = {k: hp.choice(k, v) for k, v in hyper_params.__dict__.items() if not k.startswith('__') and not callable(k)}
+        print(self.space)

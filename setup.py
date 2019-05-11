@@ -8,10 +8,11 @@ DISTNAME = 'pykg2vec'
 
 INSTALL_REQUIRES = (
     'numpy>=1.16.2',
-    'networkx==2.2',
-    'matplotlib==3.0.3',
-    'seaborn==0.9.0',
-    'scikit_learn==0.20.3'
+    'networkx>=2.2',
+    'matplotlib>=3.0.3',
+    'seaborn>=0.9.0',
+    'scikit_learn>=0.20.3',
+    'hyperopt>=0.2'
 )
 
 with open("README.md", "r") as fh:
