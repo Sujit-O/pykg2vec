@@ -15,7 +15,7 @@ from config.global_config import KnowledgeGraph
 class BasicConfig:
     def __init__(self,
                  test_step=100,
-                 test_num=300,
+                 test_num=600,
                  triple_num=20,
                  tmp=Path('..') / 'intermediate',
                  result=Path('..') / 'results',
@@ -128,11 +128,11 @@ class TransDConfig(BasicConfig):
 class TransEConfig(BasicConfig):
 
     def __init__(self,
-                 learning_rate=0.001,
+                 learning_rate=0.01,
                  l1_flag=True,
                  hidden_size=50,
-                 batch_size=128,
-                 epochs=1000,
+                 batch_size=512,
+                 epochs=500,
                  margin=1.0,
                  data='Freebase',
                  optimizer='adam',
