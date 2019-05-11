@@ -7,9 +7,10 @@ sys.path.append("../")
 model_path = "core"
 config_path = "config.config"
 
-from core.TuckER import TuckER
-from config.config import TuckERConfig
-from utils.dataprep import DataPrep
+# from core.TuckER import TuckER
+# from config.config import TuckERConfig
+# from utils.dataprep import DataPrep
+from config.global_config import KnowledgeGraph
 from utils.trainer import Trainer
 
 modelMap = {"complex": "Complex",
@@ -69,8 +70,10 @@ def main(_):
     args = parser.parse_args()
     model_name = args.model.lower()
     # initialize and prepare the data
-    data_handler = DataPrep(name_dataset=args.dataset, sampling="uniform", algo='TuckER')
-    data_handler.prepare_data()
+
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset, negative_sample="uniform")
+    knowledge_graph.prepare_data()
+
     config_obj = None
     model_obj = None
     try:

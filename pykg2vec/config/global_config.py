@@ -249,11 +249,10 @@ class KnowledgeGraph(object):
         self.kg_meta.tot_triple = self.kg_meta.tot_valid_triples + \
                                   self.kg_meta.tot_test_triples  + \
                                   self.kg_meta.tot_train_triples
+
+        self.cache_data()
         
     def cache_data(self):
-        # with open(str(self.dataset.cache_path), 'wb') as f:
-        #     pickle.dump(self, f)
-
         with open(str(self.dataset.cache_metadata_path), 'wb') as f:
             pickle.dump(self.kg_meta, f)
         with open(str(self.dataset.cache_triplet_paths['train']), 'wb') as f:
