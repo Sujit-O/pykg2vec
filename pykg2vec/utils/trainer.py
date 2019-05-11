@@ -25,7 +25,6 @@ class Trainer(TrainerMeta):
         self.debug = debug
         self.model = model
         self.config = self.model.config
-        self.evaluator = Evaluation(model=model, debug=self.debug)
         self.training_results = []
         self.gen_train = None
 
@@ -59,6 +58,8 @@ class Trainer(TrainerMeta):
             generator_config = GeneratorConfig(data='train', algo=self.model.model_name,
                                                batch_size=self.model.config.batch_size)
             self.gen_train = Generator(config=generator_config, model_config=self.model.config)
+
+            self.evaluator = Evaluation(model=self.model, debug=self.debug)
 
             for n_iter in range(self.config.epochs):
                 self.train_model_epoch(n_iter)
