@@ -2,6 +2,10 @@
 
 This library is an outcome of a bold and optimistic attempt to bring all the state-of-the-art knowledge graph embedding algorithms and the building blocks in realizing those algorithms into one single python library. We hope Pykg2vec is both useful and inspiring to the researchers and the practitioners who want to contribute to related fields. 
 
+Here are some well-written papers for reading in order to start with knowledge graph embedding methodologies.
+ * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
+ * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
+
 ## The features of Pykg2vec
 * A well-structured pipeline for knowledge graph embedding algorithms (pre-processing, training, testing, statistics).
 * A sheer amount of implementation of existing state-of-the-art knowledge graph embedding algorithms.
@@ -117,12 +121,7 @@ The goal of this library is to minimize the dependency on other libraries as far
 * scikit_learn==0.20.3
 * tensorflow==`<version suitable for your workspace>`
 
-## Learn More
-Here are some links to get you started with knowledge graph embedding methodologies.
 
- * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
- * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
- 
 ## Cite
   Please kindly cite us if you found the library helpful. 
    ```
