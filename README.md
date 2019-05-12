@@ -1,6 +1,12 @@
-# Pykg2vec: Python Libarry for Knowledge Graph Embedding Methods 
+# Pykg2vec: Python Libarry for KG Embedding Methods 
 
 This library is an outcome of a bold and optimistic attempt to bring all the state-of-the-art knowledge graph embedding algorithms and the building blocks in realizing those algorithms into one single python library. We hope Pykg2vec is both useful and inspiring to the researchers and the practitioners who want to contribute to related fields. 
+
+## The features of Pykg2vec
+* A well-structured pipeline for knowledge graph embedding algorithms (pre-processing, training, testing, statistics).
+* A sheet amount of implementation of existing state-of-the-art knowledge graph embedding algorithms.
+* A set of tools to automatically tune the hyperparameters (bayesian optimizer) using [hyperopt](https://hyperopt.github.io/hyperopt/).
+* Visualization tool for showing the embedding by reducing the embedding on 2D space. 
 
 ## Usage Example
  ### Running single algorithm: TransE
