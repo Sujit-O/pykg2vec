@@ -4,7 +4,7 @@ This library is an outcome of a bold and optimistic attempt to bring all the sta
 one single python library. 
 
 ## Implemented Methods
-We aim to implement all the latest state-of-the-art knowledge graph embedding library. So far these are the implemented algorithms:
+We aim to implement all the latest state-of-the-art knowledge graph embedding library. The embedding algorithms included in the library so far (still growing) are as follows, 
 
 ### Latent Feature Models
 These modles utilize a latent feature of either entities or relations to explain the triples of the Knowledge graph. The features are called latent as they are not directly observed. The interaction of the entities and the relations are captured through their latent space representation. 
@@ -12,26 +12,20 @@ These modles utilize a latent feature of either entities or relations to explain
 #### Latent Distance Models
 These models utilized the distance-based scoring functions to embed the knowledge graph triples. 
 
-* [TransE](http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-rela): TransE is an energy based model which represents the
-relationships as translations in the embedding space. Which
-means that if (h,l,t) holds then the embedding of the tail
-'t' should be close to the embedding of head entity 'h'
-plus some vector that depends on the relationship 'l'.
-Both entities and relations are vectors in the same space[1]. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/example/train_transE.py)
+* [TransE](http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-rela): TransE is an energy based model which represents the relationships as translations in the embedding space. Specifically it assumes that if a fact (h, r, t) holds then the embedding of the tail 't' should be close to the embedding of head entity 'h' plus some vector that depends on the relationship 'r'. In TransE, both entities and relations are vectors in the same space[1]. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/TransE.py)
 
-* [TransH](https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf): TransH follows the general principle of the TransE. However, compared to it, it introduces relation-specific hyperplanes. The entities are represented as vecotrs just like in TransE, however, the relation is modeled as a vector on its own hyperplane with a normal vector. The entities are then projected to the relation hyperplane to calculate the loss. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/example/train_transH.py) 
+* [TransH](https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf): TransH follows the general principle of the TransE. However, compared to it, it introduces relation-specific hyperplanes. The entities are represented as vecotrs just like in TransE, however, the relation is modeled as a vector on its own hyperplane with a normal vector. The entities are then projected to the relation hyperplane to calculate the loss. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/TransH.py)
 
-* [TransR](http://nlp.csai.tsinghua.edu.cn/~lyk/publications/aaai2015_transr.pdf): TransR is pretty similar to TransH, the only difference being that rather than having one relation hyperplane, it introduces relation-specific hyperplanes. The entities are vecotr in entity space and each relation is a vector in relation specific space. For calculating the loss, the entities are projected to relation specific space using the projection matrix.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/example/train_transR.py) 
+* [TransR](http://nlp.csai.tsinghua.edu.cn/~lyk/publications/aaai2015_transr.pdf): TransR is pretty similar to TransH, the only difference being that rather than having one relation hyperplane, it introduces relation-specific hyperplanes. The entities are vecotr in entity space and each relation is a vector in relation specific space. For calculating the loss, the entities are projected to relation specific space using the projection matrix.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/TransR.py)
 
 * [TransD](https://www.aclweb.org/anthology/P15-1067): TransD is an improved version of TransR. For each triplet (h, r, t), it uses two mapping matrices M<sub>rh</sub>, M<sub>rt</sub> ∈ R<sup>
-m×n</sup> to project entities from entity space to relation space.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/example/train_transD.py) 
+m×n</sup> to project entities from entity space to relation space.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/TransD.py)
 
-* [TransM](https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf): TransM helps to remove the the lack of flexibility present in TransE when it comes to mapping properties of triplets. It utilizes the structure of the knowledge graph via pre-calculating the distinct weight for each training triplet according to its relational mapping property.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/example/train_transM.py)  
+* [TransM](https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf): TransM helps to remove the the lack of flexibility present in TransE when it comes to mapping properties of triplets. It utilizes the structure of the knowledge graph via pre-calculating the distinct weight for each training triplet according to its relational mapping property.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/TransM.py)
 
-* [TransM](https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf): TransM helps to 
-remove the the lack of flexibility present in TransE when it comes to mapping properties of triplets. 
-It utilizes the structure of the knowledge graph via pre-calculating the distinct weight for 
-each training triplet according to its relational mapping property.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/example/train_transM.py)
+* [KG2E](http://www.nlpr.ia.ac.cn/cip/~liukang/liukangPageFile/Learning%20to%20Represent%20Knowledge%20Graphs%20with%20Gaussian%20Embedding.pdf): Instead of assumming entities and relations as determinstic points in the embedding vector spaces, KG2E models both entities and relations (h, r and t) using random variables derived from multivariate Gaussian distribution. KG2E then evaluates a fact using translational relation by evaluating the distance between two distributions, r and t-h. KG2E provides two distance measures (KL-divergence and estimated likelihood). [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/KG2E.py)
+
+* [RotatE] (https://openreview.net/pdf?id=HkgEQnRqYQ): RotatE models the entities and the relations in the complex vector space. The translational relation in RotatE is defined as the element-wise 2D rotation in which the head entity h will be rotated to the tail entity t by multiplying the unit-length relation r in complex number form. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/RotatE.py)
 
 ####  Semantic Matching Models
 Semantic matching models are latent feature models which represents triples by using a pairwise interactions of latent features. 
