@@ -8,6 +8,8 @@ Here are some well-written papers for reading in order to start with knowledge g
 
 ## The features of Pykg2vec
 * A well-structured pipeline for knowledge graph embedding algorithms (pre-processing, training, testing, statistics).
+* Support efficient python multiprocessing implementation when running the training and evaluation processes. 
+  * Will be further adding C++ implementation. 
 * A sheer amount of implementation of existing state-of-the-art knowledge graph embedding algorithms.
 * A set of tools to automatically tune the hyperparameters (bayesian optimizer) using [hyperopt](https://hyperopt.github.io/hyperopt/).
 * A set of visualization and summerization tool 
@@ -44,14 +46,147 @@ $ pip install --upgrade pip
 (venv) $ pip install pykg2vec
 ``` 
 ## Usage Example
-### Running a single algorithm: TransE
+### Running a single algorithm: 
+```python
+import tensorflow as tf
+from argparse import ArgumentParser
+import importlib
+
+model_path = "core"
+config_path = "config.config"
+
+from pykg2vec.config.global_config import KnowledgeGraph
+from pykg2vec.utils.trainer import Trainer
+
+modelMap = {"complex": "Complex",
+            "conve": "ConvE",
+            "distmult": "DistMult",
+            "distmult2": "DistMult2",
+            "kg2e": "KG2E",
+            "ntn": "NTN",
+            "proje_pointwise": "ProjE_pointwise",
+            "rescal": "Rescal",
+            "rotate": "RotatE",
+            "slm": "SLM",
+            "sme": "SME",
+            "transd": "TransD",
+            "transe": "TransE",
+            "transh": "TransH",
+            "transm": "TransM",
+            "transR": "TransR",
+            "tucker": "TuckER",
+            "tucker_v2": "TuckER_v2"}
+
+configMap = {"complex": "ComplexConfig",
+             "conve": "ConvEConfig",
+             "distmult": "DistMultConfig",
+             "distmult2": "DistMultConfig",
+             "kg2e": "KG2EConfig",
+             "ntn": "NTNConfig",
+             "proje_pointwise": "ProjE_pointwiseConfig",
+             "rescal": "RescalConfig",
+             "rotate": "RotatEConfig",
+             "slm": "SLMConfig",
+             "sme": "SMEConfig",
+             "transd": "TransDConfig",
+             "transe": "TransEConfig",
+             "transh": "TransHConfig",
+             "transm": "TransMConfig",
+             "transR": "TransRConfig",
+             "tucker": "TuckERConfig",
+             "tucker_v2": "TuckERConfig"}
+
+
+def main(_):
+    parser = ArgumentParser(description='Knowledge Graph Embedding with RotatE')
+    parser.add_argument('-b', '--batch', default=128, type=int, help='batch size')
+    parser.add_argument('-t', '--tmp', default='../intermediate', type=str, help='Temporary folder')
+    parser.add_argument('-ds', '--dataset', default='Freebase15k', type=str, help='Dataset')
+    parser.add_argument('-l', '--epochs', default=100, type=int, help='Number of Epochs')
+    parser.add_argument('-tn', '--test_num', default=100, type=int, help='Number of test triples')
+    parser.add_argument('-ts', '--test_step', default=10, type=int, help='Test every _ epochs')
+    parser.add_argument('-lr', '--learn_rate', default=0.01, type=float, help='learning rate')
+    parser.add_argument('-gp', '--gpu_frac', default=0.8, type=float, help='GPU fraction to use')
+    parser.add_argument('-db', '--debug', default=False, type=bool, help='debug')
+    parser.add_argument('-k', '--embed', default=50, type=int, help='Hidden embedding size')
+    parser.add_argument('-m', '--model', default='TransE', type=str, help='Name of model')
+    parser.add_argument('-ghp', '--golden', default=True, type=bool, help='Use Golden Hyper parameters!')
+
+    args = parser.parse_args()
+    model_name = args.model.lower()
+
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset, negative_sample="uniform")
+    knowledge_graph.prepare_data()
+
+    config_obj = None
+    model_obj = None
+    try:
+        config_obj = getattr(importlib.import_module(config_path), configMap[model_name])
+        model_obj = getattr(importlib.import_module(model_path + ".%s" % modelMap[model_name]),
+                            modelMap[model_name])
+    except ModuleNotFoundError:
+        print("%s model  has not been implemented. please select from: %s" % (model_name,
+                                                                              ' '.join(map(str, modelMap.values()))))
+    if not args.golden:
+        config = config_obj(learning_rate=args.learn_rate,
+                            batch_size=args.batch,
+                            epochs=args.epochs)
+
+        config.test_step = args.test_step
+        config.test_num = args.test_num
+        config.gpu_fraction = args.gpu_frac
+        # config.plot_entity_only = True
+        config.save_model = True
+    else:
+        config = config_obj()
+
+    config.set_dataset(args.dataset)
+    model = model_obj(config)
+
+    trainer = Trainer(model=model, debug=args.debug)
+    trainer.build_model()
+    trainer.train_model()
+
+
+if __name__ == "__main__":
+    tf.app.run()
+
+```
+with the script we can train any model existed in the library using command:
+```bach
+python train.py -m TransE 
+python train.py -m Complex
+```
+
 ### Tuning a single algorithm: TransE
+```python
+from argparse import ArgumentParser
+import sys
+
+model_path = "core"
+config_path = "config.config"
+
+from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
+
+
+def main():
+    parser = ArgumentParser(description='Bayesian HyperParameter Optimizer')
+    parser.add_argument('-m', '--model', default='TransE', type=str, help='Model to tune')
+    args = parser.parse_args()
+
+    bays_opt = BaysOptimizer(args=args)
+
+    bays_opt.optimize()
+    
+if __name__ == "__main__":
+    main()
+```
 
 ## Repository Structure
 * **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
 * **pyKG2Vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
-* **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms.
-* **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once. 
+* **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
+* **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model. 
 
 ## Implemented Methods
 We aim to implement all the latest state-of-the-art knowledge graph embedding library. The embedding algorithms included in the library so far (still growing) are as follows, 
