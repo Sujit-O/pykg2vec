@@ -46,9 +46,9 @@ class TransE(ModelMeta):
         self.config = config
         self.model_name = 'TransE'
         
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
+        # self.def_inputs()
+        # self.def_parameters()
+        # self.def_loss()
 
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
