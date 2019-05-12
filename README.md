@@ -1,7 +1,6 @@
-# Python Knowledge Graph Embedding Library
+# Pykg2vec: Python Libarry for Knowledge Graph Embedding Methods 
 
-This library is an outcome of a bold and optimistic attempt to bring all the state-of-the-art knowledge graph embedding algorithms into 
-one single python library. 
+This library is an outcome of a bold and optimistic attempt to bring all the state-of-the-art knowledge graph embedding algorithms and the building blocks in realizing those algorithms into one single python library. We hope Pykg2vec is both useful and inspiring to the researchers and the practitioners who want to contribute to related fields. 
 
 ## Usage Example
  ### Running single algorithm: TransE
