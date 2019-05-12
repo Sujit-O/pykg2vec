@@ -6,7 +6,9 @@ This library is an outcome of a bold and optimistic attempt to bring all the sta
 * A well-structured pipeline for knowledge graph embedding algorithms (pre-processing, training, testing, statistics).
 * A sheet amount of implementation of existing state-of-the-art knowledge graph embedding algorithms.
 * A set of tools to automatically tune the hyperparameters (bayesian optimizer) using [hyperopt](https://hyperopt.github.io/hyperopt/).
-* Visualization tool for showing the embedding by reducing the embedding on 2D space. 
+* A set of visualization and summerization tool 
+  * visualization of the embedding by reducing the embedding on 2D space. 
+  * visualization of the KPIs (mean rank, hit ratio) during training stage in various format. (csvs, figures, latex table format)
 
 ## Usage Example
  ### Running single algorithm: TransE
