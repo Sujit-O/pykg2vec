@@ -17,6 +17,7 @@ def main():
 
     bays_opt = BaysOptimizer(args=args)
 
-
+    bays_opt.optimize()
+    
 if __name__ == "__main__":
     main()

@@ -7,8 +7,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import importlib
-from hyperopt import hp
 
+from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
+import pandas as pd
 import sys
 
 sys.path.append("../")
@@ -20,6 +21,8 @@ hyper_param_path = "config.hyperparams"
 
 from config.global_config import KnowledgeGraph
 from utils.trainer import Trainer
+from pprint import pprint
+
 
 modelMap = {"complex": "Complex",
             "conve": "ConvE",
@@ -40,6 +43,7 @@ modelMap = {"complex": "Complex",
             "tucker": "TuckER",
             "tucker_v2": "TuckER_v2"}
 
+
 configMap = {"complex": "ComplexConfig",
              "conve": "ConvEConfig",
              "distmult": "DistMultConfig",
@@ -58,6 +62,7 @@ configMap = {"complex": "ComplexConfig",
              "transR": "TransRConfig",
              "tucker": "TuckERConfig",
              "tucker_v2": "TuckERConfig"}
+
 
 hypMap = {"complex": "ComplexParams",
           "conve": "ConvEParams",
@@ -100,6 +105,51 @@ class BaysOptimizer(object):
         config = self.config_obj()
         config.set_dataset(name_dataset)
         self.trainer = Trainer(model=self.model_obj(config), debug=False)
+        self.search_space = self.define_search_space(hyper_params)
+        
+    def define_search_space(self, hyper_params):
+        space = {k: hp.choice(k, v) for k, v in hyper_params.__dict__.items() if not k.startswith('__') and not callable(k)}
+        return space
 
-        self.space = {k: hp.choice(k, v) for k, v in hyper_params.__dict__.items() if not k.startswith('__') and not callable(k)}
-        print(self.space)
+    def optimize(self):
+        space = self.search_space
+        trials = Trials()
+        
+        best_result = fmin(fn=self.get_loss, space=space, algo=tpe.suggest, max_evals=2, trials=trials)
+        
+        columns = list(space.keys())   
+        results = pd.DataFrame(columns=['iteration'] + columns + ['loss'])
+        
+        for idx, trial in enumerate(trials.trials):
+            row = []
+            row.append(idx)
+            translated_eval = space_eval(self.search_space, {k: v[0] for k, v in trials.trials[:1][0]['misc']['vals'].items()})
+            for k in columns:
+                row.append(translated_eval[k])
+            row.append(trial['result']['loss'])
+            results.loc[idx] = row
+
+        path = self.trainer.config.result / self.trainer.model.model_name 
+        path.mkdir(parents=True, exist_ok=True)
+        results.to_csv(str(path / "trials.csv"), index=False)
+        
+        print(results)
+        print('Found Golden Setting:')
+        pprint(space_eval(space, best_result))
+
+    def get_loss(self, params):
+        self.trainer.config.L1_flag = params['L1_flag']
+        self.trainer.config.batch_size = params['batch_size']
+        self.trainer.config.epochs = params['epochs']
+        self.trainer.config.hidden_size = params['hidden_size']
+        self.trainer.config.learning_rate = params['learning_rate']
+        self.trainer.config.margin = params['margin']
+        self.trainer.config.disp_result = False
+        self.trainer.config.disp_summary = False
+        self.trainer.config.save_model = False
+        self.trainer.build_model()
+        self.trainer.summary()
+    
+        loss = self.trainer.train_model(tuning=True)
+
+        return {'loss': loss, 'status': STATUS_OK}

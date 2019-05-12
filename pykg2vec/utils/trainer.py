@@ -8,6 +8,7 @@ from utils.evaluation import Evaluation
 from utils.visualization import Visualization
 from utils.generator import Generator
 from config.global_config import GeneratorConfig
+from config.global_config import KGMetaData, KnowledgeGraph
 import numpy as np
 
 
@@ -30,10 +31,14 @@ class Trainer(TrainerMeta):
 
     def build_model(self):
         """function to build the model"""
+        self.model.def_inputs()
+        self.model.def_parameters()
+        self.model.def_loss()
+
         self.sess = tf.Session(config=self.config.gpu_config)
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
 
-        if self.config.optimizer == 'gradient':
+        if self.config.optimizer == 'sgd':
             optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'rms':
             optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
@@ -50,8 +55,10 @@ class Trainer(TrainerMeta):
 
     ''' Training related functions:'''
 
-    def train_model(self):
+    def train_model(self, tuning=False):
         """function to train the model"""
+        loss = 0
+
         if self.config.loadFromData:
             self.load_model()
         else:
@@ -59,16 +66,19 @@ class Trainer(TrainerMeta):
                                                batch_size=self.model.config.batch_size)
             self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
-            self.evaluator = Evaluation(model=self.model, debug=self.debug)
+            if not tuning:
+                self.evaluator = Evaluation(model=self.model, debug=self.debug)
 
             for n_iter in range(self.config.epochs):
-                self.train_model_epoch(n_iter)
-                self.test(n_iter)
+                loss = self.train_model_epoch(n_iter, tuning=tuning)
+                if not tuning:
+                    self.test(n_iter)
 
             self.gen_train.stop()
 
-            self.evaluator.save_training_result(self.training_results)
-            self.evaluator.stop()
+            if not tuning:
+                self.evaluator.save_training_result(self.training_results)
+                self.evaluator.stop()
 
             if self.config.save_model:
                 self.save_model()
@@ -79,7 +89,12 @@ class Trainer(TrainerMeta):
         if self.config.disp_summary:
             self.summary()
 
-    def train_model_epoch(self, epoch_idx):
+        self.sess.close() 
+        tf.reset_default_graph() # clean the tensorflow for the next training task. 
+
+        return loss
+
+    def train_model_epoch(self, epoch_idx, tuning=False):
         acc_loss = 0
 
         num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 10
@@ -123,13 +138,16 @@ class Trainer(TrainerMeta):
 
             acc_loss += loss
 
-            print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                                                        batch_idx, num_batch, loss), end='\r')
-
-        print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
-            epoch_idx, acc_loss, timeit.default_timer() - start_time))
+            if not tuning:
+                print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
+                                                            batch_idx, num_batch, loss), end='\r')
+        if not tuning:
+            print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
+                epoch_idx, acc_loss, timeit.default_timer() - start_time))
 
         self.training_results.append([epoch_idx, acc_loss])
+
+        return acc_loss
 
     ''' Testing related functions:'''
 
@@ -197,8 +215,10 @@ class Trainer(TrainerMeta):
         # Acquire the max length and add four more spaces
         maxspace = len(max([k for k in self.config.__dict__.keys()])) + 15
         for key, val in self.config.__dict__.items():
+            if isinstance(val, (KGMetaData, KnowledgeGraph)) or key.startswith('gpu'):
+                continue
             if len(key) < maxspace:
                 for i in range(maxspace - len(key)):
                     key = ' ' + key
-            print(key, ":", val)
+            print("%s:%s"%(key, val))
         print("---------------------------")
