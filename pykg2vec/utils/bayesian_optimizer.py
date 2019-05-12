@@ -22,6 +22,7 @@ hyper_param_path = "config.hyperparams"
 from config.global_config import KnowledgeGraph
 from utils.trainer import Trainer
 from pprint import pprint
+from argparse import ArgumentParser
 
 
 modelMap = {"complex": "Complex",
@@ -86,10 +87,9 @@ hypMap = {"complex": "ComplexParams",
 
 class BaysOptimizer(object):
 
-    def __init__(self, name_dataset='Freebase15k', sampling="uniform", model_name='TransE', args=None):
+    def __init__(self, name_dataset='Freebase15k', sampling="uniform", args=None):
         """store the information of database"""
-
-        model_name = model_name.lower()
+        model_name = args.model.lower()
         self.args = args
         self.knowledge_graph = KnowledgeGraph(dataset=name_dataset, negative_sample=sampling)
         hyper_params = None
