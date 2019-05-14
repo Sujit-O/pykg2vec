@@ -53,6 +53,8 @@ class Trainer(TrainerMeta):
         self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
         self.sess.run(tf.global_variables_initializer())
 
+        self.summary()
+
     ''' Training related functions:'''
 
     def train_model(self, tuning=False):
@@ -97,7 +99,7 @@ class Trainer(TrainerMeta):
     def train_model_epoch(self, epoch_idx, tuning=False):
         acc_loss = 0
 
-        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 10
+        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 500
 
         start_time = timeit.default_timer()
 
@@ -221,4 +223,16 @@ class Trainer(TrainerMeta):
                 for i in range(maxspace - len(key)):
                     key = ' ' + key
             print("%s:%s"%(key, val))
+        print("---------------------------")
+
+    def summary_hyperparameter(self):
+        print("\n-----CONFIG-SUMMARY---------")
+
+        list_of_hyperparameter = ['learning_rate', 'L1_flag', \
+                                  'hidden_size', 'batch_size', 'epochs', 'margin', \
+                                  'optimizer', 'sampling']
+
+        for key in list_of_hyperparameter:
+            print("%s:%s" % (key, self.config.__dict__[key]))
+        
         print("---------------------------")

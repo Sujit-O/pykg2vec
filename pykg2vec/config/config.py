@@ -10,7 +10,61 @@ import sys
 
 sys.path.append("../")
 from config.global_config import KnowledgeGraph
+import importlib
 
+class Importer: 
+    def __init__(self):
+        self.model_path = "core"
+        self.config_path = "config.config"
+
+        self.modelMap = {"complex": "Complex",
+                         "conve": "ConvE",
+                         "distmult": "DistMult",
+                         "distmult2": "DistMult2",
+                         "kg2e": "KG2E",
+                         "ntn": "NTN",
+                         "proje_pointwise": "ProjE_pointwise",
+                         "rescal": "Rescal",
+                         "rotate": "RotatE",
+                         "slm": "SLM",
+                         "sme": "SME",
+                         "transd": "TransD",
+                         "transe": "TransE",
+                         "transh": "TransH",
+                         "transm": "TransM",
+                         "transR": "TransR",
+                         "tucker": "TuckER",
+                         "tucker_v2": "TuckER_v2"}
+
+        self.configMap = {"complex": "ComplexConfig",
+                         "conve": "ConvEConfig",
+                         "distmult": "DistMultConfig",
+                         "distmult2": "DistMultConfig",
+                         "kg2e": "KG2EConfig",
+                         "ntn": "NTNConfig",
+                         "proje_pointwise": "ProjE_pointwiseConfig",
+                         "rescal": "RescalConfig",
+                         "rotate": "RotatEConfig",
+                         "slm": "SLMConfig",
+                         "sme": "SMEConfig",
+                         "transd": "TransDConfig",
+                         "transe": "TransEConfig",
+                         "transh": "TransHConfig",
+                         "transm": "TransMConfig",
+                         "transR": "TransRConfig",
+                         "tucker": "TuckERConfig",
+                         "tucker_v2": "TuckERConfig"}
+    
+    def import_model_config(self, name):
+        config_obj = None
+        model_obj = None
+        try:
+            config_obj = getattr(importlib.import_module(self.config_path), self.configMap[name])
+            model_obj = getattr(importlib.import_module(self.model_path + ".%s" % self.modelMap[name]), self.modelMap[name])
+        except ModuleNotFoundError:
+            print("%s model  has not been implemented. please select from: %s" % (name, ' '.join(map(str, self.modelMap.values()))))
+        
+        return config_obj, model_obj
 
 class BasicConfig:
     def __init__(self,

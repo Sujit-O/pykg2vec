@@ -523,12 +523,3 @@ class GeneratorConfig(object):
         self.data_path = data_path
         self.loss_type = loss_type
         self.batch_size = batch_size
-
-
-def test_init_database():
-    # global_config = KnowledgeGraph('Freebase15k')
-    # global_config = KnowledgeGraph('Freebase100k')
-    global_config = KnowledgeGraph('DeepLearning50k')
-
-if __name__ == "__main__":
-    test_init_database()

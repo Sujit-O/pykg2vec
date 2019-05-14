@@ -123,7 +123,7 @@ class BaysOptimizer(object):
         for idx, trial in enumerate(trials.trials):
             row = []
             row.append(idx)
-            translated_eval = space_eval(self.search_space, {k: v[0] for k, v in trials.trials[:1][0]['misc']['vals'].items()})
+            translated_eval = space_eval(self.search_space, {k: v[0] for k, v in trial['misc']['vals'].items()})
             for k in columns:
                 row.append(translated_eval[k])
             row.append(trial['result']['loss'])
@@ -147,8 +147,11 @@ class BaysOptimizer(object):
         self.trainer.config.disp_result = False
         self.trainer.config.disp_summary = False
         self.trainer.config.save_model = False
+        self.trainer.config.debug = True
+        self.trainer.config.test_num = 1000
+
         self.trainer.build_model()
-        self.trainer.summary()
+        self.trainer.summary_hyperparameter()
     
         loss = self.trainer.train_model(tuning=True)
 
