@@ -33,9 +33,9 @@ class DistMult2(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.model_name = 'Distmult2'
 
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
+        # self.def_inputs()
+        # self.def_parameters()
+        # self.def_loss()
 
     def def_inputs(self):
         with tf.name_scope("read_inputs"):

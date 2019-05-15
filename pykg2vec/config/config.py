@@ -10,6 +10,7 @@ import sys
 
 sys.path.append("../")
 from config.global_config import KnowledgeGraph
+from argparse import ArgumentParser
 import importlib
 
 class Importer: 
@@ -32,7 +33,7 @@ class Importer:
                          "transe": "TransE",
                          "transh": "TransH",
                          "transm": "TransM",
-                         "transR": "TransR",
+                         "transr": "TransR",
                          "tucker": "TuckER",
                          "tucker_v2": "TuckER_v2"}
 
@@ -51,7 +52,7 @@ class Importer:
                          "transe": "TransEConfig",
                          "transh": "TransHConfig",
                          "transm": "TransMConfig",
-                         "transR": "TransRConfig",
+                         "transr": "TransRConfig",
                          "tucker": "TuckERConfig",
                          "tucker_v2": "TuckERConfig"}
     
@@ -66,545 +67,921 @@ class Importer:
         
         return config_obj, model_obj
 
-class BasicConfig:
-    def __init__(self,
-                 test_step=100,
-                 test_num=600,
-                 triple_num=20,
-                 tmp=Path('..') / 'intermediate',
-                 result=Path('..') / 'results',
-                 figures=Path('..') / 'figures',
-                 gpu_fraction=0.8,
-                 hits=None,
-                 gpu_allow_growth=True,
-                 load_from_data=False,
-                 save_model=False,
-                 disp_summary=True,
-                 disp_result=True,
-                 plot_embedding=True,
-                 log_device_placement=False,
-                 plot_training_result=False,
-                 plot_testing_result=False,
-                 plot_entity_only=False,
-                 full_test_flag=False):
-        self.full_test_flag = full_test_flag
-        self.plot_entity_only = plot_entity_only
-        self.test_step = test_step
-        self.test_num = test_num
-        self.disp_triple_num = triple_num
+class KGEArgParser:
 
-        self.tmp = tmp
-        self.result = result
-        self.figures = figures
+    def __init__(self):
+        self.parser = ArgumentParser(description='Knowledge Graph Embedding tunable configs.')
+
+        ''' basic configs '''
+        self.parser.add_argument('-mn',  dest='model_name', default='TransE', type=str, help='Name of model')
+        self.parser.add_argument('-db', dest='debug', default=False, type=bool, help='To use debug mode or not.')
+        self.parser.add_argument('-ghp',dest='golden', default=True, type=lambda x: (str(x).lower() == 'true'), help='Use Golden Hyper parameters!')
+        self.parser.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, help='The name of dataset.')
+        self.parser.add_argument('-ld', dest='load_from_data', default=False, type=lambda x: (str(x).lower() == 'true'), help='load_from_data!')
+        self.parser.add_argument('-sv', dest='save_model', default=True, type=lambda x: (str(x).lower() == 'true'), help='Save the model!')
+        
+        ''' arguments regarding hyperparameters '''
+        self.parser.add_argument('-b',  dest='batch_training', default=128, type=int, help='training batch size')
+        self.parser.add_argument('-bt', dest='batch_testing', default=16, type=int, help='testing batch size')
+        self.parser.add_argument('-mg', dest='margin', default=0.8, type=float, help='Margin to take')
+        self.parser.add_argument('-opt',dest='optimizer', default='adam', type=str, help='optimizer to be used in training.')
+        self.parser.add_argument('-s',  dest='sampling', default='uniform', type=str, help='strategy to do negative sampling.')
+        self.parser.add_argument('-l',  dest='epochs', default=100, type=int, help='The total number of Epochs')
+        self.parser.add_argument('-tn', dest='test_num', default=100, type=int, help='The total number of test triples')
+        self.parser.add_argument('-ts', dest='test_step', default=10, type=int, help='Test every _ epochs')
+        self.parser.add_argument('-lr', dest='learning_rate', default=0.01, type=float, help='learning rate')
+        self.parser.add_argument('-k',  dest='hidden_size', default=50, type=int, help='Hidden embedding size.')
+        self.parser.add_argument('-km', dest='ent_hidden_size', default=50, type=int, help="Hidden embedding size for entities.")
+        self.parser.add_argument('-kr', dest='rel_hidden_size', default=50, type=int, help="Hidden embedding size for relations.")
+        self.parser.add_argument('-l1', dest='l1_flag', default=True, type=bool, help='The floag of using L1 or L2 norm.')
+        self.parser.add_argument('-c', dest='C', default=0.0125, type=float, help='The parameter C used in transH.')
+
+        self.parser.add_argument('-func', dest='function', default='bilinear', type=str, help="The name of function used in SME model.")
+
+        ''' for conve '''
+        self.parser.add_argument('-lmda', dest='lmbda', default=0.1, type=float, help='The lmbda used in ConvE.')
+        self.parser.add_argument('-fmd', dest='feature_map_dropout', default=0.2, type=float, help="feature map dropout value used in ConvE.")
+        self.parser.add_argument('-idt', dest="input_dropout", default=0.3, type=float, help="input dropout value used in ConvE.")
+        self.parser.add_argument('-hdt', dest="hidden_dropout", default=0.3, type=float, help="hidden dropout value used in ConvE.")
+        self.parser.add_argument('-hdt2', dest="hidden_dropout2", default=0.3, type=float, help="hidden dropout value used in ConvE.")
+        self.parser.add_argument('-ubs', dest='use_bias', default=True, type=lambda x: (str(x).lower() == 'true'), help='The boolean indicating whether use biases or not in ConvE.')
+        self.parser.add_argument('-lbs', dest='label_smoothing', default=0.1, type=float, help="The parameter used in label smoothing.")
+        self.parser.add_argument('-lrd', dest='lr_decay', default=0.995, type=float, help="The parameter for learning_rate decay used in ConvE.")
+        
+        self.parser.add_argument('-cmax', dest='cmax', default=0.05, type=float, help="The parameter for clipping values for KG2E.")
+        self.parser.add_argument('-cmin', dest='cmin', default=5.00, type=float, help="The parameter for clipping values for KG2E.")
+
+        ''' others '''
+        self.parser.add_argument('-t',  dest='tmp', default='../intermediate', type=str, help='The folder name to store trained parameters.')
+        self.parser.add_argument('-r',  dest='result', default='../results', type=str, help="The folder name to save the results.")
+        self.parser.add_argument('-fig',dest='figures', default='../figures', type=str, help="The folder name to save the figures.")
+        self.parser.add_argument('-plote', dest='plot_embedding', default=False, type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!' )
+        self.parser.add_argument('-plot', dest='plot_entity_only', default=True, type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!' )
+        self.parser.add_argument('-gp', dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
+        
+    def get_args(self):
+        return self.parser.parse_args()
+
+
+class BasicConfig:
+    def __init__(self, args=None):
+        
+        if args is None:  
+            self.test_step=100
+            self.test_num=600
+            self.triple_num=20
+            self.tmp=Path('..') / 'intermediate'
+            self.result=Path('..') / 'results'
+            self.figures=Path('..') / 'figures'
+            self.gpu_fraction=0.8
+            self.gpu_allow_growth=True
+            self.loadFromData=False
+            self.save_model=False
+            self.disp_summary=True
+            self.disp_result=True
+            self.plot_embedding=True
+            self.log_device_placement=False
+            self.plot_training_result=False
+            self.plot_testing_result=False
+            self.plot_entity_only=False
+            self.full_test_flag=False
+            self.batch_size_testing = 16
+
+        else:
+            self.tmp = Path(args.tmp)
+            self.result = Path(args.result)
+            self.figures = Path(args.figures)
+            self.full_test_flag = (args.test_step == 0)
+            self.plot_entity_only = args.plot_entity_only
+            self.test_step = args.test_step
+            self.test_num = args.test_num
+            self.disp_triple_num = 20
+            self.log_device_placement = False
+            self.gpu_fraction = args.gpu_frac
+            self.gpu_allow_growth = True
+            self.loadFromData = args.load_from_data
+            self.save_model = args.save_model
+            self.disp_summary = True
+            self.disp_result = True
+            self.plot_embedding = args.plot_embedding
+            self.plot_training_result = False
+            self.plot_testing_result = False
+            
+            self.batch_size_testing = args.batch_testing
+        
         self.tmp.mkdir(parents=True, exist_ok=True)
         self.result.mkdir(parents=True, exist_ok=True)
         self.figures.mkdir(parents=True, exist_ok=True)
-
-        if hits is None:
-            hits = [10, 5]
-        self.hits = hits
-
-        self.gpu_fraction = gpu_fraction
-        self.gpu_allow_growth = gpu_allow_growth
-        self.gpu_config = tf.ConfigProto(log_device_placement=log_device_placement)
-        self.gpu_config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
-        self.gpu_config.gpu_options.allow_growth = gpu_allow_growth
-
-        self.loadFromData = load_from_data
-        self.save_model = save_model
-
-        self.disp_summary = disp_summary
-        self.disp_result = disp_result
-        self.plot_embedding = plot_embedding
-        self.log_device_placement = log_device_placement
-        self.plot_training_result = plot_training_result
-        self.plot_testing_result = plot_testing_result
-        self.knowledge_graph = None
-        self.batch_size_testing = 128
-
-    def set_dataset(self, dataset_name):
-        self.knowledge_graph = KnowledgeGraph(dataset=dataset_name)
+        self.hits = [10, 5]
+        self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
+        self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
+        self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
+        self.knowledge_graph = KnowledgeGraph(dataset=self.data, negative_sample=self.sampling)
         self.kg_meta = self.knowledge_graph.kg_meta
-
-
-class TransRConfig(BasicConfig):
-    def __init__(self,
-                 learning_rate=0.01,
-                 l1_flag=True,
-                 ent_hidden_size=64,
-                 rel_hidden_size=32,
-                 batch_size=128,
-                 epochs=2,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
-
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.ent_hidden_size = ent_hidden_size
-        self.rel_hidden_size = rel_hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
-
-
-class TransDConfig(BasicConfig):
-    def __init__(self,
-                 learning_rate=0.01,
-                 l1_flag=True,
-                 ent_hidden_size=64,
-                 rel_hidden_size=32,
-                 batch_size=128,
-                 epochs=2,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
-
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.ent_hidden_size = ent_hidden_size
-        self.rel_hidden_size = rel_hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
 
 
 class TransEConfig(BasicConfig):
 
-    def __init__(self,
-                 learning_rate=0.01,
-                 l1_flag=True,
-                 hidden_size=50,
-                 batch_size=512,
-                 epochs=500,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
+    def __init__(self, args=None):
+        
+        if args is None or args.golden is True:
+            # the golden setting for TransE (only for Freebase15k now)
+            self.learning_rate=0.01
+            self.L1_flag=True
+            self.hidden_size=50
+            self.batch_size=512
+            self.epochs=500
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
 
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+        
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling
+        }
+
+        BasicConfig.__init__(self, args)
+
+
+class TransRConfig(BasicConfig):
+    def __init__(self, args=None):       
+
+        if args is None or args.golden is True:
+            self.learning_rate = 0.01
+            self.L1_flag = True
+            self.ent_hidden_size = 64
+            self.rel_hidden_size = 32
+            self.batch_size = 128
+            self.epochs = 2
+            self.margin = 1.0
+            self.data = 'Freebase15k'
+            self.optimizer = 'adam'
+            self.sampling = "uniform"
+
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.ent_hidden_size = args.ent_hidden_size
+            self.rel_hidden_size = args.rel_hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'ent_hidden_size':self.ent_hidden_size,
+            'rel_hidden_size':self.rel_hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling
+        }
+
+        BasicConfig.__init__(self, args)
+
+
+class TransDConfig(BasicConfig):
+    def __init__(self, args=None):
+        
+        if args == None or args.golden is True:
+            self.learning_rate=0.01
+            self.L1_flag=True
+            self.ent_hidden_size=100
+            self.rel_hidden_size=100
+            self.batch_size=4800
+            self.epochs=1000
+            self.margin=2.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.ent_hidden_size = args.ent_hidden_size
+            self.rel_hidden_size = args.rel_hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'ent_hidden_size':self.ent_hidden_size,
+            'rel_hidden_size':self.rel_hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class TransMConfig(BasicConfig):
 
-    def __init__(self,
-                 learning_rate=0.001,
-                 l1_flag=True,
-                 hidden_size=50,
-                 batch_size=128,
-                 epochs=1000,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
+    def __init__(self, args=None):
+        
+        if args is None or args.golden is True:
+            self.learning_rate=0.001
+            self.L1_flag=True
+            self.hidden_size=50
+            self.batch_size=128
+            self.epochs=1000
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
 
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class TransHConfig(BasicConfig):
 
-    def __init__(self,
-                 learning_rate=0.001,
-                 l1_flag=True,
-                 hidden_size=100,
-                 batch_size=128,
-                 epochs=1000,
-                 margin=1.0,
-                 C=0.123,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
+    def __init__(self, args=None):
 
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.C = C
-        self.sampling = sampling
+        if args is None or args.golden is True:
+            self.learning_rate=0.001
+            self.L1_flag=True
+            self.hidden_size=100
+            self.batch_size=128
+            self.epochs=1000
+            self.margin=1.0
+            self.C=0.123
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+        
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+            self.C = args.C
+
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling,
+            'C':self.C
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class RescalConfig(BasicConfig):
 
-    def __init__(self,
-                 learning_rate=0.001,
-                 l1_flag=True,
-                 hidden_size=50,
-                 batch_size=128,
-                 epochs=1000,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
+    def __init__(self, args=None):
+        
+        if args is None or args.golden is True:
+            self.learning_rate=0.001
+            self.L1_flag=True
+            self.hidden_size=50
+            self.batch_size=128
+            self.epochs=1000
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
 
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class SMEConfig(BasicConfig):
 
-    def __init__(self,
-                 learning_rate=0.001,
-                 l1_flag=True,
-                 hidden_size=50,
-                 batch_size=128,
-                 epochs=1000,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform",
-                 bilinear=False):
-        BasicConfig.__init__(self)
+    def __init__(self, args=None):
+        
+        if args is None or args.golden is True:
+            self.learning_rate=0.001
+            self.L1_flag=True
+            self.hidden_size=50
+            self.batch_size=128
+            self.epochs=1000
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+            self.bilinear=False
 
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
-        self.bilinear = bilinear
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+            self.bilinear = True if args.function == 'bilinear' else False
+        
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling,
+            'bilinear': self.bilinear
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class NTNConfig(BasicConfig):
-    def __init__(self,
-                 learning_rate=0.01,
-                 l1_flag=True,
-                 ent_hidden_size=64,
-                 rel_hidden_size=32,
-                 batch_size=128,
-                 epochs=2,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
 
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.ent_hidden_size = ent_hidden_size
-        self.rel_hidden_size = rel_hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+    def __init__(self, args=None):
+        
+        if args is None or args.golden is True:
+            self.learning_rate=0.01
+            self.L1_flag=True
+            self.ent_hidden_size=64
+            self.rel_hidden_size=32
+            self.batch_size=128
+            self.epochs=2
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+            
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.ent_hidden_size = args.ent_hidden_size
+            self.rel_hidden_size = args.rel_hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'ent_hidden_size':self.ent_hidden_size,
+            'rel_hidden_size':self.rel_hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class SLMConfig(BasicConfig):
-    def __init__(self,
-                 learning_rate=0.01,
-                 l1_flag=True,
-                 ent_hidden_size=64,
-                 rel_hidden_size=32,
-                 batch_size=128,
-                 epochs=2,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
+    
+    def __init__(self, args=None):
 
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.ent_hidden_size = ent_hidden_size
-        self.rel_hidden_size = rel_hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+        if args is None or args.golden is True:
+            self.learning_rate=0.01
+            self.L1_flag=True
+            self.ent_hidden_size=64
+            self.rel_hidden_size=32
+            self.batch_size=128
+            self.epochs=2
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+        
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.ent_hidden_size = args.ent_hidden_size
+            self.rel_hidden_size = args.rel_hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'ent_hidden_size':self.ent_hidden_size,
+            'rel_hidden_size':self.rel_hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class RotatEConfig(BasicConfig):
-    def __init__(self,
-                 learning_rate=0.01,
-                 l1_flag=True,
-                 hidden_size=50,
-                 batch_size=128,
-                 epochs=2,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
+    def __init__(self, args=None):
+        
+        if args is None or args.golden is True:
+            self.learning_rate=0.01
+            self.L1_flag=True
+            self.hidden_size=50
+            self.batch_size=128
+            self.epochs=2
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+        
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
 
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class ConvEConfig(BasicConfig):
-    def __init__(self,
-                 learning_rate=0.003,
-                 l1_flag=True,
-                 hidden_size=50,
-                 batch_size=128,
-                 epochs=2,
-                 input_dropout=0.2,
-                 hidden_dropout=0.3,
-                 feature_map_dropout=0.2,
-                 lr_decay=0.995,
-                 label_smoothing=0.1,
-                 use_bias=True,
-                 lmbda=0.1,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
+    def __init__(self, args=None):
 
-        self.lmbda = lmbda
-        self.feature_map_dropout = feature_map_dropout
-        self.hidden_dropout = hidden_dropout
-        self.input_dropout = input_dropout
-        self.use_bias = use_bias
-        self.label_smoothing = label_smoothing
-        self.lr_decay = lr_decay
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+        if args is None or args.golden is True:
+            self.lmbda=0.1
+            self.feature_map_dropout=0.2
+            self.input_dropout=0.2
+            self.hidden_dropout=0.3
+            self.use_bias=True
+            self.label_smoothing=0.1
+            self.lr_decay=0.995
+
+            self.learning_rate=0.003
+            self.L1_flag=True
+            self.hidden_size=50
+            self.batch_size=128
+            self.epochs=2
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+        
+        else:
+            self.lmbda = args.lmbda
+            self.feature_map_dropout = args.feature_map_dropout
+            self.input_dropout = args.input_dropout
+            self.hidden_dropout = args.hidden_dropout
+            self.use_bias = args.use_bias
+            self.label_smoothing = args.label_smoothing
+            self.lr_decay = args.lr_decay
+
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+        
+        self.hyperparameters = {
+            'lmbda':self.lmbda,
+            'feature_map_dropout':self.feature_map_dropout,
+            'input_dropout':self.input_dropout,
+            'hidden_dropout':self.hidden_dropout,
+            'use_bias':self.use_bias,
+            'label_smoothing':self.label_smoothing,
+            'lr_decay':self.lr_decay,
+
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling,
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class ProjE_pointwiseConfig(BasicConfig):
-    def __init__(self,
-                 learning_rate=0.003,
-                 l1_flag=True,
-                 hidden_size=50,
-                 batch_size=128,
-                 epochs=2,
-                 input_dropout=0.2,
-                 hidden_dropout=0.3,
-                 feature_map_dropout=0.2,
-                 lr_decay=0.995,
-                 label_smoothing=0.1,
-                 use_bias=True,
-                 lmbda=0.1,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
+    
+    def __init__(self, args=None):
 
-        self.lmbda = lmbda
-        self.feature_map_dropout = feature_map_dropout
-        self.hidden_dropout = hidden_dropout
-        self.input_dropout = input_dropout
-        self.use_bias = use_bias
-        self.label_smoothing = label_smoothing
-        self.lr_decay = lr_decay
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+        if args is None or args.golden is True:
+            self.lmbda=0.1
+            self.feature_map_dropout=0.2
+            self.input_dropout=0.2
+            self.hidden_dropout=0.3
+            self.use_bias=True
+            self.label_smoothing=0.1
+            self.lr_decay=0.995
+
+            self.learning_rate=0.003
+            self.L1_flag=True
+            self.hidden_size=50
+            self.batch_size=128
+            self.epochs=2
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+        
+        else:
+            self.lmbda = args.lmbda
+            self.feature_map_dropout = args.feature_map_dropout
+            self.input_dropout = args.input_dropout
+            self.hidden_dropout = args.hidden_dropout
+            self.use_bias = args.use_bias
+            self.label_smoothing = args.label_smoothing
+            self.lr_decay = args.lr_decay
+
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+        
+        self.hyperparameters = {
+            'lmbda':self.lmbda,
+            'feature_map_dropout':self.feature_map_dropout,
+            'input_dropout':self.input_dropout,
+            'hidden_dropout':self.hidden_dropout,
+            'use_bias':self.use_bias,
+            'label_smoothing':self.label_smoothing,
+            'lr_decay':self.lr_decay,
+
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling,
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class KG2EConfig(BasicConfig):
 
-    def __init__(self,
-                 learning_rate=0.001,
-                 l1_flag=True,
-                 hidden_size=50,
-                 batch_size=128,
-                 epochs=1000,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform",
-                 distance_measure="kl_divergence",
-                 cmax=0.05,
-                 cmin=5.00
-                 ):
-        BasicConfig.__init__(self)
+    def __init__(self, args=None):
+                      
+        if args is None or args.golden is True:
+            self.learning_rate=0.001
+            self.L1_flag=True
+            self.hidden_size=50
+            self.batch_size=128
+            self.epochs=1000
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+            self.bilinear=False
+            self.distance_measure="kl_divergence"
+            self.cmax=0.05
+            self.cmin=5.00
 
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
-        self.distance_measure = distance_measure
-        self.cmax = cmax
-        self.cmin = cmin
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+            self.distance_measure = args.function
+            self.cmax = args.cmax
+            self.cmin = args.cmin
+        
+        self.hyperparameters = {
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling,
+            'distance_measure': self.distance_measure,
+            'cmax': self.cmax,
+            'cmin': self.cmin
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class ComplexConfig(BasicConfig):
-    def __init__(self,
-                 learning_rate=0.003,
-                 l1_flag=True,
-                 hidden_size=50,
-                 batch_size=128,
-                 epochs=2,
-                 input_dropout=0.2,
-                 hidden_dropout=0.3,
-                 feature_map_dropout=0.2,
-                 lr_decay=0.995,
-                 label_smoothing=0.1,
-                 use_bias=True,
-                 lmbda=0.1,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
 
-        self.lmbda = lmbda
-        self.feature_map_dropout = feature_map_dropout
-        self.hidden_dropout = hidden_dropout
-        self.input_dropout = input_dropout
-        self.use_bias = use_bias
-        self.label_smoothing = label_smoothing
-        self.lr_decay = lr_decay
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+    def __init__(self, args=None):
+
+        if args is None or args.golden is True:
+            self.lmbda=0.1
+            self.feature_map_dropout=0.2
+            self.input_dropout=0.2
+            self.hidden_dropout=0.3
+            self.use_bias=True
+            self.label_smoothing=0.1
+            self.lr_decay=0.995
+
+            self.learning_rate=0.003
+            self.L1_flag=True
+            self.hidden_size=50
+            self.batch_size=128
+            self.epochs=2
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+        
+        else:
+            self.lmbda = args.lmbda
+            self.feature_map_dropout = args.feature_map_dropout
+            self.input_dropout = args.input_dropout
+            self.hidden_dropout = args.hidden_dropout
+            self.use_bias = args.use_bias
+            self.label_smoothing = args.label_smoothing
+            self.lr_decay = args.lr_decay
+
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+        
+        self.hyperparameters = {
+            'lmbda':self.lmbda,
+            'feature_map_dropout':self.feature_map_dropout,
+            'input_dropout':self.input_dropout,
+            'hidden_dropout':self.hidden_dropout,
+            'use_bias':self.use_bias,
+            'label_smoothing':self.label_smoothing,
+            'lr_decay':self.lr_decay,
+
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling,
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class DistMultConfig(BasicConfig):
-    def __init__(self,
-                 learning_rate=0.003,
-                 l1_flag=True,
-                 hidden_size=50,
-                 batch_size=128,
-                 epochs=2,
-                 input_dropout=0.2,
-                 hidden_dropout=0.3,
-                 feature_map_dropout=0.2,
-                 lr_decay=0.995,
-                 lmbda=0.1,
-                 label_smoothing=0.1,
-                 use_bias=True,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
+    
+    def __init__(self, args=None):
+        
+        if args is None or args.golden is True:
+            self.lmbda=0.1
+            self.feature_map_dropout=0.2
+            self.input_dropout=0.2
+            self.hidden_dropout=0.3
+            self.use_bias=True
+            self.label_smoothing=0.1
+            self.lr_decay=0.995
 
-        self.lmbda = lmbda
-        self.feature_map_dropout = feature_map_dropout
-        self.hidden_dropout = hidden_dropout
-        self.input_dropout = input_dropout
-        self.use_bias = use_bias
-        self.label_smoothing = label_smoothing
-        self.lr_decay = lr_decay
-        self.learning_rate = learning_rate
-        self.L1_flag = l1_flag
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.margin = margin
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+            self.learning_rate=0.003
+            self.L1_flag=True
+            self.hidden_size=50
+            self.batch_size=128
+            self.epochs=2
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+        
+        else:
+            self.lmbda = args.lmbda
+            self.feature_map_dropout = args.feature_map_dropout
+            self.input_dropout = args.input_dropout
+            self.hidden_dropout = args.hidden_dropout
+            self.use_bias = args.use_bias
+            self.label_smoothing = args.label_smoothing
+            self.lr_decay = args.lr_decay
+
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+        
+        self.hyperparameters = {
+            'lmbda':self.lmbda,
+            'feature_map_dropout':self.feature_map_dropout,
+            'input_dropout':self.input_dropout,
+            'hidden_dropout':self.hidden_dropout,
+            'use_bias':self.use_bias,
+            'label_smoothing':self.label_smoothing,
+            'lr_decay':self.lr_decay,
+
+            'learning_rate':self.learning_rate,       
+            'L1_flag':self.L1_flag,
+            'hidden_size':self.hidden_size,
+            'batch_size':self.batch_size,
+            'epochs':self.epochs,
+            'margin':self.margin,
+            'data':self.data,
+            'optimizer':self.optimizer,
+            'sampling':self.sampling,
+        }
+
+        BasicConfig.__init__(self, args)
 
 
 class TuckERConfig(BasicConfig):
-    def __init__(self,
-                 learning_rate=0.01,
-                 l1_flag=True,
-                 ent_hidden_size=50,
-                 rel_hidden_size=50,
-                 batch_size=128,
-                 epochs=2,
-                 input_dropout=0.2,
-                 hidden_dropout1=0.3,
-                 hidden_dropout2=0.3,
-                 feature_map_dropout=0.2,
-                 lr_decay=0.995,
-                 label_smoothing=0.1,
-                 use_bias=True,
-                 lmbda=0.01,
-                 margin=1.0,
-                 data='Freebase',
-                 optimizer='adam',
-                 sampling="uniform"):
-        BasicConfig.__init__(self)
+    def __init__(self, args=None):
 
-        self.margin = margin
-        self.hidden_dropout2 = hidden_dropout2
-        self.hidden_dropout1 = hidden_dropout1
-        self.epochs = epochs
-        self.batch_size = batch_size
-        self.l1_flag = l1_flag
-        self.learning_rate = learning_rate
-        self.rel_hidden_size = rel_hidden_size
-        self.ent_hidden_size = ent_hidden_size
-        self.lmbda = lmbda
-        self.feature_map_dropout = feature_map_dropout
-        self.input_dropout = input_dropout
-        self.use_bias = use_bias
-        self.label_smoothing = label_smoothing
-        self.lr_decay = lr_decay
-        self.data = data
-        self.optimizer = optimizer
-        self.sampling = sampling
+        if args is None or args.golden is True:
+            self.lmbda=0.1
+            self.feature_map_dropout=0.2
+            self.input_dropout=0.2
+            self.hidden_dropout2 = 0.3
+            self.hidden_dropout1 = 0.3
+            self.use_bias=True
+            self.label_smoothing=0.1
+            self.lr_decay=0.995
+
+            self.learning_rate=0.003
+            self.L1_flag=True
+            self.hidden_size=50
+            self.rel_hidden_size = 50
+            self.ent_hidden_size = 50
+            self.batch_size=128
+            self.epochs=2
+            self.margin=1.0
+            self.data='Freebase15k'
+            self.optimizer='adam'
+            self.sampling="uniform"
+        
+        else:
+            self.lmbda = args.lmbda
+            self.feature_map_dropout = args.feature_map_dropout
+            self.input_dropout = args.input_dropout
+            self.hidden_dropout1 = args.hidden_dropout
+            self.hidden_dropout2 = args.hidden_dropout2
+            self.use_bias = args.use_bias
+            self.label_smoothing = args.label_smoothing
+            self.lr_decay = args.lr_decay
+
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.rel_hidden_size = args.rel_hidden_size
+            self.ent_hidden_size = args.ent_hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+        
+        self.hyperparameters = {
+            'lmbda': self.lmbda,
+            'feature_map_dropout': self.feature_map_dropout,
+            'input_dropout': self.input_dropout,
+            'hidden_dropout1': self.hidden_dropout1,
+            'hidden_dropout2': self.hidden_dropout2,
+            'use_bias': self.use_bias,
+            'label_smoothing': self.label_smoothing,
+            'lr_decay': self.lr_decay,
+
+            'learning_rate': self.learning_rate,
+            'L1_flag': self.L1_flag,
+            'rel_hidden_size': self.rel_hidden_size,
+            'ent_hidden_size': self.ent_hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'margin': self.margin,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+        }
+
+        BasicConfig.__init__(self, args)

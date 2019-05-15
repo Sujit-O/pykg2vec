@@ -26,10 +26,6 @@ class ProjE_pointwise(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.model_name = 'ProjE_pointwise'
 
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
-
     def def_inputs(self):
         num_total_ent = self.data_stats.tot_entity
 

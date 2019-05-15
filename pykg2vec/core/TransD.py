@@ -31,10 +31,6 @@ class TransD(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.model_name = 'TransD'
         
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
-
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])

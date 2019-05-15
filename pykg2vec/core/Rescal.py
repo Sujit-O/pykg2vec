@@ -33,10 +33,6 @@ class Rescal(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.model_name = 'Rescal'
 
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
-
     def def_inputs(self):
         with tf.name_scope("read_inputs"):
             self.pos_h = tf.placeholder(tf.int32, [None])
@@ -114,7 +110,10 @@ class Rescal(ModelMeta):
         _, tail_rank = tf.nn.top_k(tf.reduce_sum(tf.negative(t_sim), 1), k=num_entity)
 
         return head_rank, tail_rank
-
+    
+    def test_batch(self):
+        pass
+    
     def embed(self, h, r, t):
         """function to get the embedding value"""
         k = self.config.hidden_size

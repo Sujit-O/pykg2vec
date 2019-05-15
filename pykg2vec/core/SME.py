@@ -50,10 +50,6 @@ class SME(ModelMeta):
         else:
             self.model_name = 'SME_Linear'
 
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
-
     def gu_bilinear(self, h, r):
         return tf.transpose(
             tf.multiply(tf.matmul(self.mu1, tf.transpose(h)), tf.matmul(self.mu2, tf.transpose(r))) + self.bu)
@@ -136,6 +132,9 @@ class SME(ModelMeta):
 
         return head_rank, tail_rank
 
+    def test_batch(self):
+        pass
+        
     def embed(self, h, r, t):
         """function to get the embedding value"""
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)

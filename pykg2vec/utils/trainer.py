@@ -54,6 +54,7 @@ class Trainer(TrainerMeta):
         self.sess.run(tf.global_variables_initializer())
 
         self.summary()
+        self.summary_hyperparameter()
 
     ''' Training related functions:'''
 
@@ -217,8 +218,12 @@ class Trainer(TrainerMeta):
         # Acquire the max length and add four more spaces
         maxspace = len(max([k for k in self.config.__dict__.keys()])) + 15
         for key, val in self.config.__dict__.items():
-            if isinstance(val, (KGMetaData, KnowledgeGraph)) or key.startswith('gpu'):
+            if key in self.config.__dict__['hyperparameters']:
                 continue
+
+            if isinstance(val, (KGMetaData, KnowledgeGraph)) or key.startswith('gpu') or key.startswith('hyperparameters'):
+                continue
+
             if len(key) < maxspace:
                 for i in range(maxspace - len(key)):
                     key = ' ' + key
@@ -228,11 +233,7 @@ class Trainer(TrainerMeta):
     def summary_hyperparameter(self):
         print("\n-----CONFIG-SUMMARY---------")
 
-        list_of_hyperparameter = ['learning_rate', 'L1_flag', \
-                                  'hidden_size', 'batch_size', 'epochs', 'margin', \
-                                  'optimizer', 'sampling']
-
-        for key in list_of_hyperparameter:
-            print("%s:%s" % (key, self.config.__dict__[key]))
+        for key in self.config.hyperparameters:
+            print("%s:%s" % (key, self.config.hyperparameters[key]))
         
         print("---------------------------")

@@ -25,10 +25,10 @@ class DistMult(ModelMeta):
         self.tot_rel = self.data_stats.tot_relation
         self.model_name = 'Complex'
 
-        self.def_inputs()
-        self.def_parameters()
+        # self.def_inputs()
+        # self.def_parameters()
         self.def_layer()
-        self.def_loss()
+        # self.def_loss()
 
     def def_inputs(self):
         self.e1 = tf.placeholder(tf.int32, [None])

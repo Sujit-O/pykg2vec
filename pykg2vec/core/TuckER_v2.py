@@ -25,10 +25,10 @@ class TuckER_v2(ModelMeta):
         self.config = config
         self.data_stats = self.config.kg_meta
         self.model_name = 'TuckER_v2'
-        self.def_inputs()
-        self.def_parameters()
+        # self.def_inputs()
+        # self.def_parameters()
         self.def_layer()
-        self.def_loss()
+        # self.def_loss()
 
     def def_inputs(self):
         self.h = tf.placeholder(tf.int32, [None])

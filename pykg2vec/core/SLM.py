@@ -25,10 +25,6 @@ class SLM(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.model_name = 'SLM'
 
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
-
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
@@ -93,6 +89,9 @@ class SLM(ModelMeta):
 
         return head_rank, tail_rank
 
+    def test_batch(self):
+        pass
+        
     def embed(self, h, r, t):
         """function to get the embedding value"""
         emb_h = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), h)

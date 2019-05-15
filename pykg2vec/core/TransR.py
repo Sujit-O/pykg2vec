@@ -36,10 +36,6 @@ class TransR(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.model_name = 'TransR'
 
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
-
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
@@ -116,7 +112,7 @@ class TransR(ModelMeta):
         pos_matrix = tf.reshape(pos_matrix, [-1, self.config.ent_hidden_size])
         project_ent_embedding = self.transform(self.ent_embeddings, tf.transpose(pos_matrix))
         project_ent_embedding = tf.reshape(project_ent_embedding,
-                                           [self.config.batch_size, -1, self.config.rel_hidden_size])
+                                           [self.config.batch_size_testing, -1, self.config.rel_hidden_size])
 
         project_ent_embedding = tf.nn.l2_normalize(project_ent_embedding, axis=2)
 

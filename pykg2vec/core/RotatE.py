@@ -25,10 +25,6 @@ class RotatE(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.model_name = 'RotatE'
 
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
-
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
@@ -90,6 +86,9 @@ class RotatE(ModelMeta):
 
         return head_rank, tail_rank
 
+    def test_batch(self):
+        pass
+        
     def embed(self, h, r, t):
         """function to get the embedding value"""
         pi = 3.14159265358979323846

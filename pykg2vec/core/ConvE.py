@@ -36,10 +36,7 @@ class ConvE(ModelMeta):
             raise NotImplementedError("The hidden dimension is not supported!")
         self.last_dim = self.dense_last_dim[self.config.hidden_size]
 
-        self.def_inputs()
-        self.def_parameters()
-        self.def_layer()
-        self.def_loss()
+        self.def_layer()      
 
     def def_inputs(self):
         self.h = tf.placeholder(tf.int32, [None])

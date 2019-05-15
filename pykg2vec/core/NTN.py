@@ -26,10 +26,6 @@ class NTN(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.model_name = 'NTN'
 
-        self.def_inputs()
-        self.def_parameters()
-        self.def_loss()
-
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
@@ -160,6 +156,9 @@ class NTN(ModelMeta):
         _, tail_rank = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
 
         return head_rank, tail_rank
+
+    def test_batch(self):
+        pass
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
