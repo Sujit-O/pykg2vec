@@ -2,15 +2,19 @@
 
 Pykg2vec is a Tensorflow-based library in active development for learning the representation of entities and relations in Knowledge Graphs. We attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of running the task into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
 
+Here are some well-written papers for reading in order to start with knowledge graph embedding methodologies.
+ * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
+ * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
+ 
 ## Features
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
   * TransE, TransH, TransR, TransD, TransM, KG2E, RESCAL, DistMult, ComplEX, ConvE, ProjE, RotatE, SME, SLM, NTN, TuckER. 
 * Tools that support automatic hyperparameter tuning (bayesian optimizer).
+* Optimized performance by making a proper use of CPUs and GPUs (multiprocess and Tensorflow).  
+  * Will be adding C++ implementation to further optimize! 
 * A suite of visualization and summerization tools
   * t-SNE based embedding visualization. 
   * KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
-* Optimized performance by making a proper use of CPUs and GPUs (multiprocess and Tensorflow).  
-  * Will be adding C++ implementation to further optimize! 
 
 Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 :-------------------------:|:-------------------------:|:-------------------------:
@@ -25,11 +29,6 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 * **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
 
 ## Installation
-
-Here are some well-written papers for reading in order to start with knowledge graph embedding methodologies.
- * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
- * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
-
 
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms.
 
