@@ -171,14 +171,6 @@ Semantic matching models are latent feature models which represents triples by u
 We intend to provide the libraries to test the knowledge graph algorithms against all the well-known datasets available online. So far the library is able to work with the following datasets:
 * [Freebase](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz): Freebase is a large collaborative knowledge base consisting of data composed mainly by its community members. It is an online collection of structured data harvested from many sources, including individual, user-submitted wiki contributions [2]. 
   * Freebase15K is supported.
-
-* We also interface the knowledge graph controller and its underlying dataset controller so that a developer may incorporate your own dataset to this library with flexibility by simply following certain naming and formatting conventions.
-  * Divide all the triplets into training, development, testing sets and save them into separate file. (with extension txt) 
-  * The format of the triple in txt file should be as follows: 
-   ```bash 
-   <string of head entity>\t<string of relation>\t<string of tail entity>
-   ```
-  * Create a customized class for your dataset. We have a sample class implementation reference as well in [global_config.py#DeepLearning50](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/config/global_config.py). 
  
 ## Dependencies
 The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
