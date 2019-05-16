@@ -1,16 +1,16 @@
 # Pykg2vec: Python Library for KG Embedding Methods 
 
-Pykg2vec is a Python library in active development for learning the representation of entities and relations in Knowledge Graphs. We attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of running the task into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
+Pykg2vec is a Python Tensorflow-based library in active development for learning the representation of entities and relations in Knowledge Graphs. We attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of running the task into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
 
 ## The features of Pykg2vec
-* Performance gained by making a proper use of CPUs and GPUs.  
-  * Will be adding C++ implementation to further optimize! 
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
   * TransE, TransH, TransR, TransD, TransM, KG2E, RESCAL, DistMult, ComplEX, ConvE, ProjE, RotatE, SME, SLM, NTN, TuckER. 
 * Tools that support automatic hyperparameter tuning (bayesian optimizer) using [hyperopt](https://hyperopt.github.io/hyperopt/).
 * A suite of visualization and summerization tools
   * t-SNE based embedding visualization. 
   * KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
+* Optimized performance by making a proper use of CPUs and GPUs (multiprocess and Tensorflow).  
+  * Will be adding C++ implementation to further optimize! 
 
 ## Repository Structure
 * **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
