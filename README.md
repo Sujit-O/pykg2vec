@@ -5,7 +5,7 @@ Pykg2vec is a Python Tensorflow-based library in active development for learning
 ## The features of Pykg2vec
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
   * TransE, TransH, TransR, TransD, TransM, KG2E, RESCAL, DistMult, ComplEX, ConvE, ProjE, RotatE, SME, SLM, NTN, TuckER. 
-* Tools that support automatic hyperparameter tuning (bayesian optimizer) using [hyperopt](https://hyperopt.github.io/hyperopt/).
+* Tools that support automatic hyperparameter tuning (bayesian optimizer).
 * A suite of visualization and summerization tools
   * t-SNE based embedding visualization. 
   * KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
