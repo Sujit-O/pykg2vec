@@ -16,6 +16,12 @@ Here are some well-written papers for reading in order to start with knowledge g
   * visualization of the embedding by reducing the embedding on 2D space. 
   * visualization of the KPIs (mean rank, hit ratio) during training stage in various format. (csvs, figures, latex table format)
 
+## Repository Structure
+* **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
+* **pyKG2Vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
+* **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
+* **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
+
 ## Installation
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms.
 
@@ -180,13 +186,7 @@ def main():
     
 if __name__ == "__main__":
     main()
-```
-
-## Repository Structure
-* **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
-* **pyKG2Vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
-* **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
-* **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model. 
+``` 
 
 ## Implemented Methods
 We aim to implement all the latest state-of-the-art knowledge graph embedding library. The embedding algorithms included in the library so far (still growing) are as follows, 
