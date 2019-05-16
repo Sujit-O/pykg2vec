@@ -1,10 +1,6 @@
 # Pykg2vec: Python Library for KG Embedding Methods 
 
-Pykg2vec is an Python library in active development for learning the representation of entities and relations in Knowledge Graphs. We attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of running the task into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
-
-Here are some well-written papers for reading in order to start with knowledge graph embedding methodologies.
- * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
- * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
+Pykg2vec is a Python library in active development for learning the representation of entities and relations in Knowledge Graphs. We attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of running the task into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
 
 ## The features of Pykg2vec
 * Performance gained by making a proper use of CPUs and GPUs.  
@@ -23,6 +19,12 @@ Here are some well-written papers for reading in order to start with knowledge g
 * **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
 
 ## Installation
+
+Here are some well-written papers for reading in order to start with knowledge graph embedding methodologies.
+ * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
+ * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
+
+
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms.
 
 **Please install [tensorflow](https://www.tensorflow.org/install) cpu or gpu version before performing pip install of pykg2vec!**
@@ -245,7 +247,7 @@ We intend to provide the libraries to test the knowledge graph algorithms agains
    <string of head entity>\t<string of relation>\t<string of tail entity>
    ```
   * Create a customized class for your dataset. We have a sample class implementation reference as well in [global_config.py#DeepLearning50](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/config/global_config.py). 
-
+ 
 ## Dependencies
 The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
 
