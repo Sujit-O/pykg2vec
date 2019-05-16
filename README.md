@@ -61,6 +61,7 @@ $ pip install --upgrade pip
 ## Usage Example
 
 ### Running a single algorithm: 
+Train.py
 ```python
 from pykg2vec.config.global_config import KnowledgeGraph
 from pykg2vec.config.config import Importer, KGEArgParser
@@ -88,10 +89,11 @@ def main():
 if __name__ == "__main__":
     main()
 ```
-with the script we can train any model existed in the library using command:
+with train.py we then can train the existed model using command:
 ```bach
-python train.py -m TransE 
-python train.py -m Complex
+python train.py -h # check all tunnable parameters.
+python train.py -m TransE # Run TransE model.
+python train.py -m Complex # Run Complex model. 
 ```
 
 ### Tuning a single algorithm: TransE
@@ -101,7 +103,7 @@ from pykg2vec.config.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
 def main():
-   	# getting the customized configurations from the command-line arguments.
+    # getting the customized configurations from the command-line arguments.
     args = KGETuneArgParser().get_args()
 
     # initializing bayesian optimizer and prepare data.
