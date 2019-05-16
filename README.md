@@ -1,6 +1,6 @@
 # Pykg2vec: Python Library for KG Embedding Methods 
 
-Pykg2vec is a Python Tensorflow-based library in active development for learning the representation of entities and relations in Knowledge Graphs. We attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of running the task into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
+Pykg2vec is a Tensorflow-based library in active development for learning the representation of entities and relations in Knowledge Graphs. We attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of running the task into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
 
 ## The features of Pykg2vec
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
@@ -11,6 +11,12 @@ Pykg2vec is a Python Tensorflow-based library in active development for learning
   * KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
 * Optimized performance by making a proper use of CPUs and GPUs (multiprocess and Tensorflow).  
   * Will be adding C++ implementation to further optimize! 
+
+Training Loss Plot             |  Testing Rank Results | Testing Hits Result
+:-------------------------:|:-------------------------:|:-------------------------:
+![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/Freebase15k_training_loss_plot_0-1.png?raw=true)  |  ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/Freebase15k_testing_rank_plot_1-1.png?raw=true) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/Freebase15k_testing_hits_plot_1-1.png?raw=true)
+**Relation embedding plot**             |  **Entity embedding plot**   | **Relation and Entity Plot**
+![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_rel_plot_embedding_plot_0.png?raw=true)| ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_entity_plot_embedding_plot_0.png?raw=true) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_ent_n_rel_plot_embedding_plot_0.png?raw=true)
 
 ## Repository Structure
 * **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
