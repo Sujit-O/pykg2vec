@@ -96,7 +96,8 @@ python train.py -m TransE # Run TransE model.
 python train.py -m Complex # Run Complex model. 
 ```
 
-### Tuning a single algorithm: TransE
+### Tuning a single algorithm:
+tune_model.py
 ```python
 
 from pykg2vec.config.hyperparams import KGETuneArgParser
@@ -115,6 +116,11 @@ def main():
 if __name__ == "__main__":
     main()
 ``` 
+with tune_model.py we then can train the existed model using command:
+```bach
+python tune_model.py -h # check all tunnable parameters.
+python tune_model.py -m TransE # Tune TransE model.
+```
 
 ## Implemented Methods
 We aim to implement all the latest state-of-the-art knowledge graph embedding library. The embedding algorithms included in the library so far (still growing) are as follows, 
