@@ -2,7 +2,7 @@
 
 Pykg2vec is a Tensorflow-based library in active development for learning the representation of entities and relations in Knowledge Graphs. We attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of running the task into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
 
-## The features of Pykg2vec
+## Features
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
   * TransE, TransH, TransR, TransD, TransM, KG2E, RESCAL, DistMult, ComplEX, ConvE, ProjE, RotatE, SME, SLM, NTN, TuckER. 
 * Tools that support automatic hyperparameter tuning (bayesian optimizer).
@@ -63,9 +63,9 @@ $ pip install --upgrade pip
 
 ### Running a single algorithm: 
 ```python
-from config.global_config import KnowledgeGraph
-from config.config import Importer, KGEArgParser
-from utils.trainer import Trainer
+from pykg2vec.config.global_config import KnowledgeGraph
+from pykg2vec.config.config import Importer, KGEArgParser
+from pykg2vec.utils.trainer import Trainer
 
 def main():
     # getting the customized configurations from the command-line arguments.
@@ -97,22 +97,18 @@ python train.py -m Complex
 
 ### Tuning a single algorithm: TransE
 ```python
-from argparse import ArgumentParser
-import sys
 
-model_path = "core"
-config_path = "config.config"
-
+from pykg2vec.config.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
-
 def main():
-    parser = ArgumentParser(description='Bayesian HyperParameter Optimizer')
-    parser.add_argument('-m', '--model', default='TransE', type=str, help='Model to tune')
-    args = parser.parse_args()
+   	# getting the customized configurations from the command-line arguments.
+    args = KGETuneArgParser().get_args()
 
+    # initializing bayesian optimizer and prepare data.
     bays_opt = BaysOptimizer(args=args)
 
+    # perform the golden hyperparameter tuning. 
     bays_opt.optimize()
     
 if __name__ == "__main__":
@@ -185,6 +181,7 @@ The goal of this library is to minimize the dependency on other libraries as far
 * numpy==1.16.2
 * seaborn==0.9.0
 * scikit_learn==0.20.3
+* progressbar2==3.39.3
 * tensorflow==`<version suitable for your workspace>`
 
 
