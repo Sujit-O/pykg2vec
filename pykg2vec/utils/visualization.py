@@ -168,14 +168,23 @@ def draw_embedding_rel_space(h_emb,
 class Visualization(object):
     def __init__(self,
                  model=None,
-                 ent_only_plot=False,
-                 rel_only_plot=False,
-                 ent_and_rel_plot=False):
+                 vis_opts=None):
 
-        self.ent_only_plot = ent_only_plot
-        self.rel_only_plot = rel_only_plot
-        self.ent_and_rel_plot = ent_and_rel_plot
+        if vis_opts:
+            self.ent_only_plot = vis_opts["ent_only_plot"]
+            self.rel_only_plot = vis_opts["rel_only_plot"]
+            self.ent_and_rel_plot = vis_opts["ent_and_rel_plot"]
+        else:
+            self.ent_only_plot = False
+            self.rel_only_plot = False
+            self.ent_and_rel_plot = False
+
         self.model = model
+
+        self.algo_list = ['Complex', 'ConvE', 'DistMult', 'DistMult2', 'KG2E',
+                          'KGMeta', 'NTN', 'ProjE_pointwise', 'Rescal',
+                          'RotatE', 'SLM', 'SME', 'TransD', 'TransE', 'TransH',
+                           'TransM', 'TransR', 'TuckER_v2', 'TuckER']
 
         self.h_name = []
         self.r_name = []
@@ -265,22 +274,24 @@ class Visualization(object):
                                      self.t_name[:disp_num_r_n_e],
                                      resultpath, algos + '_ent_n_rel_plot', show_label)
 
-    def plot_train_result(self, path=None, result=None, algo=None, data=None):
+    def plot_train_result(self):
+        algo = self.algo_list
+        path = self.model.config.result
+        result = self.model.config.figures
+        data = [self.model.config.data]
         if not os.path.exists(result):
             os.mkdir(result)
-        if path is None or algo is None or data is None:
+        if path is None or data is None:
             raise NotImplementedError('Please provide valid path, algorithm and dataset!')
         files = os.listdir(path)
         files_lwcase = [f.lower() for f in files]
         for d in data:
             df = pd.DataFrame()
-            # print(algo)
             for a in algo:
                 file_no = len([c for c in files_lwcase if a.lower() in c if 'training' in c])
-                # print(a,file_no)
                 if file_no < 1:
                     continue
-                with open(path + '/' + a + '_Training_results_' + str(file_no - 1) + '.csv', 'r') as fh:
+                with open(path / (a + '_Training_results_' + str(file_no - 1) + '.csv'), 'r') as fh:
                     df_2 = pd.read_csv(fh)
                 if df.empty:
                     df['Epochs'] = df_2['Epochs']
@@ -293,19 +304,21 @@ class Visualization(object):
                     df_3['Algorithm'] = [a] * len(df_2)
                     frames = [df, df_3]
                     df = pd.concat(frames)
-                # print(df)
             plt.figure()
-            import pdb
-            pdb.set_trace()
             ax = seaborn.lineplot(x="Epochs", y="Loss", hue="Algorithm",
                                   markers=True, dashes=False, data=df)
             files = os.listdir(result)
             files_lwcase = [f.lower() for f in files]
             file_no = len([c for c in files_lwcase if d.lower() in c if 'training' in c])
-            plt.savefig(result + '/' + d + '_training_loss_plot_' + str(file_no) + '.pdf', bbox_inches='tight', dpi=300)
+            plt.savefig(result / (d + '_training_loss_plot_' + str(file_no) + '.pdf'), bbox_inches='tight', dpi=300)
             plt.show()
 
-    def plot_test_result(self, path=None, result=None, algo=None, data=None, paramlist=None, hits=None):
+    def plot_test_result(self):
+        algo = self.algo_list
+        path = self.model.config.result
+        result = self.model.config.figures
+        data = [self.model.config.data]
+        hits = self.model.config.hits
         if not os.path.exists(result):
             os.mkdir(result)
         if path is None or algo is None or data is None:
@@ -319,7 +332,7 @@ class Visualization(object):
                 file_algo = [c for c in files if a.lower() in c.lower() if 'testing' in c.lower()]
                 if not file_algo:
                     continue
-                with open(path + '/' + file_algo[-1], 'r') as fh:
+                with open(path / file_algo[-1], 'r') as fh:
                     df_2 = pd.read_csv(fh)
 
                 if df.empty:
@@ -327,22 +340,22 @@ class Visualization(object):
                     df['Epochs'] = df_2['Epoch']
                     df['Mean Rank'] = df_2['mean_rank']
                     df['Filt Mean Rank'] = df_2['filter_mean_rank']
-                
+
                     for hit in hits:
                         df['Hits' + str(hit)] = df_2['hits' + str(hit)]
                         df['Filt Hits' + str(hit)] = df_2['filter_hits' + str(hit)]
-                        
+
                 else:
                     df_3 = pd.DataFrame()
                     df_3['Algorithm'] = [a] * len(df_2)
                     df_3['Epochs'] = df_2['Epoch']
                     df_3['Mean Rank'] = df_2['mean_rank']
                     df_3['Filt Mean Rank'] = df_2['filter_mean_rank']
-                    
+
                     for hit in hits:
                         df_3['Hits' + str(hit)] = df_2['hits' + str(hit)]
                         df_3['Filt Hits' + str(hit)] = df_2['filter_hits' + str(hit)]
-                        
+
                     frames = [df, df_3]
                     df = pd.concat(frames)
 
@@ -352,13 +365,13 @@ class Visualization(object):
 
             file_no = len(
                 [c for c in files if d.lower() in c.lower() if 'testing' in c.lower() if 'latex' in c.lower()])
-            with open(result + '/' + d + '_testing_latex_table_' + str(file_no + 1) + '.txt', 'w') as fh:
+            with open(result / (d + '_testing_latex_table_' + str(file_no + 1) + '.txt'), 'w') as fh:
                 fh.write(df_4.to_latex(index=False))
 
             file_no = len(
                 [c for c in files if d.lower() in c.lower() if 'testing' in c.lower() if 'table' in c.lower() if
                  'csv' in c.lower()])
-            with open(result + '/' + d + '_testing_table_' + str(file_no + 1) + '.csv', 'w') as fh:
+            with open(result / (d + '_testing_table_' + str(file_no + 1) + '.csv'), 'w') as fh:
                 df_4.to_csv(fh, index=False)
 
             df_5 = pd.DataFrame(columns=['Metrics', 'Algorithm', 'Score'])
@@ -389,7 +402,7 @@ class Visualization(object):
 
             files_lwcase = [f.lower() for f in files]
             file_no = len([c for c in files_lwcase if d.lower() in c if 'testing' in c if 'rank_plot' in c])
-            plt.savefig(result + '/' + d + '_testing_rank_plot_' + str(file_no + 1) + '.pdf', bbox_inches='tight',
+            plt.savefig(result / (d + '_testing_rank_plot_' + str(file_no + 1) + '.pdf'), bbox_inches='tight',
                         dpi=300)
             plt.show()
 
@@ -402,7 +415,7 @@ class Visualization(object):
 
             files_lwcase = [f.lower() for f in files]
             file_no = len([c for c in files_lwcase if d.lower() in c if 'testing' in c if 'hits_plot' in c])
-            plt.savefig(result + '/' + d + '_testing_hits_plot_' + str(file_no + 1) + '.pdf', bbox_inches='tight',
+            plt.savefig(result / (d + '_testing_hits_plot_' + str(file_no + 1) + '.pdf'), bbox_inches='tight',
                         dpi=300)
             plt.show()
 

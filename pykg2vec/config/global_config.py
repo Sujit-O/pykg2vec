@@ -5,7 +5,7 @@ import numpy as np
 import pickle
 
 class Triple(object):
-    
+
     def __init__(self, h, r, t):
         self.h = None
         self.r = None
@@ -18,17 +18,17 @@ class Triple(object):
             self.h = h
             self.r = r
             self.t = t
-        
+
         else:
             self.h_string = h
             self.r_string = r
             self.t_string = t
-        
+
         self.hr_t = None
         self.tr_h = None
 
     def set_ids(self, h, r, t):
-        self.h = h 
+        self.h = h
         self.r = r
         self.t = t
 
@@ -54,7 +54,7 @@ class KGMetaData(object):
         self.tot_train_triples = tot_train_triples
         self.tot_relation = tot_relation
         self.tot_entity = tot_entity
-        
+
 # TODO: to be moved to utils
 def extract(tar_path, extract_path='.'):
     tar = tarfile.open(tar_path, 'r')
@@ -96,7 +96,7 @@ class FreebaseFB15k(object):
             'test' : self.root_path / 'triplets_test.pkl',
             'valid': self.root_path / 'triplets_valid.pkl'
         }
-        
+
         self.cache_hr_t_path = self.root_path / 'hr_t.pkl'
         self.cache_tr_h_path = self.root_path / 'tr_h.pkl'
         self.cache_idx2entity_path = self.root_path / 'idx2entity.pkl'
@@ -104,7 +104,7 @@ class FreebaseFB15k(object):
         self.cache_entity2idx_path = self.root_path / 'entity2idx.pkl'
         self.cache_relation2idx_path = self.root_path / 'relation2idx.pkl'
 
-       
+
     def download(self):
         ''' download Freebase 15k dataset from url'''
         print("Downloading the dataset %s" % self.name)
@@ -134,7 +134,7 @@ class FreebaseFB15k(object):
 
             return knowledge_graph
         return None
-    
+
     def read_metadata(self):
         with open(str(self.cache_metadata_path), 'rb') as f:
             meta = pickle.load(f)
@@ -144,26 +144,45 @@ class FreebaseFB15k(object):
     def is_meta_cache_exists(self):
         return self.cache_metadata_path.exists()
 
-class DeepLearning50k(object):
+class DeepLearning50a(object):
 
     def __init__(self):
-        self.name="dLmL50"
+        self.name = "dLmL50"
         self.url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
         self.dataset_home_path = Path('..')/'dataset'
         self.dataset_home_path.mkdir(parents=True, exist_ok=True)
         self.dataset_home_path = self.dataset_home_path.resolve()
-        self.root_path = self.dataset_home_path/'DeepLearning'
-        self.tar = self.root_path/'dLmL50.tgz'
-        self.downloaded_path = self.root_path/'dLmL50'/'deeplearning_dataset_50arch-'
-        self.prepared_data_path = self.root_path/'dLmL50'/'dLmL50_'
-        self.entity2idx_path = self.root_path/'dLmL50'/'dLmL50_entity2idx.pkl'
-        self.idx2entity_path = self.root_path/'dLmL50'/'dLmL50_idx2entity.pkl'
-        self.relation2idx_path = self.root_path/'dLmL50'/'dLmL50_relation2idx.pkl'
-        self.idx2relation_path = self.root_path/'dLmL50'/'dLmL50_idx2relation.pkl'
+        self.root_path = self.dataset_home_path / 'DeepLearning'
+        self.tar = self.root_path / 'dLmL50.tgz'
 
         if not self.root_path.exists():
             self.download()
             self.extract()
+
+        self.root_path = self.root_path / 'dLmL50'
+        self.downloaded_path    = self.root_path / 'deeplearning_dataset_50arch-'
+
+        self.data_paths = {
+            'train': self.root_path / 'deeplearning_dataset_50arch-train.txt',
+            'test' : self.root_path / 'deeplearning_dataset_50arch-test.txt',
+            'valid': self.root_path / 'deeplearning_dataset_50arch-valid.txt'
+        }
+
+        self.cache_path = self.root_path / 'all.pkl'
+        self.cache_metadata_path = self.root_path / 'metadata.pkl'
+
+        self.cache_triplet_paths = {
+            'train': self.root_path / 'triplets_train.pkl',
+            'test' : self.root_path / 'triplets_test.pkl',
+            'valid': self.root_path / 'triplets_valid.pkl'
+        }
+
+        self.cache_hr_t_path = self.root_path / 'hr_t.pkl'
+        self.cache_tr_h_path = self.root_path / 'tr_h.pkl'
+        self.cache_idx2entity_path = self.root_path / 'idx2entity.pkl'
+        self.cache_idx2relation_path = self.root_path / 'idx2relation.pkl'
+        self.cache_entity2idx_path = self.root_path / 'entity2idx.pkl'
+        self.cache_relation2idx_path = self.root_path / 'relation2idx.pkl'
 
     def download(self):
         ''' Download dLmL50 dataset from url'''
@@ -174,18 +193,35 @@ class DeepLearning50k(object):
             shutil.copyfileobj(response, out_file)
 
     def extract(self):
-        ''' extract the downloaded tar under DeepLearning folder'''
-        print("Extracting the downloaded dataset from %s to %s"% (self.tar, self.root_path))
+        ''' extract the downloaded tar under Freebase 15k folder'''
+        print("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
 
         try:
             extract(str(self.tar), str(self.root_path))
         except Exception as e:
             print("Could not extract the tgz file!")
-            print(type(e),e.args)
+            print(type(e), e.args)
 
     def dump(self):
         for key, value in self.__dict__.items():
             print(key, value)
+
+    def read_data(self):
+        if self.cache_path.exists():
+            with open(str(self.cache_path), 'rb') as f:
+                knowledge_graph = pickle.load(f)
+
+            return knowledge_graph
+        return None
+
+    def read_metadata(self):
+        with open(str(self.cache_metadata_path), 'rb') as f:
+            meta = pickle.load(f)
+
+            return meta
+
+    def is_meta_cache_exists(self):
+        return self.cache_metadata_path.exists()
 
 
 class KnowledgeGraph(object):
@@ -193,19 +229,19 @@ class KnowledgeGraph(object):
     def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
         if dataset == 'Freebase15k':
             self.dataset = FreebaseFB15k()
-        elif dataset == 'DeepLearning50k':
-            self.dataset = DeepLearning50k()
+        elif dataset == 'DeepLearning50a':
+            self.dataset = DeepLearning50a()
         else:
             raise NotImplementedError("%s dataset config not found!" % dataset)
 
         self.negative_sample = negative_sample
-        
+
         self.triplets = {'train': [], 'test' : [], 'valid': []}
 
-        self.relations = [] 
+        self.relations = []
         self.entities = []
 
-        self.entity2idx = {} 
+        self.entity2idx = {}
         self.idx2entity = {}
         self.relation2idx = {}
         self.idx2relation = {}
@@ -226,7 +262,7 @@ class KnowledgeGraph(object):
     def prepare_data(self):
         if self.dataset.is_meta_cache_exists():
             return
-            
+
         self.read_entities()
         self.read_relations()
         self.read_mappings()
@@ -237,7 +273,7 @@ class KnowledgeGraph(object):
         self.read_tr_h()
         self.read_hr_t_train()
         self.read_tr_h_train()
-        
+
         self.read_hr_tr_train()
 
         if self.negative_sample == 'bern':
@@ -253,7 +289,7 @@ class KnowledgeGraph(object):
                                   self.kg_meta.tot_train_triples
 
         self.cache_data()
-        
+
     def cache_data(self):
         with open(str(self.dataset.cache_metadata_path), 'wb') as f:
             pickle.dump(self.kg_meta, f)
@@ -295,13 +331,13 @@ class KnowledgeGraph(object):
 
         elif key == 'hr_t':
             with open(str(self.dataset.cache_hr_t_path), 'rb') as f:
-                hr_t = pickle.load(f) 
+                hr_t = pickle.load(f)
 
                 return hr_t
 
         elif key == 'tr_h':
             with open(str(self.dataset.cache_tr_h_path), 'rb') as f:
-                tr_h = pickle.load(f) 
+                tr_h = pickle.load(f)
 
                 return tr_h
 
@@ -310,7 +346,7 @@ class KnowledgeGraph(object):
                 idx2entity = pickle.load(f)
 
                 return idx2entity
-        
+
         elif key == 'idx2relation':
             with open(str(self.dataset.cache_idx2relation_path), 'rb') as f:
                 idx2relation = pickle.load(f)
@@ -322,7 +358,7 @@ class KnowledgeGraph(object):
                 entity2idx = pickle.load(f)
 
                 return entity2idx
-        
+
         elif key == 'relation2idx':
             with open(str(self.dataset.cache_relation2idx_path), 'rb') as f:
                 relation2idx = pickle.load(f)
@@ -338,7 +374,7 @@ class KnowledgeGraph(object):
             (in string format)
         '''
         triplets = self.triplets[set_type]
-        
+
         if len(triplets) == 0:
             with open(str(self.dataset.data_paths[set_type]), 'r') as file:
                 for line in file.readlines():
@@ -346,7 +382,7 @@ class KnowledgeGraph(object):
                     triplets.append(Triple(s.strip(), p.strip(), o.strip()))
 
         return triplets
-        
+
     def read_entities(self):
         ''' ensure '''
         if len(self.entities) == 0:
@@ -389,7 +425,7 @@ class KnowledgeGraph(object):
         # assert entities can not be none
         # assert relations can not be none
         triplets = self.triplets[set_type]
-        
+
         entity2idx = self.entity2idx
         relation2idx = self.relation2idx
 
@@ -432,7 +468,7 @@ class KnowledgeGraph(object):
             self.tr_h_train[(t.t, t.r)].add(t.h)
 
         return self.tr_h_train
-    
+
     def read_hr_tr_train(self):
         for t in self.triplets['train']:
             t.set_hr_t(self.hr_t_train[(t.h, t.r)])
@@ -508,7 +544,7 @@ class GeneratorConfig(object):
                  raw_queue_size=50,
                  processed_queue_size=50,
                  process_num=2,
-                 data='train', 
+                 data='train',
                  algo ='ConvE',
                  neg_rate=2
                  ):
