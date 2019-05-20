@@ -1,10 +1,11 @@
 # Pykg2vec: Python Library for KG Embedding Methods 
 
-Pykg2vec is a Tensorflow-based library in active development for learning the representation of entities and relations in Knowledge Graphs. We attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of running the task into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
+Pykg2vec is a Tensorflow-based library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks including the necessary pipeline into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
 
 Here are some well-written papers for reading in order to start with knowledge graph embedding methodologies.
  * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
  * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
+ * [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098)
  
 ## Features
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
