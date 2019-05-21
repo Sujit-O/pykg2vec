@@ -24,11 +24,6 @@ class Complex(ModelMeta):
         self.tot_rel = self.data_stats.tot_relation
         self.model_name = 'Complex'
 
-        # self.def_inputs()
-        # self.def_parameters()
-        self.def_layer()
-        # self.def_loss()
-
     def def_inputs(self):
         self.h = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
@@ -36,9 +31,9 @@ class Complex(ModelMeta):
         self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
         self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
-        self.test_h = tf.placeholder(tf.int32, [None])
-        self.test_r = tf.placeholder(tf.int32, [None])
-        self.test_t = tf.placeholder(tf.int32, [None])
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         k = self.config.hidden_size
@@ -66,7 +61,6 @@ class Complex(ModelMeta):
         h_emb_img = tf.squeeze(h_emb_img)
         r_emb_img = tf.squeeze(r_emb_img)
         t_emb_img = tf.squeeze(t_emb_img)
-        # TODO : finished upto here!! continue later
 
         realrealreal = tf.matmul(h_emb_real * r_emb_real,
                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
@@ -78,19 +72,29 @@ class Complex(ModelMeta):
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
 
         pred = realrealreal + realimgimg + imgrealimg - imgimgreal
-        pred = tf.nn.sigmoid(pred)
+        pred_heads = tf.nn.sigmoid(pred)
 
-        e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        e2_multi1 = tf.reshape(e2_multi1, [self.config.batch_size, self.data_stats.tot_entity])
+        realrealreal = tf.matmul(t_emb_real * r_emb_real,
+                                 tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+        realimgimg = tf.matmul(t_emb_real * r_emb_img,
+                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
+        imgrealimg = tf.matmul(t_emb_img * r_emb_real,
+                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
+        imgimgreal = tf.matmul(t_emb_img * r_emb_img,
+                               tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
 
-        loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
+        pred = realrealreal + realimgimg + imgrealimg - imgimgreal
+        pred_tails = tf.nn.sigmoid(pred)
 
-        reg_losses = tf.nn.l2_loss(self.emb_e_real) + \
-                     tf.nn.l2_loss(self.emb_e_img) + \
-                     tf.nn.l2_loss(self.emb_rel_real) + \
-                     tf.nn.l2_loss(self.emb_rel_img)
+        hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        rt_h = self.rt_h * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
 
-        self.loss = loss + self.config.lmbda * reg_losses
+        loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
+        loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
+
+        # reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
+
+        self.loss = loss_heads + loss_tails #+ self.config.lmbda * reg_losses
 
     def def_layer(self):
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
@@ -107,53 +111,46 @@ class Complex(ModelMeta):
         return h,r,t
 
     def test_batch(self):
-        e1_embedded_real, rel_embedded_real, e1_embedded_img, rel_embedded_img = self.embed(self.test_e1, self.test_r)
-        e2_embedded_real, r_rev_embedded_real, e2_embedded_img, r_rev_embedded_img = self.embed(self.test_e2,
-                                                                                                self.test_r_rev)
+        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(self.test_h_batch,
+                                                                                         self.test_r_batch,
+                                                                                         self.test_t_batch)
 
-        e1_embedded_real, rel_embedded_real = self.layer(e1_embedded_real, rel_embedded_real)
-        e1_embedded_img, rel_embedded_img = self.layer(e1_embedded_img, rel_embedded_img)
+        h_emb_real, r_emb_real, t_emb_real = self.layer(h_emb_real, r_emb_real, t_emb_real)
+        h_emb_img, r_emb_img, t_emb_img = self.layer(h_emb_img, r_emb_img, t_emb_img)
 
-        e2_embedded_real, r_rev_embedded_real = self.layer(e2_embedded_real, r_rev_embedded_real)
-        e2_embedded_img, r_rev_embedded_img = self.layer(e2_embedded_img, r_rev_embedded_img)
+        h_emb_real = tf.squeeze(h_emb_real)
+        r_emb_real = tf.squeeze(r_emb_real)
+        t_emb_real = tf.squeeze(t_emb_real)
+        h_emb_img = tf.squeeze(h_emb_img)
+        r_emb_img = tf.squeeze(r_emb_img)
+        t_emb_img = tf.squeeze(t_emb_img)
 
-        e1_embedded_real = tf.squeeze(e1_embedded_real)
-        rel_embedded_real = tf.squeeze(rel_embedded_real)
-        e1_embedded_img = tf.squeeze(e1_embedded_img)
-        rel_embedded_img = tf.squeeze(rel_embedded_img)
+        realrealreal = tf.matmul(h_emb_real * r_emb_real,
+                                 tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+        realimgimg = tf.matmul(h_emb_real * r_emb_img,
+                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
+        imgrealimg = tf.matmul(h_emb_img * r_emb_real,
+                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
+        imgimgreal = tf.matmul(h_emb_img * r_emb_img,
+                               tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
 
-        e2_embedded_real = tf.squeeze(e2_embedded_real)
-        r_rev_embedded_real = tf.squeeze(r_rev_embedded_real)
-        e2_embedded_img = tf.squeeze(e2_embedded_img)
-        r_rev_embedded_img = tf.squeeze(r_rev_embedded_img)
+        pred_tails = realrealreal + realimgimg + imgrealimg - imgimgreal
+        pred_tails = tf.nn.sigmoid(pred_tails)
 
-        hr_realrealreal = tf.matmul(e1_embedded_real * rel_embedded_real,
-                                    tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
-        hr_realimgimg = tf.matmul(e1_embedded_real * rel_embedded_img,
-                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        hr_imgrealimg = tf.matmul(e1_embedded_img * rel_embedded_real,
-                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        hr_imgimgreal = tf.matmul(e1_embedded_img * rel_embedded_img,
-                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+        realrealreal = tf.matmul(t_emb_real * r_emb_real,
+                                 tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+        realimgimg = tf.matmul(t_emb_real * r_emb_img,
+                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
+        imgrealimg = tf.matmul(t_emb_img * r_emb_real,
+                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
+        imgimgreal = tf.matmul(t_emb_img * r_emb_img,
+                               tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
 
-        tr_realrealreal = tf.matmul(e2_embedded_real * r_rev_embedded_real,
-                                    tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
-        tr_realimgimg = tf.matmul(e2_embedded_real * r_rev_embedded_img,
-                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        tr_imgrealimg = tf.matmul(e2_embedded_img * r_rev_embedded_real,
-                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        tr_imgimgreal = tf.matmul(e2_embedded_img * r_rev_embedded_img,
-                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+        pred_heads = realrealreal + realimgimg + imgrealimg - imgimgreal
+        pred_heads = tf.nn.sigmoid(pred_heads)
 
-        hr_pred = hr_realrealreal + hr_realimgimg + hr_imgrealimg - hr_imgimgreal
-        hr_pred = tf.nn.sigmoid(hr_pred)
-
-        tr_pred = tr_realrealreal + tr_realimgimg + tr_imgrealimg - tr_imgimgreal
-        tr_pred = tf.nn.sigmoid(tr_pred)
-
-
-        _, head_rank = tf.nn.top_k(-hr_pred, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(-tr_pred, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
@@ -177,7 +174,7 @@ class Complex(ModelMeta):
 
     def get_embed(self, e, r, sess=None):
         """function to get the embedding value in numpy"""
-        emb_e_real, rel_emb_real, emb_e_img, rel_emb_img = self.embed(e, r)
+        emb_e_real, rel_emb_real, emb_e_img, rel_emb_img = self.embed(h,r, t)
         emb_e_real, rel_emb_real, emb_e_img, rel_emb_img = sess.run([emb_e_real, rel_emb_real, emb_e_img, rel_emb_img])
         return emb_e_real, rel_emb_real, emb_e_img, rel_emb_img
 
