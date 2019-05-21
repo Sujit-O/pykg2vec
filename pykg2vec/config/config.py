@@ -13,7 +13,7 @@ from config.global_config import KnowledgeGraph
 from argparse import ArgumentParser
 import importlib
 
-class Importer: 
+class Importer:
     def __init__(self):
         self.model_path = "core"
         self.config_path = "config.config"
@@ -55,7 +55,7 @@ class Importer:
                          "transr": "TransRConfig",
                          "tucker": "TuckERConfig",
                          "tucker_v2": "TuckERConfig"}
-    
+
     def import_model_config(self, name):
         config_obj = None
         model_obj = None
@@ -64,7 +64,7 @@ class Importer:
             model_obj = getattr(importlib.import_module(self.model_path + ".%s" % self.modelMap[name]), self.modelMap[name])
         except ModuleNotFoundError:
             print("%s model  has not been implemented. please select from: %s" % (name, ' '.join(map(str, self.modelMap.values()))))
-        
+
         return config_obj, model_obj
 
 class KGEArgParser:
@@ -81,7 +81,7 @@ class KGEArgParser:
         self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, help='The name of dataset.')
         self.general_group.add_argument('-ld', dest='load_from_data', default=False, type=lambda x: (str(x).lower() == 'true'), help='load_from_data!')
         self.general_group.add_argument('-sv', dest='save_model', default=True, type=lambda x: (str(x).lower() == 'true'), help='Save the model!')
-        
+
         ''' arguments regarding hyperparameters '''
         self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
         self.general_hyper_group.add_argument('-b',  dest='batch_training', default=128, type=int, help='training batch size')
@@ -115,7 +115,7 @@ class KGEArgParser:
         self.conv_group.add_argument('-ubs', dest='use_bias', default=True, type=lambda x: (str(x).lower() == 'true'), help='The boolean indicating whether use biases or not in ConvE.')
         self.conv_group.add_argument('-lbs', dest='label_smoothing', default=0.1, type=float, help="The parameter used in label smoothing.")
         self.conv_group.add_argument('-lrd', dest='lr_decay', default=0.995, type=float, help="The parameter for learning_rate decay used in ConvE.")
-        
+
         ''' others '''
         self.misc_group = self.parser.add_argument_group('MISC')
         self.misc_group.add_argument('-t',  dest='tmp', default='../intermediate', type=str, help='The folder name to store trained parameters.')
@@ -124,15 +124,15 @@ class KGEArgParser:
         self.misc_group.add_argument('-plote', dest='plot_embedding', default=False, type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!' )
         self.misc_group.add_argument('-plot', dest='plot_entity_only', default=True, type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!' )
         self.misc_group.add_argument('-gp', dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
-        
+
     def get_args(self):
         return self.parser.parse_args()
 
 
 class BasicConfig:
     def __init__(self, args=None):
-        
-        if args is None:  
+
+        if args is None:
             self.test_step=100
             self.test_num=600
             self.triple_num=20
@@ -170,11 +170,11 @@ class BasicConfig:
             self.disp_summary = True
             self.disp_result = True
             self.plot_embedding = args.plot_embedding
-            self.plot_training_result = False
-            self.plot_testing_result = False
-            
+            self.plot_training_result = True
+            self.plot_testing_result = True
+
             self.batch_size_testing = args.batch_testing
-        
+
         self.tmp.mkdir(parents=True, exist_ok=True)
         self.result.mkdir(parents=True, exist_ok=True)
         self.figures.mkdir(parents=True, exist_ok=True)
@@ -189,7 +189,6 @@ class BasicConfig:
 class TransEConfig(BasicConfig):
 
     def __init__(self, args=None):
-        
         if args is None or args.golden is True:
             # the golden setting for TransE (only for Freebase15k now)
             self.learning_rate=0.01
@@ -212,9 +211,9 @@ class TransEConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
-        
+
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -224,12 +223,10 @@ class TransEConfig(BasicConfig):
             'optimizer':self.optimizer,
             'sampling':self.sampling
         }
-
         BasicConfig.__init__(self, args)
 
-
 class TransRConfig(BasicConfig):
-    def __init__(self, args=None):       
+    def __init__(self, args=None):
 
         if args is None or args.golden is True:
             self.learning_rate = 0.01
@@ -256,7 +253,7 @@ class TransRConfig(BasicConfig):
             self.sampling = args.sampling
 
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'ent_hidden_size':self.ent_hidden_size,
             'rel_hidden_size':self.rel_hidden_size,
@@ -273,7 +270,7 @@ class TransRConfig(BasicConfig):
 
 class TransDConfig(BasicConfig):
     def __init__(self, args=None):
-        
+
         if args == None or args.golden is True:
             self.learning_rate=0.01
             self.L1_flag=True
@@ -299,7 +296,7 @@ class TransDConfig(BasicConfig):
             self.sampling = args.sampling
 
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'ent_hidden_size':self.ent_hidden_size,
             'rel_hidden_size':self.rel_hidden_size,
@@ -317,7 +314,7 @@ class TransDConfig(BasicConfig):
 class TransMConfig(BasicConfig):
 
     def __init__(self, args=None):
-        
+
         if args is None or args.golden is True:
             self.learning_rate=0.001
             self.L1_flag=True
@@ -341,7 +338,7 @@ class TransMConfig(BasicConfig):
             self.sampling = args.sampling
 
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -370,7 +367,7 @@ class TransHConfig(BasicConfig):
             self.data='Freebase15k'
             self.optimizer='adam'
             self.sampling="uniform"
-        
+
         else:
             self.learning_rate = args.learning_rate
             self.L1_flag = args.l1_flag
@@ -384,7 +381,7 @@ class TransHConfig(BasicConfig):
             self.C = args.C
 
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -402,7 +399,7 @@ class TransHConfig(BasicConfig):
 class RescalConfig(BasicConfig):
 
     def __init__(self, args=None):
-        
+
         if args is None or args.golden is True:
             self.learning_rate=0.001
             self.L1_flag=True
@@ -426,7 +423,7 @@ class RescalConfig(BasicConfig):
             self.sampling = args.sampling
 
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -443,7 +440,7 @@ class RescalConfig(BasicConfig):
 class SMEConfig(BasicConfig):
 
     def __init__(self, args=None):
-        
+
         if args is None or args.golden is True:
             self.learning_rate=0.001
             self.L1_flag=True
@@ -467,9 +464,9 @@ class SMEConfig(BasicConfig):
             self.optimizer = args.optimizer
             self.sampling = args.sampling
             self.bilinear = True if args.function == 'bilinear' else False
-        
+
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -487,7 +484,7 @@ class SMEConfig(BasicConfig):
 class NTNConfig(BasicConfig):
 
     def __init__(self, args=None):
-        
+
         if args is None or args.golden is True:
             self.learning_rate=0.01
             self.L1_flag=True
@@ -499,7 +496,7 @@ class NTNConfig(BasicConfig):
             self.data='Freebase15k'
             self.optimizer='adam'
             self.sampling="uniform"
-            
+
         else:
             self.learning_rate = args.learning_rate
             self.L1_flag = args.l1_flag
@@ -513,7 +510,7 @@ class NTNConfig(BasicConfig):
             self.sampling = args.sampling
 
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'ent_hidden_size':self.ent_hidden_size,
             'rel_hidden_size':self.rel_hidden_size,
@@ -529,7 +526,7 @@ class NTNConfig(BasicConfig):
 
 
 class SLMConfig(BasicConfig):
-    
+
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
@@ -543,7 +540,7 @@ class SLMConfig(BasicConfig):
             self.data='Freebase15k'
             self.optimizer='adam'
             self.sampling="uniform"
-        
+
         else:
             self.learning_rate = args.learning_rate
             self.L1_flag = args.l1_flag
@@ -557,7 +554,7 @@ class SLMConfig(BasicConfig):
             self.sampling = args.sampling
 
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'ent_hidden_size':self.ent_hidden_size,
             'rel_hidden_size':self.rel_hidden_size,
@@ -574,7 +571,7 @@ class SLMConfig(BasicConfig):
 
 class RotatEConfig(BasicConfig):
     def __init__(self, args=None):
-        
+
         if args is None or args.golden is True:
             self.learning_rate=0.01
             self.L1_flag=True
@@ -585,7 +582,7 @@ class RotatEConfig(BasicConfig):
             self.data='Freebase15k'
             self.optimizer='adam'
             self.sampling="uniform"
-        
+
         else:
             self.learning_rate = args.learning_rate
             self.L1_flag = args.l1_flag
@@ -598,7 +595,7 @@ class RotatEConfig(BasicConfig):
             self.sampling = args.sampling
 
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -633,7 +630,7 @@ class ConvEConfig(BasicConfig):
             self.data='Freebase15k'
             self.optimizer='adam'
             self.sampling="uniform"
-        
+
         else:
             self.lmbda = args.lmbda
             self.feature_map_dropout = args.feature_map_dropout
@@ -653,7 +650,7 @@ class ConvEConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
-        
+
         self.hyperparameters = {
             'lmbda':self.lmbda,
             'feature_map_dropout':self.feature_map_dropout,
@@ -663,7 +660,7 @@ class ConvEConfig(BasicConfig):
             'label_smoothing':self.label_smoothing,
             'lr_decay':self.lr_decay,
 
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -678,7 +675,7 @@ class ConvEConfig(BasicConfig):
 
 
 class ProjE_pointwiseConfig(BasicConfig):
-    
+
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
@@ -699,7 +696,7 @@ class ProjE_pointwiseConfig(BasicConfig):
             self.data='Freebase15k'
             self.optimizer='adam'
             self.sampling="uniform"
-        
+
         else:
             self.lmbda = args.lmbda
             self.feature_map_dropout = args.feature_map_dropout
@@ -718,7 +715,7 @@ class ProjE_pointwiseConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
-        
+
         self.hyperparameters = {
             'lmbda':self.lmbda,
             'feature_map_dropout':self.feature_map_dropout,
@@ -728,7 +725,7 @@ class ProjE_pointwiseConfig(BasicConfig):
             'label_smoothing':self.label_smoothing,
             'lr_decay':self.lr_decay,
 
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -745,7 +742,7 @@ class ProjE_pointwiseConfig(BasicConfig):
 class KG2EConfig(BasicConfig):
 
     def __init__(self, args=None):
-                      
+
         if args is None or args.golden is True:
             self.learning_rate=0.001
             self.L1_flag=True
@@ -774,9 +771,9 @@ class KG2EConfig(BasicConfig):
             self.distance_measure = args.function
             self.cmax = args.cmax
             self.cmin = args.cmin
-        
+
         self.hyperparameters = {
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -815,7 +812,7 @@ class ComplexConfig(BasicConfig):
             self.data='Freebase15k'
             self.optimizer='adam'
             self.sampling="uniform"
-        
+
         else:
             self.lmbda = args.lmbda
             self.feature_map_dropout = args.feature_map_dropout
@@ -834,7 +831,7 @@ class ComplexConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
-        
+
         self.hyperparameters = {
             'lmbda':self.lmbda,
             'feature_map_dropout':self.feature_map_dropout,
@@ -844,7 +841,7 @@ class ComplexConfig(BasicConfig):
             'label_smoothing':self.label_smoothing,
             'lr_decay':self.lr_decay,
 
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -859,9 +856,9 @@ class ComplexConfig(BasicConfig):
 
 
 class DistMultConfig(BasicConfig):
-    
+
     def __init__(self, args=None):
-        
+
         if args is None or args.golden is True:
             self.lmbda=0.1
             self.feature_map_dropout=0.2
@@ -880,7 +877,7 @@ class DistMultConfig(BasicConfig):
             self.data='Freebase15k'
             self.optimizer='adam'
             self.sampling="uniform"
-        
+
         else:
             self.lmbda = args.lmbda
             self.feature_map_dropout = args.feature_map_dropout
@@ -899,7 +896,7 @@ class DistMultConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
-        
+
         self.hyperparameters = {
             'lmbda':self.lmbda,
             'feature_map_dropout':self.feature_map_dropout,
@@ -909,7 +906,7 @@ class DistMultConfig(BasicConfig):
             'label_smoothing':self.label_smoothing,
             'lr_decay':self.lr_decay,
 
-            'learning_rate':self.learning_rate,       
+            'learning_rate':self.learning_rate,
             'L1_flag':self.L1_flag,
             'hidden_size':self.hidden_size,
             'batch_size':self.batch_size,
@@ -947,7 +944,7 @@ class TuckERConfig(BasicConfig):
             self.data='Freebase15k'
             self.optimizer='adam'
             self.sampling="uniform"
-        
+
         else:
             self.lmbda = args.lmbda
             self.feature_map_dropout = args.feature_map_dropout
@@ -968,7 +965,7 @@ class TuckERConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
-        
+
         self.hyperparameters = {
             'lmbda': self.lmbda,
             'feature_map_dropout': self.feature_map_dropout,

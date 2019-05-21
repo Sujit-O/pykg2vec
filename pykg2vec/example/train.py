@@ -13,7 +13,7 @@ def main():
     knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling)
     knowledge_graph.prepare_data()
 
-    # Extracting the corresponding model config and definition from Importer(). 
+    # Extracting the corresponding model config and definition from Importer().
     config_def, model_def = Importer().import_model_config(args.model_name.lower())
     config = config_def(args=args)
     model = model_def(config)

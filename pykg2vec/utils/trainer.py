@@ -97,8 +97,8 @@ class Trainer(TrainerMeta):
         if self.config.disp_summary:
             self.summary()
 
-        self.sess.close() 
-        tf.reset_default_graph() # clean the tensorflow for the next training task. 
+        self.sess.close()
+        tf.reset_default_graph() # clean the tensorflow for the next training task.
 
         return loss
 
@@ -188,34 +188,25 @@ class Trainer(TrainerMeta):
 
     def display(self):
         """function to display embedding"""
-        if self.config.plot_embedding:
-            if self.config.plot_entity_only:
-                viz = Visualization(model=self.model,
-                                    ent_only_plot=True,
-                                    rel_only_plot=False,
-                                    ent_and_rel_plot=False)
-            else:
-                viz = Visualization(model=self.model,
-                                    ent_only_plot=True,
-                                    rel_only_plot=True,
-                                    ent_and_rel_plot=True)
+        options = {"ent_only_plot": True,
+                    "rel_only_plot": not self.config.plot_entity_only,
+                    "ent_and_rel_plot": not self.config.plot_entity_only}
 
-            viz.plot_embedding(sess=self.sess, resultpath=self.config.figures, algos=self.model.model_name,
+        if self.config.plot_embedding:
+            viz = Visualization(model=self.model, vis_opts = options)
+
+            viz.plot_embedding(sess=self.sess,
+                               resultpath=self.config.figures,
+                               algos=self.model.model_name,
                                show_label=False)
 
         if self.config.plot_training_result:
-            viz = Visualization()
-            viz.plot_train_result(path=self.config.result,
-                                  result=self.config.figures,
-                                  algo=['TransE', 'TransR', 'TransH', 'SLM'],
-                                  data=['Freebase15k'])
+            viz = Visualization(model=self.model)
+            viz.plot_train_result()
 
         if self.config.plot_testing_result:
-            viz = Visualization()
-            viz.plot_test_result(path=self.config.result,
-                                 result=self.config.figures,
-                                 algo=['TransE', 'TransR', 'TransH'],
-                                 data=['Freebase15k'], paramlist=None, hits=self.config.hits)
+            viz = Visualization(model=self.model)
+            viz.plot_test_result()
 
     def summary(self):
         """function to print the summary"""
@@ -240,5 +231,5 @@ class Trainer(TrainerMeta):
 
         for key in self.config.hyperparameters:
             print("%s:%s" % (key, self.config.hyperparameters[key]))
-        
+
         print("---------------------------")
