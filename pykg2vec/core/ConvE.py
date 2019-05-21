@@ -36,8 +36,6 @@ class ConvE(ModelMeta):
             raise NotImplementedError("The hidden dimension is not supported!")
         self.last_dim = self.dense_last_dim[self.config.hidden_size]
 
-        self.def_layer()      
-
     def def_inputs(self):
         self.h = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
@@ -45,9 +43,9 @@ class ConvE(ModelMeta):
         self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
         self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
-        self.test_h = tf.placeholder(tf.int32, [None])
-        self.test_r = tf.placeholder(tf.int32, [None])
-        self.test_t = tf.placeholder(tf.int32, [None])
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
@@ -92,7 +90,7 @@ class ConvE(ModelMeta):
         x = self.feat_drop(x)
         # reshape the tensor to get the batch size
         '''10368 with k=200,5184 with k=100, 2592 with k=50'''
-        x = tf.reshape(x, [self.config.batch_size, self.last_dim])
+        x = tf.reshape(x, [-1, self.last_dim])
         # pass the feature through fully connected layer, output size = batch size, hidden size
         x = self.fc1(x)
         # dropout in the hidden layer
@@ -104,7 +102,7 @@ class ConvE(ModelMeta):
         # project and get inner product with the tail triple
         x = tf.matmul(x, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
         # add a bias value
-        x = tf.add(x, self.b)
+        # x = tf.add(x, self.b)
         # sigmoid activation
         return tf.nn.sigmoid(x)
 
@@ -141,9 +139,9 @@ class ConvE(ModelMeta):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        h_emb = tf.nn.embedding_lookup(ent_emb_norm, self.test_h)
-        r_emb = tf.nn.embedding_lookup(rel_emb_norm, self.test_r)
-        t_emb = tf.nn.embedding_lookup(ent_emb_norm, self.test_t)
+        h_emb = tf.nn.embedding_lookup(ent_emb_norm, self.test_h_batch)
+        r_emb = tf.nn.embedding_lookup(rel_emb_norm, self.test_r_batch)
+        t_emb = tf.nn.embedding_lookup(ent_emb_norm, self.test_t_batch)
 
         stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
         stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])

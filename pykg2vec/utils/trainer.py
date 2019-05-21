@@ -33,8 +33,6 @@ class Trainer(TrainerMeta):
         """function to build the model"""
         self.model.def_inputs()
         self.model.def_parameters()
-        # import pdb
-        # pdb.set_trace()
         if getattr(self.model, "def_layer", None):
             self.model.def_layer()
         self.model.def_loss()

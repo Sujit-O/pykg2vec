@@ -645,7 +645,8 @@ class ConvEConfig(BasicConfig):
 
             self.learning_rate = args.learning_rate
             self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
+            #TODO: Currently conve can only have k=50, 100, or 200
+            self.hidden_size = 50#args.hidden_size
             self.batch_size = args.batch_training
             self.epochs = args.epochs
             self.margin = args.margin
