@@ -76,7 +76,7 @@ class KGEArgParser:
         self.general_group = self.parser.add_argument_group('Generic')
 
         self.general_group.add_argument('-mn',  dest='model_name', default='TransE', type=str, help='Name of model')
-        self.general_group.add_argument('-db', dest='debug', default=False, type=bool, help='To use debug mode or not.')
+        self.general_group.add_argument('-db', dest='debug', default=False, type=lambda x: (str(x).lower() == 'true'), help='To use debug mode or not.')
         self.general_group.add_argument('-ghp',dest='golden', default=True, type=lambda x: (str(x).lower() == 'true'), help='Use Golden Hyper parameters!')
         self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, help='The name of dataset.')
         self.general_group.add_argument('-ld', dest='load_from_data', default=False, type=lambda x: (str(x).lower() == 'true'), help='load_from_data!')
@@ -90,13 +90,13 @@ class KGEArgParser:
         self.general_hyper_group.add_argument('-opt',dest='optimizer', default='adam', type=str, help='optimizer to be used in training.')
         self.general_hyper_group.add_argument('-s',  dest='sampling', default='uniform', type=str, help='strategy to do negative sampling.')
         self.general_hyper_group.add_argument('-l',  dest='epochs', default=100, type=int, help='The total number of Epochs')
-        self.general_hyper_group.add_argument('-tn', dest='test_num', default=100, type=int, help='The total number of test triples')
+        self.general_hyper_group.add_argument('-tn', dest='test_num', default=1000, type=int, help='The total number of test triples')
         self.general_hyper_group.add_argument('-ts', dest='test_step', default=10, type=int, help='Test every _ epochs')
         self.general_hyper_group.add_argument('-lr', dest='learning_rate', default=0.01, type=float, help='learning rate')
         self.general_hyper_group.add_argument('-k',  dest='hidden_size', default=50, type=int, help='Hidden embedding size.')
         self.general_hyper_group.add_argument('-km', dest='ent_hidden_size', default=50, type=int, help="Hidden embedding size for entities.")
         self.general_hyper_group.add_argument('-kr', dest='rel_hidden_size', default=50, type=int, help="Hidden embedding size for relations.")
-        self.general_hyper_group.add_argument('-l1', dest='l1_flag', default=True, type=bool, help='The floag of using L1 or L2 norm.')
+        self.general_hyper_group.add_argument('-l1', dest='l1_flag', default=True, type=lambda x: (str(x).lower() == 'true'), help='The flag of using L1 or L2 norm.')
         self.general_hyper_group.add_argument('-c', dest='C', default=0.0125, type=float, help='The parameter C used in transH.')
 
         ''' arguments regarding SME and KG2E '''
@@ -234,10 +234,10 @@ class TransRConfig(BasicConfig):
         if args is None or args.golden is True:
             self.learning_rate = 0.01
             self.L1_flag = True
-            self.ent_hidden_size = 64
-            self.rel_hidden_size = 32
+            self.ent_hidden_size = 128
+            self.rel_hidden_size = 128
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 100
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'

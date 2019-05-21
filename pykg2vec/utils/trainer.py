@@ -35,7 +35,10 @@ class Trainer(TrainerMeta):
         self.model.def_parameters()
         self.model.def_loss()
 
-        self.sess = tf.Session(config=self.config.gpu_config)
+        if not self.debug:
+            self.sess = tf.Session(config=self.config.gpu_config)
+        else:
+            self.sess = tf.InteractiveSession()
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
 
         if self.config.optimizer == 'sgd':
@@ -100,7 +103,7 @@ class Trainer(TrainerMeta):
     def train_model_epoch(self, epoch_idx, tuning=False):
         acc_loss = 0
 
-        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 500
+        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 10
 
         start_time = timeit.default_timer()
 
