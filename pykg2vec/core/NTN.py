@@ -119,9 +119,17 @@ class NTN(ModelMeta):
         expanded_t = tf.tile(tf.expand_dims(tf.expand_dims(t, 1), 3), [1, k, 1, 1])
 
         # [m, k]
+        # import pdb
+        # pdb.set_trace()
         htmrt = tf.squeeze(tf.matmul(tf.matmul(expanded_h, expanded_mr), expanded_t), [2, 3])
-        import pdb
-        pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
+        # num_entity = self.data_stats.tot_entity
+        # mr1h = tf.cond(tf.shape(mr1h)[0] < num_entity, lambda: tf.expand_dims(mr1h, axis=1), lambda: mr1h)
+        # mr2t = tf.cond(tf.shape(mr2t)[0] < num_entity, lambda: tf.expand_dims(mr2t, axis=1), lambda: mr2t)
+        # # br = tf.cond(tf.shape(br)[0] < num_entity, lambda: tf.expand_dims(br, axis=1), lambda: br)
+        # htmrt = tf.cond(tf.shape(htmrt)[0] < num_entity, lambda: tf.expand_dims(htmrt, axis=1), lambda: htmrt)
+
         return tf.tanh(mr1h + mr2t + br + htmrt)
 
     # Loop over ret_hidden_size
@@ -193,8 +201,10 @@ class NTN(ModelMeta):
         # t_vec = tf.expand_dims(t_vec, axis=1)
         # import pdb
         # pdb.set_trace()
-        energy_h = tf.reduce_sum(tf.expand_dims(r_vec, axis=1) * self.test_layer(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t_vec), -1)
-        energy_t = tf.reduce_sum(tf.expand_dims(r_vec, axis=1) * self.test_layer(h_vec, tf.nn.l2_normalize(self.ent_embeddings, axis=1)), -1)
+        energy_h = tf.reduce_sum(
+            tf.expand_dims(r_vec, axis=1) * self.test_layer(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t_vec), -1)
+        energy_t = tf.reduce_sum(
+            tf.expand_dims(r_vec, axis=1) * self.test_layer(h_vec, tf.nn.l2_normalize(self.ent_embeddings, axis=1)), -1)
 
         _, head_rank = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
         _, tail_rank = tf.nn.top_k(tf.negative(energy_t), k=num_entity)

@@ -939,7 +939,7 @@ class TuckERConfig(BasicConfig):
             self.rel_hidden_size = 50
             self.ent_hidden_size = 50
             self.batch_size=128
-            self.epochs=2
+            self.epochs=10
             self.margin=1.0
             self.data='Freebase15k'
             self.optimizer='adam'
