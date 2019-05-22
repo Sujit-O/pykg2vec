@@ -36,16 +36,15 @@ class DistMult(ModelMeta):
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
+    def def_parameters(self):
+            k = self.config.hidden_size
+            with tf.name_scope("embedding"):
+                self.emb_e = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
+                                             initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                self.emb_rel = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
+                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-def def_parameters(self):
-        k = self.config.hidden_size
-        with tf.name_scope("embedding"):
-            self.emb_e = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
-                                         initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.emb_rel = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
-                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-        self.parameter_list = [self.emb_e, self.emb_rel]
+            self.parameter_list = [self.emb_e, self.emb_rel]
 
     def def_loss(self):
         h_emb, r_emb, t_emb = self.embed(self.h, self.r, self.t)
@@ -63,9 +62,6 @@ def def_parameters(self):
         loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
 
         self.loss = loss_tails + loss_heads
-
-    # def def_layer(self):
-    #     self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
 
     def test_batch(self):
         h_emb, r_emb, t_emb = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
