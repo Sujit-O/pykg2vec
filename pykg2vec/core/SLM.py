@@ -35,6 +35,9 @@ class SLM(ModelMeta):
         self.test_h = tf.placeholder(tf.int32, [1])
         self.test_t = tf.placeholder(tf.int32, [1])
         self.test_r = tf.placeholder(tf.int32, [1])
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
@@ -77,21 +80,42 @@ class SLM(ModelMeta):
 
         return tf.tanh(mr1h + mr2t)
 
-    def test_step(self):
+    def test_layer(self, h, t):
+        k = self.config.rel_hidden_size
+        # h => [m, d], self.mr1 => [d, k]
+        mr1h = tf.matmul(h, self.mr1)
+        # t => [m, d], self.mr2 => [d, k]
+        mr2t = tf.matmul(t, self.mr2)
+
+        result = tf.cond(tf.shape(mr1h)[0] < tf.shape(mr2t)[0], lambda: tf.tanh(tf.expand_dims(mr1h, axis=1) + mr2t),
+                         lambda: tf.tanh(tf.expand_dims(mr2t, axis=1) + mr1h))
+
+        return result
+
+    # def test_step(self):
+    #     num_entity = self.data_stats.tot_entity
+    #
+    #     h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
+    #     energy_h = tf.reduce_sum(r_vec * self.layer(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t_vec), -1)
+    #     energy_t = tf.reduce_sum(r_vec * self.layer(h_vec, tf.nn.l2_normalize(self.ent_embeddings, axis=1)), -1)
+    #
+    #     _, head_rank = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
+    #     _, tail_rank = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
+    #
+    #     return head_rank, tail_rank
+
+    def test_batch(self):
         num_entity = self.data_stats.tot_entity
 
-        h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        energy_h = tf.reduce_sum(r_vec * self.layer(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t_vec), -1)
-        energy_t = tf.reduce_sum(r_vec * self.layer(h_vec, tf.nn.l2_normalize(self.ent_embeddings, axis=1)), -1)
+        h_vec, r_vec, t_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+        energy_h = tf.reduce_sum(tf.expand_dims(r_vec,axis=1) * self.test_layer(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t_vec), -1)
+        energy_t = tf.reduce_sum(tf.expand_dims(r_vec,axis=1) * self.test_layer(h_vec, tf.nn.l2_normalize(self.ent_embeddings, axis=1)), -1)
 
         _, head_rank = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
         _, tail_rank = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
 
         return head_rank, tail_rank
 
-    def test_batch(self):
-        pass
-        
     def embed(self, h, r, t):
         """function to get the embedding value"""
         emb_h = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), h)

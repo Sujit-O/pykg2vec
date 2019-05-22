@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 import sys
+
 sys.path.append("../")
 
 from core.KGMeta import ModelMeta
@@ -44,7 +45,7 @@ class SME(ModelMeta):
     def __init__(self, config=None):
         self.config = config
         self.data_stats = self.config.kg_meta
-        
+
         if self.config.bilinear:
             self.model_name = 'SME_Bilinear'
         else:
@@ -80,6 +81,9 @@ class SME(ModelMeta):
         self.test_h = tf.placeholder(tf.int32, [1])
         self.test_t = tf.placeholder(tf.int32, [1])
         self.test_r = tf.placeholder(tf.int32, [1])
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
@@ -134,7 +138,7 @@ class SME(ModelMeta):
 
     def test_batch(self):
         pass
-        
+
     def embed(self, h, r, t):
         """function to get the embedding value"""
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
