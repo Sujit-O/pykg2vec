@@ -32,9 +32,10 @@ class RotatE(ModelMeta):
         self.neg_h = tf.placeholder(tf.int32, [None])
         self.neg_t = tf.placeholder(tf.int32, [None])
         self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h = tf.placeholder(tf.int32, [1])
-        self.test_t = tf.placeholder(tf.int32, [1])
-        self.test_r = tf.placeholder(tf.int32, [1])
+
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
@@ -57,6 +58,21 @@ class RotatE(ModelMeta):
         score_i = hr * ri + hi * rr - ti
         return tf.reduce_sum(tf.sqrt(score_r ** 2 + score_i ** 2), -1)
 
+    def comp_mul_and_min_4_test(self, hr, hi, rr, ri, tr, ti):
+
+        rr = tf.expand_dims(rr, axis=1)
+        ri = tf.expand_dims(ri, axis=1)
+
+        score_r = tf.cond(tf.shape(hr)[0] < tf.shape(tr)[0],
+                          lambda: tf.expand_dims(hr, axis=1)*rr-tf.expand_dims(hi, axis=1)*ri-tr,
+                          lambda: hr*rr-hi*ri-tf.expand_dims(tr, axis=1))
+
+        score_i = tf.cond(tf.shape(hr)[0] < tf.shape(tr)[0],
+                          lambda: tf.expand_dims(hr, axis=1) * ri + tf.expand_dims(hi, axis=1) * rr - ti,
+                          lambda:  hr * ri + hi * rr - tf.expand_dims(ti, axis=1))
+
+        return tf.reduce_sum(tf.sqrt(score_r ** 2 + score_i ** 2), -1)
+
     def def_loss(self):
         (pos_h_e_r, pos_h_e_i), (pos_r_e_r, pos_r_e_i), (pos_t_e_r, pos_t_e_i) \
             = self.embed(self.pos_h, self.pos_r, self.pos_t)
@@ -69,26 +85,23 @@ class RotatE(ModelMeta):
 
         self.loss = tf.reduce_sum(tf.maximum(pos_score + self.config.margin - neg_score, 0))
 
-    def test_step(self):
+    def test_batch(self):
         num_entity = self.data_stats.tot_entity
 
         (h_vec_r, h_vec_i), (r_vec_r, r_vec_i), (t_vec_r, t_vec_i) \
-            = self.embed(self.test_h, self.test_r, self.test_t)
+            = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        head_pos_score = self.comp_mul_and_min(self.ent_embeddings_real, self.ent_embeddings_imag, \
-                                               r_vec_r, r_vec_i, t_vec_r, t_vec_i)
+        head_pos_score = self.comp_mul_and_min_4_test(self.ent_embeddings_real, self.ent_embeddings_imag,
+                                                      r_vec_r, r_vec_i, t_vec_r, t_vec_i)
 
-        tail_pos_score = self.comp_mul_and_min(h_vec_r, h_vec_i, r_vec_r, r_vec_i,
-                                               self.ent_embeddings_real, self.ent_embeddings_imag)
+        tail_pos_score = self.comp_mul_and_min_4_test(h_vec_r, h_vec_i, r_vec_r, r_vec_i,
+                                                      self.ent_embeddings_real, self.ent_embeddings_imag)
 
         _, head_rank = tf.nn.top_k(head_pos_score, k=num_entity)
         _, tail_rank = tf.nn.top_k(tail_pos_score, k=num_entity)
 
         return head_rank, tail_rank
 
-    def test_batch(self):
-        pass
-        
     def embed(self, h, r, t):
         """function to get the embedding value"""
         pi = 3.14159265358979323846
