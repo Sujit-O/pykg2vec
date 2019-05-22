@@ -51,25 +51,55 @@ class SME(ModelMeta):
         else:
             self.model_name = 'SME_Linear'
 
-    def gu_bilinear(self, h, r):
-        return tf.transpose(
-            tf.multiply(tf.matmul(self.mu1, tf.transpose(h)), tf.matmul(self.mu2, tf.transpose(r))) + self.bu)
-
-    def gv_bilinear(self, r, t):
-        return tf.transpose(
-            tf.multiply(tf.matmul(self.mv1, tf.transpose(r)), tf.matmul(self.mv2, tf.transpose(t))) + self.bv)
-
-    def gu_linear(self, h, r):
-        return tf.transpose(tf.matmul(self.mu1, tf.transpose(h)) + tf.matmul(self.mu2, tf.transpose(r)) + self.bu)
-
-    def gv_linear(self, r, t):
-        return tf.transpose(tf.matmul(self.mv1, tf.transpose(r)) + tf.matmul(self.mv2, tf.transpose(t)) + self.bv)
-
-    def match(self, h, r, t):
-        if self.config.bilinear:
-            return tf.reduce_sum(tf.multiply(self.gu_bilinear(h, r), self.gv_bilinear(r, t)), 1)
+    def gu_bilinear(self, h, r, test_flag):
+        if test_flag:
+            import pdb
+            pdb.set_trace()
+            return tf.transpose(
+                tf.multiply(tf.matmul(self.mu1, tf.transpose(h)), tf.matmul(self.mu2, tf.transpose(r))) + self.bu)
         else:
-            return tf.reduce_sum(self.gu_linear(h, r) * self.gv_linear(r, t), 1)
+            return tf.transpose(
+                tf.multiply(tf.matmul(self.mu1, tf.transpose(h)), tf.matmul(self.mu2, tf.transpose(r))) + self.bu)
+
+    def gv_bilinear(self, r, t, test_flag):
+        if test_flag:
+            import pdb
+            pdb.set_trace()
+        else:
+            return tf.transpose(
+                tf.multiply(tf.matmul(self.mv1, tf.transpose(r)), tf.matmul(self.mv2, tf.transpose(t))) + self.bv)
+
+    def gu_linear(self, h, r, test_flag):
+        if test_flag:
+            tmp1 = tf.cond(tf.shape(h)[0] > tf.shape(r)[0],
+                           lambda: tf.expand_dims(tf.transpose(tf.matmul(self.mu2, tf.transpose(r)) + self.bu), axis=1),
+                           lambda: tf.transpose(tf.matmul(self.mu2, tf.transpose(r)) + self.bu))
+            return tf.transpose(tf.matmul(self.mu1, tf.transpose(h))) + tmp1
+        else:
+            return tf.transpose(tf.matmul(self.mu1, tf.transpose(h)) + tf.matmul(self.mu2, tf.transpose(r)) + self.bu)
+
+    def gv_linear(self, r, t, test_flag):
+        if test_flag:
+            tmp1 = tf.cond(tf.shape(t)[0] > tf.shape(r)[0],
+                           lambda: tf.expand_dims(tf.transpose(tf.matmul(self.mv1, tf.transpose(r)) + self.bv), axis=1),
+                           lambda: tf.transpose(tf.matmul(self.mv1, tf.transpose(r)) + self.bv))
+            return tf.transpose(tf.matmul(self.mv2, tf.transpose(t))) + tmp1
+        else:
+            return tf.transpose(tf.matmul(self.mv1, tf.transpose(r)) + tf.matmul(self.mv2, tf.transpose(t)) + self.bv)
+
+    def match(self, h, r, t, test_flag=False):
+        if self.config.bilinear:
+            return tf.reduce_sum(tf.multiply(self.gu_bilinear(h, r, test_flag), self.gv_bilinear(r, t, test_flag)), 1)
+        else:
+            if test_flag:
+                tmp1 = self.gu_linear(h, r, test_flag)
+                tmp2 = self.gv_linear(r, t, test_flag)
+                result = tf.cond(tf.shape(tmp1)[1] < tf.shape(tmp2)[1],
+                                 lambda: tf.reduce_sum(tf.expand_dims(tmp1, axis=1) * tmp2, -1),
+                                 lambda: tf.reduce_sum(tf.expand_dims(tmp2, axis=1) * tmp1, -1))
+                return result
+            else:
+                return tf.reduce_sum(self.gu_linear(h, r, test_flag) * self.gv_linear(r, t, test_flag), 1)
 
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
@@ -78,9 +108,6 @@ class SME(ModelMeta):
         self.neg_h = tf.placeholder(tf.int32, [None])
         self.neg_t = tf.placeholder(tf.int32, [None])
         self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h = tf.placeholder(tf.int32, [1])
-        self.test_t = tf.placeholder(tf.int32, [1])
-        self.test_r = tf.placeholder(tf.int32, [1])
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
@@ -110,7 +137,7 @@ class SME(ModelMeta):
             self.bv = tf.get_variable(name="bv", shape=[k, 1],
                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, \
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings,
                                self.mu1, self.mu2, self.bu, self.mv1, self.mv2, self.bv]
 
     def def_loss(self):
@@ -137,7 +164,16 @@ class SME(ModelMeta):
         return head_rank, tail_rank
 
     def test_batch(self):
-        pass
+        num_entity = self.data_stats.tot_entity
+
+        h_vec, r_vec, t_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+        energy_h = self.match(tf.nn.l2_normalize(self.ent_embeddings, axis=1), r_vec, t_vec, test_flag=True)
+        energy_t = self.match(h_vec, r_vec, tf.nn.l2_normalize(self.ent_embeddings, axis=1), test_flag=True)
+
+        _, head_rank = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
+        _, tail_rank = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
+
+        return head_rank, tail_rank
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
