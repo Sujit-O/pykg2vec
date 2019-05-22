@@ -101,106 +101,26 @@ class NTN(ModelMeta):
         return tf.tanh(mr1h + mr2t + br + htmrt)
 
     def test_layer(self, h, t):
-        k = self.config.rel_hidden_size
+        num_entity = self.data_stats.tot_entity
         # h => [m, d], self.mr1 => [d, k]
         mr1h = tf.matmul(h, self.mr1)
         # t => [m, d], self.mr2 => [d, k]
         mr2t = tf.matmul(t, self.mr2)
         # br = [k]
         br = tf.squeeze(self.br, -1)
-
-        # [m, k, 1, d]
-        expanded_h = tf.tile(tf.expand_dims(tf.expand_dims(h, 1), 1), [1, k, 1, 1])
-
-        # [m, k, d, d]
-        expanded_mr = tf.tile(tf.expand_dims(self.mr, 0), [tf.shape(h)[0], 1, 1, 1])
-
-        # [m, k, d, 1]
-        expanded_t = tf.tile(tf.expand_dims(tf.expand_dims(t, 1), 3), [1, k, 1, 1])
-
-        # [m, k]
-        # import pdb
-        # pdb.set_trace()
-        htmrt = tf.squeeze(tf.matmul(tf.matmul(expanded_h, expanded_mr), expanded_t), [2, 3])
-        # import pdb
-        # pdb.set_trace()
-        # num_entity = self.data_stats.tot_entity
-        # mr1h = tf.cond(tf.shape(mr1h)[0] < num_entity, lambda: tf.expand_dims(mr1h, axis=1), lambda: mr1h)
-        # mr2t = tf.cond(tf.shape(mr2t)[0] < num_entity, lambda: tf.expand_dims(mr2t, axis=1), lambda: mr2t)
-        # # br = tf.cond(tf.shape(br)[0] < num_entity, lambda: tf.expand_dims(br, axis=1), lambda: br)
-        # htmrt = tf.cond(tf.shape(htmrt)[0] < num_entity, lambda: tf.expand_dims(htmrt, axis=1), lambda: htmrt)
+        htmrt = tf.cond(tf.shape(h)[0] > tf.shape(t)[0],
+                        lambda: tf.tensordot(t, tf.tensordot(h, self.mr, axes=((-1), (-1))), axes=((-1), (-1))),
+                        lambda: tf.tensordot(h, tf.tensordot(t, self.mr, axes=((-1), (-1))), axes=((-1), (-1))))
+        mr1h = tf.cond(tf.shape(mr1h)[0] < num_entity, lambda: tf.expand_dims(mr1h, axis=1), lambda: mr1h)
+        mr2t = tf.cond(tf.shape(mr2t)[0] < num_entity, lambda: tf.expand_dims(mr2t, axis=1), lambda: mr2t)
 
         return tf.tanh(mr1h + mr2t + br + htmrt)
-
-    # Loop over ret_hidden_size
-    # def test_layer(self, h, t, expand=None):
-    #     k = self.config.rel_hidden_size
-    #     # h => [m, d], self.mr1 => [d, k]
-    #     mr1h = tf.matmul(h, self.mr1)
-    #     # t => [m, d], self.mr2 => [d, k]
-    #     mr2t = tf.matmul(t, self.mr2)
-    #     # br = [k]
-    #     br = tf.squeeze(self.br, -1)
-    #
-    #     # [m, 1, d]
-    #     expanded_h = tf.expand_dims(h, 1)
-    #     # [m, d, 1]
-    #     expanded_t = tf.expand_dims(t, 2)
-    #
-    #     if expand == "t":
-    #         size = tf.shape(h)[0]
-    #         expanded_t = tf.tile(expanded_t, [size, 1, 1])
-    #
-    #     elif expand == "h":
-    #         size = tf.shape(t)[0]
-    #         expanded_h = tf.tile(expanded_h, [size, 1, 1])
-    #
-    #     def condition(i, outputs):
-    #         return tf.less(i, k)
-    #
-    #     def body(i, outputs):
-    #         # self.mr[i]: [d, d], mr_prime: [m, d, d]
-    #         mr_prime = tf.tile(tf.expand_dims(self.mr[i], 0), [size, 1, 1])
-    #         # [m, 1, 1]
-    #         htmrt_index = tf.squeeze(tf.matmul(tf.matmul(expanded_h, mr_prime), expanded_t), [1, 2])
-    #
-    #         outputs = outputs.write(i, tf.expand_dims(htmrt_index, 0))
-    #         return [tf.add(i, 1), outputs]
-    #
-    #     i = tf.constant(0)
-    #     outputs = tf.TensorArray(dtype=tf.float32, infer_shape=True, size=1, dynamic_size=True)
-    #
-    #     _, outputs = tf.while_loop(condition, body, [i, outputs])
-    #
-    #     htmrt = outputs.concat()
-    #
-    #     htmrt = tf.transpose(htmrt)
-    #
-    #     return tf.tanh(mr1h + mr2t + br + htmrt)
-
-    # def test_step(self):
-    #     num_entity = self.data_stats.tot_entity
-    #
-    #     h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-    #     energy_h = tf.reduce_sum(r_vec * self.test_layer(tf.nn.l2_normalize(self.ent_embeddings, axis=1),
-    #                                                      t_vec, expand='t'), -1)
-    #     energy_t = tf.reduce_sum(r_vec * self.test_layer(h_vec, tf.nn.l2_normalize(self.ent_embeddings, axis=1),
-    #                                                      expand='h'), -1)
-    #
-    #     _, head_rank = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
-    #     _, tail_rank = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
-    #
-    #     return head_rank, tail_rank
 
     def test_batch(self):
         num_entity = self.data_stats.tot_entity
 
         h_vec, r_vec, t_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
-        # h_vec= tf.expand_dims(h_vec, axis=1)
-        # r_vec = tf.expand_dims(r_vec, axis=1)
-        # t_vec = tf.expand_dims(t_vec, axis=1)
-        # import pdb
-        # pdb.set_trace()
+
         energy_h = tf.reduce_sum(
             tf.expand_dims(r_vec, axis=1) * self.test_layer(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t_vec), -1)
         energy_t = tf.reduce_sum(
