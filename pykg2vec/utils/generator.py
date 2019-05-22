@@ -205,7 +205,7 @@ class Generator:
         if config.data == 'test' or config.data == 'valid':
             self.create_test_processer_process(config.process_num)
         else:
-            if config.algo.lower() in ["tucker","tucker_v2","conve", "complex", "distmult", "proje"]:    
+            if config.algo.lower() in ["tucker","tucker_v2","conve", "complex", "distmult", "proje_pointwise"]:
                 self.create_train_processor_process(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, config.neg_rate)
             else:
                 self.create_train_processor_process_trans(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, observed_triples)

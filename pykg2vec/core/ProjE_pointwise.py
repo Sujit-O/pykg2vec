@@ -27,59 +27,56 @@ class ProjE_pointwise(ModelMeta):
         self.model_name = 'ProjE_pointwise'
 
     def def_inputs(self):
-        num_total_ent = self.data_stats.tot_entity
+        self.h = tf.placeholder(tf.int32, [None])
+        self.r = tf.placeholder(tf.int32, [None])
+        self.t = tf.placeholder(tf.int32, [None])
+        self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
-        self.test_h = tf.placeholder(tf.int32, [None])
-        self.test_t = tf.placeholder(tf.int32, [None])
-        self.test_r = tf.placeholder(tf.int32, [None])
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
 
-        self.hr_h = tf.placeholder(tf.int32, [None])  # [m]
-        self.hr_r = tf.placeholder(tf.int32, [None])  # [m]
-        self.hr_t = tf.placeholder(tf.float32, [None, num_total_ent])  # [m, tot_entity]
-
-        self.tr_t = tf.placeholder(tf.int32, [None])  # [m]
-        self.tr_r = tf.placeholder(tf.int32, [None])  # [m]
-        self.tr_h = tf.placeholder(tf.float32, [None, num_total_ent])  # [m, tot_entity]
 
     def def_parameters(self):
-        num_total_ent = self.data_stats.tot_entity
-        num_total_rel = self.data_stats.tot_relation
-        k = self.config.hidden_size
+            num_total_ent = self.data_stats.tot_entity
+            num_total_rel = self.data_stats.tot_relation
+            k = self.config.hidden_size
 
-        with tf.name_scope("embedding"):
+            with tf.name_scope("embedding"):
 
-            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
+                                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
+                                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            self.bc1 = tf.get_variable(name="bc1", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.De1 = tf.get_variable(name="De1", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.Dr1 = tf.get_variable(name="Dr1", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                self.bc1 = tf.get_variable(name="bc1", shape=[k],
+                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                self.De1 = tf.get_variable(name="De1", shape=[k],
+                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                self.Dr1 = tf.get_variable(name="Dr1", shape=[k],
+                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            self.bc2 = tf.get_variable(name="bc2", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.De2 = tf.get_variable(name="De2", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.Dr2 = tf.get_variable(name="Dr2", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                self.bc2 = tf.get_variable(name="bc2", shape=[k],
+                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                self.De2 = tf.get_variable(name="De2", shape=[k],
+                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+                self.Dr2 = tf.get_variable(name="Dr2", shape=[k],
+                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2,
-                                   self.De2, self.Dr2]
+                self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2,
+                                       self.De2, self.Dr2]
 
     def def_loss(self):
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
         norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
 
-        emb_hr_h = tf.nn.embedding_lookup(norm_ent_embeddings, self.hr_h)  # [m, k]
-        emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.hr_r)  # [m, k]
+        emb_hr_h = tf.nn.embedding_lookup(norm_ent_embeddings, self.h)  # [m, k]
+        emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.r)  # [m, k]
 
-        emb_tr_t = tf.nn.embedding_lookup(norm_ent_embeddings, self.tr_t)  # [m, k]
-        emb_tr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.tr_r)  # [m, k]
+        emb_tr_t = tf.nn.embedding_lookup(norm_ent_embeddings, self.t)  # [m, k]
+        emb_tr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.r)  # [m, k]
 
         hrt_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_h, emb_hr_r), 0.5), norm_ent_embeddings)
 
@@ -91,9 +88,9 @@ class ProjE_pointwise(ModelMeta):
 
         trh_sigmoid = self.g(tf.nn.dropout(self.f2(emb_tr_t, emb_tr_r), 0.5), norm_ent_embeddings)
 
-        trh_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., self.tr_h)))
+        trh_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., self.rt_h)))
         trh_loss_right = - tf.reduce_sum(
-            (tf.log(tf.clip_by_value(1 - trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.tr_h))))
+            (tf.log(tf.clip_by_value(1 - trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.rt_h))))
 
         trh_loss = trh_loss_left + trh_loss_right
 
@@ -110,15 +107,15 @@ class ProjE_pointwise(ModelMeta):
     def g(self, f, W):
         return tf.sigmoid(tf.matmul(f, tf.transpose(W)))
 
-    def test_step(self):
+    def test_batch(self):
         num_entity = self.data_stats.tot_entity
 
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
         norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
 
-        h_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_h)  # [1, k]
-        r_vec = tf.nn.embedding_lookup(norm_rel_embeddings, self.test_r)  # [1, k]
-        t_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_t)  # [1, k]
+        h_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_h_batch)  # [1, k]
+        r_vec = tf.nn.embedding_lookup(norm_rel_embeddings, self.test_r_batch)  # [1, k]
+        t_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_t_batch)  # [1, k]
 
         hrt_sigmoid = - self.g(self.f1(h_vec, r_vec), norm_ent_embeddings)
         trh_sigmoid = - self.g(self.f2(t_vec, r_vec), norm_ent_embeddings)
