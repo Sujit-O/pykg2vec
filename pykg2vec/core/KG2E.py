@@ -138,6 +138,36 @@ class KG2E(ModelMeta):
         return head_rank, tail_rank
 
     def test_batch(self):
+        test_h_mu, test_h_sigma, test_r_mu, test_r_sigma, test_t_mu, test_t_sigma = self.get_embed_guassian(self.test_h,
+                                                                                                            self.test_r,
+                                                                                                            self.test_t)
+
+        norm_ent_embeddings_mu = tf.nn.l2_normalize(self.ent_embeddings_mu, axis=1)
+        norm_ent_embeddings_sigma = tf.nn.l2_normalize(self.ent_embeddings_sigma, axis=1)
+
+        if self.config.distance_measure == "expected_likelihood":
+            score_head = self.cal_score_expected_likelihood(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, \
+                                                            test_r_mu, test_r_sigma, \
+                                                            test_t_mu, test_t_sigma)
+
+            score_tail = self.cal_score_expected_likelihood(test_h_mu, test_h_sigma, \
+                                                            test_r_mu, test_r_sigma, \
+                                                            norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
+        else:
+            score_head = self.cal_score_kl_divergence(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, \
+                                                      test_r_mu, test_r_sigma, \
+                                                      test_t_mu, test_t_sigma)
+
+            score_tail = self.cal_score_kl_divergence(test_h_mu, test_h_sigma, \
+                                                      test_r_mu, test_r_sigma, \
+                                                      norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
+
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
+
+        return head_rank, tail_rank
+
+    def test_batch(self):
         test_h_mu, test_h_sigma, test_r_mu, test_r_sigma, test_t_mu, test_t_sigma = self.get_embed_guassian(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
         norm_ent_embeddings_mu    = tf.nn.l2_normalize(self.ent_embeddings_mu,    axis=1)

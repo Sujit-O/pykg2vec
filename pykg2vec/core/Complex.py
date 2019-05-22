@@ -149,8 +149,8 @@ class Complex(ModelMeta):
         pred_heads = realrealreal + realimgimg + imgrealimg - imgimgreal
         pred_heads = tf.nn.sigmoid(pred_heads)
 
-        _, head_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(pred_tails, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(pred_heads, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 

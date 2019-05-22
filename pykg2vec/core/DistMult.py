@@ -23,26 +23,21 @@ class DistMult(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.tot_ent = self.data_stats.tot_entity
         self.tot_rel = self.data_stats.tot_relation
-        self.model_name = 'Complex'
-
-        # self.def_inputs()
-        # self.def_parameters()
-        self.def_layer()
-        # self.def_loss()
+        self.model_name = 'Distmult'
 
     def def_inputs(self):
-        self.e1 = tf.placeholder(tf.int32, [None])
-        self.r = tf.placeholder(tf.int32, [None])
-        self.e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.pos_h = tf.placeholder(tf.int32, [None])
+        self.pos_t = tf.placeholder(tf.int32, [None])
+        self.pos_r = tf.placeholder(tf.int32, [None])
+        self.neg_h = tf.placeholder(tf.int32, [None])
+        self.neg_t = tf.placeholder(tf.int32, [None])
+        self.neg_r = tf.placeholder(tf.int32, [None])
+        self.test_h_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
+        self.test_r_batch = tf.placeholder(tf.int32, [None])
 
-        self.test_e1 = tf.placeholder(tf.int32, [None])
-        self.test_e2 = tf.placeholder(tf.int32, [None])
-        self.test_r = tf.placeholder(tf.int32, [None])
-        self.test_r_rev = tf.placeholder(tf.int32, [None])
-        self.test_e2_multi1 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-        self.test_e2_multi2 = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
-    def def_parameters(self):
+def def_parameters(self):
         k = self.config.hidden_size
         with tf.name_scope("embedding"):
             self.emb_e = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
@@ -53,76 +48,58 @@ class DistMult(ModelMeta):
         self.parameter_list = [self.emb_e, self.emb_rel]
 
     def def_loss(self):
-        e1_emb, rel_emb = self.embed(self.e1, self.r)
+        h_emb, r_emb, t_emb = self.embed(self.h, self.r, self.t)
 
-        e1_emb, rel_emb = self.layer(e1_emb, rel_emb)
+        pred_tails = tf.matmul(h_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
+        pred_heads = tf.matmul(t_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
 
-        e1_emb = tf.squeeze(e1_emb)
-        rel_emb = tf.squeeze(rel_emb)
+        pred_tails = tf.nn.sigmoid(pred_tails)
+        pred_heads = tf.nn.sigmoid(pred_heads)
 
-        pred = tf.matmul(e1_emb * rel_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
-        pred = tf.nn.sigmoid(pred)
+        hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        rt_h = self.rt_h * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
 
-        e2_multi1 = self.e2_multi1 * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
+        loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
 
-        loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(e2_multi1, pred))
+        self.loss = loss_tails + loss_heads
 
-        reg_losses = tf.nn.l2_loss(self.emb_e) + tf.nn.l2_loss(self.emb_rel)
-
-        self.loss = loss + self.config.lmbda * reg_losses
-
-    def def_layer(self):
-        self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
-
-    def layer(self, e, rel):
-        e = tf.squeeze(e)
-        rel = tf.squeeze(rel)
-        e = self.inp_drop(e)
-        rel = self.inp_drop(rel)
-        return e, rel
+    # def def_layer(self):
+    #     self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
 
     def test_batch(self):
-        e1_emb, rel_emb = self.embed(self.test_e1, self.test_r)
-        e2_emb, r_rev_emb = self.embed(self.test_e2, self.test_r_rev)
+        h_emb, r_emb, t_emb = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        e1_emb, rel_emb = self.layer(e1_emb, rel_emb)
-        e2_emb, r_rev_emb = self.layer(e2_emb, r_rev_emb)
+        pred_tails = tf.matmul(h_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
+        pred_tails = tf.nn.sigmoid(pred_tails)
 
-        e1_emb = tf.squeeze(e1_emb)
-        e2_emb = tf.squeeze(e2_emb)
-        rel_emb = tf.squeeze(rel_emb)
-        r_rev_emb = tf.squeeze(r_rev_emb)
+        pred_heads = tf.matmul(t_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
+        pred_heads = tf.nn.sigmoid(pred_heads)
 
-        hr_pred = tf.matmul(e1_emb * rel_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
-        hr_pred = tf.nn.sigmoid(hr_pred)
-
-        tr_pred = tf.matmul(e2_emb * r_rev_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
-        tr_pred = tf.nn.sigmoid(tr_pred)
-
-        _, head_rank = tf.nn.top_k(-hr_pred, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(-tr_pred, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(pred_tails, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(pred_heads, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
-    def embed(self, e1, r):
+    def embed(self, h, r, t):
         """function to get the embedding value"""
         norm_emb_e = tf.nn.l2_normalize(self.emb_e, axis=1)
         norm_emb_rel = tf.nn.l2_normalize(self.emb_rel, axis=1)
 
-        emb_e1 = tf.nn.embedding_lookup(norm_emb_e, e1)
-        rel_emb = tf.nn.embedding_lookup(norm_emb_rel, r)
+        h_emb = tf.nn.embedding_lookup(norm_emb_e, h)
+        r_emb = tf.nn.embedding_lookup(norm_emb_rel, r)
+        t_emb = tf.nn.embedding_lookup(norm_emb_e, t)
 
-        return emb_e1, rel_emb
+        return h_emb, r_emb, t_emb
 
-    def get_embed(self, e, r, sess=None):
+    def get_embed(self, h, r, t, sess=None):
         """function to get the embedding value in numpy"""
-        emb_e, rel_emb = self.embed(e, r)
-        emb_e, rel_emb = sess.run([emb_e, rel_emb])
-        return emb_e, rel_emb
+        h, r, t = self.embed(h, r, t)
+        return sess.run([h, r, t])
 
-    def get_proj_embed(self, e, r, sess):
+    def get_proj_embed(self, h, r, t, sess):
         """function to get the projected embedding value in numpy"""
-        return self.get_embed(e, r, sess)
+        return self.get_embed(h, r, t, sess)
 
 
 if __name__ == '__main__':
