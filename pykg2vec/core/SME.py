@@ -53,18 +53,20 @@ class SME(ModelMeta):
 
     def gu_bilinear(self, h, r, test_flag):
         if test_flag:
-            import pdb
-            pdb.set_trace()
-            return tf.transpose(
-                tf.multiply(tf.matmul(self.mu1, tf.transpose(h)), tf.matmul(self.mu2, tf.transpose(r))) + self.bu)
+            tmp1 = tf.cond(tf.shape(h)[0] > tf.shape(r)[0],
+                           lambda: tf.expand_dims(tf.transpose(tf.matmul(self.mu2, tf.transpose(r))), axis=1),
+                           lambda: tf.transpose(tf.matmul(self.mu2, tf.transpose(r))))
+            return tf.multiply(tf.transpose(tf.matmul(self.mu1, tf.transpose(h))), tmp1) + tf.squeeze(self.bu, axis=-1)
         else:
             return tf.transpose(
                 tf.multiply(tf.matmul(self.mu1, tf.transpose(h)), tf.matmul(self.mu2, tf.transpose(r))) + self.bu)
 
     def gv_bilinear(self, r, t, test_flag):
         if test_flag:
-            import pdb
-            pdb.set_trace()
+            tmp1 = tf.cond(tf.shape(t)[0] > tf.shape(r)[0],
+                           lambda: tf.expand_dims(tf.transpose(tf.matmul(self.mv1, tf.transpose(r))), axis=1),
+                           lambda: tf.transpose(tf.matmul(self.mv1, tf.transpose(r))))
+            return tf.multiply(tf.transpose(tf.matmul(self.mv2, tf.transpose(t))), tmp1) + tf.squeeze(self.bu, axis=-1)
         else:
             return tf.transpose(
                 tf.multiply(tf.matmul(self.mv1, tf.transpose(r)), tf.matmul(self.mv2, tf.transpose(t))) + self.bv)
@@ -89,7 +91,16 @@ class SME(ModelMeta):
 
     def match(self, h, r, t, test_flag=False):
         if self.config.bilinear:
-            return tf.reduce_sum(tf.multiply(self.gu_bilinear(h, r, test_flag), self.gv_bilinear(r, t, test_flag)), 1)
+            if test_flag:
+                tmp1 = self.gu_bilinear(h, r, test_flag)
+                tmp2 = self.gv_bilinear(r, t, test_flag)
+                result = tf.cond(tf.shape(tmp1)[1] < tf.shape(tmp2)[1],
+                                 lambda: tf.reduce_sum(tf.multiply(tf.expand_dims(tmp1, axis=1), tmp2), -1),
+                                 lambda: tf.reduce_sum(tf.multiply(tf.expand_dims(tmp2, axis=1), tmp1), -1))
+                return result
+            else:
+                return tf.reduce_sum(tf.multiply(self.gu_bilinear(h, r, test_flag), self.gv_bilinear(r, t, test_flag)),
+                                     1)
         else:
             if test_flag:
                 tmp1 = self.gu_linear(h, r, test_flag)
