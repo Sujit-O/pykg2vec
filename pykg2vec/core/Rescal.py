@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+
 sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
@@ -41,9 +42,10 @@ class Rescal(ModelMeta):
             self.neg_h = tf.placeholder(tf.int32, [None])
             self.neg_t = tf.placeholder(tf.int32, [None])
             self.neg_r = tf.placeholder(tf.int32, [None])
-            self.test_h = tf.placeholder(tf.int32, [1])
-            self.test_t = tf.placeholder(tf.int32, [1])
-            self.test_r = tf.placeholder(tf.int32, [1])
+
+            self.test_h_batch = tf.placeholder(tf.int32, [None])
+            self.test_t_batch = tf.placeholder(tf.int32, [None])
+            self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         num_total_ent = self.data_stats.tot_entity
@@ -110,20 +112,32 @@ class Rescal(ModelMeta):
         _, tail_rank = tf.nn.top_k(tf.reduce_sum(tf.negative(t_sim), 1), k=num_entity)
 
         return head_rank, tail_rank
-    
+
     def test_batch(self):
-        pass
-    
+        num_entity = self.data_stats.tot_entity
+        k = self.config.hidden_size
+
+        h_vec, r_vec, t_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+
+        h_sim = tf.tensordot(tf.squeeze(tf.matmul(r_vec, t_vec), axis=-1), self.ent_embeddings, axes=((-1), (-1)))
+        t_sim = tf.squeeze(tf.tensordot(tf.matmul(tf.reshape(h_vec, [-1, 1, k]), r_vec),
+                                        self.ent_embeddings, axes=((-1), (-1))), axis=1)
+
+        _, head_rank = tf.nn.top_k(tf.negative(h_sim), k=num_entity)
+        _, tail_rank = tf.nn.top_k(tf.negative(t_sim), k=num_entity)
+
+        return head_rank, tail_rank
+
     def embed(self, h, r, t):
         """function to get the embedding value"""
         k = self.config.hidden_size
         emb_h = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), h)
         emb_r = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.rel_matrices, axis=1), r)
         emb_t = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t)
-
-        emb_h = tf.reshape(emb_h, [k, 1])
-        emb_r = tf.reshape(emb_r, [k, k])
-        emb_t = tf.reshape(emb_t, [k, 1])
+        #
+        emb_h = tf.reshape(emb_h, [-1, k, 1])
+        emb_r = tf.reshape(emb_r, [-1, k, k])
+        emb_t = tf.reshape(emb_t, [-1, k, 1])
 
         return emb_h, emb_r, emb_t
 
