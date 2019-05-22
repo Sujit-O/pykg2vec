@@ -13,11 +13,14 @@ from core.KGMeta import ModelMeta
 class SLM(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-    ---
+    Reasoning With Neural Tensor Networks for Knowledge Base Completion
     ------------------Paper Authors---------------------------
-    ---
+    Richard Socher∗, Danqi Chen*, Christopher D. Manning, Andrew Y. Ng
+    Computer Science Department, Stanford University, Stanford, CA 94305, USA
+    richard@socher.org, {danqi,manning}@stanford.edu, ang@cs.stanford.edu
     ------------------Summary---------------------------------
-    ---
+    SLM model is designed as a baseline of Neural Tensor Network.
+    The model constructs a nonlinear neural network to represent the score function.
     """
 
     def __init__(self, config=None):
@@ -32,9 +35,7 @@ class SLM(ModelMeta):
         self.neg_h = tf.placeholder(tf.int32, [None])
         self.neg_t = tf.placeholder(tf.int32, [None])
         self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h = tf.placeholder(tf.int32, [1])
-        self.test_t = tf.placeholder(tf.int32, [1])
-        self.test_r = tf.placeholder(tf.int32, [1])
+
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
@@ -91,18 +92,6 @@ class SLM(ModelMeta):
                          lambda: tf.tanh(tf.expand_dims(mr2t, axis=1) + mr1h))
 
         return result
-
-    # def test_step(self):
-    #     num_entity = self.data_stats.tot_entity
-    #
-    #     h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-    #     energy_h = tf.reduce_sum(r_vec * self.layer(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t_vec), -1)
-    #     energy_t = tf.reduce_sum(r_vec * self.layer(h_vec, tf.nn.l2_normalize(self.ent_embeddings, axis=1)), -1)
-    #
-    #     _, head_rank = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
-    #     _, tail_rank = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
-    #
-    #     return head_rank, tail_rank
 
     def test_batch(self):
         num_entity = self.data_stats.tot_entity

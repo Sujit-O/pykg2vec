@@ -13,11 +13,22 @@ from core.KGMeta import ModelMeta
 class RotatE(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-    ---
+    ROTATE: KNOWLEDGE GRAPH EMBEDDING BY RELATIONAL ROTATION IN COMPLEX SPACE
     ------------------Paper Authors---------------------------
-    ---
+     Zhiqing Sun 1∗, Zhi-Hong Deng1, Jian-Yun Nie3, Jian Tang2,4,5
+    1Peking University, China
+    2Mila-Quebec Institute for Learning Algorithms, Canada
+    3Universite de Montr ´ eal, Canada ´
+    4HEC Montreal, Canada ´
+    5CIFAR AI Research Chair
+    {1500012783, zhdeng}@pku.edu.cn
+    nie@iro.umontreal.ca
+    jian.tang@hec.ca
     ------------------Summary---------------------------------
-    ---
+     RotatE models the entities and the relations in the complex vector space.
+     The translational relation in RotatE is defined as the element-wise 2D
+     rotation in which the head entity h will be rotated to the tail entity t by
+     multiplying the unit-length relation r in complex number form.
     """
 
     def __init__(self, config=None):

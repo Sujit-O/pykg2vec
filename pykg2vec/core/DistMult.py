@@ -14,8 +14,21 @@ from core.KGMeta import ModelMeta
 class DistMult(ModelMeta):
     """
     ------------------Paper Title-----------------------------
+    EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES
     ------------------Paper Authors---------------------------
+    Bishan Yang1˚, Wen-tau Yih2
+    , Xiaodong He2
+    , Jianfeng Gao2 & Li Deng2
+    1Department of Computer Science, Cornell University, Ithaca, NY, 14850, USA
+    bishan@cs.cornell.edu
+    2Microsoft Research, Redmond, WA 98052, USA
+    {scottyih,xiaohe,jfgao,deng}@microsoft.com
     ------------------Summary---------------------------------
+    DistMult is a simpler model comparing with RESCAL in that it simplifies
+    the weight matrix used in RESCAL to a diagonal matrix. The scoring
+    function used DistMult can capture the pairwise interactions between
+     the head and the tail entities. However, DistMult has limitation on modeling
+     asymmetric relations.
     """
 
     def __init__(self, config=None):
@@ -97,64 +110,3 @@ class DistMult(ModelMeta):
         """function to get the projected embedding value in numpy"""
         return self.get_embed(h, r, t, sess)
 
-
-if __name__ == '__main__':
-    # Unit Test Script with tensorflow Eager Execution
-    import tensorflow as tf
-    import numpy as np
-
-    tf.enable_eager_execution()
-    batch = 128
-    k = 100
-    tot_ent = 14700
-    tot_rel = 2600
-    train = True
-    e1 = np.random.randint(0, tot_ent, size=(batch, 1))
-    print('pos_r_e:', e1)
-    r = np.random.randint(0, tot_rel, size=(batch, 1))
-    print('pos_r_e:', r)
-    e2 = np.random.randint(0, tot_ent, size=(batch, 1))
-    print('pos_t_e:', e2)
-    r_rev = np.random.randint(0, tot_rel, size=(batch, 1))
-    print('pos_r_e:', r_rev)
-
-    emb_e_real = tf.get_variable(name="emb_e_real", shape=[tot_ent, k],
-                                 initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    emb_e_img = tf.get_variable(name="emb_e_img", shape=[tot_ent, k],
-                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    emb_rel_real = tf.get_variable(name="emb_rel_real", shape=[tot_rel, k],
-                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    emb_rel_img = tf.get_variable(name="emb_rel_img", shape=[tot_rel, k],
-                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-    norm_emb_e_real = tf.nn.l2_normalize(emb_e_real, axis=1)
-    norm_emb_e_img = tf.nn.l2_normalize(emb_e_img, axis=1)
-    norm_emb_rel_real = tf.nn.l2_normalize(emb_rel_real, axis=1)
-    norm_emb_rel_img = tf.nn.l2_normalize(emb_rel_img, axis=1)
-
-    emb_e1_real = tf.nn.embedding_lookup(norm_emb_e_real, e1)
-    rel_emb_real = tf.nn.embedding_lookup(norm_emb_rel_real, r)
-    emb_e1_img = tf.nn.embedding_lookup(norm_emb_e_img, e1)
-    rel_emb_img = tf.nn.embedding_lookup(norm_emb_rel_img, r)
-
-    e1_embedded_real = tf.keras.layers.Dropout(rate=0.2)(emb_e1_real)
-    rel_embedded_real = tf.keras.layers.Dropout(rate=0.2)(rel_emb_real)
-    e1_embedded_img = tf.keras.layers.Dropout(rate=0.2)(emb_e1_img)
-    rel_embedded_img = tf.keras.layers.Dropout(rate=0.2)(rel_emb_img)
-
-    e1_embedded_real = tf.squeeze(e1_embedded_real)
-    rel_embedded_real = tf.squeeze(rel_embedded_real)
-    e1_embedded_img = tf.squeeze(e1_embedded_img)
-    rel_embedded_img = tf.squeeze(rel_embedded_img)
-
-    import pdb
-
-    pdb.set_trace()
-    print(e1_embedded_real.shape, rel_embedded_real.shape, emb_e_real.shape)
-    realrealreal = tf.matmul(e1_embedded_real * rel_embedded_real, tf.transpose(tf.nn.l2_normalize(emb_e_real, axis=1)))
-    realimgimg = tf.matmul(e1_embedded_real * rel_embedded_img, tf.transpose(tf.nn.l2_normalize(emb_e_img, axis=1)))
-    imgrealimg = tf.matmul(e1_embedded_img * rel_embedded_real, tf.transpose(tf.nn.l2_normalize(emb_e_img, axis=1)))
-    imgimgreal = tf.matmul(e1_embedded_img * rel_embedded_img, tf.transpose(tf.nn.l2_normalize(emb_e_real, axis=1)))
-
-    pred = realrealreal + realimgimg + imgrealimg - imgimgreal
-    pred = tf.nn.sigmoid(pred)

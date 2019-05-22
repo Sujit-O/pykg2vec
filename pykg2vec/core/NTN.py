@@ -13,10 +13,15 @@ from core.KGMeta import ModelMeta
 class NTN(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-    ---
+    Reasoning With Neural Tensor Networks for Knowledge Base Completion
     ------------------Paper Authors---------------------------
-    ---
+    Richard Socher∗, Danqi Chen*, Christopher D. Manning, Andrew Y. Ng
+    Computer Science Department, Stanford University, Stanford, CA 94305, USA
+    richard@socher.org, {danqi,manning}@stanford.edu, ang@cs.stanford.edu
     ------------------Summary---------------------------------
+    It is a neural tensor network which represents entities as an average of their
+    constituting word vectors. It then projects entities to their vector embeddings
+    in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.
     https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
     ---
     """

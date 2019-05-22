@@ -21,7 +21,12 @@ class KG2E(ModelMeta):
     Chinese Academy of Sciences, Beijing, 100190, China 
     {shizhu.he, kliu, guoliang.ji, jzhao}@nlpr.ia.ac.cn
     ------------------Summary---------------------------------
-
+    Instead of assumming entities and relations as determinstic points in the
+     embedding vector spaces, KG2E models both entities and relations (h, r and t)
+     using random variables derived from multivariate Gaussian distribution.
+     KG2E then evaluates a fact using translational relation by evaluating the
+     distance between two distributions, r and t-h. KG2E provides two distance
+      measures (KL-divergence and estimated likelihood).
     Portion of the code based on https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
     """
 

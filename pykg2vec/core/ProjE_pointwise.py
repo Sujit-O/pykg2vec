@@ -14,11 +14,18 @@ from core.KGMeta import ModelMeta
 class ProjE_pointwise(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-    ---
+    ProjE: Embedding Projection for Knowledge Graph Completion
     ------------------Paper Authors---------------------------
-    ---
+    Baoxu Shi1 and Tim Weninger1
+    1Department of Computer Science and Engineering, University of Notre Dame
     ------------------Summary---------------------------------
-    ---
+    Instead of measuring the distance or matching scores between the pair of the
+    head entity and relation and then tail entity in embedding space ((h,r) vs (t)).
+    ProjE projects the entity candidates onto a target vector representing the
+    input data. The loss in ProjE is computed by the cross-entropy between
+    the projected target vector and binary label vector, where the included
+    entities will have value 0 if in negative sample set and value 1 if in
+    positive sample set.
     """
 
     def __init__(self, config):

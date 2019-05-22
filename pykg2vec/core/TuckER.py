@@ -14,11 +14,18 @@ from core.KGMeta import ModelMeta
 class TuckER(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-
+    TuckER: Tensor Factorization for Knowledge Graph Completion
     ------------------Paper Authors---------------------------
-
+    Ivana Balazevi ˇ c´1 Carl Allen 1 Timothy M. Hospedales 1
+    1School of Informatics, University of Edinburgh,
+    United Kingdom. Correspondence to: Ivana Balazevi ˇ c´
+    <ivana.balazevic@ed.ac.uk>.
     ------------------Summary---------------------------------
-
+    TuckER is a Tensor-factorization-based embedding technique based on
+    the Tucker decomposition of a third-order binary tensor of triplets. Although
+    being fully expressive, the number of parameters used in Tucker only grows linearly
+    with respect to embedding dimension as the number of entities or relations in a
+    knowledge graph increases.
     """
 
     def __init__(self, config=None):
@@ -34,10 +41,6 @@ class TuckER(ModelMeta):
         self.t = tf.placeholder(tf.int32, [None])
         self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
         self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-
-        self.test_h = tf.placeholder(tf.int32, [None])
-        self.test_r = tf.placeholder(tf.int32, [None])
-        self.test_t = tf.placeholder(tf.int32, [None])
 
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
@@ -128,48 +131,3 @@ class TuckER(ModelMeta):
     def get_proj_embed(self, h, r, t, sess):
         """function to get the projected embedding value in numpy"""
         return self.get_embed(h, r, t, sess)
-
-
-if __name__ == '__main__':
-    # Unit Test Script with tensorflow Eager Execution
-    import tensorflow as tf
-    import numpy as np
-    import sys
-
-    sys.path.append("../")
-    from config.config import TuckERConfig
-
-    tf.enable_eager_execution()
-    batch = 128
-    d1 = 64
-    d2 = 32
-    tot_ent = 14951
-    tot_rel = 2600
-    train = True
-    e1 = np.random.randint(0, tot_ent, size=(batch, 1))
-    print('pos_r_e:', e1)
-    r = np.random.randint(0, tot_rel, size=(batch, 1))
-    print('pos_r_e:', r)
-    e2 = np.random.randint(0, tot_ent, size=(batch, 1))
-    print('pos_t_e:', e2)
-    r_rev = np.random.randint(0, tot_rel, size=(batch, 1))
-    print('pos_r_e:', r_rev)
-    #
-    config = TuckERConfig()
-    #
-    model = TuckER(config=config)
-    # optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
-    # grads = optimizer.compute_gradients(model.loss)
-    #
-    logits = model.forward(e1, r)
-    print("pred:", logits)
-    #
-    # e2_multi1 = tf.constant(np.random.randint(0,2,size=(batch, tot_ent)), dtype=tf.float32)
-    # # e2_multi1 = e2_multi1 * (1.0 - 0.1) + 1.0 / tot_ent
-    # print("e2_multi1:", e2_multi1)
-    # loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-    #     logits=logits,
-    #     labels=e2_multi1))
-    # print("loss:", loss)
-    # optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
-    # grads = optimizer.compute_gradients(model.loss)

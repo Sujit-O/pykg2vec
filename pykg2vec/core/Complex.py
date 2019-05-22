@@ -13,8 +13,23 @@ from core.KGMeta import ModelMeta
 class Complex(ModelMeta):
     """
     ------------------Paper Title-----------------------------
+    Complex Embeddings for Simple Link Prediction
     ------------------Paper Authors---------------------------
+    Theo Trouillon ´
+    1,2 THEO.TROUILLON@XRCE.XEROX.COM
+    Johannes Welbl3
+    J.WELBL@CS.UCL.AC.UK
+    Sebastian Riedel3
+    S.RIEDEL@CS.UCL.AC.UK
+    Eric Gaussier ´ 2 ERIC.GAUSSIER@IMAG.FR
+    Guillaume Bouchard3 G.BOUCHARD@CS.UCL.AC.UK
+    1 Xerox Research Centre Europe, 6 chemin de Maupertuis, 38240 Meylan, FRANCE
+    2 Universite Grenoble Alpes, 621 avenue Centrale, 38400 Saint Martin d’H ´ eres, FRANCE `
+    3 University College London, Gower St, London WC1E 6BT, UNITED KINGDOM
     ------------------Summary---------------------------------
+    ComplEx is an enhanced version of DistMult in that it uses complex-valued embeddings
+    to represent both entities and relations. Using the complex-valued embedding allows
+    the defined scoring function in ComplEx to differentiate that facts with assymmetric relations.
     """
 
     def __init__(self, config=None):
@@ -182,64 +197,3 @@ class Complex(ModelMeta):
         """function to get the projected embedding value in numpy"""
         return self.get_embed(e, r, sess)
 
-
-if __name__ == '__main__':
-    # Unit Test Script with tensorflow Eager Execution
-    import tensorflow as tf
-    import numpy as np
-
-    tf.enable_eager_execution()
-    batch = 128
-    k = 100
-    tot_ent = 14700
-    tot_rel = 2600
-    train = True
-    e1 = np.random.randint(0, tot_ent, size=(batch, 1))
-    print('pos_r_e:', e1)
-    r = np.random.randint(0, tot_rel, size=(batch, 1))
-    print('pos_r_e:', r)
-    e2 = np.random.randint(0, tot_ent, size=(batch, 1))
-    print('pos_t_e:', e2)
-    r_rev = np.random.randint(0, tot_rel, size=(batch, 1))
-    print('pos_r_e:', r_rev)
-
-    emb_e_real = tf.get_variable(name="emb_e_real", shape=[tot_ent, k],
-                                 initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    emb_e_img = tf.get_variable(name="emb_e_img", shape=[tot_ent, k],
-                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    emb_rel_real = tf.get_variable(name="emb_rel_real", shape=[tot_rel, k],
-                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-    emb_rel_img = tf.get_variable(name="emb_rel_img", shape=[tot_rel, k],
-                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-    norm_emb_e_real = tf.nn.l2_normalize(emb_e_real, axis=1)
-    norm_emb_e_img = tf.nn.l2_normalize(emb_e_img, axis=1)
-    norm_emb_rel_real = tf.nn.l2_normalize(emb_rel_real, axis=1)
-    norm_emb_rel_img = tf.nn.l2_normalize(emb_rel_img, axis=1)
-
-    emb_e1_real = tf.nn.embedding_lookup(norm_emb_e_real, e1)
-    rel_emb_real = tf.nn.embedding_lookup(norm_emb_rel_real, r)
-    emb_e1_img = tf.nn.embedding_lookup(norm_emb_e_img, e1)
-    rel_emb_img = tf.nn.embedding_lookup(norm_emb_rel_img, r)
-
-    e1_embedded_real = tf.keras.layers.Dropout(rate=0.2)(emb_e1_real)
-    rel_embedded_real = tf.keras.layers.Dropout(rate=0.2)(rel_emb_real)
-    e1_embedded_img = tf.keras.layers.Dropout(rate=0.2)(emb_e1_img)
-    rel_embedded_img = tf.keras.layers.Dropout(rate=0.2)(rel_emb_img)
-
-    e1_embedded_real = tf.squeeze(e1_embedded_real)
-    rel_embedded_real = tf.squeeze(rel_embedded_real)
-    e1_embedded_img = tf.squeeze(e1_embedded_img)
-    rel_embedded_img = tf.squeeze(rel_embedded_img)
-
-    import pdb
-
-    pdb.set_trace()
-    print(e1_embedded_real.shape, rel_embedded_real.shape, emb_e_real.shape)
-    realrealreal = tf.matmul(e1_embedded_real * rel_embedded_real, tf.transpose(tf.nn.l2_normalize(emb_e_real, axis=1)))
-    realimgimg = tf.matmul(e1_embedded_real * rel_embedded_img, tf.transpose(tf.nn.l2_normalize(emb_e_img, axis=1)))
-    imgrealimg = tf.matmul(e1_embedded_img * rel_embedded_real, tf.transpose(tf.nn.l2_normalize(emb_e_img, axis=1)))
-    imgimgreal = tf.matmul(e1_embedded_img * rel_embedded_img,  tf.transpose(tf.nn.l2_normalize(emb_e_real, axis=1)))
-
-    pred = realrealreal + realimgimg + imgrealimg - imgimgreal
-    pred = tf.nn.sigmoid(pred)
