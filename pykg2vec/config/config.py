@@ -79,7 +79,7 @@ class KGEArgParser:
         self.general_group.add_argument('-mn', dest='model_name', default='TransE', type=str, help='Name of model')
         self.general_group.add_argument('-db', dest='debug', default=False, type=lambda x: (str(x).lower() == 'true'),
                                         help='To use debug mode or not.')
-        self.general_group.add_argument('-ghp', dest='golden', default=True, type=lambda x: (str(x).lower() == 'true'),
+        self.general_group.add_argument('-ghp', dest='golden', default=False, type=lambda x: (str(x).lower() == 'true'),
                                         help='Use Golden Hyper parameters!')
         self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str,
                                         help='The name of dataset.')
