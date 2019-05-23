@@ -2,6 +2,8 @@
 
 Pykg2vec is a Tensorflow-based library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks including the whole pipeline into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
 
+![](https://github.com/Sujit-O/pykg2vec/blob/development/figures/pykg2vec_structure.png?raw=true)
+
 Here are some well-written papers for reading in order to start with knowledge graph embedding methodologies.
  * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
  * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
@@ -24,7 +26,7 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_rel_plot_embedding_plot_0.png?raw=true)| ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_entity_plot_embedding_plot_0.png?raw=true) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_ent_n_rel_plot_embedding_plot_0.png?raw=true)
 
 ## Repository Structure
-![](https://github.com/Sujit-O/pykg2vec/blob/development/figures/pykg2vec_structure.png?raw=true)
+
 * **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
 * **pyKG2Vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
 * **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
