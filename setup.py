@@ -11,19 +11,21 @@ INSTALL_REQUIRES = (
     'seaborn>=0.9.0',
     'scikit_learn>=0.20.3',
     'hyperopt>=0.1.2',
-    'progressbar2>=3.39.3'
+    'progressbar2>=3.39.3',
+    'tensorflow==1.13.1'
 )
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
 setuptools.setup(
     name='pykg2vec',
-    version="0.0.40",
+    version="0.0.44",
     author="Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Martinez Canedo, Arquimedes, Mohammad Abdullah Al Faruque",
     author_email="sujitchhetri@gmail.com",
-    description="A python library for Knowledge Graph Embedding",
-    ext_modules=[setuptools.Extension('file_handler', ['./pykg2vec/csource/file_handler.c'])],
+    description="A Python library for Knowledge Graph Embedding",
+    # ext_modules=[setuptools.Extension('file_handler', ['./pykg2vec/csource/file_handler.c'])],
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Sujit-O/pykg2vec.git",

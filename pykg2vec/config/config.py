@@ -13,8 +13,8 @@ import importlib
 
 class Importer:
     def __init__(self):
-        self.model_path = "core"
-        self.config_path = "config.config"
+        self.model_path = "pykg2vec.core"
+        self.config_path = "pykg2vec.config.config"
 
         self.modelMap = {"complex": "Complex",
                          "conve": "ConvE",
@@ -79,7 +79,7 @@ class KGEArgParser:
         self.general_group.add_argument('-mn', dest='model_name', default='TransE', type=str, help='Name of model')
         self.general_group.add_argument('-db', dest='debug', default=False, type=lambda x: (str(x).lower() == 'true'),
                                         help='To use debug mode or not.')
-        self.general_group.add_argument('-ghp', dest='golden', default=True, type=lambda x: (str(x).lower() == 'true'),
+        self.general_group.add_argument('-ghp', dest='golden', default=False, type=lambda x: (str(x).lower() == 'true'),
                                         help='Use Golden Hyper parameters!')
         self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str,
                                         help='The name of dataset.')
