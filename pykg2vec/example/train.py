@@ -1,9 +1,7 @@
-import sys
-sys.path.append("../")
+from pykg2vec.config.global_config import KnowledgeGraph
+from pykg2vec.config.config import Importer, KGEArgParser
+from pykg2vec.utils.trainer import Trainer
 
-from config.global_config import KnowledgeGraph
-from config.config import Importer, KGEArgParser
-from utils.trainer import Trainer
 
 def main():
     # getting the customized configurations from the command-line arguments.

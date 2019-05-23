@@ -6,10 +6,7 @@ We store the base configuration of the models here
 import tensorflow as tf
 from pathlib import Path
 
-import sys
-
-sys.path.append("../")
-from config.global_config import KnowledgeGraph
+from pykg2vec.config.global_config import KnowledgeGraph
 from argparse import ArgumentParser
 import importlib
 

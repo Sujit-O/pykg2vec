@@ -10,20 +10,14 @@ import importlib
 
 from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
 import pandas as pd
-import sys
 
-sys.path.append("../")
-model_path = "core"
-config_path = "config.config"
-hyper_param_path = "config.hyperparams"
-# model_path = "pykg2vec.core"
-# config_path = "pykg2vec.config"
-
-from config.global_config import KnowledgeGraph
-from utils.trainer import Trainer
+from pykg2vec.config.global_config import KnowledgeGraph
+from pykg2vec.utils.trainer import Trainer
 from pprint import pprint
-from argparse import ArgumentParser
 
+model_path = "pykg2vec.core"
+config_path = "pykg2vec.config.config"
+hyper_param_path = "pykg2vec.config.hyperparams"
 
 modelMap = {"complex": "Complex",
             "conve": "ConvE",

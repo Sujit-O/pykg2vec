@@ -4,6 +4,7 @@ from collections import defaultdict
 import numpy as np
 import pickle
 
+
 class Triple(object):
 
     def __init__(self, h, r, t):
@@ -41,6 +42,7 @@ class Triple(object):
     def set_tr_h(self, tr_h):
         self.tr_h = tr_h
 
+
 class KGMetaData(object):
     def __init__(self, tot_entity=None,
                  tot_relation=None,
@@ -54,6 +56,7 @@ class KGMetaData(object):
         self.tot_train_triples = tot_train_triples
         self.tot_relation = tot_relation
         self.tot_entity = tot_entity
+
 
 # TODO: to be moved to utils
 def extract(tar_path, extract_path='.'):
@@ -80,11 +83,11 @@ class FreebaseFB15k(object):
             self.extract()
 
         self.root_path = self.root_path / 'FB15k'
-        self.downloaded_path    = self.root_path / 'freebase_mtr100_mte100-'
+        self.downloaded_path = self.root_path / 'freebase_mtr100_mte100-'
 
         self.data_paths = {
             'train': self.root_path / 'freebase_mtr100_mte100-train.txt',
-            'test' : self.root_path / 'freebase_mtr100_mte100-test.txt',
+            'test': self.root_path / 'freebase_mtr100_mte100-test.txt',
             'valid': self.root_path / 'freebase_mtr100_mte100-valid.txt'
         }
 
@@ -93,7 +96,7 @@ class FreebaseFB15k(object):
 
         self.cache_triplet_paths = {
             'train': self.root_path / 'triplets_train.pkl',
-            'test' : self.root_path / 'triplets_test.pkl',
+            'test': self.root_path / 'triplets_test.pkl',
             'valid': self.root_path / 'triplets_valid.pkl'
         }
 
@@ -103,7 +106,6 @@ class FreebaseFB15k(object):
         self.cache_idx2relation_path = self.root_path / 'idx2relation.pkl'
         self.cache_entity2idx_path = self.root_path / 'entity2idx.pkl'
         self.cache_relation2idx_path = self.root_path / 'relation2idx.pkl'
-
 
     def download(self):
         ''' download Freebase 15k dataset from url'''
@@ -144,12 +146,13 @@ class FreebaseFB15k(object):
     def is_meta_cache_exists(self):
         return self.cache_metadata_path.exists()
 
+
 class DeepLearning50a(object):
 
     def __init__(self):
         self.name = "dLmL50"
         self.url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
-        self.dataset_home_path = Path('..')/'dataset'
+        self.dataset_home_path = Path('..') / 'dataset'
         self.dataset_home_path.mkdir(parents=True, exist_ok=True)
         self.dataset_home_path = self.dataset_home_path.resolve()
         self.root_path = self.dataset_home_path / 'DeepLearning'
@@ -160,11 +163,11 @@ class DeepLearning50a(object):
             self.extract()
 
         self.root_path = self.root_path / 'dLmL50'
-        self.downloaded_path    = self.root_path / 'deeplearning_dataset_50arch-'
+        self.downloaded_path = self.root_path / 'deeplearning_dataset_50arch-'
 
         self.data_paths = {
             'train': self.root_path / 'deeplearning_dataset_50arch-train.txt',
-            'test' : self.root_path / 'deeplearning_dataset_50arch-test.txt',
+            'test': self.root_path / 'deeplearning_dataset_50arch-test.txt',
             'valid': self.root_path / 'deeplearning_dataset_50arch-valid.txt'
         }
 
@@ -173,7 +176,7 @@ class DeepLearning50a(object):
 
         self.cache_triplet_paths = {
             'train': self.root_path / 'triplets_train.pkl',
-            'test' : self.root_path / 'triplets_test.pkl',
+            'test': self.root_path / 'triplets_test.pkl',
             'valid': self.root_path / 'triplets_valid.pkl'
         }
 
@@ -186,7 +189,7 @@ class DeepLearning50a(object):
 
     def download(self):
         ''' Download dLmL50 dataset from url'''
-        print("Downloading the dataset %s"%self.name)
+        print("Downloading the dataset %s" % self.name)
 
         self.root_path.mkdir()
         with urllib.request.urlopen(self.url) as response, open(str(self.tar), 'wb') as out_file:
@@ -236,7 +239,7 @@ class KnowledgeGraph(object):
 
         self.negative_sample = negative_sample
 
-        self.triplets = {'train': [], 'test' : [], 'valid': []}
+        self.triplets = {'train': [], 'test': [], 'valid': []}
 
         self.relations = []
         self.entities = []
@@ -280,12 +283,12 @@ class KnowledgeGraph(object):
             self.read_relation_property()
 
         self.kg_meta.tot_relation = len(self.relations)
-        self.kg_meta.tot_entity   = len(self.entities)
+        self.kg_meta.tot_entity = len(self.entities)
         self.kg_meta.tot_valid_triples = len(self.triplets['valid'])
-        self.kg_meta.tot_test_triples  = len(self.triplets['test'])
+        self.kg_meta.tot_test_triples = len(self.triplets['test'])
         self.kg_meta.tot_train_triples = len(self.triplets['train'])
         self.kg_meta.tot_triple = self.kg_meta.tot_valid_triples + \
-                                  self.kg_meta.tot_test_triples  + \
+                                  self.kg_meta.tot_test_triples + \
                                   self.kg_meta.tot_train_triples
 
         self.cache_data()
@@ -388,8 +391,8 @@ class KnowledgeGraph(object):
         if len(self.entities) == 0:
             entities = set()
 
-            all_triplets = self.read_triplets('train') +\
-                           self.read_triplets('valid') +\
+            all_triplets = self.read_triplets('train') + \
+                           self.read_triplets('valid') + \
                            self.read_triplets('test')
 
             for triplet in all_triplets:
@@ -404,8 +407,8 @@ class KnowledgeGraph(object):
         if len(self.relations) == 0:
             relations = set()
 
-            all_triplets = self.read_triplets('train') +\
-                           self.read_triplets('valid') +\
+            all_triplets = self.read_triplets('train') + \
+                           self.read_triplets('valid') + \
                            self.read_triplets('test')
 
             for triplet in all_triplets:
@@ -416,9 +419,9 @@ class KnowledgeGraph(object):
         return self.relations
 
     def read_mappings(self):
-        self.entity2idx = {v: k for k, v in enumerate(self.read_entities())} ##
+        self.entity2idx = {v: k for k, v in enumerate(self.read_entities())}  ##
         self.idx2entity = {v: k for k, v in self.entity2idx.items()}
-        self.relation2idx = {v: k for k, v in enumerate(self.read_relations())} ##
+        self.relation2idx = {v: k for k, v in enumerate(self.read_relations())}  ##
         self.idx2relation = {v: k for k, v in self.relation2idx.items()}
 
     def read_triple_ids(self, set_type):
@@ -485,7 +488,7 @@ class KnowledgeGraph(object):
             relation_property_tail[t.r].append(t.t)
 
         self.relation_property = {x: (len(set(relation_property_tail[x]))) / ( \
-                len(set(relation_property_head[x])) + len(set(relation_property_tail[x]))) \
+                    len(set(relation_property_head[x])) + len(set(relation_property_tail[x]))) \
                                   for x in relation_property_head.keys()}
 
         return self.relation_property
@@ -518,6 +521,7 @@ class KnowledgeGraph(object):
     #     for idx, triple in enumerate(self.validation_triples):
     #         print(idx, triple.h, triple.r, triple.t)
 
+
 class GeneratorConfig(object):
     """Configuration for Generator
 
@@ -545,7 +549,7 @@ class GeneratorConfig(object):
                  processed_queue_size=50,
                  process_num=2,
                  data='train',
-                 algo ='ConvE',
+                 algo='ConvE',
                  neg_rate=2
                  ):
         self.neg_rate = neg_rate

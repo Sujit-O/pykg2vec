@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 
+
 class KGETuneArgParser:
 
     def __init__(self):
@@ -7,9 +8,10 @@ class KGETuneArgParser:
 
         ''' basic configs '''
         self.parser.add_argument('-m', dest='model', default='TransE', type=str, help='Model to tune')
-        
+
     def get_args(self):
         return self.parser.parse_args()
+
 
 class TransEParams:
     def __init__(self):

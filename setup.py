@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import setuptools
-import os
-import glob
 
 DISTNAME = 'pykg2vec'
 
@@ -12,7 +10,8 @@ INSTALL_REQUIRES = (
     'matplotlib>=3.0.3',
     'seaborn>=0.9.0',
     'scikit_learn>=0.20.3',
-    'hyperopt>=0.2'
+    'hyperopt>=0.1.2',
+    'progressbar2>=3.39.3'
 )
 
 with open("README.md", "r") as fh:
@@ -20,7 +19,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='pykg2vec',
-    version="0.0.39",
+    version="0.0.40",
     author="Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Martinez Canedo, Arquimedes, Mohammad Abdullah Al Faruque",
     author_email="sujitchhetri@gmail.com",
     description="A python library for Knowledge Graph Embedding",
