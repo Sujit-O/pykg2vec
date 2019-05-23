@@ -8,6 +8,18 @@ Here are some well-written papers for reading in order to start with knowledge g
  * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
  * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
  * [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098)
+
+## Dependencies
+The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
+* tensorflow==`<version suitable for your workspace>`
+* networkx>=2.2
+* setuptools>=40.8.0
+* matplotlib>=3.0.3
+* numpy>=1.16.2
+* seaborn>=0.9.0
+* scikit_learn>=0.20.3
+* hyperopt>=0.1.2
+* progressbar2>=3.39.3
  
 ## Features
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
@@ -176,16 +188,8 @@ We intend to provide the libraries to test the knowledge graph algorithms agains
 * [Freebase](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz): Freebase is a large collaborative knowledge base consisting of data composed mainly by its community members. It is an online collection of structured data harvested from many sources, including individual, user-submitted wiki contributions [2]. 
   * Freebase15K is supported.
  
-## Dependencies
-The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
 
-* networkx==2.2
-* matplotlib==3.0.3
-* numpy==1.16.2
-* seaborn==0.9.0
-* scikit_learn==0.20.3
-* progressbar2==3.39.3
-* tensorflow==`<version suitable for your workspace>`
+
 
 
 ## Cite
