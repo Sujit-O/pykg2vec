@@ -39,15 +39,15 @@ class DistMult(ModelMeta):
         self.model_name = 'Distmult'
 
     def def_inputs(self):
-        self.pos_h = tf.placeholder(tf.int32, [None])
-        self.pos_t = tf.placeholder(tf.int32, [None])
-        self.pos_r = tf.placeholder(tf.int32, [None])
-        self.neg_h = tf.placeholder(tf.int32, [None])
-        self.neg_t = tf.placeholder(tf.int32, [None])
-        self.neg_r = tf.placeholder(tf.int32, [None])
+        self.h = tf.placeholder(tf.int32, [None])
+        self.r = tf.placeholder(tf.int32, [None])
+        self.t = tf.placeholder(tf.int32, [None])
+        self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+        self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
+
         self.test_h_batch = tf.placeholder(tf.int32, [None])
-        self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
+        self.test_t_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
             k = self.config.hidden_size

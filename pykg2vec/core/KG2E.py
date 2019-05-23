@@ -70,12 +70,13 @@ class KG2E(ModelMeta):
                                                         initializer=tf.contrib.layers.xavier_initializer(uniform=True))
             self.rel_embeddings_sigma = tf.get_variable(name="rel_embeddings_sigma", shape=[num_total_rel, k], 
                                                         initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+            self.parameter_list = [self.ent_embeddings_mu, self.ent_embeddings_sigma,
+                                   self.rel_embeddings_mu, self.rel_embeddings_sigma]
 
             self.ent_embeddings_sigma = tf.maximum(self.config.cmin, tf.minimum(self.config.cmax, (self.ent_embeddings_sigma + 1.0)))
             self.rel_embeddings_sigma = tf.maximum(self.config.cmin, tf.minimum(self.config.cmax, (self.rel_embeddings_sigma + 1.0)))
 
-            self.parameter_list = [self.ent_embeddings_mu, self.ent_embeddings_sigma, 
-                                   self.rel_embeddings_mu, self.rel_embeddings_sigma]
+
 
 
     def def_loss(self):

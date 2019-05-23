@@ -10,6 +10,7 @@ sys.path.append("../")
 import tensorflow as tf
 from core.KGMeta import ModelMeta
 
+
 class Complex(ModelMeta):
     """
     ------------------Paper Title-----------------------------
@@ -109,7 +110,7 @@ class Complex(ModelMeta):
 
         # reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
 
-        self.loss = loss_heads + loss_tails #+ self.config.lmbda * reg_losses
+        self.loss = loss_heads + loss_tails  # + self.config.lmbda * reg_losses
 
     def def_layer(self):
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
@@ -123,7 +124,7 @@ class Complex(ModelMeta):
         r = self.inp_drop(r)
         t = self.inp_drop(t)
 
-        return h,r,t
+        return h, r, t
 
     def test_batch(self):
         h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(self.test_h_batch,
@@ -169,7 +170,7 @@ class Complex(ModelMeta):
 
         return head_rank, tail_rank
 
-    def embed(self, h,r,t):
+    def embed(self, h, r, t):
         """function to get the embedding value"""
         norm_emb_e_real = tf.nn.l2_normalize(self.emb_e_real, axis=1)
         norm_emb_e_img = tf.nn.l2_normalize(self.emb_e_img, axis=1)
@@ -185,15 +186,15 @@ class Complex(ModelMeta):
         r_emb_real = tf.nn.embedding_lookup(norm_emb_rel_real, r)
         r_emb_img = tf.nn.embedding_lookup(norm_emb_rel_img, r)
 
-        return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img 
+        return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
-    def get_embed(self, e, r, sess=None):
+    def get_embed(self, h, r, t, sess=None):
         """function to get the embedding value in numpy"""
-        emb_e_real, rel_emb_real, emb_e_img, rel_emb_img = self.embed(h,r, t)
-        emb_e_real, rel_emb_real, emb_e_img, rel_emb_img = sess.run([emb_e_real, rel_emb_real, emb_e_img, rel_emb_img])
-        return emb_e_real, rel_emb_real, emb_e_img, rel_emb_img
+        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(h, r, t)
+        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = sess.run(
+            [h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img])
+        return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
-    def get_proj_embed(self, e, r, sess):
+    def get_proj_embed(self, h, r, t, sess):
         """function to get the projected embedding value in numpy"""
-        return self.get_embed(e, r, sess)
-
+        return self.get_embed(h, r, t, sess)
