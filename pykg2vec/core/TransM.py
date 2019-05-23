@@ -7,42 +7,32 @@ from __future__ import print_function
 import tensorflow as tf
 from pykg2vec.core.KGMeta import ModelMeta
 
+import numpy as np
 
-class TransE(ModelMeta):
+
+class TransM(ModelMeta):
     """
     ------------------Paper Title-----------------------------
-    Translating Embeddings for Modeling Multi-relational Data
+    Transition-based Knowledge Graph Embedding with Relational Mapping Properties
     ------------------Paper Authors---------------------------
-    Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran
-    Universite de Technologie de Compiegne – CNRS
-    Heudiasyc UMR 7253
-    Compiegne, France
-    {bordesan, nusunier, agarciad}@utc.fr
-    Jason Weston, Oksana Yakhnenko
-    Google
-    111 8th avenue
-    New York, NY, USA
-    {jweston, oksana}@google.com
+    Miao Fan(1,3), Qiang Zhou(1), Emily Chang(2), Thomas Fang Zheng(1,4),
+    1. CSLT, Tsinghua National Laboratory for Information Science and Technology
+    Department of Computer Science and Technology, Tsinghua University, Beijing, 100084, China.
+    2. Emory University, U.S.A.
+    3. fanmiao.cslt.thu@gmail.com, 4. fzheng@tsinghua.edu.cn Abstract
     ------------------Summary---------------------------------
-    TransE is an energy based model which represents the
-    relationships as translations in the embedding space. Which
-    means that if (h,l,t) holds then the embedding of the tail
-    't' should be close to the embedding of head entity 'h'
-    plus some vector that depends on the relationship 'l'.
-    Both entities and relations are vectors in the same space.
-    |        ......>.
-    |      .     .
-    |    .    .
-    |  .  .
-    |_________________
-    Portion of Code Based on https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
-     and https://github.com/wencolani/TransE.git
+    TransM is another line of research that improves TransE by relaxing the overstrict requirement of 
+    h+r ==> t. TransM associates each fact (h, r, t) with a weight theta(r) specific to the relation. 
+     
+
+    https://github.com/wencolani/TransE.git
     """
 
     def __init__(self, config=None):
         self.config = config
-        self.model_name = 'TransE'
-        
+        self.data_stats = self.config.kg_meta
+        self.model_name = 'TransM'
+
     def def_inputs(self):
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
@@ -58,8 +48,8 @@ class TransE(ModelMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
@@ -69,50 +59,50 @@ class TransE(ModelMeta):
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
+
+            rel_head = {x: [] for x in range(num_total_rel)}
+            rel_tail = {x: [] for x in range(num_total_rel)}
+            rel_counts = {x: 0 for x in range(num_total_rel)}
+            train_triples_ids = self.config.knowledge_graph.read_cache_data('triplets_train')
+            for t in train_triples_ids:
+                rel_head[t.r].append(t.h)
+                rel_tail[t.r].append(t.t)
+                rel_counts[t.r] += 1
+
+            theta = [1/np.log(2+rel_counts[x]/(1+len(rel_tail[x])) + rel_counts[x]/(1+len(rel_head[x]))) for x in range(num_total_rel)]
+            self.theta = tf.Variable(np.asarray(theta, dtype=np.float32), trainable=False)
+            
+            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.theta]
 
     def def_loss(self):
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
         neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
 
-        score_pos = self.distance(pos_h_e, pos_r_e, pos_t_e)
-        score_neg = self.distance(neg_h_e, neg_r_e, neg_t_e)
+        pos_r_theta = tf.nn.embedding_lookup(self.theta, self.pos_r)
+        neg_r_theta = tf.nn.embedding_lookup(self.theta, self.neg_r)
+
+        score_pos = pos_r_theta*self.distance(pos_h_e, pos_r_e, pos_t_e)
+        score_neg = neg_r_theta*self.distance(neg_h_e, neg_r_e, neg_t_e)
 
         self.loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
-
-    def test_step(self):
-        head_vec, rel_vec, tail_vec = self.embed(self.test_h, self.test_r, self.test_t)
-
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        score_head = self.distance(norm_ent_embeddings, rel_vec, tail_vec)
-        score_tail = self.distance(head_vec, rel_vec, norm_ent_embeddings)
-
-        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
-
-        return head_rank, tail_rank
 
     def test_batch(self):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        score_head = self.distance(norm_ent_embeddings,
-                                   tf.expand_dims(rel_vec, axis=1),
-                                   tf.expand_dims(tail_vec, axis=1), axis=2)
-        score_tail = self.distance(tf.expand_dims(head_vec, axis=1),
-                                   tf.expand_dims(rel_vec, axis=1),
-                                   norm_ent_embeddings, axis=2)
+        score_head = self.distance(norm_ent_embeddings, tf.expand_dims(rel_vec, 1), tf.expand_dims(tail_vec, 1))
+        score_tail = self.distance(tf.expand_dims(head_vec, 1), tf.expand_dims(rel_vec, 1), norm_ent_embeddings)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
-    def distance(self, h, r, t, axis=1):
+    def distance(self, h, r, t):
         if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
+            return tf.reduce_sum(tf.abs(h + r - t), axis=-1)  # L1 norm
         else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
+            return tf.reduce_sum((h + r - t) ** 2, axis=-1)  # L2 norm
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
