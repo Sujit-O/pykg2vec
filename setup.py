@@ -29,7 +29,7 @@ except ImportError:
 
 setuptools.setup(
     name='pykg2vec',
-    version="0.0.40",
+    version="0.0.42",
     author="Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Martinez Canedo, Arquimedes, Mohammad Abdullah Al Faruque",
     author_email="sujitchhetri@gmail.com",
     description="A python library for Knowledge Graph Embedding",

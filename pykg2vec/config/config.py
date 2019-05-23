@@ -13,8 +13,8 @@ import importlib
 
 class Importer:
     def __init__(self):
-        self.model_path = "core"
-        self.config_path = "config.config"
+        self.model_path = "pykg2vec.core"
+        self.config_path = "pykg2vec.config.config"
 
         self.modelMap = {"complex": "Complex",
                          "conve": "ConvE",
