@@ -198,7 +198,7 @@ We intend to provide the libraries to test the knowledge graph algorithms agains
   Please kindly cite us if you found the library helpful. 
    ```
    @online{pykg2vec,
-  author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo Arquimedes, Martinez},
+  author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo, Arquimedes},
   title = {{pykg2vec: Python Knowledge Graph Embedding Library},
   year = 2019,
   url = {https://pypi.org/project/pykg2vec/}

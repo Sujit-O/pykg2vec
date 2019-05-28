@@ -220,12 +220,64 @@ class DeepLearning50a(object):
     def read_metadata(self):
         with open(str(self.cache_metadata_path), 'rb') as f:
             meta = pickle.load(f)
-
             return meta
 
     def is_meta_cache_exists(self):
         return self.cache_metadata_path.exists()
 
+class UserDefinedDataset(object):
+
+    def __init__(self, name):
+        self.name = name
+        # XXX: I'm having trouble with this. Shouldn't this be relative to the pykg2vec installation directory?
+        self.dataset_home_path = Path('.') / 'dataset'
+        self.dataset_home_path.mkdir(parents=True, exist_ok=True)
+        self.dataset_home_path = self.dataset_home_path.resolve()
+        self.root_path = self.dataset_home_path / name
+
+        if not self.root_path.exists():
+            raise NotImplementedError("%s user defined dataset not found!" % self.root_path)
+
+        train_file = self.root_path / (name + '-train.txt')
+        test_file = self.root_path / (name + '-test.txt')
+        valid_file = self.root_path / (name + '-valid.txt')
+
+        if not train_file.exists():
+            raise NotImplementedError("%s training file not found!" % train_file)
+        if not test_file.exists():
+            raise NotImplementedError("%s test file not found!" % test_file)
+        if not test_file.exists():
+            raise NotImplementedError("%s validation file not found!" % valid_file)
+
+        self.data_paths = {
+            'train': self.root_path / (name + '-train.txt'),
+            'test': self.root_path / (name + '-test.txt'),
+            'valid': self.root_path / (name + '-valid.txt')
+        }
+
+        self.cache_path = self.root_path / 'all.pkl'
+        self.cache_metadata_path = self.root_path / 'metadata.pkl'
+
+        self.cache_triplet_paths = {
+            'train': self.root_path / 'triplets_train.pkl',
+            'test': self.root_path / 'triplets_test.pkl',
+            'valid': self.root_path / 'triplets_valid.pkl'
+        }
+
+        self.cache_hr_t_path = self.root_path / 'hr_t.pkl'
+        self.cache_tr_h_path = self.root_path / 'tr_h.pkl'
+        self.cache_idx2entity_path = self.root_path / 'idx2entity.pkl'
+        self.cache_idx2relation_path = self.root_path / 'idx2relation.pkl'
+        self.cache_entity2idx_path = self.root_path / 'entity2idx.pkl'
+        self.cache_relation2idx_path = self.root_path / 'relation2idx.pkl'
+
+    def is_meta_cache_exists(self):
+        return self.cache_metadata_path.exists()
+
+    def read_metadata(self):
+        with open(str(self.cache_metadata_path), 'rb') as f:
+            meta = pickle.load(f)
+            return meta
 
 class KnowledgeGraph(object):
 
@@ -235,7 +287,8 @@ class KnowledgeGraph(object):
         elif dataset == 'DeepLearning50a':
             self.dataset = DeepLearning50a()
         else:
-            raise NotImplementedError("%s dataset config not found!" % dataset)
+            self.dataset = UserDefinedDataset(dataset)
+            #raise NotImplementedError("%s dataset config not found!" % dataset)
 
         self.negative_sample = negative_sample
 
