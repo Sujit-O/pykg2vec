@@ -4,7 +4,7 @@ We feel humbled that you have decided to contribute to the pykg2vec repository. 
 
 #### Table Of Contents
 
-* [Reporting Bugs](#reporting-bugs)
+* [Reporting Bugs](https://github.com/Sujit-O/pykg2vec/blob/development/ISSUE_TEMPLATE.md)
 * [Suggesting Enhancements](#suggesting-enhancements)
 * [Adding Algorithm](#adding-algorithm)
 * [Adding Evaluation Metric](#adding-evaluation-metric)
@@ -12,7 +12,6 @@ We feel humbled that you have decided to contribute to the pykg2vec repository. 
 * [Adding Dataset Source](#adding-dataset-source)
 * [Pull Requests](#pull-requests)
 
-### Reporting Bugs
 
 ### Suggesting Enhancements
 
