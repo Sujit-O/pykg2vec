@@ -1,5 +1,20 @@
 # Pykg2vec: Python Library for KG Embedding Methods 
 
+## Table of Contents
+
+* [Introduction](#introduction)
+* [Dependencies](#dependencies)
+* [Features](#features)
+* [Repository Structure](#repository-structure)
+* [Usage Example](#usage-example)
+* [Implemented Methods](#implemented-methods)
+* [Datasets](#datasets)
+* [Common Installation Problems](#common-installation-problems)
+* [How to Contribute?](https://github.com/Sujit-O/pykg2vec/blob/master/CONTRIBUTING.md)
+* [Cite](#cite)
+
+
+## Introduction
 Pykg2vec is a Tensorflow-based library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks including the whole pipeline into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
 
 ![](https://github.com/Sujit-O/pykg2vec/blob/development/figures/pykg2vec_structure.png?raw=true)
