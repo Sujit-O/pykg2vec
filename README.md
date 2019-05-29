@@ -10,7 +10,7 @@
 * [Implemented Methods](#implemented-methods)
 * [Datasets](#datasets)
 * [Common Installation Problems](#common-installation-problems)
-* [How to Contribute?](https://github.com/Sujit-O/pykg2vec/blob/master/CONTRIBUTING.md)
+* [How to Contribute?](https://github.com/Sujit-O/pykg2vec/blob/development/CONTRIBUTING.md)
 * [Cite](#cite)
 
 
