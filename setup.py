@@ -12,7 +12,8 @@ INSTALL_REQUIRES = (
     'scikit_learn>=0.20.3',
     'hyperopt>=0.1.2',
     'progressbar2>=3.39.3',
-    'tensorflow==1.13.1'
+    'tensorflow==1.13.1',
+    'pathlib>=1.0.1'
 )
 
 with open("README.md", "r") as fh:

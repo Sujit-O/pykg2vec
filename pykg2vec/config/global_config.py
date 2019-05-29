@@ -1,4 +1,4 @@
-import shutil, tarfile, urllib.request
+import shutil, tarfile, urllib
 from pathlib import Path
 from collections import defaultdict
 import numpy as np

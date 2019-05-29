@@ -20,6 +20,7 @@ The goal of this library is to minimize the dependency on other libraries as far
 * scikit_learn>=0.20.3
 * hyperopt>=0.1.2
 * progressbar2>=3.39.3
+* pathlib>=1.0.1
  
 ## Features
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
