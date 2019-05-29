@@ -1,5 +1,9 @@
-from pykg2vec.config.hyperparams import KGETuneArgParser
-from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
+import sys
+sys.path.append("../")
+from config.hyperparams import KGETuneArgParser
+# from pykg2vec.config.hyperparams import KGETuneArgParser
+from utils.bayesian_optimizer import BaysOptimizer
+# from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
 
 def main():

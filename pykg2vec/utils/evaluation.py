@@ -10,7 +10,10 @@ from __future__ import print_function
 import os
 import numpy as np
 import pandas as pd
-from pykg2vec.core.KGMeta import EvaluationMeta
+import sys
+sys.path.append("../")
+from core.KGMeta import EvaluationMeta
+# from pykg2vec.core.KGMeta import EvaluationMeta
 import timeit
 from multiprocessing import Process, Queue
 import progressbar
