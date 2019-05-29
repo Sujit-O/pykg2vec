@@ -5,6 +5,13 @@ import numpy as np
 import pickle
 
 
+import shutil, tarfile, urllib.request
+from pathlib import Path
+from collections import defaultdict
+import numpy as np
+import pickle
+
+
 class Triple(object):
 
     def __init__(self, h, r, t):
@@ -67,45 +74,46 @@ def extract(tar_path, extract_path='.'):
             extract(item.name, "./" + item.name[:item.name.rfind('/')])
 
 
-class FreebaseFB15k(object):
+class KnownDataset:
 
-    def __init__(self):
-        self.name = "FB15k"
-        self.url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
+    def __init__(self, name, url, prefix):
+
+        self.name = name
+        self.url = url
+        self.prefix = prefix
+
         self.dataset_home_path = Path('..') / 'dataset'
         self.dataset_home_path.mkdir(parents=True, exist_ok=True)
         self.dataset_home_path = self.dataset_home_path.resolve()
-        self.root_path = self.dataset_home_path / 'Freebase'
-        self.tar = self.root_path / 'FB15k.tgz'
+        self.root_path = self.dataset_home_path / self.name
+        self.tar = self.root_path / ('%s.tgz' % self.name)
 
         if not self.root_path.exists():
             self.download()
             self.extract()
 
-        self.root_path = self.root_path / 'FB15k'
-        self.downloaded_path = self.root_path / 'freebase_mtr100_mte100-'
+        self.dataset_path = self.root_path / self.name
 
         self.data_paths = {
-            'train': self.root_path / 'freebase_mtr100_mte100-train.txt',
-            'test': self.root_path / 'freebase_mtr100_mte100-test.txt',
-            'valid': self.root_path / 'freebase_mtr100_mte100-valid.txt'
+            'train': self.dataset_path / ('%strain.txt'%self.prefix),
+            'test': self.dataset_path / ('%stest.txt'%self.prefix),
+            'valid': self.dataset_path / ('%svalid.txt'%self.prefix)
         }
-
-        self.cache_path = self.root_path / 'all.pkl'
-        self.cache_metadata_path = self.root_path / 'metadata.pkl'
 
         self.cache_triplet_paths = {
-            'train': self.root_path / 'triplets_train.pkl',
-            'test': self.root_path / 'triplets_test.pkl',
-            'valid': self.root_path / 'triplets_valid.pkl'
+            'train': self.dataset_path / 'triplets_train.pkl',
+            'test': self.dataset_path / 'triplets_test.pkl',
+            'valid': self.dataset_path / 'triplets_valid.pkl'
         }
 
-        self.cache_hr_t_path = self.root_path / 'hr_t.pkl'
-        self.cache_tr_h_path = self.root_path / 'tr_h.pkl'
-        self.cache_idx2entity_path = self.root_path / 'idx2entity.pkl'
-        self.cache_idx2relation_path = self.root_path / 'idx2relation.pkl'
-        self.cache_entity2idx_path = self.root_path / 'entity2idx.pkl'
-        self.cache_relation2idx_path = self.root_path / 'relation2idx.pkl'
+        self.cache_metadata_path = self.dataset_path / 'metadata.pkl'
+        self.cache_hr_t_path = self.dataset_path / 'hr_t.pkl'
+        self.cache_tr_h_path = self.dataset_path / 'tr_h.pkl'
+        self.cache_idx2entity_path = self.dataset_path / 'idx2entity.pkl'
+        self.cache_idx2relation_path = self.dataset_path / 'idx2relation.pkl'
+        self.cache_entity2idx_path = self.dataset_path / 'entity2idx.pkl'
+        self.cache_relation2idx_path = self.dataset_path / 'relation2idx.pkl'
+
 
     def download(self):
         ''' download Freebase 15k dataset from url'''
@@ -125,112 +133,45 @@ class FreebaseFB15k(object):
             print("Could not extract the tgz file!")
             print(type(e), e.args)
 
-    def dump(self):
-        for key, value in self.__dict__.items():
-            print(key, value)
-
-    def read_data(self):
-        if self.cache_path.exists():
-            with open(str(self.cache_path), 'rb') as f:
-                knowledge_graph = pickle.load(f)
-
-            return knowledge_graph
-        return None
-
     def read_metadata(self):
         with open(str(self.cache_metadata_path), 'rb') as f:
             meta = pickle.load(f)
-
             return meta
 
     def is_meta_cache_exists(self):
         return self.cache_metadata_path.exists()
 
+    def dump(self):
+        for key, value in self.__dict__.items():
+            print(key, value)
 
-class DeepLearning50a(object):
+
+class FreebaseFB15k(KnownDataset):
+    
+    def __init__(self):
+        name = "FB15k"
+        url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
+        prefix = "freebase_mtr100_mte100-"
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
+class DeepLearning50a(KnownDataset):
 
     def __init__(self):
-        self.name = "dLmL50"
-        self.url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
-        self.dataset_home_path = Path('..') / 'dataset'
-        self.dataset_home_path.mkdir(parents=True, exist_ok=True)
-        self.dataset_home_path = self.dataset_home_path.resolve()
-        self.root_path = self.dataset_home_path / 'DeepLearning'
-        self.tar = self.root_path / 'dLmL50.tgz'
+        name = "dLmL50"
+        url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
+        prefix = 'deeplearning_dataset_50arch-'
 
-        if not self.root_path.exists():
-            self.download()
-            self.extract()
+        KnownDataset.__init__(self, name, url, prefix)
 
-        self.root_path = self.root_path / 'dLmL50'
-        self.downloaded_path = self.root_path / 'deeplearning_dataset_50arch-'
-
-        self.data_paths = {
-            'train': self.root_path / 'deeplearning_dataset_50arch-train.txt',
-            'test': self.root_path / 'deeplearning_dataset_50arch-test.txt',
-            'valid': self.root_path / 'deeplearning_dataset_50arch-valid.txt'
-        }
-
-        self.cache_path = self.root_path / 'all.pkl'
-        self.cache_metadata_path = self.root_path / 'metadata.pkl'
-
-        self.cache_triplet_paths = {
-            'train': self.root_path / 'triplets_train.pkl',
-            'test': self.root_path / 'triplets_test.pkl',
-            'valid': self.root_path / 'triplets_valid.pkl'
-        }
-
-        self.cache_hr_t_path = self.root_path / 'hr_t.pkl'
-        self.cache_tr_h_path = self.root_path / 'tr_h.pkl'
-        self.cache_idx2entity_path = self.root_path / 'idx2entity.pkl'
-        self.cache_idx2relation_path = self.root_path / 'idx2relation.pkl'
-        self.cache_entity2idx_path = self.root_path / 'entity2idx.pkl'
-        self.cache_relation2idx_path = self.root_path / 'relation2idx.pkl'
-
-    def download(self):
-        ''' Download dLmL50 dataset from url'''
-        print("Downloading the dataset %s" % self.name)
-
-        self.root_path.mkdir()
-        with urllib.request.urlopen(self.url) as response, open(str(self.tar), 'wb') as out_file:
-            shutil.copyfileobj(response, out_file)
-
-    def extract(self):
-        ''' extract the downloaded tar under Freebase 15k folder'''
-        print("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
-
-        try:
-            extract(str(self.tar), str(self.root_path))
-        except Exception as e:
-            print("Could not extract the tgz file!")
-            print(type(e), e.args)
-
-    def dump(self):
-        for key, value in self.__dict__.items():
-            print(key, value)
-
-    def read_data(self):
-        if self.cache_path.exists():
-            with open(str(self.cache_path), 'rb') as f:
-                knowledge_graph = pickle.load(f)
-
-            return knowledge_graph
-        return None
-
-    def read_metadata(self):
-        with open(str(self.cache_metadata_path), 'rb') as f:
-            meta = pickle.load(f)
-            return meta
-
-    def is_meta_cache_exists(self):
-        return self.cache_metadata_path.exists()
 
 class UserDefinedDataset(object):
 
     def __init__(self, name):
         self.name = name
-        # XXX: I'm having trouble with this. Shouldn't this be relative to the pykg2vec installation directory?
-        self.dataset_home_path = Path('.') / 'dataset'
+
+        self.dataset_home_path = Path('..') / 'dataset'
         self.dataset_home_path.mkdir(parents=True, exist_ok=True)
         self.dataset_home_path = self.dataset_home_path.resolve()
         self.root_path = self.dataset_home_path / name
@@ -255,15 +196,13 @@ class UserDefinedDataset(object):
             'valid': self.root_path / (name + '-valid.txt')
         }
 
-        self.cache_path = self.root_path / 'all.pkl'
-        self.cache_metadata_path = self.root_path / 'metadata.pkl'
-
         self.cache_triplet_paths = {
             'train': self.root_path / 'triplets_train.pkl',
             'test': self.root_path / 'triplets_test.pkl',
             'valid': self.root_path / 'triplets_valid.pkl'
         }
 
+        self.cache_metadata_path = self.root_path / 'metadata.pkl'
         self.cache_hr_t_path = self.root_path / 'hr_t.pkl'
         self.cache_tr_h_path = self.root_path / 'tr_h.pkl'
         self.cache_idx2entity_path = self.root_path / 'idx2entity.pkl'
@@ -279,6 +218,11 @@ class UserDefinedDataset(object):
             meta = pickle.load(f)
             return meta
 
+    def dump(self):
+        for key, value in self.__dict__.items():
+            print(key, value)
+
+
 class KnowledgeGraph(object):
 
     def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
@@ -287,8 +231,9 @@ class KnowledgeGraph(object):
         elif dataset == 'DeepLearning50a':
             self.dataset = DeepLearning50a()
         else:
+            # if the dataset does not match with existing one, check if it exists in user's local space.
+            # if it still can't find corresponding folder, raise exception in UserDefinedDataset.__init__()
             self.dataset = UserDefinedDataset(dataset)
-            #raise NotImplementedError("%s dataset config not found!" % dataset)
 
         self.negative_sample = negative_sample
 
