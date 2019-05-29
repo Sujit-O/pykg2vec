@@ -1,11 +1,6 @@
----
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
 
----
+## Issue Template
+First of all, thank you for finding the bugs. Please help us improve by providing the bug report as much as possible in the following format.
 
 **Describe the bug**
 A clear and concise description of what the bug is.
