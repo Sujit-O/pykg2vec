@@ -208,7 +208,10 @@ Semantic matching models are latent feature models which represents triples by u
 We intend to provide the libraries to test the knowledge graph algorithms against all the well-known datasets available online. So far the library is able to work with the following datasets:
 * [Freebase](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz): Freebase is a large collaborative knowledge base consisting of data composed mainly by its community members. It is an online collection of structured data harvested from many sources, including individual, user-submitted wiki contributions [2]. 
   * Freebase15K is supported.
- 
+
+## Common Installation Problems
+
+* [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
 
 ## Cite
   Please kindly cite us if you found the library helpful. 
