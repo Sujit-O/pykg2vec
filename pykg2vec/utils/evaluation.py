@@ -115,9 +115,9 @@ def save_test_summary(result_path, model_name, hits,
         df.to_csv(fh)
 
 
-def evaluation_process(result_queue, tr_h, hr_t, hits,
+def evaluation_process(result_queue, output_queue, tr_h, hr_t, hits,
                        total_epoch, result_path, model_name,
-                       config):
+                       config, tuning):
     mean_rank_head = {}
     mean_rank_tail = {}
     filter_mean_rank_head = {}
@@ -167,6 +167,8 @@ def evaluation_process(result_queue, tr_h, hr_t, hits,
                                   filter_mean_rank_head,
                                   filter_mean_rank_tail, hit_head,
                                   hit_tail, filter_hit_head, filter_hit_tail, config)
+                if tuning:
+                    output_queue.put((mean_rank_head[epoch]+mean_rank_tail[epoch])/2)
                 break
         else:
             id_replace_tail = result[0]
@@ -191,10 +193,11 @@ def evaluation_process(result_queue, tr_h, hr_t, hits,
 
 class Evaluation(EvaluationMeta):
 
-    def __init__(self, model=None, debug=False, data_type='test'):
+    def __init__(self, model=None, debug=False, data_type='test', tuning=False):
         
         self.model = model
         self.debug = debug
+        self.tuning = tuning
 
         hr_t = self.model.config.knowledge_graph.read_cache_data('hr_t')
         tr_h = self.model.config.knowledge_graph.read_cache_data('tr_h')
@@ -229,12 +232,13 @@ class Evaluation(EvaluationMeta):
         self.n_test = self.model.config.batch_size_testing * self.loop_len
 
         self.result_queue = Queue()
+        self.output_queue = Queue()
         self.rank_calculator = Process(target=evaluation_process,
-                                       args=(self.result_queue, tr_h, hr_t,
+                                       args=(self.result_queue, self.output_queue, tr_h, hr_t,
                                              self.model.config.hits, self.model.config.epochs,
                                              self.model.config.result,
                                              self.model.model_name,
-                                             self.model.config))
+                                             self.model.config, self.tuning))
         self.rank_calculator.start()
 
     def stop(self):
@@ -275,6 +279,7 @@ class Evaluation(EvaluationMeta):
                 bar.update(i)
 
         self.result_queue.put("Stop!")
+
 
     def save_training_result(self, losses):
         files = os.listdir(str(self.model.config.result))

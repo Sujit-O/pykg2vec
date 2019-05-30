@@ -7,7 +7,9 @@ class KGETuneArgParser:
         self.parser = ArgumentParser(description='Knowledge Graph Embedding tunable configs.')
 
         ''' basic configs '''
-        self.parser.add_argument('-m', dest='model', default='TransE', type=str, help='Model to tune')
+        self.parser.add_argument('-mn', dest='model', default='TransE', type=str, help='Model to tune')
+        self.parser.add_argument('-db', dest='debug', default=False, type=lambda x: (str(x).lower() == 'true'),
+                                        help='To use debug mode or not.')
 
     def get_args(self):
         return self.parser.parse_args()
