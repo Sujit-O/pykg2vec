@@ -4,7 +4,7 @@ We feel humbled that you have decided to contribute to the pykg2vec repository. 
 
 #### Table Of Contents
 
-* [Reporting Bugs](https://github.com/Sujit-O/pykg2vec/blob/development/ISSUE_TEMPLATE.md)
+* [Reporting Bugs](https://github.com/Sujit-O/pykg2vec/blob/master/ISSUE_TEMPLATE.md)
 * [Suggesting Enhancements](#suggesting-enhancements)
 * [Adding Algorithm](#adding-algorithm)
 * [Adding Evaluation Metric](#adding-evaluation-metric)
@@ -13,7 +13,7 @@ We feel humbled that you have decided to contribute to the pykg2vec repository. 
 
 
 ### Suggesting Enhancements
-If you have any suggestion for enhancing any of the modules please send us an enhancement using the issue [template](https://github.com/Sujit-O/pykg2vec/blob/development/ISSUE_TEMPLATE.md).
+If you have any suggestion for enhancing any of the modules please send us an enhancement using the issue [template](https://github.com/Sujit-O/pykg2vec/blob/master/ISSUE_TEMPLATE.md).
 
 ### Adding Algorithm
 We are continually striving to add the state-of-the-art algorithms in the library. If you want to suggest adding any algorithm or add your algoirithm to the library, please follow the following steps:

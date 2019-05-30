@@ -11,12 +11,12 @@ import importlib
 from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
 import pandas as pd
 
-import sys
-sys.path.append("../")
-from config.global_config import KnowledgeGraph
-# from pykg2vec.config.global_config import KnowledgeGraph
-from utils.trainer import Trainer
-# from pykg2vec.utils.trainer import Trainer
+# import sys
+# sys.path.append("../")
+# from config.global_config import KnowledgeGraph
+from pykg2vec.config.global_config import KnowledgeGraph
+# from utils.trainer import Trainer
+from pykg2vec.utils.trainer import Trainer
 from pprint import pprint
 
 model_path = "core"

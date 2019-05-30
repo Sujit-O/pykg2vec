@@ -3,26 +3,26 @@ import unittest
 import sys
 sys.path.append("../")
 
-from core.TransE import TransE
-from core.TransH import TransH
-from core.TransR import TransR
-from core.TransD import TransD
-from core.ConvE import ConvE
-from core.TransM import TransM
-from core.SME import SME
-from core.Complex import Complex
-from core.DistMult import DistMult
-from core.KG2E import KG2E
-from core.NTN import NTN
-from core.ProjE_pointwise import ProjE_pointwise
-from core.Rescal import Rescal
-from core.RotatE import RotatE
-from core.SLM import SLM
+from pykg2vec.core.TransE import TransE
+from pykg2vec.core.TransH import TransH
+from pykg2vec.core.TransR import TransR
+from pykg2vec.core.TransD import TransD
+from pykg2vec.core.ConvE import ConvE
+from pykg2vec.core.TransM import TransM
+from pykg2vec.core.SME import SME
+from pykg2vec.core.Complex import Complex
+from pykg2vec.core.DistMult import DistMult
+from pykg2vec.core.KG2E import KG2E
+from pykg2vec.core.NTN import NTN
+from pykg2vec.core.ProjE_pointwise import ProjE_pointwise
+from pykg2vec.core.Rescal import Rescal
+from pykg2vec.core.RotatE import RotatE
+from pykg2vec.core.SLM import SLM
 
-from config.config import *
-from utils.dataprep import DataPrep
+from pykg2vec.config.config import *
+from pykg2vec.utils.dataprep import DataPrep
 # from utils.dataprep import Triple
-from utils.trainer import Trainer
+from pykg2vec.utils.trainer import Trainer
 import tensorflow as tf
 
 class Pykg2vecIT(unittest.TestCase):
