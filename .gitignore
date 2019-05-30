@@ -6,6 +6,8 @@
 /build/
 /py-env/
 
+pykg2vec/intermediate
+pykg2vec/dataset
 
 # Python egg metadata, regenerated from source files by setuptools.
 /*.egg-info

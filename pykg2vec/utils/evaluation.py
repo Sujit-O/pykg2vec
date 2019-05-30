@@ -191,48 +191,47 @@ def evaluation_process(result_queue, tr_h, hr_t, hits,
 
 class Evaluation(EvaluationMeta):
 
-    def __init__(self, model=None, debug=False, test_data='test'):
+    def __init__(self, model=None, debug=False, data_type='test'):
+        
         self.model = model
         self.debug = debug
-        self.size_per_batch = self.model.config.batch_size_testing
-
-        self.n_test = model.config.test_num
-        hits = model.config.hits
-        self.eval_process_list = []
-
-        self.epoch = []
 
         hr_t = self.model.config.knowledge_graph.read_cache_data('hr_t')
         tr_h = self.model.config.knowledge_graph.read_cache_data('tr_h')
 
-        self.data_stats = self.model.config.kg_meta
-        self.result_queue = Queue()
-
-        knowledge_graph = self.model.config.knowledge_graph
-
-        if test_data == 'test':
-            self.eval_data = knowledge_graph.read_cache_data('triplets_test')
-        elif test_data == 'valid':
-            self.eval_data = knowledge_graph.read_cache_data('triplets_valid')
+        if data_type == 'test':
+            self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_test')
+        elif data_type == 'valid':
+            self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
         else:
-            raise NotImplementedError("%s datatype is not available!" % test_data)
+            raise NotImplementedError("%s datatype is not available!" % data_type)
 
-        tot_data = len(self.eval_data)
-
+        '''
+            n_test: number of triplets to be tested
+            1) if n_test == 0, test all the triplets. 
+            2) if n_test >= # of testable triplets, then set n_test to # of testable triplets
+        '''
+        self.n_test = model.config.test_num
         if self.n_test == 0:
-            self.n_test = tot_data
+            self.n_test = len(self.eval_data)
         else:
-            self.n_test = min(self.n_test, tot_data)
+            self.n_test = min(self.n_test, len(self.eval_data))
 
-        self.loop_len = self.n_test // self.size_per_batch if not self.debug else 2
-
-        if self.n_test < self.size_per_batch:
+        ''' 
+            loop_len: the # of loops to perform batch evaluation. 
+            if debug mode is turned on, then set to only 2. 
+        ''' 
+        if self.n_test < self.model.config.batch_size_testing:
             self.loop_len = 1
-        self.n_test = self.size_per_batch * self.loop_len
+        else:
+            self.loop_len = (self.n_test // self.model.config.batch_size_testing) if not self.debug else 2
+        
+        self.n_test = self.model.config.batch_size_testing * self.loop_len
 
+        self.result_queue = Queue()
         self.rank_calculator = Process(target=evaluation_process,
                                        args=(self.result_queue, tr_h, hr_t,
-                                             hits, self.model.config.epochs,
+                                             self.model.config.hits, self.model.config.epochs,
                                              self.model.config.result,
                                              self.model.model_name,
                                              self.model.config))
@@ -243,26 +242,26 @@ class Evaluation(EvaluationMeta):
         self.rank_calculator.terminate()
 
     def test_batch(self, sess=None, epoch=None):
-
-        head_rank, tail_rank = self.model.test_batch()
-        self.epoch.append(epoch)
-        if not sess:
+        
+        if sess == None:
             raise NotImplementedError('No session found for evaluation!')
-
         print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
 
+        size_per_batch = self.model.config.batch_size_testing
+        head_rank, tail_rank = self.model.test_batch()
+              
         h_list = np.zeros(shape=(self.n_test,), dtype=np.int32)
         r_list = np.zeros(shape=(self.n_test,), dtype=np.int32)
         t_list = np.zeros(shape=(self.n_test,), dtype=np.int32)
-
         id_replace_head = np.zeros(shape=(self.n_test, self.model.config.kg_meta.tot_entity), dtype=np.int32)
         id_replace_tail = np.zeros(shape=(self.n_test, self.model.config.kg_meta.tot_entity), dtype=np.int32)
+
         widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), " Done:",
                    progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
         with progressbar.ProgressBar(max_value=self.loop_len, widgets=widgets) as bar:
             for i in range(self.loop_len):
                 data = np.asarray([[self.eval_data[x].h, self.eval_data[x].r, self.eval_data[x].t]
-                                   for x in range(self.size_per_batch * i, self.size_per_batch * (i + 1))])
+                                   for x in range(size_per_batch * i, size_per_batch * (i + 1))])
                 h = data[:, 0]
                 r = data[:, 1]
                 t = data[:, 2]
@@ -274,12 +273,12 @@ class Evaluation(EvaluationMeta):
 
                 head_tmp, tail_tmp = np.squeeze(sess.run([head_rank, tail_rank], feed_dict))
 
-                h_list[self.size_per_batch * i: self.size_per_batch * (i + 1)] = h
-                r_list[self.size_per_batch * i: self.size_per_batch * (i + 1)] = r
-                t_list[self.size_per_batch * i: self.size_per_batch * (i + 1)] = t
+                h_list[size_per_batch * i: size_per_batch * (i + 1)] = h
+                r_list[size_per_batch * i: size_per_batch * (i + 1)] = r
+                t_list[size_per_batch * i: size_per_batch * (i + 1)] = t
 
-                id_replace_head[self.size_per_batch * i: self.size_per_batch * (i + 1), :] = head_tmp
-                id_replace_tail[self.size_per_batch * i: self.size_per_batch * (i + 1), :] = tail_tmp
+                id_replace_head[size_per_batch * i: size_per_batch * (i + 1), :] = head_tmp
+                id_replace_tail[size_per_batch * i: size_per_batch * (i + 1), :] = tail_tmp
                 bar.update(i)
 
         result_data = [id_replace_tail, id_replace_head, h_list, r_list, t_list, epoch]
