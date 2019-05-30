@@ -127,64 +127,66 @@ def evaluation_process(result_queue, tr_h, hr_t, hits,
     hit_tail = {}
     filter_hit_head = {}
     filter_hit_tail = {}
+    start_time = None
+    epoch = None
+
+    rank_head = []
+    rank_tail = []
+    filter_rank_head = []
+    filter_rank_tail = []
 
     while True:
         result = result_queue.get()
-        id_replace_tail = result[0]
-        id_replace_head = result[1]
-        h_list = result[2]
-        r_list = result[3]
-        t_list = result[4]
-        epoch = result[5]
+        if result == 'Start!':
+            rank_head = []
+            rank_tail = []
+            filter_rank_head = []
+            filter_rank_tail = []
+            start_time = timeit.default_timer()
+        elif result == 'Stop!':
+            mean_rank_head[epoch] = np.mean(rank_head, dtype=np.float32) 
+            mean_rank_tail[epoch] = np.mean(rank_tail, dtype=np.float32) 
 
-        rank_head = []
-        rank_tail = []
-        filter_rank_head = []
-        filter_rank_tail = []
-        total_test = len(h_list)
+            filter_mean_rank_head[epoch] = np.mean(filter_rank_head, dtype=np.float32) 
+            filter_mean_rank_tail[epoch] = np.mean(filter_rank_tail, dtype=np.float32) 
 
-        start_time = timeit.default_timer()
-        for triple_id in range(total_test):
-            t_rank, fil_t_rank = eval_batch_tail(id_replace_tail[triple_id], h_list[triple_id],
-                                                 r_list[triple_id], t_list[triple_id], hr_t)
-            h_rank, fil_h_rank = eval_batch_head(id_replace_head[triple_id], h_list[triple_id],
-                                                 r_list[triple_id], t_list[triple_id], tr_h)
-            rank_head.append(h_rank)
-            filter_rank_head.append(fil_h_rank)
-            rank_tail.append(t_rank)
-            filter_rank_tail.append(fil_t_rank)
+            for hit in hits:
+                hit_head[(epoch, hit)] = np.mean(np.asarray(rank_head) < hit, dtype=np.float32) 
+                hit_tail[(epoch, hit)] = np.mean(np.asarray(rank_tail) < hit, dtype=np.float32) 
+                filter_hit_head[(epoch, hit)] = np.mean(np.asarray(filter_rank_head) < hit, dtype=np.float32) 
+                filter_hit_tail[(epoch, hit)] = np.mean(np.asarray(filter_rank_tail) < hit, dtype=np.float32) 
+            del rank_head, rank_tail, filter_rank_head, filter_rank_tail
 
-        mean_rank_head[epoch] = np.sum(rank_head, dtype=np.float32) / total_test
-        mean_rank_tail[epoch] = np.sum(rank_tail, dtype=np.float32) / total_test
+            display_summary(epoch, hits, mean_rank_head, mean_rank_tail,
+                            filter_mean_rank_head, filter_mean_rank_tail,
+                            hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time)
 
-        filter_mean_rank_head[epoch] = np.sum(filter_rank_head,
-                                              dtype=np.float32) / total_test
-        filter_mean_rank_tail[epoch] = np.sum(filter_rank_tail,
-                                              dtype=np.float32) / total_test
+            if epoch >= total_epoch - 1:
+                save_test_summary(result_path, model_name, hits,
+                                  mean_rank_head, mean_rank_tail,
+                                  filter_mean_rank_head,
+                                  filter_mean_rank_tail, hit_head,
+                                  hit_tail, filter_hit_head, filter_hit_tail, config)
+                break
+        else:
+            id_replace_tail = result[0]
+            id_replace_head = result[1]
+            h_list = result[2]
+            r_list = result[3]
+            t_list = result[4]
+            epoch = result[5]
 
-        for hit in hits:
-            hit_head[(epoch, hit)] = np.sum(np.asarray(rank_head) < hit,
-
-                                            dtype=np.float32) / total_test
-            hit_tail[(epoch, hit)] = np.sum(np.asarray(rank_tail) < hit,
-                                            dtype=np.float32) / total_test
-            filter_hit_head[(epoch, hit)] = np.sum(np.asarray(filter_rank_head) < hit,
-                                                   dtype=np.float32) / total_test
-            filter_hit_tail[(epoch, hit)] = np.sum(np.asarray(filter_rank_tail) < hit,
-                                                   dtype=np.float32) / total_test
-        del rank_head, rank_tail, filter_rank_head, filter_rank_tail
-
-        display_summary(epoch, hits, mean_rank_head, mean_rank_tail,
-                        filter_mean_rank_head, filter_mean_rank_tail,
-                        hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time)
-
-        if epoch >= total_epoch - 1:
-            save_test_summary(result_path, model_name, hits,
-                              mean_rank_head, mean_rank_tail,
-                              filter_mean_rank_head,
-                              filter_mean_rank_tail, hit_head,
-                              hit_tail, filter_hit_head, filter_hit_tail, config)
-            break
+            total_test = len(h_list)
+            
+            for triple_id in range(total_test):
+                t_rank, fil_t_rank = eval_batch_tail(id_replace_tail[triple_id], h_list[triple_id],
+                                                     r_list[triple_id], t_list[triple_id], hr_t)
+                h_rank, fil_h_rank = eval_batch_head(id_replace_head[triple_id], h_list[triple_id],
+                                                     r_list[triple_id], t_list[triple_id], tr_h)
+                rank_head.append(h_rank)
+                filter_rank_head.append(fil_h_rank)
+                rank_tail.append(t_rank)
+                filter_rank_tail.append(fil_t_rank)
 
 
 class Evaluation(EvaluationMeta):
@@ -247,15 +249,11 @@ class Evaluation(EvaluationMeta):
 
         size_per_batch = self.model.config.batch_size_testing
         head_rank, tail_rank = self.model.test_batch()
-              
-        h_list = np.zeros(shape=(self.n_test,), dtype=np.int32)
-        r_list = np.zeros(shape=(self.n_test,), dtype=np.int32)
-        t_list = np.zeros(shape=(self.n_test,), dtype=np.int32)
-        id_replace_head = np.zeros(shape=(self.n_test, self.model.config.kg_meta.tot_entity), dtype=np.int32)
-        id_replace_tail = np.zeros(shape=(self.n_test, self.model.config.kg_meta.tot_entity), dtype=np.int32)
 
         widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), " Done:",
                    progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
+
+        self.result_queue.put("Start!")
         with progressbar.ProgressBar(max_value=self.loop_len, widgets=widgets) as bar:
             for i in range(self.loop_len):
                 data = np.asarray([[self.eval_data[x].h, self.eval_data[x].r, self.eval_data[x].t]
@@ -270,19 +268,13 @@ class Evaluation(EvaluationMeta):
                     self.model.test_t_batch: t}
 
                 head_tmp, tail_tmp = np.squeeze(sess.run([head_rank, tail_rank], feed_dict))
+                
+                result_data = [tail_tmp, head_tmp, h, r, t, epoch]
+                self.result_queue.put(result_data)
 
-                h_list[size_per_batch * i: size_per_batch * (i + 1)] = h
-                r_list[size_per_batch * i: size_per_batch * (i + 1)] = r
-                t_list[size_per_batch * i: size_per_batch * (i + 1)] = t
-
-                id_replace_head[size_per_batch * i: size_per_batch * (i + 1), :] = head_tmp
-                id_replace_tail[size_per_batch * i: size_per_batch * (i + 1), :] = tail_tmp
                 bar.update(i)
 
-        result_data = [id_replace_tail, id_replace_head, h_list, r_list, t_list, epoch]
-        self.result_queue.put(result_data)
-
-        del id_replace_tail, id_replace_head, h_list, r_list, t_list
+        self.result_queue.put("Stop!")
 
     def save_training_result(self, losses):
         files = os.listdir(str(self.model.config.result))
