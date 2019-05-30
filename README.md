@@ -1,5 +1,20 @@
 # Pykg2vec: Python Library for KG Embedding Methods 
 
+## Table of Contents
+
+* [Introduction](#introduction)
+* [Dependencies](#dependencies)
+* [Features](#features)
+* [Repository Structure](#repository-structure)
+* [Usage Example](#usage-example)
+* [Implemented Methods](#implemented-methods)
+* [Datasets](#datasets)
+* [Common Installation Problems](#common-installation-problems)
+* [How to Contribute?](https://github.com/Sujit-O/pykg2vec/blob/development/CONTRIBUTING.md)
+* [Cite](#cite)
+
+
+## Introduction
 Pykg2vec is a Tensorflow-based library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks including the whole pipeline into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
 
 ![](https://github.com/Sujit-O/pykg2vec/blob/development/figures/pykg2vec_structure.png?raw=true)
@@ -20,6 +35,7 @@ The goal of this library is to minimize the dependency on other libraries as far
 * scikit_learn>=0.20.3
 * hyperopt>=0.1.2
 * progressbar2>=3.39.3
+* pathlib>=1.0.1
  
 ## Features
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
@@ -74,9 +90,15 @@ $ pip install --upgrade pip
 #Install pyKG2Vec:  
 (venv) $ pip install pykg2vec
 
-#Install from github rep:  
+#Install stable version directly from github repo:  
 (venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
 (venv) $ cd pykg2vec
+(venv) $ python setup.py install
+
+#Install development version directly from github repo:  
+(venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
+(venv) $ cd pykg2vec
+(venv) $ git checkout development
 (venv) $ python setup.py install
 ``` 
 ## Usage Example
@@ -140,7 +162,7 @@ if __name__ == "__main__":
 with tune_model.py we then can train the existed model using command:
 ```bach
 python tune_model.py -h # check all tunnable parameters.
-python tune_model.py -m TransE # Tune TransE model.
+python tune_model.py -mn TransE # Tune TransE model.
 ```
 
 ## Implemented Methods
@@ -192,7 +214,10 @@ Semantic matching models are latent feature models which represents triples by u
 We intend to provide the libraries to test the knowledge graph algorithms against all the well-known datasets available online. So far the library is able to work with the following datasets:
 * [Freebase](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz): Freebase is a large collaborative knowledge base consisting of data composed mainly by its community members. It is an online collection of structured data harvested from many sources, including individual, user-submitted wiki contributions [2]. 
   * Freebase15K is supported.
- 
+
+## Common Installation Problems
+
+* [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
 
 ## Cite
   Please kindly cite us if you found the library helpful. 

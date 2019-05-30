@@ -6,6 +6,10 @@ We store the base configuration of the models here
 import tensorflow as tf
 from pathlib import Path
 
+# import sys
+# sys.path.append("../")
+# from config.global_config import KnowledgeGraph
+
 from pykg2vec.config.global_config import KnowledgeGraph
 from argparse import ArgumentParser
 import importlib
@@ -13,7 +17,9 @@ import importlib
 
 class Importer:
     def __init__(self):
+        # self.model_path = "core"
         self.model_path = "pykg2vec.core"
+        # self.config_path = "config.config"
         self.config_path = "pykg2vec.config.config"
 
         self.modelMap = {"complex": "Complex",
@@ -229,7 +235,7 @@ class TransEConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 512
-            self.epochs = 2
+            self.epochs = 500
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -392,13 +398,13 @@ class TransHConfig(BasicConfig):
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
-            self.learning_rate = 0.001
+            self.learning_rate = 0.005
             self.L1_flag = True
-            self.hidden_size = 100
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
-            self.C = 0.123
+            self.hidden_size = 50
+            self.batch_size = 1200
+            self.epochs = 500
+            self.margin = 0.5
+            self.C = 0.015625
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"

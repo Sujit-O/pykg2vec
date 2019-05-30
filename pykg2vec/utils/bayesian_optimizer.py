@@ -11,12 +11,19 @@ import importlib
 from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
 import pandas as pd
 
+# import sys
+# sys.path.append("../")
+# from config.global_config import KnowledgeGraph
 from pykg2vec.config.global_config import KnowledgeGraph
+# from utils.trainer import Trainer
 from pykg2vec.utils.trainer import Trainer
 from pprint import pprint
 
+# model_path = "core"
 model_path = "pykg2vec.core"
+# config_path = "config.config"
 config_path = "pykg2vec.config.config"
+# hyper_param_path = "config.hyperparams"
 hyper_param_path = "pykg2vec.config.hyperparams"
 
 modelMap = {"complex": "Complex",
@@ -97,8 +104,9 @@ class BaysOptimizer(object):
             print("%s not implemented! Select from: %s" % (model_name,
                                                            ' '.join(map(str, modelMap.values()))))
         config = self.config_obj()
-        config.set_dataset(name_dataset)
-        self.trainer = Trainer(model=self.model_obj(config), debug=False)
+        config.data=name_dataset
+        # config.set_dataset(name_dataset)
+        self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug, tuning=True)
         self.search_space = self.define_search_space(hyper_params)
         
     def define_search_space(self, hyper_params):
@@ -147,6 +155,7 @@ class BaysOptimizer(object):
         self.trainer.build_model()
         self.trainer.summary_hyperparameter()
     
-        loss = self.trainer.train_model(tuning=True)
+        loss = self.trainer.tune_model()
+        # loss = self.trainer.train_model(tuning=True)
 
         return {'loss': loss, 'status': STATUS_OK}

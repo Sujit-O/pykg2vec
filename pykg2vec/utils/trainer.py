@@ -1,11 +1,19 @@
 import tensorflow as tf
 import timeit
 
+# import sys
+# sys.path.append("../")
+# from core.KGMeta import TrainerMeta
 from pykg2vec.core.KGMeta import TrainerMeta
+# from utils.evaluation import Evaluation
 from pykg2vec.utils.evaluation import Evaluation
+# from utils.visualization import Visualization
 from pykg2vec.utils.visualization import Visualization
+# from utils.generator import Generator
 from pykg2vec.utils.generator import Generator
+# from config.global_config import GeneratorConfig
 from pykg2vec.config.global_config import GeneratorConfig
+# from config.global_config import KGMetaData, KnowledgeGraph
 from pykg2vec.config.global_config import KGMetaData, KnowledgeGraph
 import numpy as np
 
@@ -20,12 +28,13 @@ def get_sparse_mat(data, bs, te):
 
 class Trainer(TrainerMeta):
 
-    def __init__(self, model, debug=False):
+    def __init__(self, model, debug=False, tuning=False):
         self.debug = debug
         self.model = model
         self.config = self.model.config
         self.training_results = []
         self.gen_train = None
+        self.tuning=tuning
 
     def build_model(self):
         """function to build the model"""
@@ -56,12 +65,13 @@ class Trainer(TrainerMeta):
         self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
         self.sess.run(tf.global_variables_initializer())
 
-        self.summary()
-        self.summary_hyperparameter()
+        if not self.tuning:
+            self.summary()
+            self.summary_hyperparameter()
 
     ''' Training related functions:'''
 
-    def train_model(self, tuning=False):
+    def train_model(self):
         """function to train the model"""
         loss = 0
 
@@ -72,17 +82,17 @@ class Trainer(TrainerMeta):
                                                batch_size=self.model.config.batch_size)
             self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
-            if not tuning:
+            if not self.tuning:
                 self.evaluator = Evaluation(model=self.model, debug=self.debug)
 
             for n_iter in range( self.config.epochs):
-                loss = self.train_model_epoch(n_iter, tuning=tuning)
-                if not tuning:
+                loss = self.train_model_epoch(n_iter)
+                if not self.tuning:
                     self.test(n_iter)
 
             self.gen_train.stop()
 
-            if not tuning:
+            if not self.tuning:
                 self.evaluator.save_training_result(self.training_results)
                 self.evaluator.stop()
 
@@ -101,7 +111,29 @@ class Trainer(TrainerMeta):
 
         return loss
 
-    def train_model_epoch(self, epoch_idx, tuning=False):
+    def tune_model(self):
+        """function to tune the model"""
+        acc = 0
+
+        generator_config = GeneratorConfig(data='train', algo=self.model.model_name,
+                                           batch_size=self.model.config.batch_size)
+        self.gen_train = Generator(config=generator_config, model_config=self.model.config)
+
+        self.evaluator = Evaluation(model=self.model, debug=self.debug, tuning=True)
+       
+        for n_iter in range( self.config.epochs):
+            loss = self.train_model_epoch(n_iter)
+
+        self.gen_train.stop()
+        self.evaluator.test_batch(self.sess, n_iter)
+        acc = self.evaluator.output_queue.get()
+        self.evaluator.stop()
+        self.sess.close()
+        tf.reset_default_graph() # clean the tensorflow for the next training task.
+
+        return acc
+
+    def train_model_epoch(self, epoch_idx):
         acc_loss = 0
 
         num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 10
@@ -145,10 +177,10 @@ class Trainer(TrainerMeta):
 
             acc_loss += loss
 
-            if not tuning:
+            if not self.tuning:
                 print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
                                                             batch_idx, num_batch, loss), end='\r')
-        if not tuning:
+        if not self.tuning:
             print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
                 epoch_idx, acc_loss, timeit.default_timer() - start_time))
 

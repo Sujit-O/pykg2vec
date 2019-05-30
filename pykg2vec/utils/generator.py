@@ -7,19 +7,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+# import sys
+# sys.path.append("../")
+# from config.global_config import GeneratorConfig
 from pykg2vec.config.global_config import GeneratorConfig
 import numpy as np
 from multiprocessing import Process, Queue, Value, current_process
-
-
-def gen_id(ids):
-    i = 0
-    while True:
-        yield ids[i]
-        i += 1
-        if i >= len(ids):
-            np.random.shuffle(ids)
-            i = 0
 
 
 def get_label_mat(data, bs, te, neg_rate=1):

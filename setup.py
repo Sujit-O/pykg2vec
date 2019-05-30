@@ -12,7 +12,8 @@ INSTALL_REQUIRES = (
     'scikit_learn>=0.20.3',
     'hyperopt>=0.1.2',
     'progressbar2>=3.39.3',
-    'tensorflow==1.13.1'
+    'tensorflow==1.13.1',
+    'pathlib>=1.0.1'
 )
 
 with open("README.md", "r") as fh:
@@ -21,7 +22,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='pykg2vec',
-    version="0.0.44",
+    version="0.0.45",
     author="Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Martinez Canedo, Arquimedes, Mohammad Abdullah Al Faruque",
     author_email="sujitchhetri@gmail.com",
     description="A Python library for Knowledge Graph Embedding",
