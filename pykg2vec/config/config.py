@@ -235,7 +235,7 @@ class TransEConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 512
-            self.epochs = 2
+            self.epochs = 500
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
