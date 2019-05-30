@@ -90,9 +90,15 @@ $ pip install --upgrade pip
 #Install pyKG2Vec:  
 (venv) $ pip install pykg2vec
 
-#Install from github rep:  
+#Install stable version directly from github repo:  
 (venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
 (venv) $ cd pykg2vec
+(venv) $ python setup.py install
+
+#Install development version directly from github repo:  
+(venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
+(venv) $ cd pykg2vec
+(venv) $ git checkout development
 (venv) $ python setup.py install
 ``` 
 ## Usage Example
