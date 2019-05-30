@@ -73,8 +73,6 @@ def save_test_summary(result_path, model_name, hits,
                       filter_mean_rank_head,
                       filter_mean_rank_tail, hit_head,
                       hit_tail, filter_hit_head, filter_hit_tail, config):
-    if not os.path.exists(result_path):
-        os.mkdir(result_path)
     files = os.listdir(str(result_path))
     l = len([f for f in files if model_name in f if 'Testing' in f])
     with open(str(result_path / (model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
@@ -287,8 +285,6 @@ class Evaluation(EvaluationMeta):
         del id_replace_tail, id_replace_head, h_list, r_list, t_list
 
     def save_training_result(self, losses):
-        if not os.path.exists(self.model.config.result):
-            os.mkdir(self.model.config.result)
         files = os.listdir(str(self.model.config.result))
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
         df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
