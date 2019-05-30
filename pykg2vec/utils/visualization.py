@@ -279,11 +279,8 @@ class Visualization(object):
         path = self.model.config.result
         result = self.model.config.figures
         data = [self.model.config.data]
-        if not os.path.exists(result):
-            os.mkdir(result)
-        if path is None or data is None:
-            raise NotImplementedError('Please provide valid path, algorithm and dataset!')
-        files = os.listdir(path)
+        
+        files = os.listdir(str(path))
         files_lwcase = [f.lower() for f in files]
         for d in data:
             df = pd.DataFrame()
@@ -291,7 +288,7 @@ class Visualization(object):
                 file_no = len([c for c in files_lwcase if a.lower() in c if 'training' in c])
                 if file_no < 1:
                     continue
-                with open(path / (a + '_Training_results_' + str(file_no - 1) + '.csv'), 'r') as fh:
+                with open(str(path / (a + '_Training_results_' + str(file_no - 1) + '.csv')), 'r') as fh:
                     df_2 = pd.read_csv(fh)
                 if df.empty:
                     df['Epochs'] = df_2['Epochs']
