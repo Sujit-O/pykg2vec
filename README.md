@@ -162,7 +162,7 @@ if __name__ == "__main__":
 with tune_model.py we then can train the existed model using command:
 ```bach
 python tune_model.py -h # check all tunnable parameters.
-python tune_model.py -m TransE # Tune TransE model.
+python tune_model.py -mn TransE # Tune TransE model.
 ```
 
 ## Implemented Methods
