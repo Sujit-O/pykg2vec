@@ -389,7 +389,7 @@ class Visualization(object):
             df_6 = df_5[df_5['Metrics'].str.contains('Hits') == False]
             plt.figure()
             flatui = ["#d46a7e", "#d5b60a", "#9b59b6", "#3498db", "#95a5a6", "#34495e", "#2ecc71", "#e74c3c"]
-            g = seaborn.barplot(x="Metrics", y='Score', hue="Algorithm", palette=flatui, data=df_6)
+            g = seaborn.barplot(x="Metrics", y='Rank', hue="Algorithm", palette=flatui, data=df_6)
             g.legend(loc='upper center', bbox_to_anchor=(0.5, 1.14), ncol=6)
             g.tick_params(labelsize=6)
             # ax = seaborn.lineplot(x="Metrics", y='Score', hue="Algorithm",
@@ -404,7 +404,7 @@ class Visualization(object):
             df_6 = df_5[df_5['Metrics'].str.contains('Hits') == True]
             plt.figure()
             flatui = ["#3498db", "#95a5a6", "#34495e", "#2ecc71", "#e74c3c", "#d46a7e", "#d5b60a", "#9b59b6"]
-            g = seaborn.barplot(x="Metrics", y='Score', hue="Algorithm", palette=flatui, data=df_6)
+            g = seaborn.barplot(x="Metrics", y='Ratio', hue="Algorithm", palette=flatui, data=df_6)
             g.legend(loc='upper center', bbox_to_anchor=(0.5, 1.14), ncol=6)
             g.tick_params(labelsize=6)
 
