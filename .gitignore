@@ -15,3 +15,4 @@ pykg2vec/dataset
 *.pdf
 *.txt
 *.csv
+.vscode/settings.json

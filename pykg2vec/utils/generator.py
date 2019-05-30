@@ -15,16 +15,6 @@ import numpy as np
 from multiprocessing import Process, Queue, Value, current_process
 
 
-def gen_id(ids):
-    i = 0
-    while True:
-        yield ids[i]
-        i += 1
-        if i >= len(ids):
-            np.random.shuffle(ids)
-            i = 0
-
-
 def get_label_mat(data, bs, te, neg_rate=1):
     mat = np.zeros(shape=(bs, te), dtype=np.int8)
     for i in range(bs):
