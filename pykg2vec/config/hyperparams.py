@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 
+
 class KGETuneArgParser:
 
     def __init__(self):
@@ -7,9 +8,10 @@ class KGETuneArgParser:
 
         ''' basic configs '''
         self.parser.add_argument('-m', dest='model', default='TransE', type=str, help='Model to tune')
-        
+
     def get_args(self):
         return self.parser.parse_args()
+
 
 class TransEParams:
     def __init__(self):
@@ -19,5 +21,5 @@ class TransEParams:
         self.batch_size = [128, 256, 512]
         self.epochs = [2, 5, 10]
         self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'adam', 'rms']
+        self.optimizer = ["adam", "sgd", 'rms']
         self.sampling = ["uniform", "bern"]

@@ -1,14 +1,20 @@
 import tensorflow as tf
 import timeit
-import sys
 
+import sys
 sys.path.append("../")
 from core.KGMeta import TrainerMeta
+# from pykg2vec.core.KGMeta import TrainerMeta
 from utils.evaluation import Evaluation
+# from pykg2vec.utils.evaluation import Evaluation
 from utils.visualization import Visualization
+# from pykg2vec.utils.visualization import Visualization
 from utils.generator import Generator
+# from pykg2vec.utils.generator import Generator
 from config.global_config import GeneratorConfig
+# from pykg2vec.config.global_config import GeneratorConfig
 from config.global_config import KGMetaData, KnowledgeGraph
+# from pykg2vec.config.global_config import KGMetaData, KnowledgeGraph
 import numpy as np
 
 
@@ -77,7 +83,7 @@ class Trainer(TrainerMeta):
             if not tuning:
                 self.evaluator = Evaluation(model=self.model, debug=self.debug)
 
-            for n_iter in range(self.config.epochs):
+            for n_iter in range( self.config.epochs):
                 loss = self.train_model_epoch(n_iter, tuning=tuning)
                 if not tuning:
                     self.test(n_iter)
@@ -96,6 +102,7 @@ class Trainer(TrainerMeta):
 
         if self.config.disp_summary:
             self.summary()
+            self.summary_hyperparameter()
 
         self.sess.close()
         tf.reset_default_graph() # clean the tensorflow for the next training task.
@@ -210,9 +217,9 @@ class Trainer(TrainerMeta):
 
     def summary(self):
         """function to print the summary"""
-        print("\n----------SUMMARY----------")
+        print("\n------------------Global Setting--------------------")
         # Acquire the max length and add four more spaces
-        maxspace = len(max([k for k in self.config.__dict__.keys()])) + 15
+        maxspace = len(max([k for k in self.config.__dict__.keys()])) +20
         for key, val in self.config.__dict__.items():
             if key in self.config.__dict__['hyperparameters']:
                 continue
@@ -223,13 +230,15 @@ class Trainer(TrainerMeta):
             if len(key) < maxspace:
                 for i in range(maxspace - len(key)):
                     key = ' ' + key
-            print("%s:%s"%(key, val))
-        print("---------------------------")
+            print("%s : %s"%(key, val))
+        print("---------------------------------------------------")
 
     def summary_hyperparameter(self):
-        print("\n-----CONFIG-SUMMARY---------")
-
-        for key in self.config.hyperparameters:
-            print("%s:%s" % (key, self.config.hyperparameters[key]))
-
-        print("---------------------------")
+        print("\n-----------------%s Setting-------------------"%(self.model.model_name))
+        maxspace = len(max([k for k in self.config.hyperparameters.keys()])) + 15
+        for key,val in self.config.hyperparameters.items():
+            if len(key) < maxspace:
+                for i in range(maxspace - len(key)):
+                    key = ' ' + key
+            print("%s : %s" % (key, val))
+        print("---------------------------------------------------")

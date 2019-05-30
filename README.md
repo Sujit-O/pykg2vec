@@ -1,11 +1,41 @@
 # Pykg2vec: Python Library for KG Embedding Methods 
 
+## Table of Contents
+
+* [Introduction](#introduction)
+* [Dependencies](#dependencies)
+* [Features](#features)
+* [Repository Structure](#repository-structure)
+* [Usage Example](#usage-example)
+* [Implemented Methods](#implemented-methods)
+* [Datasets](#datasets)
+* [Common Installation Problems](#common-installation-problems)
+* [How to Contribute?](https://github.com/Sujit-O/pykg2vec/blob/development/CONTRIBUTING.md)
+* [Cite](#cite)
+
+
+## Introduction
 Pykg2vec is a Tensorflow-based library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks including the whole pipeline into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
+
+![](https://github.com/Sujit-O/pykg2vec/blob/development/figures/pykg2vec_structure.png?raw=true)
 
 Here are some well-written papers for reading in order to start with knowledge graph embedding methodologies.
  * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
  * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
  * [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098)
+
+## Dependencies
+The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
+* tensorflow==`<version suitable for your workspace>`
+* networkx>=2.2
+* setuptools>=40.8.0
+* matplotlib>=3.0.3
+* numpy>=1.16.2
+* seaborn>=0.9.0
+* scikit_learn>=0.20.3
+* hyperopt>=0.1.2
+* progressbar2>=3.39.3
+* pathlib>=1.0.1
  
 ## Features
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
@@ -24,6 +54,7 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_rel_plot_embedding_plot_0.png?raw=true)| ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_entity_plot_embedding_plot_0.png?raw=true) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_ent_n_rel_plot_embedding_plot_0.png?raw=true)
 
 ## Repository Structure
+
 * **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
 * **pyKG2Vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
 * **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
@@ -58,6 +89,11 @@ $ pip install --upgrade pip
 
 #Install pyKG2Vec:  
 (venv) $ pip install pykg2vec
+
+#Install from github rep:  
+(venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
+(venv) $ cd pykg2vec
+(venv) $ python setup.py install
 ``` 
 ## Usage Example
 
@@ -150,46 +186,38 @@ m×n</sup> to project entities from entity space to relation space.[Check the Co
 ####  Semantic Matching Models
 Semantic matching models are latent feature models which represents triples by using a pairwise interactions of latent features. 
 
-* [RESCAL](http://www.icml-2011.org/papers/438_icmlpaper.pdf): Rescal is a latent feature model where each relation is represented as a matrix modeling the iteraction between latent factors. It utilizes a weight matrix which specify how much the latent features of head and tail entities interact in the relation.  
+* [RESCAL](http://www.icml-2011.org/papers/438_icmlpaper.pdf): Rescal is a latent feature model where each relation is represented as a matrix modeling the iteraction between latent factors. It utilizes a weight matrix which specify how much the latent features of head and tail entities interact in the relation. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/Rescal.py)  
 
-* [DistMult](https://arxiv.org/pdf/1412.6575.pdf): DistMult is a simpler model comparing with RESCAL in that it simplifies the weight matrix used in RESCAL to a diagonal matrix. The scoring function used DistMult can capture the pairwise interactions between the head and the tail entities. However, DistMult has limitation on modeling asymmetric relations. 
+* [DistMult](https://arxiv.org/pdf/1412.6575.pdf): DistMult is a simpler model comparing with RESCAL in that it simplifies the weight matrix used in RESCAL to a diagonal matrix. The scoring function used DistMult can capture the pairwise interactions between the head and the tail entities. However, DistMult has limitation on modeling asymmetric relations. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/DistMult.py)
 
-* [Complex Embeddings](http://proceedings.mlr.press/v48/trouillon16.pdf): ComplEx is an enhanced version of DistMult in that it uses complex-valued embeddings to represent both entities and relations. Using the complex-valued embedding allows the defined scoring function in ComplEx to differentiate that facts with assymmetric relations. 
+* [Complex Embeddings](http://proceedings.mlr.press/v48/trouillon16.pdf): ComplEx is an enhanced version of DistMult in that it uses complex-valued embeddings to represent both entities and relations. Using the complex-valued embedding allows the defined scoring function in ComplEx to differentiate that facts with assymmetric relations. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/Complex.py)
 
-* [TuckER](https://arxiv.org/pdf/1901.09590.pdf): TuckER is a Tensor-factorization-based embedding technique based on the Tucker decomposition of a third-order binary tensor of triplets. Although being fully expressive, the number of parameters used in Tucker only grows linearly with respect to embedding dimension as the number of entities or relations in a knowledge graph increases. The author also showed in paper that the models, such as RESCAL, DistMult, ComplEx, are all special case of TuckER. 
+* [TuckER](https://arxiv.org/pdf/1901.09590.pdf): TuckER is a Tensor-factorization-based embedding technique based on the Tucker decomposition of a third-order binary tensor of triplets. Although being fully expressive, the number of parameters used in Tucker only grows linearly with respect to embedding dimension as the number of entities or relations in a knowledge graph increases. The author also showed in paper that the models, such as RESCAL, DistMult, ComplEx, are all special case of TuckER. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/TuckER.py)
 
 ####  Semantic Matching Models using Neural Network Architectures
-* [Semantic Matching Energy (SME)](http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf): SME utilizes a neural network architecture to perform the semantic matching. The energy of the triples are computed by a parameterized function which relies on matching criterion computed between both sides of the triples. The semantic energy function learns to distinguish plausible combinations of entities from implausible ones. It consists of two variation SMElinear and SMEbilinear.
+* [Semantic Matching Energy (SME)](http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf): SME utilizes a neural network architecture to perform the semantic matching. The energy of the triples are computed by a parameterized function which relies on matching criterion computed between both sides of the triples. The semantic energy function learns to distinguish plausible combinations of entities from implausible ones. It consists of two variation SMElinear and SMEbilinear.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/SME.py)
 
-* [Neural Tensor Network (NTN)](https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf): It is a neural tensor network which represents entities as an average of their constituting word vectors. It then projects entities to their vector embeddings in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.
+* [Neural Tensor Network (NTN)](https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf): It is a neural tensor network which represents entities as an average of their constituting word vectors. It then projects entities to their vector embeddings in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/NTN.py)
 
 #### Projection-Based Models
-* [ProjE](https://arxiv.org/abs/1611.05425): Instead of measuring the distance or matching scores between the pair of the head entity and relation and then tail entity in embedding space ((h,r) vs (t)). ProjE projects the entity candidates onto a target vector representing the input data. The loss in ProjE is computed by the cross-entropy between the projected target vector and binary label vector, where the included entities will have value 0 if in negative sample set and value 1 if in positive sample set. 
+* [ProjE](https://arxiv.org/abs/1611.05425): Instead of measuring the distance or matching scores between the pair of the head entity and relation and then tail entity in embedding space ((h,r) vs (t)). ProjE projects the entity candidates onto a target vector representing the input data. The loss in ProjE is computed by the cross-entropy between the projected target vector and binary label vector, where the included entities will have value 0 if in negative sample set and value 1 if in positive sample set.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/ProjE_pointwise.py) 
 
-* [ConvE](https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/download/17366/15884): ConvE is the first non-linear model that uses a global 2D convolution operation on the combined and head entity and relation embedding vectors. The obtained feature maps are made flattened and then transformed through a fully connected layer. The projected target vector is then computed by performing linear transformation (passing through the fully connected layer) and activation function, and finally an inner product with the latent representation of every entities. 
+* [ConvE](https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/download/17366/15884): ConvE is the first non-linear model that uses a global 2D convolution operation on the combined and head entity and relation embedding vectors. The obtained feature maps are made flattened and then transformed through a fully connected layer. The projected target vector is then computed by performing linear transformation (passing through the fully connected layer) and activation function, and finally an inner product with the latent representation of every entities. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/ConvE.py)
 
 ## Datasets
 We intend to provide the libraries to test the knowledge graph algorithms against all the well-known datasets available online. So far the library is able to work with the following datasets:
 * [Freebase](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz): Freebase is a large collaborative knowledge base consisting of data composed mainly by its community members. It is an online collection of structured data harvested from many sources, including individual, user-submitted wiki contributions [2]. 
   * Freebase15K is supported.
- 
-## Dependencies
-The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
 
-* networkx==2.2
-* matplotlib==3.0.3
-* numpy==1.16.2
-* seaborn==0.9.0
-* scikit_learn==0.20.3
-* progressbar2==3.39.3
-* tensorflow==`<version suitable for your workspace>`
+## Common Installation Problems
 
+* [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
 
 ## Cite
   Please kindly cite us if you found the library helpful. 
    ```
    @online{pykg2vec,
-  author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo Arquimedes, Martinez},
+  author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo, Arquimedes},
   title = {{pykg2vec: Python Knowledge Graph Embedding Library},
   year = 2019,
   url = {https://pypi.org/project/pykg2vec/}
