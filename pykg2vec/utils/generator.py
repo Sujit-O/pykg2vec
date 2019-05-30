@@ -7,10 +7,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# import sys
-# sys.path.append("../")
-# from config.global_config import GeneratorConfig
-from pykg2vec.config.global_config import GeneratorConfig
+import sys
+sys.path.append("../")
+from config.global_config import GeneratorConfig
+# from pykg2vec.config.global_config import GeneratorConfig
 import numpy as np
 from multiprocessing import Process, Queue, Value, current_process
 

@@ -19,12 +19,12 @@ from pykg2vec.config.global_config import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
 from pprint import pprint
 
-# model_path = "core"
-model_path = "pykg2vec.core"
-# config_path = "config.config"
-config_path = "pykg2vec.config.config"
-# hyper_param_path = "config.hyperparams"
-hyper_param_path = "pykg2vec.config.hyperparams"
+model_path = "core"
+# model_path = "pykg2vec.core"
+config_path = "config.config"
+# config_path = "pykg2vec.config.config"
+hyper_param_path = "config.hyperparams"
+# hyper_param_path = "pykg2vec.config.hyperparams"
 
 modelMap = {"complex": "Complex",
             "conve": "ConvE",

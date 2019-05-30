@@ -1,20 +1,20 @@
 import tensorflow as tf
 import timeit
 
-# import sys
-# sys.path.append("../")
-# from core.KGMeta import TrainerMeta
-from pykg2vec.core.KGMeta import TrainerMeta
-# from utils.evaluation import Evaluation
-from pykg2vec.utils.evaluation import Evaluation
-# from utils.visualization import Visualization
-from pykg2vec.utils.visualization import Visualization
-# from utils.generator import Generator
-from pykg2vec.utils.generator import Generator
-# from config.global_config import GeneratorConfig
-from pykg2vec.config.global_config import GeneratorConfig
-# from config.global_config import KGMetaData, KnowledgeGraph
-from pykg2vec.config.global_config import KGMetaData, KnowledgeGraph
+import sys
+sys.path.append("../")
+from core.KGMeta import TrainerMeta
+# from pykg2vec.core.KGMeta import TrainerMeta
+from utils.evaluation import Evaluation
+# from pykg2vec.utils.evaluation import Evaluation
+from utils.visualization import Visualization
+# from pykg2vec.utils.visualization import Visualization
+from utils.generator import Generator
+# from pykg2vec.utils.generator import Generator
+from config.global_config import GeneratorConfig
+# from pykg2vec.config.global_config import GeneratorConfig
+from config.global_config import KGMetaData, KnowledgeGraph
+# from pykg2vec.config.global_config import KGMetaData, KnowledgeGraph
 import numpy as np
 
 

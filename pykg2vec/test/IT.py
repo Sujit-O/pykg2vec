@@ -1,7 +1,7 @@
 import unittest
 
-# import sys
-# sys.path.append("../")
+import sys
+sys.path.append("../")
 
 from pykg2vec.core.TransE import TransE
 from pykg2vec.core.TransH import TransH
