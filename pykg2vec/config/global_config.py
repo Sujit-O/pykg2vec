@@ -5,13 +5,6 @@ import numpy as np
 import pickle
 
 
-import shutil, tarfile, urllib.request
-from pathlib import Path
-from collections import defaultdict
-import numpy as np
-import pickle
-
-
 class Triple(object):
 
     def __init__(self, h, r, t):
