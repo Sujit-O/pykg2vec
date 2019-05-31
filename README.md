@@ -24,7 +24,8 @@ Here are some well-written papers for reading in order to start with knowledge g
  * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
  * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
  * [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098)
-
+ 
+[__***Back to Top***__](#table-of-contents)
 ## Dependencies
 The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
 * tensorflow==`<version suitable for your workspace>`
@@ -37,7 +38,8 @@ The goal of this library is to minimize the dependency on other libraries as far
 * hyperopt>=0.1.2
 * progressbar2>=3.39.3
 * pathlib>=1.0.1
- 
+
+[__***Back to Top***__](#table-of-contents)
 ## Features
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
   * TransE, TransH, TransR, TransD, TransM, KG2E, RESCAL, DistMult, ComplEX, ConvE, ProjE, RotatE, SME, SLM, NTN, TuckER. 
@@ -54,6 +56,7 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 **Relation embedding plot**             |  **Entity embedding plot**   | **Relation and Entity Plot**
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_rel_plot_embedding_plot_0.png?raw=true)| ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_entity_plot_embedding_plot_0.png?raw=true) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_ent_n_rel_plot_embedding_plot_0.png?raw=true)
 
+[__***Back to Top***__](#table-of-contents)
 ## Repository Structure
 
 * **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
@@ -61,6 +64,7 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 * **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
 * **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
 
+[__***Back to Top***__](#table-of-contents)
 ## Installation
 
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms.
@@ -101,7 +105,9 @@ $ pip install --upgrade pip
 (venv) $ cd pykg2vec
 (venv) $ git checkout development
 (venv) $ python setup.py install
-``` 
+```
+
+[__***Back to Top***__](#table-of-contents)
 ## Usage Example
 
 ### Running a single algorithm: 
@@ -166,6 +172,7 @@ python tune_model.py -h # check all tunnable parameters.
 python tune_model.py -mn TransE # Tune TransE model.
 ```
 
+[__***Back to Top***__](#table-of-contents)
 ## Implemented Methods
 We aim to implement all the latest state-of-the-art knowledge graph embedding library. The embedding algorithms included in the library so far (still growing) are as follows, 
 
@@ -190,6 +197,7 @@ m×n</sup> to project entities from entity space to relation space.[Check the Co
 
 * [RotatE](https://openreview.net/pdf?id=HkgEQnRqYQ): RotatE models the entities and the relations in the complex vector space. The translational relation in RotatE is defined as the element-wise 2D rotation in which the head entity h will be rotated to the tail entity t by multiplying the unit-length relation r in complex number form. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/RotatE.py)
 
+[__***Back to Top***__](#table-of-contents)
 ####  Semantic Matching Models
 Semantic matching models are latent feature models which represents triples by using a pairwise interactions of latent features. 
 
@@ -206,11 +214,13 @@ Semantic matching models are latent feature models which represents triples by u
 
 * [Neural Tensor Network (NTN)](https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf): It is a neural tensor network which represents entities as an average of their constituting word vectors. It then projects entities to their vector embeddings in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/NTN.py)
 
+[__***Back to Top***__](#table-of-contents)
 #### Projection-Based Models
 * [ProjE](https://arxiv.org/abs/1611.05425): Instead of measuring the distance or matching scores between the pair of the head entity and relation and then tail entity in embedding space ((h,r) vs (t)). ProjE projects the entity candidates onto a target vector representing the input data. The loss in ProjE is computed by the cross-entropy between the projected target vector and binary label vector, where the included entities will have value 0 if in negative sample set and value 1 if in positive sample set.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/ProjE_pointwise.py) 
 
 * [ConvE](https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/download/17366/15884): ConvE is the first non-linear model that uses a global 2D convolution operation on the combined and head entity and relation embedding vectors. The obtained feature maps are made flattened and then transformed through a fully connected layer. The projected target vector is then computed by performing linear transformation (passing through the fully connected layer) and activation function, and finally an inner product with the latent representation of every entities. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/ConvE.py)
 
+[__***Back to Top***__](#table-of-contents)
 ## Datasets
 We intend to provide the libraries to test the knowledge graph algorithms against all the well-known datasets available online. So far the library is able to work with the following datasets:
 * [Freebase](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz): Freebase is a large collaborative knowledge base consisting of data composed mainly by its community members. It is an online collection of structured data harvested from many sources, including individual, user-submitted wiki contributions [2]. 
@@ -220,6 +230,7 @@ We intend to provide the libraries to test the knowledge graph algorithms agains
 
 * [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
 
+[__***Back to Top***__](#table-of-contents)
 ## Cite
   Please kindly cite us if you found the library helpful. 
    ```
