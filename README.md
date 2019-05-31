@@ -6,6 +6,7 @@
 * [Dependencies](#dependencies)
 * [Features](#features)
 * [Repository Structure](#repository-structure)
+* [Installation](#installation)
 * [Usage Example](#usage-example)
 * [Implemented Methods](#implemented-methods)
 * [Datasets](#datasets)
