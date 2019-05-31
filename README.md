@@ -146,6 +146,7 @@ python train.py -m TransE # Run TransE model.
 python train.py -m Complex # Run Complex model. 
 ```
 
+[__***Back to Top***__](#table-of-contents)
 ### Tuning a single algorithm:
 tune_model.py
 ```python
@@ -220,7 +221,6 @@ Semantic matching models are latent feature models which represents triples by u
 
 * [ConvE](https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/download/17366/15884): ConvE is the first non-linear model that uses a global 2D convolution operation on the combined and head entity and relation embedding vectors. The obtained feature maps are made flattened and then transformed through a fully connected layer. The projected target vector is then computed by performing linear transformation (passing through the fully connected layer) and activation function, and finally an inner product with the latent representation of every entities. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/ConvE.py)
 
-[__***Back to Top***__](#table-of-contents)
 ## Datasets
 We intend to provide the libraries to test the knowledge graph algorithms against all the well-known datasets available online. So far the library is able to work with the following datasets:
 * [Freebase](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz): Freebase is a large collaborative knowledge base consisting of data composed mainly by its community members. It is an online collection of structured data harvested from many sources, including individual, user-submitted wiki contributions [2]. 
@@ -230,7 +230,6 @@ We intend to provide the libraries to test the knowledge graph algorithms agains
 
 * [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
 
-[__***Back to Top***__](#table-of-contents)
 ## Cite
   Please kindly cite us if you found the library helpful. 
    ```
@@ -242,4 +241,5 @@ We intend to provide the libraries to test the knowledge graph algorithms agains
   }
     
    ```
+   [__***Back to Top***__](#table-of-contents)
    
