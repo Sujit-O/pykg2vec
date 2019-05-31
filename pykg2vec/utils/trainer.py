@@ -122,7 +122,7 @@ class Trainer(TrainerMeta):
         self.evaluator = Evaluation(model=self.model, debug=self.debug, tuning=True)
        
         for n_iter in range( self.config.epochs):
-            loss = self.train_model_epoch(n_iter)
+            self.train_model_epoch(n_iter)
 
         self.gen_train.stop()
         self.evaluator.test_batch(self.sess, n_iter)
@@ -258,7 +258,8 @@ class Trainer(TrainerMeta):
         print("---------------------------------------------------")
 
     def summary_hyperparameter(self):
-        print("\n-----------------%s Setting-------------------"%(self.model.model_name))
+        """function to print the hyperparameter summary"""
+        print("\n-----------%s Hyperparameter Setting-------------"%(self.model.model_name))
         maxspace = len(max([k for k in self.config.hyperparameters.keys()])) + 15
         for key,val in self.config.hyperparameters.items():
             if len(key) < maxspace:
