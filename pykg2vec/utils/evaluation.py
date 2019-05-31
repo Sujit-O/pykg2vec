@@ -114,6 +114,16 @@ def save_test_summary(result_path, model_name, hits,
               'a') as fh:
         df.to_csv(fh)
 
+class MetricCalculator:
+    '''
+        MetricCalculator aims to 
+        1) address all the statistic tasks.
+        2) provide interfaces for querying results.
+
+        MetricCalculator is expected to be used by "evaluation_process".
+    '''
+    def __init__(self):
+        pass
 
 def evaluation_process(result_queue, output_queue, config, model_name, tuning):
 
@@ -212,6 +222,8 @@ class Evaluation(EvaluationMeta):
         else:
             raise NotImplementedError("%s datatype is not available!" % data_type)
 
+        tot_rows_data = len(self.eval_data)
+
         '''
             n_test: number of triplets to be tested
             1) if n_test == 0, test all the triplets. 
@@ -219,9 +231,9 @@ class Evaluation(EvaluationMeta):
         '''
         self.n_test = model.config.test_num
         if self.n_test == 0:
-            self.n_test = len(self.eval_data)
+            self.n_test = tot_rows_data
         else:
-            self.n_test = min(self.n_test, len(self.eval_data))
+            self.n_test = min(self.n_test, tot_rows_data)
 
         ''' 
             loop_len: the # of loops to perform batch evaluation. 
@@ -236,6 +248,8 @@ class Evaluation(EvaluationMeta):
 
         '''
             create the process that manages the batched evaluating results.
+            result_queue: stores the results for each batch. 
+            output_queue: stores the result for a trial, used by bayesian_optimizer.
         '''
         self.result_queue = Queue()
         self.output_queue = Queue()
