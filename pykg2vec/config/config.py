@@ -26,7 +26,6 @@ class Importer:
                          "conve": "ConvE",
                          "hole": "HoLE",
                          "distmult": "DistMult",
-                         "distmult2": "DistMult2",
                          "kg2e": "KG2E",
                          "ntn": "NTN",
                          "proje_pointwise": "ProjE_pointwise",
@@ -45,7 +44,6 @@ class Importer:
                           "conve": "ConvEConfig",
                           "hole": "HoLEConfig",
                           "distmult": "DistMultConfig",
-                          "distmult2": "DistMultConfig",
                           "kg2e": "KG2EConfig",
                           "ntn": "NTNConfig",
                           "proje_pointwise": "ProjE_pointwiseConfig",
@@ -304,6 +302,7 @@ class HoLEConfig(BasicConfig):
             'sampling': self.sampling
         }
         BasicConfig.__init__(self, args)
+
 
 class TransRConfig(BasicConfig):
     def __init__(self, args=None):
