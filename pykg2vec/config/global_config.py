@@ -87,6 +87,8 @@ class KnownDataset:
 
         if self.name == 'WN18':
             self.dataset_path = self.root_path / 'wordnet-mlj12'
+        elif self.name == 'YAGO3_10':
+            self.dataset_path = self.root_path
         else:
             self.dataset_path = self.root_path / self.name
 
@@ -171,6 +173,16 @@ class WordNet18(KnownDataset):
 
         KnownDataset.__init__(self, name, url, prefix)
 
+class YAGO3_10(KnownDataset):
+
+    def __init__(self):
+        name = "YAGO3_10"
+        url = "https://github.com/TimDettmers/ConvE/raw/master/YAGO3-10.tar.gz"
+        prefix = ''
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
 class UserDefinedDataset(object):
 
     def __init__(self, name):
@@ -237,6 +249,8 @@ class KnowledgeGraph(object):
             self.dataset = DeepLearning50a()
         elif dataset.lower() == 'wordnet18':
             self.dataset = WordNet18()
+        elif dataset.lower() == 'yago3_10':
+            self.dataset = YAGO3_10()
         else:
             # if the dataset does not match with existing one, check if it exists in user's local space.
             # if it still can't find corresponding folder, raise exception in UserDefinedDataset.__init__()
@@ -384,7 +398,7 @@ class KnowledgeGraph(object):
         triplets = self.triplets[set_type]
 
         if len(triplets) == 0:
-            with open(str(self.dataset.data_paths[set_type]), 'r') as file:
+            with open(str(self.dataset.data_paths[set_type]), 'r', encoding='utf-8') as file:
                 for line in file.readlines():
                     s, p, o = line.split('\t')
                     triplets.append(Triple(s.strip(), p.strip(), o.strip()))
