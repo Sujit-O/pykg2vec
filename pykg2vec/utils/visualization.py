@@ -181,7 +181,7 @@ class Visualization(object):
 
         self.model = model
 
-        self.algo_list = ['Complex', 'ConvE', 'DistMult', 'DistMult2', 'KG2E_EL','KG2E_KL',
+        self.algo_list = ['Complex', 'ConvE','HoLE', 'DistMult', 'DistMult2', 'KG2E_EL','KG2E_KL',
                           'KGMeta', 'NTN', 'ProjE_pointwise', 'Rescal',
                           'RotatE', 'SLM', 'SME_Bilinear','SME_Linear', 'TransD', 'TransE', 'TransH',
                            'TransM', 'TransR', 'TuckER']

@@ -24,6 +24,7 @@ class Importer:
 
         self.modelMap = {"complex": "Complex",
                          "conve": "ConvE",
+                         "hole": "HoLE",
                          "distmult": "DistMult",
                          "distmult2": "DistMult2",
                          "kg2e": "KG2E",
@@ -38,11 +39,11 @@ class Importer:
                          "transh": "TransH",
                          "transm": "TransM",
                          "transr": "TransR",
-                         "tucker": "TuckER",
-                         "tucker_v2": "TuckER_v2"}
+                         "tucker": "TuckER"}
 
         self.configMap = {"complex": "ComplexConfig",
                           "conve": "ConvEConfig",
+                          "hole": "HoLEConfig",
                           "distmult": "DistMultConfig",
                           "distmult2": "DistMultConfig",
                           "kg2e": "KG2EConfig",
@@ -57,8 +58,7 @@ class Importer:
                           "transh": "TransHConfig",
                           "transm": "TransMConfig",
                           "transr": "TransRConfig",
-                          "tucker": "TuckERConfig",
-                          "tucker_v2": "TuckERConfig"}
+                          "tucker": "TuckERConfig"}
 
     def import_model_config(self, name):
         config_obj = None
@@ -265,6 +265,45 @@ class TransEConfig(BasicConfig):
         }
         BasicConfig.__init__(self, args)
 
+
+class HoLEConfig(BasicConfig):
+
+    def __init__(self, args=None):
+        if args is None or args.golden is True:
+            # the golden setting for TransE (only for Freebase15k now)
+            self.learning_rate = 0.01
+            self.L1_flag = True
+            self.hidden_size = 50
+            self.batch_size = 512
+            self.epochs = 500
+            self.margin = 1.0
+            self.data = 'Freebase15k'
+            self.optimizer = 'adam'
+            self.sampling = "uniform"
+
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+
+        self.hyperparameters = {
+            'learning_rate': self.learning_rate,
+            'L1_flag': self.L1_flag,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'margin': self.margin,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling
+        }
+        BasicConfig.__init__(self, args)
 
 class TransRConfig(BasicConfig):
     def __init__(self, args=None):
