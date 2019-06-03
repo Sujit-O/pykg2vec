@@ -67,7 +67,7 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 [__***Back to Top***__](#table-of-contents)
 ## Installation
 
-For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms.
+For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms using Python3.6.
 
 **Please install [tensorflow](https://www.tensorflow.org/install) cpu or gpu version before performing pip install of pykg2vec!**
 
