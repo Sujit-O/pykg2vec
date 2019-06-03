@@ -87,7 +87,7 @@ class KnownDataset:
 
         if self.name == 'WN18':
             self.dataset_path = self.root_path / 'wordnet-mlj12'
-        elif self.name == 'YAGO3_10':
+        elif self.name == 'YAGO3_10' or self.name == 'WN18RR':
             self.dataset_path = self.root_path
         else:
             self.dataset_path = self.root_path / self.name
@@ -173,6 +173,17 @@ class WordNet18(KnownDataset):
 
         KnownDataset.__init__(self, name, url, prefix)
 
+
+class WordNet18_RR(KnownDataset):
+
+    def __init__(self):
+        name = "WN18RR"
+        url = "https://github.com/TimDettmers/ConvE/raw/master/WN18RR.tar.gz"
+        prefix = ''
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
 class YAGO3_10(KnownDataset):
 
     def __init__(self):
@@ -249,6 +260,8 @@ class KnowledgeGraph(object):
             self.dataset = DeepLearning50a()
         elif dataset.lower() == 'wordnet18':
             self.dataset = WordNet18()
+        elif dataset.lower() == 'wordnet18_rr':
+            self.dataset = WordNet18_RR()
         elif dataset.lower() == 'yago3_10':
             self.dataset = YAGO3_10()
         else:
