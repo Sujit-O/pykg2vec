@@ -131,6 +131,20 @@ class KGEArgParser:
         self.SME_group.add_argument('-cmin', dest='cmin', default=5.00, type=float,
                                     help="The parameter for clipping values for KG2E.")
 
+        ''' arguments regarding TransG '''
+        self.TransG_group = self.parser.add_argument_group('TransG function selection')
+        self.TransG_group.add_argument('-th', dest='training_threshold', default=3.5, type=float,
+                                    help="Training Threshold for updateing the clusters.")
+        self.TransG_group.add_argument('-nc', dest='ncluster', default=4, type=int,
+                                       help="Number of clusters")
+        self.TransG_group.add_argument('-crp', dest='crp_factor', default=0.01, type=float,
+                                       help="Chinese Restaurant Process Factor.")
+        self.TransG_group.add_argument('-stb', dest='step_before', default=10, type=int,
+                                       help="Steps before")
+        self.TransG_group.add_argument('-wn', dest='weight_norm', default=False,
+                                              type=lambda x: (str(x).lower() == 'true'),
+                                       help="normalize the weights!")
+
         ''' for conve '''
         self.conv_group = self.parser.add_argument_group('ConvE specific Hyperparameters')
         self.conv_group.add_argument('-lmda', dest='lmbda', default=0.1, type=float, help='The lmbda used in ConvE.')
@@ -223,6 +237,57 @@ class BasicConfig:
         self.knowledge_graph = KnowledgeGraph(dataset=self.data, negative_sample=self.sampling)
         self.kg_meta = self.knowledge_graph.kg_meta
 
+
+class TransGConfig(BasicConfig):
+
+    def __init__(self, args=None):
+        if args is None or args.golden is True:
+            # the golden setting for TransE (only for Freebase15k now)
+            self.learning_rate = 0.0015
+            self.L1_flag = True
+            self.hidden_size = 400
+            self.batch_size = 512
+            self.epochs = 500
+            self.margin = 1.0
+            self.data = 'Freebase15k'
+            self.optimizer = 'adam'
+            self.sampling = "uniform"
+            self.training_threshold = 3.0
+            self.ncluster = 4
+            self.CRP_factor = 0.01
+            self.weight_norm = True
+            self.step_before = 10
+
+
+
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+            self.training_threshold = args.training_threshold
+            self.ncluster = args.ncluster
+            self.CRP_factor = args.crp_factor
+            self.weight_norm = args.weight_norm
+            self.step_before = args.step_before
+
+        self.hyperparameters = {
+            'learning_rate': self.learning_rate,
+            'L1_flag': self.L1_flag,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'margin': self.margin,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling
+        }
+        BasicConfig.__init__(self, args)
 
 class TransEConfig(BasicConfig):
 
