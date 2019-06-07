@@ -235,7 +235,7 @@ We intend to provide the libraries to test the knowledge graph algorithms agains
    ```
    @online{pykg2vec,
   author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo, Arquimedes},
-  title = {{pykg2vec: Python Knowledge Graph Embedding Library},
+  title = {pykg2vec: Python Knowledge Graph Embedding Library},
   year = 2019,
   url = {https://pypi.org/project/pykg2vec/}
   }
