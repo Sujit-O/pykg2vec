@@ -36,6 +36,7 @@ class Importer:
                          "transd": "TransD",
                          "transe": "TransE",
                          "transh": "TransH",
+                         "transg": "TransG",
                          "transm": "TransM",
                          "transr": "TransR",
                          "tucker": "TuckER"}
@@ -53,6 +54,7 @@ class Importer:
                           "sme": "SMEConfig",
                           "transd": "TransDConfig",
                           "transe": "TransEConfig",
+                          "transg": "TransGConfig",
                           "transh": "TransHConfig",
                           "transm": "TransMConfig",
                           "transr": "TransRConfig",
@@ -285,7 +287,12 @@ class TransGConfig(BasicConfig):
             'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling
+            'sampling': self.sampling,
+            'threshold': self.training_threshold,
+            'cluster':self.ncluster,
+            'crp_factor':self.CRP_factor,
+            'weight_norm':self.weight_norm
+
         }
         BasicConfig.__init__(self, args)
 
