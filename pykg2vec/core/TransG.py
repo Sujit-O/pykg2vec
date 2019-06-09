@@ -79,7 +79,7 @@ class TransG(ModelMeta):
 
     def train_cluster_once(self, ph,pr,pt,nh,nr,nt, c, prob_true, prob_false,factor):
         prob_local_true = tf.math.exp(-tf.reduce_sum(tf.math.abs(self.ent_embeddings[ph] + self.rel_clusters[pr][c] -
-                                                  self.ent_embeddings[t])))
+                                                  self.ent_embeddings[pt])))
         prob_local_false = tf.math.exp(-tf.reduce_sum(tf.math.abs(self.ent_embeddings[nh] + self.rel_clusters[nr][c] -
                                                   self.ent_embeddings[nt])))
         self.weights_clusters[pr][0, c] += factor / prob_true * prob_local_true * tf.sign(self.weights_clusters[pr][0, c])
@@ -90,10 +90,10 @@ class TransG(ModelMeta):
 
         self.ent_embeddings[ph] -= change * tf.sign(self.ent_embeddings[ph] + self.rel_clusters[pr][c] - self.ent_embeddings[pt])
         self.ent_embeddings[pt] += change * tf.sign(self.ent_embeddings[ph] + self.rel_clusters[pr][c] - self.ent_embeddings[pt])
-        self.rel_clusters[pr][c] -= change * tf..sign(self.ent_embeddings[ph] + self.rel_clusters[pr][c] -self.ent_embeddings[pt])
-        self.ent_embeddings[nh] += change_f * np.sign(self.ent_embeddings[nh] + self.rel_clusters[nr][c] -self.ent_embeddings[nt])
-        self.ent_embeddings[nt] -= change_f * np.sign(self.ent_embeddings[nh] + self.rel_clusters[nr][c] -self.ent_embeddings[nt])
-        self.rel_clusters[nr][c] += change_f * np.sign(self.ent_embeddings[nh] + self.rel_clusters[nr][c] - self.ent_embeddings[nt])
+        self.rel_clusters[pr][c] -= change * tf.sign(self.ent_embeddings[ph] + self.rel_clusters[pr][c] -self.ent_embeddings[pt])
+        self.ent_embeddings[nh] += change_f * tf.sign(self.ent_embeddings[nh] + self.rel_clusters[nr][c] -self.ent_embeddings[nt])
+        self.ent_embeddings[nt] -= change_f * tf.sign(self.ent_embeddings[nh] + self.rel_clusters[nr][c] -self.ent_embeddings[nt])
+        self.rel_clusters[nr][c] += change_f * tf.sign(self.ent_embeddings[nh] + self.rel_clusters[nr][c] - self.ent_embeddings[nt])
 
         self.rel_clusters[pr][c]=tf.cond(tf.less(1.0, tf.norm(self.rel_clusters[pr][c])), 
             lambda: tf.nn.l2_normalize(self.rel_clusters[pr][c]), lambda: self.rel_clusters[pr][c])
@@ -106,7 +106,7 @@ class TransG(ModelMeta):
         for i in range(self.c):
             self.train_cluster_once(ph,pr,pt,nh,nr,nt, i, prob_true, prob_false, self.alpha)
 
-        prob_new_component = self.CRP * tf.math.exp(-tf.reduce.sum(tf.abs(self.ent_embeddings[ph] - self.ent_embeddings[pt])))
+        prob_new_component = self.CRP * tf.math.exp(-tf.reduce_sum(tf.abs(self.ent_embeddings[ph] - self.ent_embeddings[pt])))
         
         if random.random() < prob_new_component / (prob_new_component + prob_true) \
         and self.c < 20 and cur_epoch >= self.config.step_before:
