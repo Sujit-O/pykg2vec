@@ -63,38 +63,37 @@ class TransG(ModelMeta):
 
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.weights_clusters]
 
-
     def prob_triples(self, h,r,t):
         mixed_prob = 1e-100
-        error_c = self.entity[h] + self.rel_clusters[r][0:self.c] - self.entity[t]
+        error_c = self.ent_embeddings[h] + self.rel_clusters[r][0:self.c] - self.ent_embeddings[t]
         mixed_prob = tf.math.abs(self.weights_clusters[r][0:self.c]) * tf.math.exp(-tf.reduce_sum(tf.math.abs(error_c),[0,2]))
         mixed_prob = tf.math.reduce_max(mixed_prob)
         return mixed_prob
 
     def training_prob_triples(self, h,r,t):
         mixed_prob = 1e-100
-        error_c = self.entity[h] + self.rel_clusters[r][0:self.c] - self.entity[t]
+        error_c = self.ent_embeddings[h] + self.rel_clusters[r][0:self.c] - self.ent_embeddings[t]
         mixed_prob = tf.math.abs(self.weights_clusters[r][0:self.c]) * tf.math.exp(-tf.reduce_sum(tf.math.abs(error_c),[0,2]))
         mixed_prob = tf.reduce_sum(mixed_prob)
         return mixed_prob
 
     def train_cluster_once(self, ph,pr,pt,nh,nr,nt, c, prob_true, prob_false,factor):
-        prob_local_true = tf.math.exp(-tf.reduce_sum(tf.math.abs(self.entity[ph] + self.rel_clusters[pr][c] -
-                                                  self.entity[t])))
-        prob_local_false = tf.math.exp(-tf.reduce_sum(tf.math.abs(self.entity[nh] + self.rel_clusters[nr][c] -
-                                                  self.entity[nt])))
+        prob_local_true = tf.math.exp(-tf.reduce_sum(tf.math.abs(self.ent_embeddings[ph] + self.rel_clusters[pr][c] -
+                                                  self.ent_embeddings[t])))
+        prob_local_false = tf.math.exp(-tf.reduce_sum(tf.math.abs(self.ent_embeddings[nh] + self.rel_clusters[nr][c] -
+                                                  self.ent_embeddings[nt])))
         self.weights_clusters[pr][0, c] += factor / prob_true * prob_local_true * tf.sign(self.weights_clusters[pr][0, c])
         self.weights_clusters[nr][0, c] -= factor / prob_false * prob_local_false * tf.sign(self.weights_clusters[nr][0, c])
         
         change = factor * prob_local_true / prob_true * tf.math.abs(self.weights_clusters[pr][0, c])
         change_f = factor * prob_local_false / prob_false * tf.math.abs(self.weights_clusters[nr][0, c])
 
-        self.entity[ph] -= change * tf.sign(self.entity[ph] + self.rel_clusters[pr][c] - self.entity[pt])
-        self.entity[pt] += change * tf.sign(self.entity[ph] + self.rel_clusters[pr][c] - self.entity[pt])
-        self.rel_clusters[pr][c] -= change * tf..sign(self.entity[ph] + self.rel_clusters[pr][c] -self.entity[pt])
-        self.entity[nh] += change_f * np.sign(self.entity[nh] + self.rel_clusters[nr][c] -self.entity[nt])
-        self.entity[nt] -= change_f * np.sign(self.entity[nh] + self.rel_clusters[nr][c] -self.entity[nt])
-        self.rel_clusters[nr][c] += change_f * np.sign(self.entity[nh] + self.rel_clusters[nr][c] - self.entity[nt])
+        self.ent_embeddings[ph] -= change * tf.sign(self.ent_embeddings[ph] + self.rel_clusters[pr][c] - self.ent_embeddings[pt])
+        self.ent_embeddings[pt] += change * tf.sign(self.ent_embeddings[ph] + self.rel_clusters[pr][c] - self.ent_embeddings[pt])
+        self.rel_clusters[pr][c] -= change * tf..sign(self.ent_embeddings[ph] + self.rel_clusters[pr][c] -self.ent_embeddings[pt])
+        self.ent_embeddings[nh] += change_f * np.sign(self.ent_embeddings[nh] + self.rel_clusters[nr][c] -self.ent_embeddings[nt])
+        self.ent_embeddings[nt] -= change_f * np.sign(self.ent_embeddings[nh] + self.rel_clusters[nr][c] -self.ent_embeddings[nt])
+        self.rel_clusters[nr][c] += change_f * np.sign(self.ent_embeddings[nh] + self.rel_clusters[nr][c] - self.ent_embeddings[nt])
 
         self.rel_clusters[pr][c]=tf.cond(tf.less(1.0, tf.norm(self.rel_clusters[pr][c])), 
             lambda: tf.nn.l2_normalize(self.rel_clusters[pr][c]), lambda: self.rel_clusters[pr][c])
@@ -102,13 +101,12 @@ class TransG(ModelMeta):
         self.rel_clusters[nr][c]=tf.cond(tf.less(1.0, tf.norm(self.rel_clusters[nr][c])), 
             lambda: tf.nn.l2_normalize(self.rel_clusters[nr][c]), lambda: self.rel_clusters[nr][c])
 
-
     def f1(self,ph,pr,pt,nh,nr,nt, prob_true, prob_false, cur_epoch):
         
         for i in range(self.c):
             self.train_cluster_once(ph,pr,pt,nh,nr,nt, i, prob_true, prob_false, self.alpha)
 
-        prob_new_component = self.CRP * tf.math.exp(-tf.reduce.sum(tf.abs(self.entity[ph] - self.entity[pt])))
+        prob_new_component = self.CRP * tf.math.exp(-tf.reduce.sum(tf.abs(self.ent_embeddings[ph] - self.ent_embeddings[pt])))
         
         if random.random() < prob_new_component / (prob_new_component + prob_true) \
         and self.c < 20 and cur_epoch >= self.config.step_before:
@@ -116,19 +114,18 @@ class TransG(ModelMeta):
             self.weights_clusters[pr][0,component] = self.CRP
             self.c+=1
         
-        self.entity[ph]=tf.cond(tf.less(1.0, tf.norm(self.entity[ph])), 
-            lambda: tf.nn.l2_normalize(self.entity[ph]), lambda: self.entity[ph])
-        self.entity[pt]=tf.cond(tf.less(1.0, tf.norm(self.entity[pt])), 
-            lambda: tf.nn.l2_normalize(self.entity[pt]), lambda: self.entity[pt])
-        self.entity[nh]=tf.cond(tf.less(1.0, tf.norm(self.entity[nh])), 
-            lambda: tf.nn.l2_normalize(self.entity[nh]), lambda: self.entity[nh])
-        self.entity[nt]=tf.cond(tf.less(1.0, tf.norm(self.entity[nt])), 
-            lambda: tf.nn.l2_normalize(self.entity[nt]), lambda: self.entity[nt])
+        self.ent_embeddings[ph]=tf.cond(tf.less(1.0, tf.norm(self.ent_embeddings[ph])), 
+            lambda: tf.nn.l2_normalize(self.ent_embeddings[ph]), lambda: self.ent_embeddings[ph])
+        self.ent_embeddings[pt]=tf.cond(tf.less(1.0, tf.norm(self.ent_embeddings[pt])), 
+            lambda: tf.nn.l2_normalize(self.ent_embeddings[pt]), lambda: self.ent_embeddings[pt])
+        self.ent_embeddings[nh]=tf.cond(tf.less(1.0, tf.norm(self.ent_embeddings[nh])), 
+            lambda: tf.nn.l2_normalize(self.ent_embeddings[nh]), lambda: self.ent_embeddings[nh])
+        self.ent_embeddings[nt]=tf.cond(tf.less(1.0, tf.norm(self.ent_embeddings[nt])), 
+            lambda: tf.nn.l2_normalize(self.ent_embeddings[nt]), lambda: self.ent_embeddings[nt])
         if self.config.weight_norm:
             self.weights_clusters[pr] = tf.nn.l2_normalize(self.weights_clusters[pr])  
 
         return prob_false / prob_true  
-
 
     def train_step(self,ph,pr,pt,nh,nr,nt):
         prob_true = self.training_prob_triples(ph, pr, pt)
@@ -147,7 +144,6 @@ class TransG(ModelMeta):
         tf.while_loop(c, b, [0,loss])
         self.loss = loss
 
-    
     def test_batch(self):
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
@@ -163,12 +159,6 @@ class TransG(ModelMeta):
         _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
 
         return head_rank, tail_rank
-
-    def distance(self, h, r, t, axis=1):
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
 
     def embed(self, h, r, t):
         """function to get the embedding value"""
