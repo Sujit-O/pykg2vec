@@ -1,3 +1,10 @@
+[![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)[![Build Status](https://travis-ci.org/Sujit-O/pykg2vec.svg?branch=master)](https://travis-ci.org/Sujit-O/pykg2vec) [![PyPI version](https://badge.fury.io/py/pykg2vec.svg)](https://badge.fury.io/py/pykg2vec) [![GitHub issues](https://img.shields.io/github/issues/Sujit-O/pykg2vec.svg)](https://github.com/Sujit-O/pykg2vec/issues) [![Twitter](https://img.shields.io/twitter/url/https/github.com/Sujit-O/pykg2vec.svg?style=social)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2FSujit-O%2Fpykg2vec)[![GitHub license](https://img.shields.io/github/license/Sujit-O/pykg2vec.svg)](https://github.com/Sujit-O/pykg2vec/blob/master/LICENSE)[![Coverage Status](https://coveralls.io/repos/github/Sujit-O/pykg2vec/badge.svg?branch=master)](https://coveralls.io/github/Sujit-O/pykg2vec?branch=master) 
+
+
+.. |CircleCI| image:: https://circleci.com/gh/dmbee/seglearn.svg?style=shield&circle-token=:circle-token
+.. _CircleCI: https://circleci.com/gh/dmbee/seglearn/tree/master
+
+
 # Pykg2vec: Python Library for KG Embedding Methods 
 
 ## Table of Contents
