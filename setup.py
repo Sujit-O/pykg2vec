@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import setuptools
-
+import os
 # get __version__ from _version.py
 ver_file = os.path.join('pykg2vec', '_version.py')
 

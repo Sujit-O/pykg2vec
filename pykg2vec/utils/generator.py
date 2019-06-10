@@ -7,13 +7,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-sys.path.append("../")
-from config.global_config import GeneratorConfig
-# from pykg2vec.config.global_config import GeneratorConfig
 import numpy as np
-from multiprocessing import Process, Queue, Value, current_process
+from multiprocessing import Process, Queue, Value
 
+from pykg2vec.config.global_config import GeneratorConfig
 
 def get_label_mat(data, bs, te, neg_rate=1):
     mat = np.zeros(shape=(bs, te), dtype=np.int8)

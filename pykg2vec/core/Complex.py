@@ -6,11 +6,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-import sys
-sys.path.append("../")
-from core.KGMeta import ModelMeta
-
-# from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta
 
 
 class Complex(ModelMeta):

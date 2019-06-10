@@ -1,8 +1,5 @@
 import unittest
 
-import sys
-sys.path.append("../")
-
 from pykg2vec.core.TransE import TransE
 from pykg2vec.core.TransH import TransH
 from pykg2vec.core.TransR import TransR
@@ -21,7 +18,6 @@ from pykg2vec.core.SLM import SLM
 
 from pykg2vec.config.config import *
 from pykg2vec.utils.dataprep import DataPrep
-# from utils.dataprep import Triple
 from pykg2vec.utils.trainer import Trainer
 import tensorflow as tf
 

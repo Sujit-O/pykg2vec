@@ -10,14 +10,11 @@ from __future__ import print_function
 import os
 import numpy as np
 import pandas as pd
-import sys
-sys.path.append("../")
-from core.KGMeta import EvaluationMeta
-# from pykg2vec.core.KGMeta import EvaluationMeta
 import timeit
 from multiprocessing import Process, Queue
 import progressbar
 
+from pykg2vec.core.KGMeta import EvaluationMeta
 
 def eval_batch_head(id_replace_head, h, r, t, tr_h):
     hrank = 0

@@ -1,26 +1,21 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
-We store the base configuration of the models here
+config.py
+====================================
+The necessary configuration of the algorithms are stored here.
 """
+
 import tensorflow as tf
 from pathlib import Path
-
-import sys
-sys.path.append("../")
-from config.global_config import KnowledgeGraph
-
-# from pykg2vec.config.global_config import KnowledgeGraph
 from argparse import ArgumentParser
 import importlib
+
+from pykg2vec.config.global_config import KnowledgeGraph
 
 
 class Importer:
     def __init__(self):
-        self.model_path = "core"
-        # self.model_path = "pykg2vec.core"
-        self.config_path = "config.config"
-        # self.config_path = "pykg2vec.config.config"
+        self.model_path = "pykg2vec.core"
+        self.config_path = "pykg2vec.config.config"
 
         self.modelMap = {"complex": "Complex",
                          "conve": "ConvE",

@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 
-
 class KGETuneArgParser:
 
     def __init__(self):
