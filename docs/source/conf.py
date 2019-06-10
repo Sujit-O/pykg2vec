@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'pykg2vec'
-copyright = '2019, Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Arquimedes Canedo, Mohammad Al Faruque'
-author = 'Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Arquimedes Canedo, Mohammad Al Faruque'
+copyright = '2019, Sujit Rokka Chhetri, Shih-Yuan Yuand, Ahmet Salih Aksakal, Palash Goyal and Arquimedes Canedo'
+author = 'Sujit Rokka Chhetri, Shih-Yuan Yuand, Ahmet Salih Aksakal, Palash Goyal and Arquimedes Canedo'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.45'
