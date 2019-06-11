@@ -2,6 +2,9 @@
 
 # Pykg2vec: Python Library for KG Embedding Methods 
 
+## Documentation
+[Documentation of the pykg2vec library!](https://pykg2vec.readthedocs.io/)
+
 ## Table of Contents
 
 * [Introduction](#introduction)

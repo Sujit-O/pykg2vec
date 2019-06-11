@@ -17,7 +17,6 @@ from pykg2vec.core.RotatE import RotatE
 from pykg2vec.core.SLM import SLM
 
 from pykg2vec.config.config import *
-from pykg2vec.utils.dataprep import DataPrep
 from pykg2vec.utils.trainer import Trainer
 import tensorflow as tf
 
