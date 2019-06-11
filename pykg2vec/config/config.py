@@ -328,10 +328,34 @@ class BasicConfig:
 
 
 class TransGConfig(BasicConfig):
+    """This class defines the configuration for the TransG Algorithm.
 
+    TransGConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for both entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+      training_threshold (float): Defines the threshold to be used to update the clusters for TransG.
+      ncluster (int): Defines the initial cluster for the relation.
+      CRP_factor (float): Chinese Restaurant Process Factor.
+      weight_norm (bool): If True, normalizes the weights.
+      step_before (int): Defines the number of steps before which the update is cluster is not performed.
+    
+    """
     def __init__(self, args=None):
         if args is None or args.golden is True:
-            # the golden setting for TransE (only for Freebase15k now)
+            # the golden setting for TransG (only for Freebase15k now)
             self.learning_rate = 0.0015
             self.L1_flag = True
             self.hidden_size = 400
@@ -384,7 +408,26 @@ class TransGConfig(BasicConfig):
         BasicConfig.__init__(self, args)
 
 class TransEConfig(BasicConfig):
+    """This class defines the configuration for the TransE Algorithm.
 
+    TransEConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for both entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
     def __init__(self, args=None):
         if args is None or args.golden is True:
             # the golden setting for TransE (only for Freebase15k now)
