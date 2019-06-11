@@ -467,7 +467,26 @@ class TransEConfig(BasicConfig):
 
 
 class HoLEConfig(BasicConfig):
+    """This class defines the configuration for the HoLE Algorithm.
 
+    HoLEConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for both entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
     def __init__(self, args=None):
         if args is None or args.golden is True:
             # the golden setting for TransE (only for Freebase15k now)
@@ -507,6 +526,28 @@ class HoLEConfig(BasicConfig):
 
 
 class TransRConfig(BasicConfig):
+    """This class defines the configuration for the TransR Algorithm.
+
+    TransRConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      ent_hidden_size (int): Defines the size of the latent dimension for entities.
+      rel_hidden_size (int): Defines the size of the latent dimension for relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
+
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
@@ -550,6 +591,27 @@ class TransRConfig(BasicConfig):
 
 
 class TransDConfig(BasicConfig):
+    """This class defines the configuration for the TransD Algorithm.
+
+    TransDConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      ent_hidden_size (int): Defines the size of the latent dimension for entities.
+      rel_hidden_size (int): Defines the size of the latent dimension for relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
     def __init__(self, args=None):
 
         if args == None or args.golden is True:
@@ -593,6 +655,26 @@ class TransDConfig(BasicConfig):
 
 
 class TransMConfig(BasicConfig):
+    """This class defines the configuration for the TransM Algorithm.
+
+    TransMConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
 
     def __init__(self, args=None):
 
@@ -634,6 +716,27 @@ class TransMConfig(BasicConfig):
 
 
 class TransHConfig(BasicConfig):
+    """This class defines the configuration for the TransH Algorithm.
+
+    TransHConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      C (float) : It is used to weigh the importance of soft-constraints.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
 
     def __init__(self, args=None):
 
@@ -678,7 +781,26 @@ class TransHConfig(BasicConfig):
 
 
 class RescalConfig(BasicConfig):
+    """This class defines the configuration for the Rescal Algorithm.
 
+    RescalConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
@@ -719,7 +841,28 @@ class RescalConfig(BasicConfig):
 
 
 class SMEConfig(BasicConfig):
+    """This class defines the configuration for the SME Algorithm.
 
+    SMEConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      ent_hidden_size (int): Defines the size of the latent dimension for entities.
+      rel_hidden_size (int): Defines the size of the latent dimension for relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+      bilinear (bool): If true uses bilnear transformation for loss else uses linear.
+    
+    """
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
@@ -763,7 +906,27 @@ class SMEConfig(BasicConfig):
 
 
 class NTNConfig(BasicConfig):
+    """This class defines the configuration for the NTN Algorithm.
 
+    NTNConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      ent_hidden_size (int): Defines the size of the latent dimension for entities.
+      rel_hidden_size (int): Defines the size of the latent dimension for relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
@@ -807,6 +970,27 @@ class NTNConfig(BasicConfig):
 
 
 class SLMConfig(BasicConfig):
+    """This class defines the configuration for the SLM Algorithm.
+
+    SLMConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      ent_hidden_size (int): Defines the size of the latent dimension for entities.
+      rel_hidden_size (int): Defines the size of the latent dimension for relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
 
     def __init__(self, args=None):
 
@@ -851,6 +1035,26 @@ class SLMConfig(BasicConfig):
 
 
 class RotatEConfig(BasicConfig):
+    """This class defines the configuration for the RotatE Algorithm.
+
+    RotatEDConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
