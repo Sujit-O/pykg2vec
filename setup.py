@@ -20,7 +20,9 @@ INSTALL_REQUIRES = (
     'progressbar2>=3.39.3',
     'tensorflow==1.13.1',
     'pathlib>=1.0.1',
-    'numpydoc>=0.9.1'
+    'numpydoc>=0.9.1',
+    'sphinx-gallery>=0.3.1',
+    'sphinx-rtd-theme>=0.4.3'
 )
 
 with open("README.md", "r") as fh:
