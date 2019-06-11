@@ -22,9 +22,7 @@ import sphinx_rtd_theme
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../pykg2vec'))
-# sys.path.insert(0, "/home/david/Code/seglearn/selglearn")
-
-
+# sys.path.insert(0, "/Users/sujito/Desktop/codes/dev/pykg2vec")
 # -- General configuration ---------------------------------------------------
 
 # Try to override the matplotlib configuration as early as possible
@@ -85,8 +83,8 @@ master_doc = 'index'
 # -- Project information -----------------------------------------------------
 
 project = 'pykg2vec'
-copyright = '2019, Sujit Rokka Chhetri, Shih-Yuan Yuand, Ahmet Salih Aksakal, Palash Goyal and Arquimedes Canedo'
-author = 'Sujit Rokka Chhetri, Shih-Yuan Yuand, Ahmet Salih Aksakal, Palash Goyal and Arquimedes Canedo'
+copyright = '2019, Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal and Arquimedes Canedo'
+author = 'Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal and Arquimedes Canedo'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
