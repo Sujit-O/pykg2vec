@@ -27,6 +27,12 @@ class Importer:
         config_path (str): Path where the configuration for each models are defineds.
         modelMap (dict): This map transforms the names of model to the actual class names.
         configMap (dict): This map transforms the input config names to the actuall config class names.
+    
+    Examples:
+        >>> from pykg2vec.config.config import Importer
+        >>> config_def, model_def = Importer().import_model_config('transe')
+        >>> config = config_def()
+        >>> model = model_def(config)
 
     """
     def __init__(self):
@@ -72,37 +78,53 @@ class Importer:
                           "tucker": "TuckERConfig"}
 
     def import_model_config(self, name):
-        """This function imports models and configuration.
+      """This function imports models and configuration.
 
-        This function is used to dynamically import the modules within
-        pykg2vec. 
+      This function is used to dynamically import the modules within
+      pykg2vec. 
 
-        Args:
-            name (str): The input to the module is either name of the model or the configuration file. The strings are converted to lowercase to makesure the user inputs can easily be matched to the names of the models and the configuration class.
+      Args:
+          name (str): The input to the module is either name of the model or the configuration file. The strings are converted to lowercase to makesure the user inputs can easily be matched to the names of the models and the configuration class.
 
-        Returns:
-            object: Configuration and model object after it is successfully loaded.
+      Returns:
+          object: Configuration and model object after it is successfully loaded.
 
-            `config_obj` (object): Returns the configuration class object of the corresponding algorithm.
-            `model_obj` (object): Returns the model class object of the corresponding algorithm.
+          `config_obj` (object): Returns the configuration class object of the corresponding algorithm.
+          `model_obj` (object): Returns the model class object of the corresponding algorithm.
 
-        Raises:
-            ModuleNotFoundError: It raises a module not found error if the configuration or the model cannot be found.
-        """
-        config_obj = None
-        model_obj = None
-        try:
-            config_obj = getattr(importlib.import_module(self.config_path), self.configMap[name])
-            model_obj = getattr(importlib.import_module(self.model_path + ".%s" % self.modelMap[name]),
-                                self.modelMap[name])
-        except ModuleNotFoundError:
-            print("%s model  has not been implemented. please select from: %s" % (
-            name, ' '.join(map(str, self.modelMap.values()))))
+      Raises:
+          ModuleNotFoundError: It raises a module not found error if the configuration or the model cannot be found.
+      """
+      config_obj = None
+      model_obj = None
+      try:
+          config_obj = getattr(importlib.import_module(self.config_path), self.configMap[name])
+          model_obj = getattr(importlib.import_module(self.model_path + ".%s" % self.modelMap[name]),
+                              self.modelMap[name])
+      except ModuleNotFoundError:
+          print("%s model  has not been implemented. please select from: %s" % (
+          name, ' '.join(map(str, self.modelMap.values()))))
 
-        return config_obj, model_obj
+      return config_obj, model_obj
 
 
 class KGEArgParser:
+    """The class implements the argument parser for the pykg2vec.
+
+    KGEArgParser defines all the necessary arguements for the global and local 
+    configuration of all the modules.
+
+    Attributes:
+        general_group (object): It parses the general arguements used by most of the modules.
+        general_hyper_group (object): It parses the arguments for the hyper-parameter tuning.
+        SME_group (object): It parses the arguments for SME and KG2E algorithms.
+        conv_group (object): It parses the arguments for convE algorithms.
+        misc_group (object): It prases other necessary arguments.
+    
+    Examples:
+        >>> from pykg2vec.config.config import KGEArgParser
+        >>> args = KGEArgParser().get_args()
+    """
 
     def __init__(self):
         self.parser = ArgumentParser(description='Knowledge Graph Embedding tunable configs.')
@@ -208,7 +230,14 @@ class KGEArgParser:
         self.misc_group.add_argument('-gp', dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
 
     def get_args(self):
-        return self.parser.parse_args()
+      """This function parses the necessary arguments.
+
+      This function is called to parse all the necessary arguments. 
+
+      Returns:
+          object: ArgumentParser object.
+      """
+      return self.parser.parse_args()
 
 
 class BasicConfig:
