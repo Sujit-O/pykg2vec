@@ -1,7 +1,11 @@
 """
 config.py
-====================================
-The necessary configuration of the algorithms are stored here.
+==========
+
+This module consists of definition of the necessary configuration parameters for all the 
+core algorithms. The parameters are seprated into global parameters which are common
+across all the algorithms, and local parameters which are specific to the algorithms.
+
 """
 
 import tensorflow as tf
@@ -13,6 +17,18 @@ from pykg2vec.config.global_config import KnowledgeGraph
 
 
 class Importer:
+    """The class defines methods for importing pykg2vec modules.
+
+    Importer is used to defines the maps for the algorithm names and
+    provides methods for loading configuration and models.
+
+    Attributes:
+        model_path (str): Path where the models are defined.
+        config_path (str): Path where the configuration for each models are defineds.
+        modelMap (dict): This map transforms the names of model to the actual class names.
+        configMap (dict): This map transforms the input config names to the actuall config class names.
+
+    """
     def __init__(self):
         self.model_path = "pykg2vec.core"
         self.config_path = "pykg2vec.config.config"
@@ -56,6 +72,23 @@ class Importer:
                           "tucker": "TuckERConfig"}
 
     def import_model_config(self, name):
+        """This function imports models and configuration.
+
+        This function is used to dynamically import the modules within
+        pykg2vec. 
+
+        Args:
+            name (str): The input to the module is either name of the model or the configuration file. The strings are converted to lowercase to makesure the user inputs can easily be matched to the names of the models and the configuration class.
+
+        Returns:
+            object: Configuration and model object after it is successfully loaded.
+
+            `config_obj` (object): Returns the configuration class object of the corresponding algorithm.
+            `model_obj` (object): Returns the model class object of the corresponding algorithm.
+
+        Raises:
+            ModuleNotFoundError: It raises a module not found error if the configuration or the model cannot be found.
+        """
         config_obj = None
         model_obj = None
         try:

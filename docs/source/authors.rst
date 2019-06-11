@@ -1,5 +1,8 @@
 Authors
 =======
+
+Core Development
+----------------
 ::
 
     Sujit Rokka Chhetri (Ph.D)
@@ -9,6 +12,10 @@ Authors
     Shih-Yuan Yu (M.S.)
     University of California, Irvine
     Email: shihyuay@uci.edu
+
+Contributors
+------------
+::
 
     Ahmet Salih Aksakal (B.S.)
     University of California, Irvine
@@ -25,6 +32,6 @@ Authors
 
     Mohammad Al Faruque (Ph.D)
     Associate Professor
-    University of Southern California
+    University of California, Irvine
     alfaruqu@uci.edu
 
