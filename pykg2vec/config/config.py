@@ -72,6 +72,23 @@ class Importer:
                           "tucker": "TuckERConfig"}
 
     def import_model_config(self, name):
+        """This function imports models and configuration.
+
+        This function is used to dynamically import the modules within
+        pykg2vec. 
+
+        Args:
+            name (str): The input to the module is either name of the model or the configuration file. The strings are converted to lowercase to makesure the user inputs can easily be matched to the names of the models and the configuration class.
+
+        Returns:
+            object: Configuration and model object after it is successfully loaded.
+
+            `config_obj` (object): Returns the configuration class object of the corresponding algorithm.
+            `model_obj` (object): Returns the model class object of the corresponding algorithm.
+
+        Raises:
+            ModuleNotFoundError: It raises a module not found error if the configuration or the model cannot be found.
+        """
         config_obj = None
         model_obj = None
         try:
