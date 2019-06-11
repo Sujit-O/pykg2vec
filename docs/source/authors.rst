@@ -1,24 +1,30 @@
 Authors
 =======
-
-Core Development
-----------------
 ::
 
-    Sujit Rokka Chhetri (PhD)
+    Sujit Rokka Chhetri (Ph.D)
     University of California, Irvine
     Email: schhetri@uci.edu
 
-    Shih-Yuan Yu (MS)
+    Shih-Yuan Yu (M.S.)
     University of California, Irvine
     Email: shihyuay@uci.edu
 
-Contributors
-------------
-::
+    Ahmet Salih Aksakal (B.S.)
+    University of California, Irvine
+    aaksakal@uci.edu
 
-    -  Ahmet Salih Aksakal: aaksakal@uci.edu
-    -  Palash Goyal: palashgo@usc.edu
-    -  Arquimedes Martinez Canedo: arquimedes.canedo@siemens.com
-    -  Mohammad Al Faruque: alfaruqu@uci.edu
+    Palash Goyal (Ph.D)
+    University of Southern California
+    palashgo@usc.edu
+
+    Arquimedes Martinez Canedo (Ph.D)
+    Principal Scientist
+    Siemens Corporate Technology
+    arquimedes.canedo@siemens.com
+
+    Mohammad Al Faruque (Ph.D)
+    Associate Professor
+    University of Southern California
+    alfaruqu@uci.edu
 

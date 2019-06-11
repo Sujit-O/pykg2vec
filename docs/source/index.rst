@@ -71,6 +71,7 @@ See the source code repository on github: https://github.com/Sujit-O/pykg2vec
 
    authors
    citations
+   license
 
 
 Indices and tables
