@@ -1,3 +1,10 @@
+"""
+global_config.py
+====================================
+It stores the global configuration of the files.
+"""
+
+
 import shutil, tarfile, urllib
 from pathlib import Path
 from collections import defaultdict
