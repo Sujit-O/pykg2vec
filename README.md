@@ -1,4 +1,4 @@
-[![Documentation Status](https://readthedocs.org/projects/pykg2vec/badge/?version=latest)](https://pykg2vec.readthedocs.io/en/latest/?badge=latest)[![CircleCI](https://circleci.com/gh/Sujit-O/pykg2vec.svg?style=svg)](https://circleci.com/gh/Sujit-O/pykg2vec) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/) [![Build Status](https://travis-ci.org/Sujit-O/pykg2vec.svg?branch=master)](https://travis-ci.org/Sujit-O/pykg2vec) [![PyPI version](https://badge.fury.io/py/pykg2vec.svg)](https://badge.fury.io/py/pykg2vec) [![GitHub license](https://img.shields.io/github/license/Sujit-O/pykg2vec.svg)](https://github.com/Sujit-O/pykg2vec/blob/master/LICENSE) [![Coverage Status](https://coveralls.io/repos/github/Sujit-O/pykg2vec/badge.svg?branch=master)](https://coveralls.io/github/Sujit-O/pykg2vec?branch=master) [![Twitter](https://img.shields.io/twitter/url/https/github.com/Sujit-O/pykg2vec.svg?style=social)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2FSujit-O%2Fpykg2vec) 
+[![Documentation Status](https://readthedocs.org/projects/pykg2vec/badge/?version=latest)](https://pykg2vec.readthedocs.io/en/latest/?badge=latest) [![CircleCI](https://circleci.com/gh/Sujit-O/pykg2vec.svg?style=svg)](https://circleci.com/gh/Sujit-O/pykg2vec) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/) [![Build Status](https://travis-ci.org/Sujit-O/pykg2vec.svg?branch=master)](https://travis-ci.org/Sujit-O/pykg2vec) [![PyPI version](https://badge.fury.io/py/pykg2vec.svg)](https://badge.fury.io/py/pykg2vec) [![GitHub license](https://img.shields.io/github/license/Sujit-O/pykg2vec.svg)](https://github.com/Sujit-O/pykg2vec/blob/master/LICENSE) [![Coverage Status](https://coveralls.io/repos/github/Sujit-O/pykg2vec/badge.svg?branch=master)](https://coveralls.io/github/Sujit-O/pykg2vec?branch=master) [![Twitter](https://img.shields.io/twitter/url/https/github.com/Sujit-O/pykg2vec.svg?style=social)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2FSujit-O%2Fpykg2vec) 
 
 # Pykg2vec: Python Library for KG Embedding Methods 
 
@@ -8,6 +8,7 @@
 * [Dependencies](#dependencies)
 * [Features](#features)
 * [Repository Structure](#repository-structure)
+* [Installation](#installation)
 * [Usage Example](#usage-example)
 * [Implemented Methods](#implemented-methods)
 * [Datasets](#datasets)
@@ -25,7 +26,8 @@ Here are some well-written papers for reading in order to start with knowledge g
  * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
  * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
  * [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098)
-
+ 
+[__***Back to Top***__](#table-of-contents)
 ## Dependencies
 The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
 * tensorflow==`<version suitable for your workspace>`
@@ -38,7 +40,8 @@ The goal of this library is to minimize the dependency on other libraries as far
 * hyperopt>=0.1.2
 * progressbar2>=3.39.3
 * pathlib>=1.0.1
- 
+
+[__***Back to Top***__](#table-of-contents)
 ## Features
 * A sheer amount of existing state-of-the-art knowledge graph embedding algorithms.
   * TransE, TransH, TransR, TransD, TransM, KG2E, RESCAL, DistMult, ComplEX, ConvE, ProjE, RotatE, SME, SLM, NTN, TuckER. 
@@ -55,6 +58,7 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 **Relation embedding plot**             |  **Entity embedding plot**   | **Relation and Entity Plot**
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_rel_plot_embedding_plot_0.png?raw=true)| ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_entity_plot_embedding_plot_0.png?raw=true) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_ent_n_rel_plot_embedding_plot_0.png?raw=true)
 
+[__***Back to Top***__](#table-of-contents)
 ## Repository Structure
 
 * **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
@@ -62,9 +66,10 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 * **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
 * **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
 
+[__***Back to Top***__](#table-of-contents)
 ## Installation
 
-For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms.
+For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms using Python3.6.
 
 **Please install [tensorflow](https://www.tensorflow.org/install) cpu or gpu version before performing pip install of pykg2vec!**
 
@@ -102,7 +107,9 @@ $ pip install --upgrade pip
 (venv) $ cd pykg2vec
 (venv) $ git checkout development
 (venv) $ python setup.py install
-``` 
+```
+
+[__***Back to Top***__](#table-of-contents)
 ## Usage Example
 
 ### Running a single algorithm: 
@@ -141,6 +148,7 @@ python train.py -m TransE # Run TransE model.
 python train.py -m Complex # Run Complex model. 
 ```
 
+[__***Back to Top***__](#table-of-contents)
 ### Tuning a single algorithm:
 tune_model.py
 ```python
@@ -167,6 +175,7 @@ python tune_model.py -h # check all tunnable parameters.
 python tune_model.py -mn TransE # Tune TransE model.
 ```
 
+[__***Back to Top***__](#table-of-contents)
 ## Implemented Methods
 We aim to implement all the latest state-of-the-art knowledge graph embedding library. The embedding algorithms included in the library so far (still growing) are as follows, 
 
@@ -191,6 +200,7 @@ m×n</sup> to project entities from entity space to relation space.[Check the Co
 
 * [RotatE](https://openreview.net/pdf?id=HkgEQnRqYQ): RotatE models the entities and the relations in the complex vector space. The translational relation in RotatE is defined as the element-wise 2D rotation in which the head entity h will be rotated to the tail entity t by multiplying the unit-length relation r in complex number form. [Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/RotatE.py)
 
+[__***Back to Top***__](#table-of-contents)
 ####  Semantic Matching Models
 Semantic matching models are latent feature models which represents triples by using a pairwise interactions of latent features. 
 
@@ -207,6 +217,7 @@ Semantic matching models are latent feature models which represents triples by u
 
 * [Neural Tensor Network (NTN)](https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf): It is a neural tensor network which represents entities as an average of their constituting word vectors. It then projects entities to their vector embeddings in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/NTN.py)
 
+[__***Back to Top***__](#table-of-contents)
 #### Projection-Based Models
 * [ProjE](https://arxiv.org/abs/1611.05425): Instead of measuring the distance or matching scores between the pair of the head entity and relation and then tail entity in embedding space ((h,r) vs (t)). ProjE projects the entity candidates onto a target vector representing the input data. The loss in ProjE is computed by the cross-entropy between the projected target vector and binary label vector, where the included entities will have value 0 if in negative sample set and value 1 if in positive sample set.[Check the Code!](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/core/ProjE_pointwise.py) 
 
@@ -226,10 +237,11 @@ We intend to provide the libraries to test the knowledge graph algorithms agains
    ```
    @online{pykg2vec,
   author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo, Arquimedes},
-  title = {{pykg2vec: Python Knowledge Graph Embedding Library},
+  title = {pykg2vec: Python Knowledge Graph Embedding Library},
   year = 2019,
   url = {https://pypi.org/project/pykg2vec/}
   }
     
    ```
+   [__***Back to Top***__](#table-of-contents)
    
