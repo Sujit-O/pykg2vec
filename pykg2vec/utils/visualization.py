@@ -181,7 +181,7 @@ class Visualization(object):
 
         self.model = model
 
-        self.algo_list = ['Complex', 'ConvE', 'DistMult', 'DistMult2', 'KG2E_EL','KG2E_KL',
+        self.algo_list = ['Complex', 'ConvE','HoLE', 'DistMult', 'DistMult2', 'KG2E_EL','KG2E_KL',
                           'KGMeta', 'NTN', 'ProjE_pointwise', 'Rescal',
                           'RotatE', 'SLM', 'SME_Bilinear','SME_Linear', 'TransD', 'TransE', 'TransH',
                            'TransM', 'TransR', 'TuckER']
@@ -198,9 +198,10 @@ class Visualization(object):
         self.r_proj_emb = []
         self.t_proj_emb = []
 
-        self.validation_triples_ids = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
-        self.idx2entity = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        self.idx2relation = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        if self.model != None:
+            self.validation_triples_ids = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
+            self.idx2entity = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+            self.idx2relation = self.model.config.knowledge_graph.read_cache_data('idx2relation')
 
     def get_idx_n_emb(self, sess=None):
         if not sess:
@@ -414,17 +415,33 @@ class Visualization(object):
                         dpi=300)
             plt.show()
 
+def test_visualization():
+    import sys
+    sys.path.append('../')
+    from core.TransE import TransE
+    from config.config import TransEConfig
+    from config.global_config import KnowledgeGraph
+
+    knowledge_graph = KnowledgeGraph(dataset='Freebase15k', negative_sample=False)
+    knowledge_graph.prepare_data()
+
+    config = TransEConfig()
+    model = TransE(config)
+
+    viz = Visualization(model=model)
+    viz.plot_test_result()
+
 if __name__ == '__main__':
-    v = Visualization()
-    viz = Visualization()
-    # viz.plot_train_result(path='../results',
-    #                       result='../figures',
-    #                       algo=['TransE', 'TransR', 'TransH'],
-    #                       data=['Freebase15k'])
-    viz.plot_test_result(path='../results',
-                         result='../figures',
-                         algo=['TransE', 'TransR', 'TransH'],
-                         data=['Freebase15k'], paramlist=None, hits=[10, 5])
+    test_visualization()
+    # viz = Visualization()
+    # # viz.plot_train_result(path='../results',
+    # #                       result='../figures',
+    # #                       algo=['TransE', 'TransR', 'TransH'],
+    # #                       data=['Freebase15k'])
+    # viz.plot_test_result(path='../results',
+    #                      result='../figures',
+    #                      algo=['TransE', 'TransR', 'TransH'],
+    #                      data=['Freebase15k'], paramlist=None, hits=[10, 5])
 
     # h_name = ['/m/07pd_j', '/m/06wxw', '/m/0d4fqn', '/m/07kcvl', '/m/012201']
     # h_embs = [[462.293, 296.02106],

@@ -1,6 +1,21 @@
-from pykg2vec.config.global_config import KnowledgeGraph
-from pykg2vec.config.config import Importer, KGEArgParser
-from pykg2vec.utils.trainer import Trainer
+'''
+=======================
+Training an Algorithm
+=======================
+In this example, we will show how to import all the modules to start training and algorithm
+'''
+# Author: Sujit Rokka Chhetri
+# License: MIT
+
+import sys
+sys.path.append("../")
+
+from config.global_config import KnowledgeGraph
+# from pykg2vec.config.global_config import KnowledgeGraph
+from config.config import Importer, KGEArgParser
+# from pykg2vec.config.config import Importer, KGEArgParser
+from utils.trainer import Trainer
+# from pykg2vec.utils.trainer import Trainer
 
 
 def main():

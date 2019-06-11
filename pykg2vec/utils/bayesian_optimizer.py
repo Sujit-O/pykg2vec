@@ -11,25 +11,19 @@ import importlib
 from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
 import pandas as pd
 
-# import sys
-# sys.path.append("../")
-# from config.global_config import KnowledgeGraph
+
 from pykg2vec.config.global_config import KnowledgeGraph
-# from utils.trainer import Trainer
 from pykg2vec.utils.trainer import Trainer
 from pprint import pprint
 
-# model_path = "core"
 model_path = "pykg2vec.core"
-# config_path = "config.config"
 config_path = "pykg2vec.config.config"
-# hyper_param_path = "config.hyperparams"
 hyper_param_path = "pykg2vec.config.hyperparams"
 
 modelMap = {"complex": "Complex",
             "conve": "ConvE",
+            "hole": "HoLE",
             "distmult": "DistMult",
-            "distmult2": "DistMult2",
             "kg2e": "KG2E",
             "ntn": "NTN",
             "proje_pointwise": "ProjE_pointwise",
@@ -39,17 +33,17 @@ modelMap = {"complex": "Complex",
             "sme": "SME",
             "transd": "TransD",
             "transe": "TransE",
+            "transg": "TransG",
             "transh": "TransH",
             "transm": "TransM",
             "transR": "TransR",
-            "tucker": "TuckER",
-            "tucker_v2": "TuckER_v2"}
+            "tucker": "TuckER"}
 
 
 configMap = {"complex": "ComplexConfig",
              "conve": "ConvEConfig",
+             "hole": "HoLEConfig",
              "distmult": "DistMultConfig",
-             "distmult2": "DistMultConfig",
              "kg2e": "KG2EConfig",
              "ntn": "NTNConfig",
              "proje_pointwise": "ProjE_pointwiseConfig",
@@ -59,17 +53,16 @@ configMap = {"complex": "ComplexConfig",
              "sme": "SMEConfig",
              "transd": "TransDConfig",
              "transe": "TransEConfig",
+             "transg": "TransGConfig",
              "transh": "TransHConfig",
              "transm": "TransMConfig",
              "transR": "TransRConfig",
-             "tucker": "TuckERConfig",
-             "tucker_v2": "TuckERConfig"}
+             "tucker": "TuckERConfig"}
 
 
 hypMap = {"complex": "ComplexParams",
           "conve": "ConvEParams",
           "distmult": "DistMultParams",
-          "distmult2": "DistMultParams",
           "kg2e": "KG2EParams",
           "ntn": "NTNParams",
           "proje_pointwise": "ProjE_pointwiseParams",
@@ -79,11 +72,11 @@ hypMap = {"complex": "ComplexParams",
           "sme": "SMEParams",
           "transd": "TransDParams",
           "transe": "TransEParams",
+          "transg": "TransGParams",
           "transh": "TransHParams",
           "transm": "TransMParams",
           "transR": "TransRParams",
-          "tucker": "TuckERParams",
-          "tucker_v2": "TuckERParams"}
+          "tucker": "TuckERParams"}
 
 
 class BaysOptimizer(object):

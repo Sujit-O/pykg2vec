@@ -1,31 +1,26 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
-We store the base configuration of the models here
+config.py
+====================================
+The necessary configuration of the algorithms are stored here.
 """
+
 import tensorflow as tf
 from pathlib import Path
-
-# import sys
-# sys.path.append("../")
-# from config.global_config import KnowledgeGraph
-
-from pykg2vec.config.global_config import KnowledgeGraph
 from argparse import ArgumentParser
 import importlib
+
+from pykg2vec.config.global_config import KnowledgeGraph
 
 
 class Importer:
     def __init__(self):
-        # self.model_path = "core"
         self.model_path = "pykg2vec.core"
-        # self.config_path = "config.config"
         self.config_path = "pykg2vec.config.config"
 
         self.modelMap = {"complex": "Complex",
                          "conve": "ConvE",
+                         "hole": "HoLE",
                          "distmult": "DistMult",
-                         "distmult2": "DistMult2",
                          "kg2e": "KG2E",
                          "ntn": "NTN",
                          "proje_pointwise": "ProjE_pointwise",
@@ -36,15 +31,15 @@ class Importer:
                          "transd": "TransD",
                          "transe": "TransE",
                          "transh": "TransH",
+                         "transg": "TransG",
                          "transm": "TransM",
                          "transr": "TransR",
-                         "tucker": "TuckER",
-                         "tucker_v2": "TuckER_v2"}
+                         "tucker": "TuckER"}
 
         self.configMap = {"complex": "ComplexConfig",
                           "conve": "ConvEConfig",
+                          "hole": "HoLEConfig",
                           "distmult": "DistMultConfig",
-                          "distmult2": "DistMultConfig",
                           "kg2e": "KG2EConfig",
                           "ntn": "NTNConfig",
                           "proje_pointwise": "ProjE_pointwiseConfig",
@@ -54,11 +49,11 @@ class Importer:
                           "sme": "SMEConfig",
                           "transd": "TransDConfig",
                           "transe": "TransEConfig",
+                          "transg": "TransGConfig",
                           "transh": "TransHConfig",
                           "transm": "TransMConfig",
                           "transr": "TransRConfig",
-                          "tucker": "TuckERConfig",
-                          "tucker_v2": "TuckERConfig"}
+                          "tucker": "TuckERConfig"}
 
     def import_model_config(self, name):
         config_obj = None
@@ -132,6 +127,20 @@ class KGEArgParser:
                                     help="The parameter for clipping values for KG2E.")
         self.SME_group.add_argument('-cmin', dest='cmin', default=5.00, type=float,
                                     help="The parameter for clipping values for KG2E.")
+
+        ''' arguments regarding TransG '''
+        self.TransG_group = self.parser.add_argument_group('TransG function selection')
+        self.TransG_group.add_argument('-th', dest='training_threshold', default=3.5, type=float,
+                                    help="Training Threshold for updateing the clusters.")
+        self.TransG_group.add_argument('-nc', dest='ncluster', default=4, type=int,
+                                       help="Number of clusters")
+        self.TransG_group.add_argument('-crp', dest='crp_factor', default=0.01, type=float,
+                                       help="Chinese Restaurant Process Factor.")
+        self.TransG_group.add_argument('-stb', dest='step_before', default=10, type=int,
+                                       help="Steps before")
+        self.TransG_group.add_argument('-wn', dest='weight_norm', default=False,
+                                              type=lambda x: (str(x).lower() == 'true'),
+                                       help="normalize the weights!")
 
         ''' for conve '''
         self.conv_group = self.parser.add_argument_group('ConvE specific Hyperparameters')
@@ -226,7 +235,103 @@ class BasicConfig:
         self.kg_meta = self.knowledge_graph.kg_meta
 
 
+class TransGConfig(BasicConfig):
+
+    def __init__(self, args=None):
+        if args is None or args.golden is True:
+            # the golden setting for TransE (only for Freebase15k now)
+            self.learning_rate = 0.0015
+            self.L1_flag = True
+            self.hidden_size = 400
+            self.batch_size = 512
+            self.epochs = 500
+            self.margin = 1.0
+            self.data = 'Freebase15k'
+            self.optimizer = 'adam'
+            self.sampling = "uniform"
+            self.training_threshold = 3.0
+            self.ncluster = 4
+            self.CRP_factor = 0.01
+            self.weight_norm = True
+            self.step_before = 10
+
+
+
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+            self.training_threshold = args.training_threshold
+            self.ncluster = args.ncluster
+            self.CRP_factor = args.crp_factor
+            self.weight_norm = args.weight_norm
+            self.step_before = args.step_before
+
+        self.hyperparameters = {
+            'learning_rate': self.learning_rate,
+            'L1_flag': self.L1_flag,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'margin': self.margin,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+            'threshold': self.training_threshold,
+            'cluster':self.ncluster,
+            'crp_factor':self.CRP_factor,
+            'weight_norm':self.weight_norm
+
+        }
+        BasicConfig.__init__(self, args)
+
 class TransEConfig(BasicConfig):
+
+    def __init__(self, args=None):
+        if args is None or args.golden is True:
+            # the golden setting for TransE (only for Freebase15k now)
+            self.learning_rate = 0.01
+            self.L1_flag = True
+            self.hidden_size = 50
+            self.batch_size = 512
+            self.epochs = 500
+            self.margin = 1.0
+            self.data = 'Freebase15k'
+            self.optimizer = 'adam'
+            self.sampling = "uniform"
+
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+
+        self.hyperparameters = {
+            'learning_rate': self.learning_rate,
+            'L1_flag': self.L1_flag,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'margin': self.margin,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling
+        }
+        BasicConfig.__init__(self, args)
+
+
+class HoLEConfig(BasicConfig):
 
     def __init__(self, args=None):
         if args is None or args.golden is True:

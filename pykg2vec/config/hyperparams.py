@@ -1,5 +1,10 @@
-from argparse import ArgumentParser
+"""
+hyperparams.py
+====================================
+It provides configuration for the tunable hyper-parameter ranges for all the algorithms.
+"""
 
+from argparse import ArgumentParser
 
 class KGETuneArgParser:
 

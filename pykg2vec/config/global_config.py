@@ -1,3 +1,10 @@
+"""
+global_config.py
+====================================
+It stores the global configuration of the files.
+"""
+
+
 import shutil, tarfile, urllib
 from pathlib import Path
 from collections import defaultdict
@@ -85,7 +92,12 @@ class KnownDataset:
             self.download()
             self.extract()
 
-        self.dataset_path = self.root_path / self.name
+        if self.name == 'WN18':
+            self.dataset_path = self.root_path / 'wordnet-mlj12'
+        elif self.name == 'YAGO3_10' or self.name == 'WN18RR':
+            self.dataset_path = self.root_path
+        else:
+            self.dataset_path = self.root_path / self.name
 
         self.data_paths = {
             'train': self.dataset_path / ('%strain.txt'%self.prefix),
@@ -140,7 +152,7 @@ class KnownDataset:
 
 
 class FreebaseFB15k(KnownDataset):
-    
+
     def __init__(self):
         name = "FB15k"
         url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
@@ -155,6 +167,36 @@ class DeepLearning50a(KnownDataset):
         name = "dLmL50"
         url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
         prefix = 'deeplearning_dataset_50arch-'
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
+class WordNet18(KnownDataset):
+
+    def __init__(self):
+        name = "WN18"
+        url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:wordnet-mlj12.tar.gz"
+        prefix = 'wordnet-mlj12-'
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
+class WordNet18_RR(KnownDataset):
+
+    def __init__(self):
+        name = "WN18RR"
+        url = "https://github.com/TimDettmers/ConvE/raw/master/WN18RR.tar.gz"
+        prefix = ''
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
+class YAGO3_10(KnownDataset):
+
+    def __init__(self):
+        name = "YAGO3_10"
+        url = "https://github.com/TimDettmers/ConvE/raw/master/YAGO3-10.tar.gz"
+        prefix = ''
 
         KnownDataset.__init__(self, name, url, prefix)
 
@@ -219,10 +261,16 @@ class UserDefinedDataset(object):
 class KnowledgeGraph(object):
 
     def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
-        if dataset == 'Freebase15k':
+        if dataset.lower() == 'freebase15k':
             self.dataset = FreebaseFB15k()
-        elif dataset == 'DeepLearning50a':
+        elif dataset.lower() == 'deeplearning50a':
             self.dataset = DeepLearning50a()
+        elif dataset.lower() == 'wordnet18':
+            self.dataset = WordNet18()
+        elif dataset.lower() == 'wordnet18_rr':
+            self.dataset = WordNet18_RR()
+        elif dataset.lower() == 'yago3_10':
+            self.dataset = YAGO3_10()
         else:
             # if the dataset does not match with existing one, check if it exists in user's local space.
             # if it still can't find corresponding folder, raise exception in UserDefinedDataset.__init__()
@@ -370,7 +418,7 @@ class KnowledgeGraph(object):
         triplets = self.triplets[set_type]
 
         if len(triplets) == 0:
-            with open(str(self.dataset.data_paths[set_type]), 'r') as file:
+            with open(str(self.dataset.data_paths[set_type]), 'r', encoding='utf-8') as file:
                 for line in file.readlines():
                     s, p, o = line.split('\t')
                     triplets.append(Triple(s.strip(), p.strip(), o.strip()))

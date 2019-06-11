@@ -10,14 +10,11 @@ from __future__ import print_function
 import os
 import numpy as np
 import pandas as pd
-# import sys
-# sys.path.append("../")
-# from core.KGMeta import EvaluationMeta
-from pykg2vec.core.KGMeta import EvaluationMeta
 import timeit
 from multiprocessing import Process, Queue
 import progressbar
 
+from pykg2vec.core.KGMeta import EvaluationMeta
 
 def eval_batch_head(id_replace_head, h, r, t, tr_h):
     hrank = 0
@@ -114,10 +111,26 @@ def save_test_summary(result_path, model_name, hits,
               'a') as fh:
         df.to_csv(fh)
 
+class MetricCalculator:
+    '''
+        MetricCalculator aims to 
+        1) address all the statistic tasks.
+        2) provide interfaces for querying results.
 
-def evaluation_process(result_queue, output_queue, tr_h, hr_t, hits,
-                       total_epoch, result_path, model_name,
-                       config, tuning):
+        MetricCalculator is expected to be used by "evaluation_process".
+    '''
+    def __init__(self):
+        pass
+
+def evaluation_process(result_queue, output_queue, config, model_name, tuning):
+
+    hits = config.hits
+    total_epoch = config.epochs
+    result_path = config.result
+
+    hr_t = config.knowledge_graph.read_cache_data('hr_t')
+    tr_h = config.knowledge_graph.read_cache_data('tr_h')
+
     mean_rank_head = {}
     mean_rank_tail = {}
     filter_mean_rank_head = {}
@@ -199,15 +212,14 @@ class Evaluation(EvaluationMeta):
         self.debug = debug
         self.tuning = tuning
 
-        hr_t = self.model.config.knowledge_graph.read_cache_data('hr_t')
-        tr_h = self.model.config.knowledge_graph.read_cache_data('tr_h')
-
         if data_type == 'test':
             self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_test')
         elif data_type == 'valid':
             self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
         else:
             raise NotImplementedError("%s datatype is not available!" % data_type)
+
+        tot_rows_data = len(self.eval_data)
 
         '''
             n_test: number of triplets to be tested
@@ -216,9 +228,9 @@ class Evaluation(EvaluationMeta):
         '''
         self.n_test = model.config.test_num
         if self.n_test == 0:
-            self.n_test = len(self.eval_data)
+            self.n_test = tot_rows_data
         else:
-            self.n_test = min(self.n_test, len(self.eval_data))
+            self.n_test = min(self.n_test, tot_rows_data)
 
         ''' 
             loop_len: the # of loops to perform batch evaluation. 
@@ -231,14 +243,16 @@ class Evaluation(EvaluationMeta):
         
         self.n_test = self.model.config.batch_size_testing * self.loop_len
 
+        '''
+            create the process that manages the batched evaluating results.
+            result_queue: stores the results for each batch. 
+            output_queue: stores the result for a trial, used by bayesian_optimizer.
+        '''
         self.result_queue = Queue()
         self.output_queue = Queue()
         self.rank_calculator = Process(target=evaluation_process,
-                                       args=(self.result_queue, self.output_queue, tr_h, hr_t,
-                                             self.model.config.hits, self.model.config.epochs,
-                                             self.model.config.result,
-                                             self.model.model_name,
-                                             self.model.config, self.tuning))
+                                       args=(self.result_queue, self.output_queue, 
+                                             self.model.config, self.model.model_name, self.tuning))
         self.rank_calculator.start()
 
     def stop(self):
@@ -280,12 +294,10 @@ class Evaluation(EvaluationMeta):
 
         self.result_queue.put("Stop!")
 
-
     def save_training_result(self, losses):
         files = os.listdir(str(self.model.config.result))
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
         df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
-
         with open(str(self.model.config.result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)
