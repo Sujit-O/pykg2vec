@@ -19,7 +19,8 @@ INSTALL_REQUIRES = (
     'hyperopt>=0.1.2',
     'progressbar2>=3.39.3',
     'tensorflow==1.13.1',
-    'pathlib>=1.0.1'
+    'pathlib>=1.0.1',
+    'numpydoc>=0.9.1'
 )
 
 with open("README.md", "r") as fh:
