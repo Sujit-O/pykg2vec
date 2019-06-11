@@ -241,6 +241,36 @@ class KGEArgParser:
 
 
 class BasicConfig:
+    """The class defines the basic configuration for the pykg2vec.
+
+    BasicConfig consists of the necessary parameter description used by all the 
+    modules including the algorithms and utility functions.
+
+    Args:
+      test_step (int): Testing is carried out every test_step.
+      test_num (int): Number of triples that will be tested during evaluation.
+      triple_num (int): Number of triples that will be used for plotting the embedding.
+      tmp (Path Object): Path where temporary model information is stored.
+      result (Path Object): Gives the path where the result will be saved.
+      figures (Path Object): Gives the path where the figures will be saved.
+      gpu_fraction (float): Amount of GPU fraction that will be made available for training and inference.
+      gpu_allow_growth (bool): If True, allocates only necessary GPU memory and grows as required later.
+      loadFromData (bool): If True, loads the model parameters if available from memory.
+      save_model (True): If True, store the trained model parameters.
+      disp_summary (bool): If True, display the summary before and after training the algorithm.
+      disp_result (bool): If True, displays result while training.
+      plot_embedding (bool): If True, will plot the embedding after performing t-SNE based dimensionality reduction.
+      log_training_placement (bool): If True, allows us to find out which devices the operations and tensors are assigned to.
+      plot_training_result (bool): If True, plots the loss values stored during training.
+      plot_testing_result (bool): If True, it will plot all the testing result such as mean rank, hit ratio, etc.
+      plot_entity_only (bool): If True, plots the t-SNE reduced embdding of the entities in a figure.
+      full_test_flag (bool): It True, performs a full test after completing the training for full epochs.
+      batch_size_testing (int): Determines the size of batch used while testing.
+      hits (List): Gives the list of integer for calculating hits.
+      knowledge_graph (Object): It prepares and holds the instance of the knowledge graph dataset.
+      kg_meta (object): Stores the statistics metadata of the knowledge graph.
+    
+    """
     def __init__(self, args=None):
 
         if args is None:
