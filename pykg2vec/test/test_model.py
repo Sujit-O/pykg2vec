@@ -2,7 +2,6 @@ import pytest
 from pykg2vec.config.config import *
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
-# from pykg2vec.test.IT import testing_function
 import tensorflow as tf
 
 @pytest.mark.skip(reason="This is a functional method.")
