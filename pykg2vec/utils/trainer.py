@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+This module is for training process.
+"""
 import tensorflow as tf
 import timeit
 
@@ -8,7 +13,7 @@ from pykg2vec.utils.evaluation import Evaluation
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator
 from pykg2vec.config.global_config import GeneratorConfig
-from pykg2vec.config.global_config import KGMetaData, KnowledgeGraph
+from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
 
 def get_sparse_mat(data, bs, te):
     mat = np.zeros(shape=(bs, te), dtype=np.int16)
