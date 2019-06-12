@@ -1,7 +1,7 @@
 """
 global_config.py
 ====================================
-It stores the global configuration of the files.
+It stores the global configuration of the files and consists of modules for processing data.
 """
 
 
@@ -13,7 +13,31 @@ import pickle
 
 
 class Triple(object):
+    """The class defines the datastructure of the knowledge graph triples.
 
+       Triple class is used to store the head, tail and relation triple in both its numerical id and
+       string form. It also stores the dictonary of (head, relation)=[tail1, tail2,..] and
+       (tail, relation)=[head1, head2, ...]
+
+       Args:
+          h (str or int): String or integer head entity.
+          r (str or int): String or integer relation entity.
+          t (str or int): String or integer tail entity.
+
+       Attributes:
+           h (int): Stores the head triple id.
+           t (int): Stores the tail triple id.
+           r (int): Stores the relation triple id.
+           hr_t (dict): Stores the list of tails for head and relation pair.
+           tr_h (dict): Stores the list of heads for tail and relation pair.
+
+       Todo:
+                * Move the module to config.
+       Examples:
+           >>> from pykg2vec.config.global_config import Triple
+           >>> trip1 = Triple(2,3,5)
+           >>> trip2 = Triple('Tokyo','isCapitalof','Japan')
+    """
     def __init__(self, h, r, t):
         self.h = None
         self.r = None
@@ -36,21 +60,66 @@ class Triple(object):
         self.tr_h = None
 
     def set_ids(self, h, r, t):
+        """This function assigns the head, relation and tail.
+
+            Args:
+                h (int): Integer head entity.
+                r (int): Integer relation entity.
+                t (int): Integer tail entity.
+        """
         self.h = h
         self.r = r
         self.t = t
 
     def set_strings(self, h, r, t):
+        """This function assigns the head, relation and tail in string format.
+
+            Args:
+                h (str): String  head entity.
+                r (str): String  relation entity.
+                t (str): String  tail entity.
+
+            Todo:
+                * Assing the strings.
+        """
         pass
 
     def set_hr_t(self, hr_t):
+        """This function assigns the tails list for the given h,r pair.
+
+            Args:
+                hr_t (list): list of integer id of tails for given head, relation pair.
+        """
         self.hr_t = hr_t
 
     def set_tr_h(self, tr_h):
+        """This function assigns the head list for the given t,r pair.
+
+            Args:
+                tr_h (list): list of integer id of head for given tail, relation pair.
+        """
         self.tr_h = tr_h
 
 
 class KGMetaData(object):
+    """The class store the metadata of the knowledge graph.
+
+       Instance of KGMetaData is used later to build the algorithms based of number
+       of entities and relation.
+
+       Args:
+            tot_entity (int):  Total number of combined head and tail entities present in knowledge graph.
+            tot_relation(int): Total number of relations present in knowlege graph.
+            tot_triple(int): Total number of head, relation and tail (triples) present in knowledge graph.
+            tot_train_triples(int): Total number of training triples
+            tot_test_triples(int): Total number of testing triple
+            tot_valid_triples(int): Total number of validation triples
+
+       Examples:
+            >>> from pykg2vec.config.global_config import KGMetaData
+            >>> kg_meta = KGMetaData(tot_triple =1000)
+
+    """
     def __init__(self, tot_entity=None,
                  tot_relation=None,
                  tot_triple=None,
@@ -65,8 +134,19 @@ class KGMetaData(object):
         self.tot_entity = tot_entity
 
 
-# TODO: to be moved to utils
 def extract(tar_path, extract_path='.'):
+    """This function extracts the tar file.
+
+        Most of the knowledge graph dataset are donwloaded in a compressed
+        tar format. This function is used to extract them
+
+        Args:
+            tar_path (str): Location of the tar folder.
+            extract_path (str): Path where the files will be decompressed.
+
+        Todo:
+            * Move this module to utils!
+    """
     tar = tarfile.open(tar_path, 'r')
     for item in tar:
         tar.extract(item, extract_path)
@@ -75,6 +155,33 @@ def extract(tar_path, extract_path='.'):
 
 
 class KnownDataset:
+    """The class consists of modules to handle the known datasets.
+
+       There are various known knowledge graph datasets used by the research
+       community. These datasets maybe in different format. This module
+       helps in parsing those known datasets for training and testing
+       the algorithms.
+
+       Args:
+          name (str): Name of the datasets
+          url (str): The full url where the dataset resides.
+          prefix (str): The prefix of the dataset given the website.
+
+       Attributes:
+           dataset_home_path (object): Path object where the data will be downloaded
+           root_oath (object): Path object for the specific dataset.
+
+       Examples:
+           >>> from pykg2vec.config.global_config import KnownDataset
+           >>> name = "dLmL50"
+           >>> url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
+           >>> prefix = 'deeplearning_dataset_50arch-'
+           >>> kgdata =  KnownDataset(name, url, prefix)
+           >>> kgdata.download()
+           >>> kgdata.extract()
+           >>> kgdata.dump()
+
+    """
 
     def __init__(self, name, url, prefix):
 
@@ -121,7 +228,7 @@ class KnownDataset:
 
 
     def download(self):
-        ''' download Freebase 15k dataset from url'''
+        ''' Downloads the given dataset from url'''
         print("Downloading the dataset %s" % self.name)
 
         self.root_path.mkdir()
@@ -129,7 +236,7 @@ class KnownDataset:
             shutil.copyfileobj(response, out_file)
 
     def extract(self):
-        ''' extract the downloaded tar under Freebase 15k folder'''
+        ''' Extract the downloaded tar under the folder with the given dataset name'''
         print("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
 
         try:
@@ -139,20 +246,33 @@ class KnownDataset:
             print(type(e), e.args)
 
     def read_metadata(self):
+        ''' Reads the metadata of the knowledge graph if available'''
         with open(str(self.cache_metadata_path), 'rb') as f:
             meta = pickle.load(f)
             return meta
 
     def is_meta_cache_exists(self):
+        ''' Checks if the metadata of the knowledge graph if available'''
         return self.cache_metadata_path.exists()
 
     def dump(self):
+        ''' Displays all the metadata of the knowledge graph'''
         for key, value in self.__dict__.items():
             print(key, value)
 
 
 class FreebaseFB15k(KnownDataset):
+    """This data structure defines the necessary information for downloading Freebase dataset.
 
+        FreebaseFB15k module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
     def __init__(self):
         name = "FB15k"
         url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz"
@@ -162,7 +282,17 @@ class FreebaseFB15k(KnownDataset):
 
 
 class DeepLearning50a(KnownDataset):
+    """This data structure defines the necessary information for downloading DeepLearning50a dataset.
 
+        DeepLearning50a module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
     def __init__(self):
         name = "dLmL50"
         url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
@@ -172,7 +302,17 @@ class DeepLearning50a(KnownDataset):
 
 
 class WordNet18(KnownDataset):
+    """This data structure defines the necessary information for downloading WordNet18 dataset.
 
+        WordNet18 module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
     def __init__(self):
         name = "WN18"
         url = "https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:wordnet-mlj12.tar.gz"
@@ -182,7 +322,17 @@ class WordNet18(KnownDataset):
 
 
 class WordNet18_RR(KnownDataset):
+    """This data structure defines the necessary information for downloading WordNet18_RR dataset.
 
+        WordNet18_RR module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
     def __init__(self):
         name = "WN18RR"
         url = "https://github.com/TimDettmers/ConvE/raw/master/WN18RR.tar.gz"
@@ -192,7 +342,17 @@ class WordNet18_RR(KnownDataset):
 
 
 class YAGO3_10(KnownDataset):
+    """This data structure defines the necessary information for downloading YAGO3_10 dataset.
 
+        YAGO3_10 module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
     def __init__(self):
         name = "YAGO3_10"
         url = "https://github.com/TimDettmers/ConvE/raw/master/YAGO3-10.tar.gz"
@@ -202,7 +362,19 @@ class YAGO3_10(KnownDataset):
 
 
 class UserDefinedDataset(object):
+    """The class consists of modules to handle the user defined datasets.
 
+      User may define their own datasets to be processed with the
+      pykg2vec library.
+
+      Args:
+         name (str): Name of the datasets
+
+      Attributes:
+          dataset_home_path (object): Path object where the data will be downloaded
+          root_oath (object): Path object for the specific dataset.
+
+   """
     def __init__(self, name):
         self.name = name
 
@@ -246,20 +418,49 @@ class UserDefinedDataset(object):
         self.cache_relation2idx_path = self.root_path / 'relation2idx.pkl'
 
     def is_meta_cache_exists(self):
+        """ Checks if the metadata has been cached"""
         return self.cache_metadata_path.exists()
 
     def read_metadata(self):
+        """ Reads the metadata of the user defined dataset"""
         with open(str(self.cache_metadata_path), 'rb') as f:
             meta = pickle.load(f)
             return meta
 
     def dump(self):
+        """ Prints the metadata of the user-defined dataset."""
         for key, value in self.__dict__.items():
             print(key, value)
 
 
 class KnowledgeGraph(object):
+    """The class is the main module that handles the knowledge graph.
 
+      There are various known knowledge graph datasets used by the research
+      community. These datasets maybe in different format. This module
+      helps in parsing those known datasets for training and testing
+      the algorithms.
+
+      Args:
+         name (str): Name of the datasets
+         url (str): The full url where the dataset resides.
+         prefix (str): The prefix of the dataset given the website.
+
+      Attributes:
+          dataset_home_path (object): Path object where the data will be downloaded
+          root_oath (object): Path object for the specific dataset.
+
+      Examples:
+          >>> from pykg2vec.config.global_config import KnownDataset
+          >>> name = "dLmL50"
+          >>> url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
+          >>> prefix = 'deeplearning_dataset_50arch-'
+          >>> kgdata =  KnownDataset(name, url, prefix)
+          >>> kgdata.download()
+          >>> kgdata.extract()
+          >>> kgdata.dump()
+
+   """
     def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
         if dataset.lower() == 'freebase15k':
             self.dataset = FreebaseFB15k()

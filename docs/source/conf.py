@@ -83,8 +83,8 @@ master_doc = 'index'
 # -- Project information -----------------------------------------------------
 
 project = 'pykg2vec'
-copyright = '2019, Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal and Arquimedes Canedo'
-author = 'Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal and Arquimedes Canedo'
+copyright = '2019, Sujit Rokka Chhetri and Shih-Yuan Yu'
+author = 'Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Arquimedes Canedo and Mohammad Al Faruque'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
