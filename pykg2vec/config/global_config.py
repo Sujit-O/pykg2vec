@@ -9,7 +9,7 @@ import shutil, tarfile, urllib
 from pathlib import Path
 from collections import defaultdict
 import numpy as np
-import pickle
+import pickle, pprint
 
 
 class Triple(object):
@@ -506,6 +506,11 @@ class KnowledgeGraph(object):
         else:
             self.kg_meta = KGMetaData()
 
+    def force_prepare_data(self):
+        if self.dataset.is_meta_cache_exists():
+            self.dataset.cache_metadata_path.unlink()
+        self.prepare_data()
+        
     def prepare_data(self):
         """Function to prepare the dataset"""
         if self.dataset.is_meta_cache_exists():
@@ -760,23 +765,15 @@ class KnowledgeGraph(object):
         return self.relation_property
 
     ''' reserved for debugging '''
-    # def dump(self):
-    #     ''' dump key information'''
-    #     print("\n----------Relation to Indexes--------------")
-    #     pprint.pprint(self.relation2idx)
-    #     print("---------------------------------------------")
-
-    #     print("\n----------Relation to Indexes--------------")
-    #     pprint.pprint(self.idx2relation)
-    #     print("---------------------------------------------")
-
-    #     print("\n----------Train Triple Stats---------------")
-    #     print("Total Training Triples   :", len(self.train_triples_ids))
-    #     print("Total Testing Triples    :", len(self.test_triples_ids))
-    #     print("Total validation Triples :", len(self.validation_triples_ids))
-    #     print("Total Entities           :", self.data_stats.tot_entity)
-    #     print("Total Relations          :", self.data_stats.tot_relation)
-    #     print("---------------------------------------------")
+    def dump(self):
+        ''' dump key information'''
+        print("\n----------Triple Stats---------------------")
+        print("Total Training Triples   :", len(self.triplets['train']))
+        print("Total Testing Triples    :", len(self.triplets['test']))
+        print("Total validation Triples :", len(self.triplets['valid']))
+        print("Total Entities           :", self.kg_meta.tot_entity)
+        print("Total Relations          :", self.kg_meta.tot_relation)
+        print("---------------------------------------------")
 
     # def dump_triples(self):
     #     '''dump all the triples'''
