@@ -1095,6 +1095,33 @@ class RotatEConfig(BasicConfig):
 
 
 class ConvEConfig(BasicConfig):
+    """This class defines the configuration for the ConvE Algorithm.
+
+    ConvEConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
@@ -1160,6 +1187,33 @@ class ConvEConfig(BasicConfig):
 
 
 class ProjE_pointwiseConfig(BasicConfig):
+    """This class defines the configuration for the ProjE Algorithm.
+
+    ProjE_pointwiseConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
 
     def __init__(self, args=None):
 
@@ -1225,7 +1279,30 @@ class ProjE_pointwiseConfig(BasicConfig):
 
 
 class KG2EConfig(BasicConfig):
+    """This class defines the configuration for the KG2E Algorithm.
 
+    KG2EConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+      bilinear (bool): If True, sets the transformaton to be bilinear.
+      distance_measure (str): Uses either kl_divergence or expected_likelihood as distance measure.
+      cmax (float): Sets the upper clipping range for the embedding.
+      cmin (float): Sets the lower clipping range for the embedding.
+    
+    """
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
@@ -1276,7 +1353,33 @@ class KG2EConfig(BasicConfig):
 
 
 class ComplexConfig(BasicConfig):
+    """This class defines the configuration for the Complex Algorithm.
 
+    ComplexConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
@@ -1341,6 +1444,33 @@ class ComplexConfig(BasicConfig):
 
 
 class DistMultConfig(BasicConfig):
+    """This class defines the configuration for the DistMult Algorithm.
+
+    DistMultConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
 
     def __init__(self, args=None):
 
@@ -1406,6 +1536,33 @@ class DistMultConfig(BasicConfig):
 
 
 class TuckERConfig(BasicConfig):
+    """This class defines the configuration for the TuckER Algorithm.
+
+    TuckERConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
