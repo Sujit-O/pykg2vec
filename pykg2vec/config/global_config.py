@@ -436,30 +436,34 @@ class UserDefinedDataset(object):
 class KnowledgeGraph(object):
     """The class is the main module that handles the knowledge graph.
 
-      There are various known knowledge graph datasets used by the research
-      community. These datasets maybe in different format. This module
-      helps in parsing those known datasets for training and testing
-      the algorithms.
+      KnowledgeGraph is responsible for downloading, parsing, processing and preparing
+      the training, testing and validation dataset.
 
       Args:
-         name (str): Name of the datasets
-         url (str): The full url where the dataset resides.
-         prefix (str): The prefix of the dataset given the website.
+         dataset (str): Name of the datasets
+         negative_sample (str): Sampling technique to be used for generating negative triples (bern or uniform).
 
       Attributes:
-          dataset_home_path (object): Path object where the data will be downloaded
-          root_oath (object): Path object for the specific dataset.
+        dataset (object): The name of the dataset.
+        negative_sample (str): negative_sample
+        triplets (dict): dictionary with three list of training, testing and validation triples.
+        relations (list):list of all the relations.
+        entities (list): List of all the entities.
+        entity2idx (dict): Dictionary for mapping string name of entities to unique numerical id.
+        idx2entity (dict): Dictionary for mapping the id to string.
+        relation2idx (dict): Dictionary for mapping the id to string.
+        idx2relation (dict): Dictionary for mapping the id to string.
+        hr_t (dict):  Dictionary with set as a default key and list as values.
+        tr_h (dict):  Dictionary with set as a default key and list as values.
+        hr_t_train (dict):  Dictionary with set as a default key and list as values.
+        tr_h_train (dict):  Dictionary with set as a default key and list as values.
+        relation_property (list): list storing the entities tied to a specific relation.
+        kg_meta (object): Object storing the statistics metadata of the dataset.
 
       Examples:
-          >>> from pykg2vec.config.global_config import KnownDataset
-          >>> name = "dLmL50"
-          >>> url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
-          >>> prefix = 'deeplearning_dataset_50arch-'
-          >>> kgdata =  KnownDataset(name, url, prefix)
-          >>> kgdata.download()
-          >>> kgdata.extract()
-          >>> kgdata.dump()
-
+          >>> from pykg2vec.config.global_config import KnowledgeGraph
+          >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k', negative_sample='uniform')
+          >>> knowledge_graph.prepare_data()
    """
     def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
         if dataset.lower() == 'freebase15k':
@@ -503,6 +507,7 @@ class KnowledgeGraph(object):
             self.kg_meta = KGMetaData()
 
     def prepare_data(self):
+        """Function to prepare the dataset"""
         if self.dataset.is_meta_cache_exists():
             return
 
@@ -534,6 +539,7 @@ class KnowledgeGraph(object):
         self.cache_data()
 
     def cache_data(self):
+        """Function to cache the prepared dataset in the memory"""
         with open(str(self.dataset.cache_metadata_path), 'wb') as f:
             pickle.dump(self.kg_meta, f)
         with open(str(self.dataset.cache_triplet_paths['train']), 'wb') as f:
@@ -556,6 +562,7 @@ class KnowledgeGraph(object):
             pickle.dump(self.relation2idx, f)
 
     def read_cache_data(self, key):
+        """Function to read the cached dataset from the memory"""
         if key == 'triplets_train':
             with open(str(self.dataset.cache_triplet_paths['train']), 'rb') as f:
                 triplets = pickle.load(f)
@@ -609,6 +616,7 @@ class KnowledgeGraph(object):
                 return relation2idx
 
     def is_cache_exists(self):
+        """Function to check if the dataset is cached in the memory"""
         return self.dataset.is_meta_cache_exists()
 
     def read_triplets(self, set_type):
@@ -627,7 +635,7 @@ class KnowledgeGraph(object):
         return triplets
 
     def read_entities(self):
-        ''' ensure '''
+        """ Function to read the entities. """
         if len(self.entities) == 0:
             entities = set()
 
@@ -644,6 +652,7 @@ class KnowledgeGraph(object):
         return self.entities
 
     def read_relations(self):
+        """ Function to read the relations. """
         if len(self.relations) == 0:
             relations = set()
 
@@ -659,12 +668,18 @@ class KnowledgeGraph(object):
         return self.relations
 
     def read_mappings(self):
+        """ Function to generate the mapping from string name to integer ids. """
         self.entity2idx = {v: k for k, v in enumerate(self.read_entities())}  ##
         self.idx2entity = {v: k for k, v in self.entity2idx.items()}
         self.relation2idx = {v: k for k, v in enumerate(self.read_relations())}  ##
         self.idx2relation = {v: k for k, v in self.relation2idx.items()}
 
     def read_triple_ids(self, set_type):
+        """ Function to read the triple idx.
+
+            Args:
+                set_type (str): Type of data, eithe train, test or valid.
+        """
         # assert entities can not be none
         # assert relations can not be none
         triplets = self.triplets[set_type]
@@ -679,6 +694,7 @@ class KnowledgeGraph(object):
         return triplets
 
     def read_hr_t(self):
+        """ Function to read the list of tails for the given head and relation pair. """
         for set_type in self.triplets:
             triplets = self.triplets[set_type]
 
@@ -688,6 +704,7 @@ class KnowledgeGraph(object):
         return self.hr_t
 
     def read_tr_h(self):
+        """ Function to read the list of heads for the given tail and relation pair. """
         for set_type in self.triplets:
             triplets = self.triplets[set_type]
 
@@ -697,6 +714,7 @@ class KnowledgeGraph(object):
         return self.tr_h
 
     def read_hr_t_train(self):
+        """ Function to read the list of tails for the given head and relation pair for the training set. """
         triplets = self.triplets['train']
 
         for t in triplets:
@@ -705,6 +723,7 @@ class KnowledgeGraph(object):
         return self.hr_t_train
 
     def read_tr_h_train(self):
+        """ Function to read the list of heads for the given tail and relation pair for the training set. """
         triplets = self.triplets['train']
 
         for t in triplets:
@@ -713,6 +732,8 @@ class KnowledgeGraph(object):
         return self.tr_h_train
 
     def read_hr_tr_train(self):
+        """ Function to read the list of heads for the given tail and relation pair
+        and list of heads for the given tail and relation pair for the training set. """
         for t in self.triplets['train']:
             t.set_hr_t(self.hr_t_train[(t.h, t.r)])
             t.set_tr_h(self.tr_h_train[(t.t, t.r)])
@@ -720,6 +741,11 @@ class KnowledgeGraph(object):
         return self.triplets['train']
 
     def read_relation_property(self):
+        """ Function to read the relation property.
+
+         Returns:
+             list: Returns the list of relation property.
+         """
         relation_property_head = {x: [] for x in range(len(self.relations))}
         relation_property_tail = {x: [] for x in range(len(self.relations))}
 
@@ -766,18 +792,21 @@ class GeneratorConfig(object):
     """Configuration for Generator
 
         Args:
-          batch_size: int value for batch size
-          loss_type : string 'distance' or 'entropy' to show
+          batch_size (int): int value for batch size
+          loss_type (str) : string 'distance' or 'entropy' to show
                      type of algorithm used
-          data_path : path from where data is read and batch is
+          data_path (object) : path from where data is read and batch is
                      generated
-          sampling  :  type of sampling used for generating negative
+          sampling (str) :  type of sampling used for generating negative
                      triples
-          queue_size : size of the generator queue
-          process_num: total number of processes for retrieving and
+          raw_queue_size (int): size of the generator queue for storing raw triples
+          processed_queue_size (int): size of the generator queue for storing processed triples
+          queue_size (int): size of the generator queue from where the data is fed to the algorithms
+          process_num (int): total number of processes for retrieving and
                        preparing the data
-          total_data: total number of data stored in the disk, returned
-                      by data_handler
+          neg_rate (int): This rate determines how many negative triples are generated per positive triple
+          data (str): Either train, test or valid.
+          algo (str): The algorithm for which the data is being generated.
     """
 
     def __init__(self, batch_size=128,
