@@ -5,7 +5,8 @@ This module is for controlling knowledge graph
 """
 
 
-import shutil, tarfile, urllib, pickle
+import shutil, tarfile, pickle
+import urllib.request
 from pathlib import Path
 from collections import defaultdict
 import numpy as np
