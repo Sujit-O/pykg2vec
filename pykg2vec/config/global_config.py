@@ -440,11 +440,12 @@ class KnowledgeGraph(object):
       the training, testing and validation dataset.
 
       Args:
-         dataset (str): Name of the datasets
+         dataset_name (str): Name of the datasets
          negative_sample (str): Sampling technique to be used for generating negative triples (bern or uniform).
 
       Attributes:
-        dataset (object): The name of the dataset.
+        dataset_name (str): The name of the dataset. 
+        dataset (object): The dataset object isntance.
         negative_sample (str): negative_sample
         triplets (dict): dictionary with three list of training, testing and validation triples.
         relations (list):list of all the relations.
@@ -466,6 +467,9 @@ class KnowledgeGraph(object):
           >>> knowledge_graph.prepare_data()
    """
     def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
+        
+        self.dataset_name = dataset
+
         if dataset.lower() == 'freebase15k':
             self.dataset = FreebaseFB15k()
         elif dataset.lower() == 'deeplearning50a':
@@ -766,23 +770,15 @@ class KnowledgeGraph(object):
 
     ''' reserved for debugging '''
     def dump(self):
+        """ Function to dump statistic information of a dataset """
         ''' dump key information'''
-        print("\n----------Triple Stats---------------------")
+        print("\n----------Triple Stats for %s----------------" % self.dataset_name)
         print("Total Training Triples   :", len(self.triplets['train']))
         print("Total Testing Triples    :", len(self.triplets['test']))
         print("Total validation Triples :", len(self.triplets['valid']))
         print("Total Entities           :", self.kg_meta.tot_entity)
         print("Total Relations          :", self.kg_meta.tot_relation)
         print("---------------------------------------------")
-
-    # def dump_triples(self):
-    #     '''dump all the triples'''
-    #     for idx, triple in enumerate(self.train_triples):
-    #         print(idx, triple.h, triple.r, triple.t)
-    #     for idx, triple in enumerate(self.test_triples):
-    #         print(idx, triple.h, triple.r, triple.t)
-    #     for idx, triple in enumerate(self.validation_triples):
-    #         print(idx, triple.h, triple.r, triple.t)
 
 
 class GeneratorConfig(object):
