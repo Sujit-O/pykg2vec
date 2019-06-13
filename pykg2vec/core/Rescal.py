@@ -32,9 +32,10 @@ class Rescal(ModelMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on `mnick`_ and `OpenKE`_.
+        Portion of the code based on mnick_ and OpenKE_.
          .. _mnick:
              https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
+
          .. _OpenKE:
              https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
     """

@@ -35,7 +35,7 @@ class SME(ModelMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-         Portion of the code based on `glorotxa`_.
+         Portion of the code based on glorotxa_.
          .. _glorotxa:
              https://github.com/glorotxa/SME/blob/master/model.py
 

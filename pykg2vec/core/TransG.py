@@ -30,12 +30,12 @@ class TransG(ModelMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on `Niubohan`_ and `BookmanHan`_.
+        Portion of the code based on Niubohan_ and BookmanHan_.
         .. _Niubohan:
-             https://github.com/Niubohan/TransG
+            https://github.com/Niubohan/TransG
 
         .. _BookmanHan:
-           https://github.com/BookmanHan/Embedding
+            https://github.com/BookmanHan/Embedding
 
         .. _TransG-A Generative Model for Knowledge Graph Embedding:
             https://www.aclweb.org/anthology/P16-1219

@@ -36,7 +36,7 @@ class DistMult(ModelMeta):
             >>> trainer.train_model()
 
         .. _EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES:
-        https://arxiv.org/pdf/1412.6575.pdf
+            https://arxiv.org/pdf/1412.6575.pdf
 
     """
 
