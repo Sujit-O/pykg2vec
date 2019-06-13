@@ -18,13 +18,8 @@ class TransE(ModelMeta):
         't' should be close to the embedding of head entity 'h'
         plus some vector that depends on the relationship 'l'.
         Both entities and relations are vectors in the same space.
-        |        ......>.
-        |      .     .
-        |    .    .
-        |  .  .
-        |_________________
 
-         Args:
+        Args:
             config (object): Model configuration parameters.
 
         Attributes:
@@ -39,9 +34,10 @@ class TransE(ModelMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on `OpenKE`_ and `wencolani`_.
+        Portion of the code based on OpenKE_ and wencolani_.
+
         .. _OpenKE:
-             https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
+            https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
 
         .. _wencolani:
             https://github.com/wencolani/TransE.git

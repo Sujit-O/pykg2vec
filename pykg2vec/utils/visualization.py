@@ -63,7 +63,7 @@ def draw_embedding(embs, names, resultpath, algos, show_label):
         [c for c in files if algos + '_embedding_plot' in c])
     filename = algos + '_embedding_plot_' + str(file_no) + '.png'
     plt.savefig(str(resultpath / filename), bbox_inches='tight', dpi=300)
-    plt.show()
+    # plt.show()
 
 
 def draw_embedding_rel_space(h_emb,
@@ -162,7 +162,7 @@ def draw_embedding_rel_space(h_emb,
     file_no = len(
         [c for c in files if algos + '_embedding_plot' in c])
     plt.savefig(str(resultpath / (algos + '_embedding_plot_' + str(file_no) + '.png')), bbox_inches='tight', dpi=300)
-    plt.show()
+    # plt.show()
 
 
 class Visualization(object):
@@ -309,7 +309,7 @@ class Visualization(object):
             files_lwcase = [f.lower() for f in files]
             file_no = len([c for c in files_lwcase if d.lower() in c if 'training' in c])
             plt.savefig(str(result / (d + '_training_loss_plot_' + str(file_no) + '.pdf')), bbox_inches='tight', dpi=300)
-            plt.show()
+            # plt.show()
 
     def plot_test_result(self):
         algo = self.algo_list
@@ -400,7 +400,7 @@ class Visualization(object):
             file_no = len([c for c in files_lwcase if d.lower() in c if 'testing' in c if 'rank_plot' in c])
             plt.savefig(str(result / (d + '_testing_rank_plot_' + str(file_no + 1) + '.pdf')), bbox_inches='tight',
                         dpi=300)
-            plt.show()
+            # plt.show()
 
             df_6 = df_5[df_5['Metrics'].str.contains('Hits') == True]
             plt.figure()
@@ -413,26 +413,26 @@ class Visualization(object):
             file_no = len([c for c in files_lwcase if d.lower() in c if 'testing' in c if 'hits_plot' in c])
             plt.savefig(str(result / (d + '_testing_hits_plot_' + str(file_no + 1) + '.pdf')), bbox_inches='tight',
                         dpi=300)
-            plt.show()
+            # plt.show()
 
-def test_visualization():
-    import sys
-    sys.path.append('../')
-    from core.TransE import TransE
-    from config.config import TransEConfig
-    from config.global_config import KnowledgeGraph
+# def test_visualization():
+#     import sys
+#     sys.path.append('../')
+#     from core.TransE import TransE
+#     from config.config import TransEConfig
+#     from config.global_config import KnowledgeGraph
 
-    knowledge_graph = KnowledgeGraph(dataset='Freebase15k', negative_sample=False)
-    knowledge_graph.prepare_data()
+#     knowledge_graph = KnowledgeGraph(dataset='Freebase15k', negative_sample=False)
+#     knowledge_graph.prepare_data()
 
-    config = TransEConfig()
-    model = TransE(config)
+#     config = TransEConfig()
+#     model = TransE(config)
 
-    viz = Visualization(model=model)
-    viz.plot_test_result()
+#     viz = Visualization(model=model)
+#     viz.plot_test_result()
 
-if __name__ == '__main__':
-    test_visualization()
+# if __name__ == '__main__':
+#     test_visualization()
     # viz = Visualization()
     # # viz.plot_train_result(path='../results',
     # #                       result='../figures',

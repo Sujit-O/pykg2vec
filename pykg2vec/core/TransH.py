@@ -31,15 +31,15 @@ class TransH(ModelMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-         Portion of the code based on `OpenKE`_ and `thunlp`_.
+         Portion of the code based on OpenKE_ and thunlp_.
          .. _OpenKE:
              https://github.com/thunlp/OpenKE/blob/master/models/TransH.py
 
          .. _thunlp:
-            https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
+             https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
 
          .. _Knowledge Graph Embedding by Translating on Hyperplanes:
-            https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf
+             https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf
     """
 
     def __init__(self, config):

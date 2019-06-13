@@ -36,7 +36,7 @@ class DistMult(ModelMeta):
             >>> trainer.train_model()
 
         .. _EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES:
-        https://arxiv.org/pdf/1412.6575.pdf
+            https://arxiv.org/pdf/1412.6575.pdf
 
     """
 
@@ -45,7 +45,7 @@ class DistMult(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.tot_ent = self.data_stats.tot_entity
         self.tot_rel = self.data_stats.tot_relation
-        self.model_name = 'Distmult'
+        self.model_name = 'DistMult'
 
     def def_inputs(self):
         """Defines the inputs to the model.
