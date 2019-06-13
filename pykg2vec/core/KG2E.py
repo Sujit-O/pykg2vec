@@ -37,10 +37,10 @@ class KG2E(ModelMeta):
 
      Portion of the code based on `this Source`_.
      .. _this Source:
-     https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
+         https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
 
      .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
-        https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
+         https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
     """
 
     def __init__(self, config=None):

@@ -33,12 +33,12 @@ class NTN(ModelMeta):
         >>> trainer.build_model()
         >>> trainer.train_model()
 
-    Portion of the code based on `this Source`_.
+     Portion of the code based on `this Source`_.
      .. _this Source:
-     https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
+         https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
 
      .. _Reasoning With Neural Tensor Networks for Knowledge Base Completion:
-        https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
+         https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
     """
 
     def __init__(self, config=None):
