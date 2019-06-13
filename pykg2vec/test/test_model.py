@@ -2,6 +2,8 @@ import pytest
 from pykg2vec.config.config import *
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pykg2vec.config.hyperparams import KGETuneArgParser
+from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 import tensorflow as tf
 
 @pytest.mark.skip(reason="This is a functional method.")
@@ -62,6 +64,17 @@ def testing_function_with_args(name, distance_measure=None, bilinear=None):
 
     tf.reset_default_graph()
 
+
+@pytest.mark.skip(reason="This is a functional method.")
+def tunning_function(name):
+    # getting the customized configurations from the command-line arguments.
+    args = KGETuneArgParser().get_args([])
+
+    # initializing bayesian optimizer and prepare data.
+    bays_opt = BaysOptimizer(args=args)
+
+    # perform the golden hyperparameter tuning. 
+    bays_opt.optimize()
 
 def test_Complex():
     testing_function('complex')
@@ -176,3 +189,6 @@ def test_HoLE_args():
 
 def test_Tucker_args():
     testing_function_with_args('tucker')
+
+def test_tuning():
+    tunning_function('transe')
