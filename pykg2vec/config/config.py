@@ -276,7 +276,7 @@ class BasicConfig:
         if args is None:
             self.test_step = 100
             self.test_num = 600
-            self.triple_num = 20
+            self.disp_triple_num = 20
             self.tmp = Path('..') / 'intermediate'
             self.result = Path('..') / 'results'
             self.figures = Path('..') / 'figures'

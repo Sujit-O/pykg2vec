@@ -7,7 +7,7 @@ from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 import tensorflow as tf
 
 @pytest.mark.skip(reason="This is a functional method.")
-def testing_function(name, distance_measure=None, bilinear=None):
+def testing_function(name, distance_measure=None, bilinear=None, display=False):
     knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
     knowledge_graph.prepare_data()
 
@@ -18,7 +18,7 @@ def testing_function(name, distance_measure=None, bilinear=None):
     config.epochs     = 1
     config.test_step  = 1
     config.test_num   = 10
-    config.disp_result= False
+    config.disp_result= display
     config.save_model = False
 
     if distance_measure is not None:
@@ -36,7 +36,7 @@ def testing_function(name, distance_measure=None, bilinear=None):
     tf.reset_default_graph()
 
 @pytest.mark.skip(reason="This is a functional method.")
-def testing_function_with_args(name, distance_measure=None, bilinear=None):
+def testing_function_with_args(name, distance_measure=None, bilinear=None, display=False):
     
     # getting the customized configurations from the command-line arguments.
     args = KGEArgParser().get_args([])
@@ -52,7 +52,7 @@ def testing_function_with_args(name, distance_measure=None, bilinear=None):
     config.epochs     = 1
     config.test_step  = 1
     config.test_num   = 10
-    config.disp_result= False
+    config.disp_result= display
     config.save_model = False
 
     model = model_def(config)
@@ -192,3 +192,9 @@ def test_Tucker_args():
 
 def test_tuning():
     tunning_function('transe')
+
+def test_transE_display():
+    testing_function('transe', display=True)
+
+def test_transE_args_display():
+    testing_function_with_args('transe', display=True)
