@@ -13,7 +13,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 import importlib
 
-from pykg2vec.config.global_config import KnowledgeGraph
+from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 
 class Importer:

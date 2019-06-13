@@ -10,19 +10,31 @@ from pykg2vec.core.KGMeta import ModelMeta
 
 
 class ConvE(ModelMeta):
-    """
-    ------------------Paper Title-----------------------------
-    Convolutional 2D Knowledge Graph Embeddings
-    ------------------Paper Authors---------------------------
-    Tim Dettmers∗
-    Università della Svizzera italiana
-    tim.dettmers@gmail.com
-    Pasquale Minervini, Pontus Stenetorp, Sebastian Riedel
-    University College London
-    {p.minervini,p.stenetorp,s.riedel}@cs.ucl.ac.uk
-    ------------------Summary---------------------------------
+    """`Convolutional 2D Knowledge Graph Embeddings`_
+
     ConvE is a multi-layer convolutional network model for link prediction,
     it is a embedding model which is highly parameter efficient.
+
+    Args:
+        config (object): Model configuration parameters.
+    
+    Attributes:
+        config (object): Model configuration.
+        data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+        model (str): Name of the model.
+        last_dim (int): The size of the last dimesion, depends on hidden size.
+
+    
+    Examples:
+        >>> from pykg2vec.core.Complex import ConvE
+        >>> from pykg2vec.utils.trainer import Trainer
+        >>> model = ConvE()
+        >>> trainer = Trainer(model=model, debug=False)
+        >>> trainer.build_model()
+        >>> trainer.train_model()
+
+    .. _Convolutional 2D Knowledge Graph Embeddings:
+        https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/download/17366/15884
     """
 
     def __init__(self, config=None):
@@ -35,6 +47,18 @@ class ConvE(ModelMeta):
         self.last_dim = self.dense_last_dim[self.config.hidden_size]
 
     def def_inputs(self):
+        """Defines the inputs to the model.
+           
+           Attributes:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               hr_t (Tensor): Tail tensor list for (h,r) pair.
+               rt_h (Tensor): Head tensor list for (r,t) pair.
+               test_h_batch (Tensor): Batch of head ids for testing.
+               test_r_batch (Tensor): Batch of relation ids for testing
+               test_t_batch (Tensor): Batch of tail ids for testing.
+        """
         self.h = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
         self.t = tf.placeholder(tf.int32, [None])
@@ -46,6 +70,17 @@ class ConvE(ModelMeta):
         self.test_t_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
+        """Defines the model parameters.
+           
+           Attributes:
+               num_total_ent (int): Total number of entities. 
+               num_total_rel (int): Total number of relations. 
+               k (Tensor): Size of the latent dimesnion for entities and relations.
+               ent_embeddings  (Tensor Variable): Lookup variable containing embedding of the entities.
+               rel_embeddings  (Tensor Variable): Lookup variable containing embedding of the relations.
+               b  (Tensor Variable): Variable storing the bias values.
+               parameter_list  (list): List of Tensor parameters.
+        """        
         num_total_ent = self.data_stats.tot_entity
         num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
@@ -63,6 +98,7 @@ class ConvE(ModelMeta):
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
 
     def def_layer(self):
+        """Defines the layers of the algorithm."""
         self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
         self.conv2d_1 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', activation=None,
@@ -74,6 +110,7 @@ class ConvE(ModelMeta):
         self.bn2 = tf.keras.layers.BatchNormalization(trainable=True)
 
     def forward(self, st_inp):
+        """Implements the forward pass layers of the algorithm."""
         # batch normalization in the first axis
         x = self.bn0(st_inp)
         # input dropout
@@ -105,6 +142,7 @@ class ConvE(ModelMeta):
         return tf.nn.sigmoid(x)
 
     def def_loss(self):
+        """Defines the loss function for the algorithm."""
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
@@ -134,6 +172,11 @@ class ConvE(ModelMeta):
         self.loss = loss_tail_pred + loss_head_pred + self.config.lmbda * reg_losses
 
     def test_batch(self):
+        """Function that performs batch testing for the algorithm.
+
+            Returns:
+                Tensors: Returns ranks of head and tail.
+        """
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
@@ -158,19 +201,48 @@ class ConvE(ModelMeta):
         return head_rank, tail_rank
 
     def embed(self, h, r, t):
-        """function to get the embedding value"""
+        """Function to get the embedding value.
+           
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
         emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess=None):
-        """function to get the embedding value in numpy"""
+        """Function to get the embedding value in numpy.
+           
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess):
-        """function to get the projected embedding value in numpy"""
+        """Function to get the projected embedding value in numpy.
+           
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         return self.get_embed(h, r, t, sess)
 

@@ -10,25 +10,32 @@ from pykg2vec.core.KGMeta import ModelMeta
 
 
 class Complex(ModelMeta):
-    """
-    ------------------Paper Title-----------------------------
-    Complex Embeddings for Simple Link Prediction
-    ------------------Paper Authors---------------------------
-    Theo Trouillon ´
-    1,2 THEO.TROUILLON@XRCE.XEROX.COM
-    Johannes Welbl3
-    J.WELBL@CS.UCL.AC.UK
-    Sebastian Riedel3
-    S.RIEDEL@CS.UCL.AC.UK
-    Eric Gaussier ´ 2 ERIC.GAUSSIER@IMAG.FR
-    Guillaume Bouchard3 G.BOUCHARD@CS.UCL.AC.UK
-    1 Xerox Research Centre Europe, 6 chemin de Maupertuis, 38240 Meylan, FRANCE
-    2 Universite Grenoble Alpes, 621 avenue Centrale, 38400 Saint Martin d’H ´ eres, FRANCE `
-    3 University College London, Gower St, London WC1E 6BT, UNITED KINGDOM
-    ------------------Summary---------------------------------
+    """`Complex Embeddings for Simple Link Prediction`_.
+
     ComplEx is an enhanced version of DistMult in that it uses complex-valued embeddings
     to represent both entities and relations. Using the complex-valued embedding allows
     the defined scoring function in ComplEx to differentiate that facts with assymmetric relations.
+    
+    Args:
+        config (object): Model configuration parameters.
+
+    Attributes:
+        config (object): Model configuration.
+        data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+        tot_ent (int): Total unique entites in the knowledge graph.
+        tot_rel (int): Total unique relation in the knowledge graph.
+        model (str): Name of the model.
+    
+    Examples:
+        >>> from pykg2vec.core.Complex import Complex
+        >>> from pykg2vec.utils.trainer import Trainer
+        >>> model = Complex()
+        >>> trainer = Trainer(model=model, debug=False)
+        >>> trainer.build_model()
+        >>> trainer.train_model()
+
+    .. _Complex Embeddings for Simple Link Prediction:
+        http://proceedings.mlr.press/v48/trouillon16.pdf
     """
 
     def __init__(self, config=None):
@@ -39,6 +46,19 @@ class Complex(ModelMeta):
         self.model_name = 'Complex'
 
     def def_inputs(self):
+        """Defines the inputs to the model.
+           
+           Attributes:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               hr_t (Tensor): Tail tensor list for (h,r) pair.
+               rt_h (Tensor): Head tensor list for (r,t) pair.
+               test_h_batch (Tensor): Batch of head ids for testing.
+               test_r_batch (Tensor): Batch of relation ids for testing
+               test_t_batch (Tensor): Batch of tail ids for testing.
+        """
+
         self.h = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
         self.t = tf.placeholder(tf.int32, [None])
@@ -50,6 +70,17 @@ class Complex(ModelMeta):
         self.test_t_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
+        """Defines the model parameters.
+           
+           Attributes:
+               k (Tensor): Size of the latent dimesnion for entities and relations.
+               emb_e_real (Tensor Variable): Lookup variable containing real values of the entities.
+               emb_e_img (Tensor Variable): Lookup variable containing imaginary values of the entities.
+               emb_rel_real (Tensor Variable): Lookup variable containing real values of the relations.
+               emb_rel_img (Tensor Variable): Lookup variable containing imaginary values of the relations.
+               parameter_list  (list): List of Tensor parameters. 
+        """
+
         k = self.config.hidden_size
         with tf.name_scope("embedding"):
             self.emb_e_real = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
@@ -64,6 +95,7 @@ class Complex(ModelMeta):
         self.parameter_list = [self.emb_e_real, self.emb_e_img, self.emb_rel_real, self.emb_rel_img]
 
     def def_loss(self):
+        """Defines the loss function for the algorithm."""
         h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(self.h, self.r, self.t)
 
         h_emb_real, r_emb_real, t_emb_real = self.layer(h_emb_real, r_emb_real, t_emb_real)
@@ -111,9 +143,20 @@ class Complex(ModelMeta):
         self.loss = loss_heads + loss_tails  # + self.config.lmbda * reg_losses
 
     def def_layer(self):
+        """Defines the layers of the algorithm."""
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
 
     def layer(self, h, r, t):
+        """Implementation of the layer.
+            
+            Args:
+                h(Tensor): Head entities id.     
+                r(Tensor): Relation id.     
+                t(Tensor): Tail entities id.  
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.   
+        """
         h = tf.squeeze(h)
         r = tf.squeeze(r)
         t = tf.squeeze(t)
@@ -125,6 +168,11 @@ class Complex(ModelMeta):
         return h, r, t
 
     def test_batch(self):
+        """Function that performs batch testing for the algorithm.
+
+            Returns:
+                Tensors: Returns ranks of head and tail.
+        """
         h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(self.test_h_batch,
                                                                                          self.test_r_batch,
                                                                                          self.test_t_batch)
@@ -169,7 +217,16 @@ class Complex(ModelMeta):
         return head_rank, tail_rank
 
     def embed(self, h, r, t):
-        """function to get the embedding value"""
+        """Function to get the embedding value.
+           
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns real and imaginary values of head, relation and tail embedding.
+        """
         norm_emb_e_real = tf.nn.l2_normalize(self.emb_e_real, axis=1)
         norm_emb_e_img = tf.nn.l2_normalize(self.emb_e_img, axis=1)
         norm_emb_rel_real = tf.nn.l2_normalize(self.emb_rel_real, axis=1)
@@ -187,12 +244,28 @@ class Complex(ModelMeta):
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
     def get_embed(self, h, r, t, sess=None):
-        """function to get the embedding value in numpy"""
+        """Function to get the embedding value in numpy.
+           
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns real and imaginary values of head, relation and tail embedding.
+        """
         h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(h, r, t)
         h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = sess.run(
             [h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img])
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
     def get_proj_embed(self, h, r, t, sess):
-        """function to get the projected embedding value in numpy"""
+        """Function to get the projected embedding value in numpy.
+           
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+        """
         return self.get_embed(h, r, t, sess)
