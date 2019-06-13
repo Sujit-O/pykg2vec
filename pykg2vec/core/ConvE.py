@@ -143,7 +143,6 @@ class ConvE(ModelMeta):
 
     def def_loss(self):
         """Defines the loss function for the algorithm."""
-        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_r
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
