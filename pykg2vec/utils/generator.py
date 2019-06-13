@@ -10,7 +10,6 @@ from __future__ import print_function
 import numpy as np
 from multiprocessing import Process, Queue, Value
 
-from pykg2vec.config.global_config import GeneratorConfig
 
 def get_label_mat(data, bs, te, neg_rate=1):
     mat = np.zeros(shape=(bs, te), dtype=np.int8)
