@@ -10,24 +10,31 @@ from pykg2vec.core.KGMeta import ModelMeta
 
 
 class RotatE(ModelMeta):
-    """
-    ------------------Paper Title-----------------------------
-    ROTATE: KNOWLEDGE GRAPH EMBEDDING BY RELATIONAL ROTATION IN COMPLEX SPACE
-    ------------------Paper Authors---------------------------
-     Zhiqing Sun 1∗, Zhi-Hong Deng1, Jian-Yun Nie3, Jian Tang2,4,5
-    1Peking University, China
-    2Mila-Quebec Institute for Learning Algorithms, Canada
-    3Universite de Montr ´ eal, Canada ´
-    4HEC Montreal, Canada ´
-    5CIFAR AI Research Chair
-    {1500012783, zhdeng}@pku.edu.cn
-    nie@iro.umontreal.ca
-    jian.tang@hec.ca
-    ------------------Summary---------------------------------
-     RotatE models the entities and the relations in the complex vector space.
-     The translational relation in RotatE is defined as the element-wise 2D
-     rotation in which the head entity h will be rotated to the tail entity t by
-     multiplying the unit-length relation r in complex number form.
+    """ `Rotate-Knowledge graph embedding by relation rotation in complex space`_
+
+        RotatE models the entities and the relations in the complex vector space.
+        The translational relation in RotatE is defined as the element-wise 2D
+        rotation in which the head entity h will be rotated to the tail entity t by
+        multiplying the unit-length relation r in complex number form.
+
+        Args:
+            config (object): Model configuration parameters.
+
+        Attributes:
+            config (object): Model configuration.
+            data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+            model_name (str): Name of the model.
+
+        Examples:
+            >>> from pykg2vec.core.RotatE import RotatE
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = RotatE()
+            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+
+        .. _Rotate-Knowledge graph embedding by relation rotation in complex space:
+            https://openreview.net/pdf?id=HkgEQnRqYQ
     """
 
     def __init__(self, config=None):
@@ -36,6 +43,19 @@ class RotatE(ModelMeta):
         self.model_name = 'RotatE'
 
     def def_inputs(self):
+        """Defines the inputs to the model.
+
+           Attributes:
+              pos_h (Tensor): Positive Head entities ids.
+              pos_r (Tensor): Positive Relation ids of the triple.
+              pos_t (Tensor): Positive Tail entity ids of the triple.
+              neg_h (Tensor): Negative Head entities ids.
+              neg_r (Tensor): Negative Relation ids of the triple.
+              neg_t (Tensor): Negative Tail entity ids of the triple.
+              test_h_batch (Tensor): Batch of head ids for testing.
+              test_r_batch (Tensor): Batch of relation ids for testing
+              test_t_batch (Tensor): Batch of tail ids for testing.
+        """
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
         self.pos_r = tf.placeholder(tf.int32, [None])
@@ -48,6 +68,15 @@ class RotatE(ModelMeta):
         self.test_t_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
+        """Defines the model parameters.
+
+           Attributes:
+               k (Tensor): Size of the latent dimesnion for entities and relations.
+               ent_embeddings_real (Tensor Variable): Lookup variable containing real values of the entities.
+               ent_embeddings_imag (Tensor Variable): Lookup variable containing imaginary values of the entities.
+               rel_embeddings_real (Tensor Variable): Lookup variable containing real values of the relations.
+               parameter_list  (list): List of Tensor parameters.
+        """
         num_total_ent = self.data_stats.tot_entity
         num_total_rel = self.data_stats.tot_relation
 
@@ -64,11 +93,37 @@ class RotatE(ModelMeta):
         self.parameter_list = [self.ent_embeddings_real, self.ent_embeddings_imag, self.rel_embeddings_real]
 
     def comp_mul_and_min(self, hr, hi, rr, ri, tr, ti):
+        """Calculates training score for loss function.
+
+            Args:
+                hi(Tensor): Imaginary part of the head embedding.
+                hr(Tensor): Real part of the head embedding.
+                ri(Tensor): Imaginary part of the tail embedding.
+                rr(Tensor): Real part of the tail embedding.
+                ti(Tensor): Imaginary part of the relation embedding.
+                tr(Tensor): Real part of the relation embedding.
+
+            Returns:
+                Tensors: Returns a tensor
+        """
         score_r = hr * rr - hi * ri - tr
         score_i = hr * ri + hi * rr - ti
         return tf.reduce_sum(tf.sqrt(score_r ** 2 + score_i ** 2), -1)
 
     def comp_mul_and_min_4_test(self, hr, hi, rr, ri, tr, ti):
+        """Calculates test score for loss function.
+
+            Args:
+                hi(Tensor): Imaginary part of the head embedding.
+                hr(Tensor): Real part of the head embedding.
+                ri(Tensor): Imaginary part of the tail embedding.
+                rr(Tensor): Real part of the tail embedding.
+                ti(Tensor): Imaginary part of the relation embedding.
+                tr(Tensor): Real part of the relation embedding.
+
+            Returns:
+                Tensors: Returns a tensor
+        """
 
         rr = tf.expand_dims(rr, axis=1)
         ri = tf.expand_dims(ri, axis=1)
@@ -84,6 +139,7 @@ class RotatE(ModelMeta):
         return tf.reduce_sum(tf.sqrt(score_r ** 2 + score_i ** 2), -1)
 
     def def_loss(self):
+        """Defines the layers of the algorithm."""
         (pos_h_e_r, pos_h_e_i), (pos_r_e_r, pos_r_e_i), (pos_t_e_r, pos_t_e_i) \
             = self.embed(self.pos_h, self.pos_r, self.pos_t)
 
@@ -96,6 +152,11 @@ class RotatE(ModelMeta):
         self.loss = tf.reduce_sum(tf.maximum(pos_score + self.config.margin - neg_score, 0))
 
     def test_batch(self):
+        """Function that performs batch testing for the algorithm.
+
+            Returns:
+                Tensors: Returns ranks of head and tail.
+        """
         num_entity = self.data_stats.tot_entity
 
         (h_vec_r, h_vec_i), (r_vec_r, r_vec_i), (t_vec_r, t_vec_i) \
@@ -113,7 +174,16 @@ class RotatE(ModelMeta):
         return head_rank, tail_rank
 
     def embed(self, h, r, t):
-        """function to get the embedding value"""
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns real and imaginary values of head, relation and tail embedding.
+        """
         pi = 3.14159265358979323846
         h_e_r = tf.nn.embedding_lookup(self.ent_embeddings_real, h)
         h_e_i = tf.nn.embedding_lookup(self.ent_embeddings_imag, h)
@@ -126,11 +196,27 @@ class RotatE(ModelMeta):
         return (h_e_r, h_e_i), (r_e_r, r_e_i), (t_e_r, t_e_i)
 
     def get_embed(self, h, r, t, sess=None):
-        """function to get the embedding value in numpy"""
+        """Function to get the embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns real and imaginary values of head, relation and tail embedding.
+        """
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess):
-        """function to get the projected embedding value in numpy"""
+        """Function to get the projected embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+        """
         return self.get_embed(h, r, t, sess)

@@ -33,6 +33,36 @@ def testing_function(name, distance_measure=None, bilinear=None):
 
     tf.reset_default_graph()
 
+@pytest.mark.skip(reason="This is a functional method.")
+def testing_function_with_args(name, distance_measure=None, bilinear=None):
+    
+    # getting the customized configurations from the command-line arguments.
+    args = KGEArgParser().get_args([])
+    
+    # Preparing data and cache the data for later usage
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling)
+    knowledge_graph.prepare_data()
+
+    # Extracting the corresponding model config and definition from Importer().
+    config_def, model_def = Importer().import_model_config(name)
+    config = config_def(args=args)
+    
+    config.epochs     = 1
+    config.test_step  = 1
+    config.test_num   = 10
+    config.disp_result= False
+    config.save_model = False
+
+    model = model_def(config)
+
+    # Create, Compile and Train the model. While training, several evaluation will be performed.
+    trainer = Trainer(model=model, debug=True)
+    trainer.build_model()
+    trainer.train_model()
+
+    tf.reset_default_graph()
+
+
 def test_Complex():
     testing_function('complex')
 
@@ -83,3 +113,66 @@ def test_TransD():
 
 def test_TransM():
     testing_function('transm')
+
+def test_HoLE():
+    testing_function('hole')
+
+def test_Tucker():
+    testing_function('tucker')
+
+def test_Complex_args():
+    testing_function_with_args('complex')
+
+def test_ConvE_args():
+    testing_function_with_args('conve')
+    
+def test_DistMult_args():
+    testing_function_with_args('distmult')
+
+def test_KG2E_EL_args():
+    testing_function_with_args('kg2e', distance_measure="expected_likelihood")
+
+def test_KG2E_KL_args():
+    testing_function_with_args('kg2e', distance_measure="kl_divergence")
+
+def test_NTN_args():
+    testing_function_with_args('ntn')
+
+def test_ProjE_args():
+    testing_function_with_args('proje_pointwise')
+
+def test_RESCAL_args():
+    testing_function_with_args('rescal')
+
+def test_RotatE_args():
+    testing_function_with_args('rotate')
+
+def test_SLM_args():
+    testing_function_with_args('slm')
+
+def test_SMEL_args():
+    testing_function_with_args('sme', bilinear=False)
+
+def test_SMEB_args():
+    testing_function_with_args('sme', bilinear=True)
+
+def test_transE_args():
+    testing_function_with_args('transe')
+
+def test_transH_args():
+    testing_function_with_args('transh')
+
+def test_transR_args():
+    testing_function_with_args('transr')
+
+def test_TransD_args():
+    testing_function_with_args('transd')
+
+def test_TransM_args():
+    testing_function_with_args('transm')
+
+def test_HoLE_args():
+    testing_function_with_args('hole')
+
+def test_Tucker_args():
+    testing_function_with_args('tucker')

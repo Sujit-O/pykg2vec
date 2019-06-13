@@ -10,7 +10,6 @@ from __future__ import print_function
 import numpy as np
 from multiprocessing import Process, Queue, Value
 
-from pykg2vec.config.global_config import GeneratorConfig
 
 def get_label_mat(data, bs, te, neg_rate=1):
     mat = np.zeros(shape=(bs, te), dtype=np.int8)
@@ -240,81 +239,3 @@ class Generator:
             self.process_list.append(process_worker)
             process_worker.daemon = True
             process_worker.start()
-
-def test_generator_proje():
-    from config.config import ProjE_pointwiseConfig
-    config = ProjE_pointwiseConfig()
-    config.set_dataset("Freebase15k")
-    gen = iter(Generator(config=GeneratorConfig(data='train', algo='ProjE'), model_config=config))
-    for i in range(1000):
-        data = list(next(gen))
-        print("----batch:", i)
-        
-        hr_hr = data[0]
-        hr_t = data[1]
-        tr_tr = data[2]
-        tr_h = data[3]
-
-        print("hr_hr:", hr_hr)
-        print("hr_t:", hr_t)
-        print("tr_tr:", tr_tr)
-        print("tr_h:", tr_h)
-    # gen.stop()
-
-
-def test_generator_trans():
-    
-    gen = Generator(config=GeneratorConfig(data='test', algo='TransE'))
-
-    for i in range(1000):
-        data = list(next(gen))
-        print("----batch:", i)
-        ph = data[0]
-        pr = data[1]
-        pt = data[2]
-        # nh = data[3]
-        # nr = data[4]
-        # nt = data[5]
-        print("ph:", ph)
-        print("pr:", pr)
-        print("pt:", pt)
-        # print("nh:", nh)
-        # print("nr:", nr)
-        # print("nt:", nt)
-    gen.stop()
-
-
-def test_generator():
-    import timeit
-    start_time = timeit.default_timer()
-    from config.config import TransEConfig
-    config = TransEConfig()
-    config.set_dataset("Freebase15k")
-
-    gen = Generator(config=GeneratorConfig(data='train', algo='tucker'), model_config=config)
-
-    print("----init time:", timeit.default_timer() - start_time)
-    for i in range(10):
-        start_time_batch = timeit.default_timer()
-        data = list(next(gen))
-        # import pdb
-        # pdb.set_trace()
-        h = data[0]
-        r = data[1]
-        t = data[2]
-        # hr_t = data[3]
-        # tr_h = data[4]
-        print("----batch:", i, "----time:",timeit.default_timer() - start_time_batch)
-        # print(h,r,t)# time.sleep(0.05)
-        # print("hr_hr:", hr_hr)
-        # print("hr_t:", hr_t)
-        # print("tr_tr:", tr_tr)
-        # print("tr_h:", tr_h)
-    print("total time:", timeit.default_timer() - start_time)
-    gen.stop()
-
-if __name__ == '__main__':
-    # test_generator_proje()
-    test_generator()
-    # test_generator_conve()
-    # test_generator_simple()

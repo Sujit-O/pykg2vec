@@ -35,9 +35,9 @@ class KGETuneArgParser:
         self.parser.add_argument('-db', dest='debug', default=False, type=lambda x: (str(x).lower() == 'true'),
                                  help='To use debug mode or not.')
 
-    def get_args(self):
+    def get_args(self, args):
         """Gets the arguments from the console and parses it."""
-        return self.parser.parse_args()
+        return self.parser.parse_args(args)
 
 
 class TransEParams:

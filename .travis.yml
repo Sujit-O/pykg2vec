@@ -1,5 +1,9 @@
 language: python
 
+notifications:
+  email:
+    - shihyuay@uci.edu
+
 os:
   - linux
 

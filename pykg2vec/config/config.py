@@ -229,7 +229,7 @@ class KGEArgParser:
                                      type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.misc_group.add_argument('-gp', dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
 
-    def get_args(self):
+    def get_args(self, args):
       """This function parses the necessary arguments.
 
       This function is called to parse all the necessary arguments. 
@@ -237,7 +237,7 @@ class KGEArgParser:
       Returns:
           object: ArgumentParser object.
       """
-      return self.parser.parse_args()
+      return self.parser.parse_args(args)
 
 
 class BasicConfig:
