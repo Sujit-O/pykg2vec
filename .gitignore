@@ -18,3 +18,4 @@ pykg2vec/dataset
 .vscode/settings.json
 pykg2vec/test/.coverage*
 .coverage
+dataset/*
