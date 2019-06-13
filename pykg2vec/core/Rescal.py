@@ -11,20 +11,32 @@ from pykg2vec.core.KGMeta import ModelMeta
 
 
 class Rescal(ModelMeta):
-    """
-    ------------------Paper Title-----------------------------
-    A Three-Way Model for Collective Learning on Multi-Relational Data
-    ------------------Paper Authors---------------------------
-    Maximilian Nickel, Volker Tresp, Hans-Peter Kriegel
-    Ludwig-Maximilians-Universitat, Munich, Germany 
-    Siemens AG, Corporate Technology, Munich, Germany
-    {NICKEL@CIP.IFI.LMU.DE, VOLKER.TRESP@SIEMENS.COM, KRIEGEL@DBS.IFI.LMU.DE}
-    ------------------Summary---------------------------------
-    RESCAL is a tensor factorization approach to knowledge representation learning, 
-    which is able to perform collective learning via the latent components of the factorization.
-    
-    Portion of Code Based on https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
-     and https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
+    """`A Three-Way Model for Collective Learning on Multi-Relational Data`_
+
+        RESCAL is a tensor factorization approach to knowledge representation learning,
+        which is able to perform collective learning via the latent components of the factorization.
+
+        Args:
+            config (object): Model configuration parameters.
+
+        Attributes:
+            config (object): Model configuration.
+            model_name (str): Name of the model.
+            data_stats (object): Class object with knowlege graph statistics.
+
+        Examples:
+            >>> from pykg2vec.core.Rescal import Rescal
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = Rescal()
+            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+
+        Portion of the code based on `mnick`_ and `OpenKE`_.
+         .. _mnick:
+             https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
+         .. _OpenKE:
+             https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
     """
 
     def __init__(self, config):
@@ -33,6 +45,19 @@ class Rescal(ModelMeta):
         self.model_name = 'Rescal'
 
     def def_inputs(self):
+        """Defines the inputs to the model.
+
+           Attributes:
+              pos_h (Tensor): Positive Head entities ids.
+              pos_r (Tensor): Positive Relation ids of the triple.
+              pos_t (Tensor): Positive Tail entity ids of the triple.
+              neg_h (Tensor): Negative Head entities ids.
+              neg_r (Tensor): Negative Relation ids of the triple.
+              neg_t (Tensor): Negative Tail entity ids of the triple.
+              test_h_batch (Tensor): Batch of head ids for testing.
+              test_r_batch (Tensor): Batch of relation ids for testing
+              test_t_batch (Tensor): Batch of tail ids for testing.
+        """
         with tf.name_scope("read_inputs"):
             self.pos_h = tf.placeholder(tf.int32, [None])
             self.pos_t = tf.placeholder(tf.int32, [None])
@@ -46,6 +71,16 @@ class Rescal(ModelMeta):
             self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
+        """Defines the model parameters.
+
+           Attributes:
+               num_total_ent (int): Total number of entities.
+               num_total_rel (int): Total number of relations.
+               k (Tensor): Size of the latent dimesnion for entities and relations.
+               ent_embeddings  (Tensor Variable): Lookup variable containing embedding of the entities.
+               rel_matrices  (Tensor Variable): Transformation matrices for entities into relation space.
+               parameter_list  (list): List of Tensor parameters.
+        """
         num_total_ent = self.data_stats.tot_entity
         num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
@@ -64,12 +99,23 @@ class Rescal(ModelMeta):
             self.parameter_list = [self.ent_embeddings, self.rel_matrices]
 
     def cal_truth_val(self, h, r, t):
+        """Function to calculate truth value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns Tensors.
+        """
         # dim of h: [m, k, 1]
         #        r: [m, k, k]
         #        t: [m, k, 1]
         return tf.reduce_sum(h * tf.matmul(r, t), [1, 2])
 
     def def_loss(self):
+        """Defines the loss function for the algorithm."""
         k = self.config.hidden_size
 
         with tf.name_scope('normalization'):
@@ -97,21 +143,12 @@ class Rescal(ModelMeta):
 
         self.loss = tf.reduce_sum(tf.maximum(neg_score + self.config.margin - pos_score, 0))
 
-    def test_step(self):
-        k = self.config.hidden_size
-        num_entity = self.data_stats.tot_entity
-
-        h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-
-        h_sim = tf.matmul(self.ent_embeddings, tf.matmul(r_vec, t_vec))
-        t_sim = tf.transpose(tf.matmul(tf.matmul(tf.transpose(h_vec), r_vec), tf.transpose(self.ent_embeddings)))
-
-        _, head_rank = tf.nn.top_k(tf.reduce_sum(tf.negative(h_sim), 1), k=num_entity)
-        _, tail_rank = tf.nn.top_k(tf.reduce_sum(tf.negative(t_sim), 1), k=num_entity)
-
-        return head_rank, tail_rank
-
     def test_batch(self):
+        """Function that performs batch testing for the algorithm.
+
+            Returns:
+                Tensors: Returns ranks of head and tail.
+        """
         num_entity = self.data_stats.tot_entity
         k = self.config.hidden_size
 
@@ -127,7 +164,16 @@ class Rescal(ModelMeta):
         return head_rank, tail_rank
 
     def embed(self, h, r, t):
-        """function to get the embedding value"""
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         k = self.config.hidden_size
         emb_h = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), h)
         emb_r = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.rel_matrices, axis=1), r)
@@ -140,11 +186,31 @@ class Rescal(ModelMeta):
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess):
-        """function to get the embedding value in numpy"""
+        """Function to get the embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess):
-        """function to get the projectd embedding value in numpy"""
+        """"Function to get the projected embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         return self.get_embed(h, r, t, sess)
