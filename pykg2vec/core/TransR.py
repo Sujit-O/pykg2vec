@@ -66,6 +66,7 @@ class TransR(ModelMeta):
         self.pos_r = tf.placeholder(tf.int32, [None])
         self.neg_h = tf.placeholder(tf.int32, [None])
         self.neg_t = tf.placeholder(tf.int32, [None])
+        self.neg_r = tf.placeholder(tf.int32, [None])
 
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
