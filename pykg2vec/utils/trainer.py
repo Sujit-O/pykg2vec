@@ -16,6 +16,16 @@ from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
 
 def get_sparse_mat(data, bs, te):
+    """Function to get the sparse matrix.
+           
+        Args:
+            data (list): List containing the positive triple integer ID.
+            bs (int): Batch size.
+            te (int): Total entities.
+            
+        Returns:
+            Matrix: Returns the numpy matrix
+    """
     mat = np.zeros(shape=(bs, te), dtype=np.int16)
     for i in range(bs):
         for j in range(len(data[i])):
@@ -24,6 +34,20 @@ def get_sparse_mat(data, bs, te):
 
 
 class Trainer(TrainerMeta):
+    """Class for handling the training of the algorithms.
+
+        Args:
+            model (object): Model object
+            debug (bool): Flag to check if its debugging
+            tuning (bool): Flag to denoting tuning if True
+
+        Examples:
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> from pykg2vec.core.TransE import TransE
+            >>> trainer = Trainer(model=TransE(), debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+    """
 
     def __init__(self, model, debug=False, tuning=False):
         self.debug = debug
@@ -69,7 +93,7 @@ class Trainer(TrainerMeta):
     ''' Training related functions:'''
 
     def train_model(self):
-        """function to train the model"""
+        """Function to train the model."""
         loss = 0
 
         if self.config.loadFromData:
@@ -109,7 +133,7 @@ class Trainer(TrainerMeta):
         return loss
 
     def tune_model(self):
-        """function to tune the model"""
+        """Function to tune the model."""
         acc = 0
 
         generator_config = GeneratorConfig(data='train', algo=self.model.model_name,
@@ -131,6 +155,7 @@ class Trainer(TrainerMeta):
         return acc
 
     def train_model_epoch(self, epoch_idx):
+        """Function to train the model for one epoch."""
         acc_loss = 0
 
         num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 10
@@ -188,6 +213,11 @@ class Trainer(TrainerMeta):
     ''' Testing related functions:'''
 
     def test(self, curr_epoch):
+        """function to test the model.
+           
+           Args:
+                curr_epoch (int): The current epoch number.
+        """
 
         if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
                                                curr_epoch == 0 or
@@ -200,7 +230,7 @@ class Trainer(TrainerMeta):
     ''' Procedural functions:'''
 
     def save_model(self):
-        """function to save the model"""
+        """Function to save the model."""
         saved_path = self.config.tmp / self.model.model_name
         saved_path.mkdir(parents=True, exist_ok=True)
 
@@ -208,14 +238,14 @@ class Trainer(TrainerMeta):
         saver.save(self.sess, str(saved_path / 'model.vec'))
 
     def load_model(self):
-        """function to load the model"""
+        """Function to load the model."""
         saved_path = self.config.tmp / self.model.model_name
         if saved_path.exists():
             saver = tf.train.Saver(self.model.parameter_list)
             saver.restore(self.sess, str(saved_path / 'model.vec'))
 
     def display(self):
-        """function to display embedding"""
+        """Function to display embedding."""
         options = {"ent_only_plot": True,
                     "rel_only_plot": not self.config.plot_entity_only,
                     "ent_and_rel_plot": not self.config.plot_entity_only}
@@ -237,7 +267,7 @@ class Trainer(TrainerMeta):
             viz.plot_test_result()
 
     def summary(self):
-        """function to print the summary"""
+        """Function to print the summary."""
         print("\n------------------Global Setting--------------------")
         # Acquire the max length and add four more spaces
         maxspace = len(max([k for k in self.config.__dict__.keys()])) +20
@@ -255,7 +285,7 @@ class Trainer(TrainerMeta):
         print("---------------------------------------------------")
 
     def summary_hyperparameter(self):
-        """function to print the hyperparameter summary"""
+        """Function to print the hyperparameter summary."""
         print("\n-----------%s Hyperparameter Setting-------------"%(self.model.model_name))
         maxspace = len(max([k for k in self.config.hyperparameters.keys()])) + 15
         for key,val in self.config.hyperparameters.items():

@@ -1,4 +1,4 @@
-aConfiguration
+Configuration
 ======================
 
 .. automodule:: pykg2vec.config.config

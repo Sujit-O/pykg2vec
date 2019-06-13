@@ -20,6 +20,16 @@ seaborn.set_style("darkgrid")
 
 
 def draw_embedding(embs, names, resultpath, algos, show_label):
+    """Function to draw the embedding.
+
+        Args:
+            embs (matrix): Two dimesnional embeddings.
+            names (list):List of string name.
+            resultpath (str):Path where the result will be save.
+            algos (str): Name of the algorithms which generated the algorithm.
+            show_label (bool): If True, prints the string names of the entities and relations.
+
+    """
     print("\t drawing figure!")
 
     pos = {}
@@ -75,6 +85,20 @@ def draw_embedding_rel_space(h_emb,
                              resultpath,
                              algos,
                              show_label):
+    """Function to draw the embedding in relation space.
+
+        Args:
+            h_emb (matrix): Two dimesnional embeddings of head.
+            r_emb (matrix): Two dimesnional embeddings of relation.
+            t_emb (matrix): Two dimesnional embeddings of tail.
+            h_name (list):List of string name of the head.
+            r_name (list):List of string name of the relation.
+            t_name (list):List of string name of the tail.
+            resultpath (str):Path where the result will be save.
+            algos (str): Name of the algorithms which generated the algorithm.
+            show_label (bool): If True, prints the string names of the entities and relations.
+
+    """
     print("\t drawing figure!")
     pos = {}
     node_color_mp_ent = {}
@@ -166,6 +190,23 @@ def draw_embedding_rel_space(h_emb,
 
 
 class Visualization(object):
+    """Class to aid in visualizing the results and embddings.
+
+        Args:
+            model (object): Model object
+            vis_opts (list): Options for visualization.
+
+        Examples:
+            >>> from pykg2vec.utils.visualization import Visualization
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> from pykg2vec.core.TransE import TransE
+            >>> model = TransE()
+            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+            >>> viz = Visualization(model=model)
+            >>> viz.plot_train_result()
+    """
     def __init__(self,
                  model=None,
                  vis_opts=None):
@@ -204,6 +245,7 @@ class Visualization(object):
             self.idx2relation = self.model.config.knowledge_graph.read_cache_data('idx2relation')
 
     def get_idx_n_emb(self, sess=None):
+        """Function to get the integer ids and the embedding."""
         if not sess:
             raise NotImplementedError('No tf Session found!')
         idx = np.random.choice(len(self.validation_triples_ids), self.model.config.disp_triple_num)
@@ -237,6 +279,16 @@ class Visualization(object):
                        algos=None,
                        show_label=False,
                        disp_num_r_n_e = 20):
+        """Function to plot the embedding.
+
+            Args:
+                sess (object): Tensorflow Session object.
+                resultpath (str): Path where the result will be saved.
+                show_label (bool): If True, will display the labels.
+                algos (str): Name of the algorithms that generated the embedding.
+                disp_num_r_n_e (int): Total number of entities to display for head, tail and relation.
+
+        """
         if not self.model:
             raise NotImplementedError('Please provide a model!')
         self.get_idx_n_emb(sess=sess)
@@ -276,6 +328,7 @@ class Visualization(object):
                                      resultpath, algos + '_ent_n_rel_plot', show_label)
 
     def plot_train_result(self):
+        """Function to plot the training result."""
         algo = self.algo_list
         path = self.model.config.result
         result = self.model.config.figures
@@ -312,6 +365,7 @@ class Visualization(object):
             # plt.show()
 
     def plot_test_result(self):
+        """Function to plot the testing result."""
         algo = self.algo_list
         path = self.model.config.result
         result = self.model.config.figures
