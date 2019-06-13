@@ -534,10 +534,10 @@ class ComplexParams:
         self.sampling = ["uniform", "bern"]
 
 
-class DistMult:
+class DistMultParams:
     """This class defines the hyperameters and its ranges for tuning DistMult algorithm.
 
-    DistMult defines all the possibel values to be tuned for the algorithm. User may
+    DistMultParams defines all the possibel values to be tuned for the algorithm. User may
     change these values directly for performing the bayesian optimization of the hyper-parameters
 
     Args:
@@ -577,10 +577,10 @@ class DistMult:
         self.sampling = ["uniform", "bern"]
 
 
-class TuckER:
+class TuckERParams:
     """This class defines the hyperameters and its ranges for tuning TuckER algorithm.
 
-    TuckER defines all the possibel values to be tuned for the algorithm. User may
+    TuckERParams defines all the possibel values to be tuned for the algorithm. User may
     change these values directly for performing the bayesian optimization of the hyper-parameters
 
     Args:
