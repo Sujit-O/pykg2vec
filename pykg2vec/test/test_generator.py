@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+This module is for testing unit functions of generator
+"""
 import timeit
 
 from pykg2vec.config.global_config import GeneratorConfig
