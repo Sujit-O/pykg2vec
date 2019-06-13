@@ -4,10 +4,12 @@ from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.generator import Generator
 from pykg2vec.config.config import TransEConfig
 from pykg2vec.config.config import ProjE_pointwiseConfig
-
+from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 def test_generator_proje():
-    
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
+    knowledge_graph.force_prepare_data()
+
     config = ProjE_pointwiseConfig()
 
     gen = iter(Generator(config=GeneratorConfig(data='train', algo='ProjE'), model_config=config))
@@ -28,6 +30,8 @@ def test_generator_proje():
     gen.stop()
 
 def test_generator_trane():
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
+    knowledge_graph.force_prepare_data()
     
     start_time = timeit.default_timer()
     
