@@ -16,5 +16,5 @@ pykg2vec/dataset
 *.txt
 *.csv
 .vscode/settings.json
-pykg2vec/test/.coverage
+pykg2vec/test/.coverage*
 .coverage
