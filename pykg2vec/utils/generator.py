@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This module is for preparing the data
+This module is for generating the batch data for training and testing.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -12,6 +12,17 @@ from multiprocessing import Process, Queue, Value
 
 
 def get_label_mat(data, bs, te, neg_rate=1):
+    """Function to label the matrix.
+           
+        Args:
+            data (list): List of integer id denoting positive data.
+            bs (int): Batch size of the samples.
+            te (int): Total number of entity.
+            neg_rate (int): Ratio of negative to positive samples.
+
+        Returns:
+            Matrix: Returns numpy matrix with labels
+    """
     mat = np.zeros(shape=(bs, te), dtype=np.int8)
     for i in range(bs):
         pos_samples = len(data[i])
@@ -31,7 +42,16 @@ def get_label_mat(data, bs, te, neg_rate=1):
 
 
 def raw_data_generator_trans(raw_queue, processed_queue, data, batch_size, number_of_batch):
-    ''' worker process that feeds raw data to raw queues.''' 
+    """Function to feed  triples to raw queue for multiprocessing.
+           
+        Args:
+            raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
+            processed_queue (Queue) : Multiprocessing Queue to put the processed data.
+            data (list) : List of integer ids denoting positive triples.
+            batch_size (int) : Size of each batch.
+            number_of_batch (int) : Total number of batch.
+
+    """
     random_ids = np.random.permutation(len(data))
     
     batch_idx = 0
@@ -50,7 +70,18 @@ def raw_data_generator_trans(raw_queue, processed_queue, data, batch_size, numbe
 
 
 def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets, lh, lr, lt):
-    ''' worker process that gets data from raw queue then processes and saves to processed queue.''' 
+    """Function that puts the processed data in the queue.
+           
+        Args:
+            raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
+            processed_queue (Queue) : Multiprocessing Queue to put the processed data.
+            te (int): Total number of entities
+            bs (int): Total size of each batch.
+            positive_triplets (list) : List of positive triples.
+            lh (int): Id of the last processed head.
+            lr (int): Id of the last processed relation.
+            lt (int): Id of the last processed tail.
+    """ 
     negative_triplets = {}
 
     while True:
@@ -122,6 +153,15 @@ def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets
 
 
 def process_function(raw_queue, processed_queue, te, bs, neg_rate):
+    """Function that puts the processed data in the queue.
+           
+        Args:
+            raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
+            processed_queue (Queue) : Multiprocessing Queue to put the processed data.
+            te (int): Total number of entities
+            bs (int): Total size of each batch.
+            neg_rate (int): Ratio of negative to positive samples.
+    """ 
     while True:
         idx, raw_data = raw_queue.get()
         
@@ -136,9 +176,12 @@ def process_function(raw_queue, processed_queue, te, bs, neg_rate):
 
 
 def worker_process_raw_data_testing(raw_queue, processed_queue):
-    ''' 
-    worker process that gets data from raw queue then processes and saves to processed queue.
-    especially for testing data.
+    '''worker process that gets data from raw queue then processes and saves to processed queue.
+        especially for testing data.
+
+        Args:
+            raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
+            processed_queue (Queue) : Multiprocessing Queue to put the processed data.
     ''' 
     while True:
         pos_triples = raw_queue.get()
@@ -152,10 +195,21 @@ def worker_process_raw_data_testing(raw_queue, processed_queue):
 
 class Generator:
     """Generator class for the embedding algorithms
+        
         Args:
-          config: generator configuration
-        Returns:
-          batch for training algorithms
+          config (object): generator configuration object.
+          model_config (object): Model configuration object.
+
+        Yields:
+            matrix : Batch size of processed triples
+
+        Examples:
+            >>> from pykg2vec.utils.generator import Generator
+            >>> from pykg2vec.core.TransE impor TransE
+            >>> model = TransE()
+            >>> from pykg2vec.config.global_config import GeneratorConfig
+            >>> generator_config = GeneratorConfig(data='train', algo='transe', batch_size=64)
+            >>> gen_train = Generator(config=generator_config, model_config=model.config)
     """
 
     def __init__(self, config, model_config):
@@ -202,10 +256,19 @@ class Generator:
         return self.processed_queue.get()
         
     def stop(self):
+        """Function to stop all the worker process."""
         for worker_process in self.process_list:
             worker_process.terminate()
 
     def create_feeder_process(self, data, batch_size, number_of_batch):
+        """Function create the feeder process.
+
+            Args:
+                data (list): List of integer id denoting positive data.
+                bs (int): Batch size of the samples.
+                te (int): Total number of entity.
+
+        """
         feeder_worker = Process(target=raw_data_generator_trans, \
                                 args=(self.raw_queue, self.processed_queue, data, batch_size, number_of_batch))
         feeder_worker.daemon = True
@@ -213,7 +276,12 @@ class Generator:
         feeder_worker.start()
     
     def create_test_processer_process(self, process_num):
-        ''' shared among algorithms '''
+        """Function create test feeder process.
+
+            Args:
+                process_num (int): Number of process to create.
+
+        """
         for i in range(process_num):
             process_worker = Process(target=worker_process_raw_data_testing, \
                                      args=(self.raw_queue, self.processed_queue))
@@ -222,7 +290,15 @@ class Generator:
             process_worker.start()
 
     def create_train_processor_process_trans(self, process_num, te, bs, observed_triples):
-        ''' special for trans-series algorithms '''
+        """Function create the process for generating training samples for translation based algorithms.
+
+            Args:
+                process_num (int): Number of process to create.
+                observed_triples (list): List of integer id of the observed triples.
+                bs (int): Batch size of the samples.
+                te (int): Total number of entity.
+
+        """
         lh = Value('i', 0)
         lr = Value('i', 0)
         lt = Value('i', 0)
@@ -234,6 +310,15 @@ class Generator:
             process_worker.start()
 
     def create_train_processor_process(self, process_num, te, bs, neg_rate):
+        """Function ro create the process for generating training samples.
+
+            Args:
+                process_num (int): Number of process to create.
+                bs (int): Batch size of the samples.
+                te (int): Total number of entity.
+                neg_rate (int): Ratio of negative to positive samples.
+
+        """
         for i in range(process_num):
             process_worker = Process(target=process_function, args=(self.raw_queue, self.processed_queue, te, bs, neg_rate))
             self.process_list.append(process_worker)
