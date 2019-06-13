@@ -45,7 +45,7 @@ class DistMult(ModelMeta):
         self.data_stats = self.config.kg_meta
         self.tot_ent = self.data_stats.tot_entity
         self.tot_rel = self.data_stats.tot_relation
-        self.model_name = 'Distmult'
+        self.model_name = 'DistMult'
 
     def def_inputs(self):
         """Defines the inputs to the model.
