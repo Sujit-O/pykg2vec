@@ -17,6 +17,18 @@ import progressbar
 from pykg2vec.core.KGMeta import EvaluationMeta
 
 def eval_batch_head(id_replace_head, h, r, t, tr_h):
+    """Function to evaluate the head rank.
+           
+       Args:
+           id_replace_head (list): List of the predicted head for the given tail, relation pair
+           h (int): head id
+           r (int): relation id
+           t (int): tail id
+           tr_h (dict): list of heads for the given tail and relation pari.
+
+        Returns:
+            Tensors: Returns head  rank and filetered head rank
+    """
     hrank = 0
     fhrank = 0
 
@@ -34,6 +46,18 @@ def eval_batch_head(id_replace_head, h, r, t, tr_h):
 
 
 def eval_batch_tail(id_replace_tail, h, r, t, hr_t):
+    """Function to evaluate the tail rank.
+           
+       Args:
+           id_replace_tail (list): List of the predicted tails for the given head, relation pair
+           h (int): head id
+           r (int): relation id
+           t (int): tail id
+           hr_t (dict): list of tails for the given hwS and relation pari.
+
+        Returns:
+            Tensors: Returns tail rank and filetered tail rank
+    """
     trank = 0
     ftrank = 0
 
@@ -52,6 +76,22 @@ def eval_batch_tail(id_replace_tail, h, r, t, hr_t):
 def display_summary(epoch, hits, mean_rank_head, mean_rank_tail,
                     filter_mean_rank_head, filter_mean_rank_tail,
                     hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time):
+    """Function to print the test summary.
+           
+        Args:
+            epoch (int): Epoch for the given result
+            hits (list): list of integet hits for hits@k
+            mean_rank_head(dict): mean rank of the head with epoch as key and float as value
+            mean_rank_tail (dict): mean rank of the tail with epoch as key and float as value
+            filter_mean_rank_head(dict): filtered mean rank of the head with epoch as key and float as value
+            filter_mean_rank_tail (dict): filtered mean rank of the head with epoch as key and float as value
+            hit_head(dict): mean head hit ratio of the head with epoch,hit as key and float as value
+            hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
+            filter_hit_head(dict): filtered mean head hit ratio of the head with epoch,hit as key and float as value
+            ilter_hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
+            start_time (objet): starting time of the evaluation
+
+    """
     print("------Test Results: Epoch: %d --- time: %.2f------------" % (epoch, timeit.default_timer() - start_time))
     print('--mean rank          : %.4f' % ((mean_rank_head[epoch] +
                                             mean_rank_tail[epoch]) / 2))
@@ -70,6 +110,23 @@ def save_test_summary(result_path, model_name, hits,
                       filter_mean_rank_head,
                       filter_mean_rank_tail, hit_head,
                       hit_tail, filter_hit_head, filter_hit_tail, config):
+    """Function to save the test of the summary.
+           
+        Args:
+            result_path (str): Path to save the test summary
+            mode_name (str): Name of the model for which the test is performed
+            hits (list): list of integet hits for hits@k
+            mean_rank_head(dict): mean rank of the head with epoch as key and float as value
+            mean_rank_tail (dict): mean rank of the tail with epoch as key and float as value
+            filter_mean_rank_head(dict): filtered mean rank of the head with epoch as key and float as value
+            filter_mean_rank_tail (dict): filtered mean rank of the head with epoch as key and float as value
+            hit_head(dict): mean head hit ratio of the head with epoch,hit as key and float as value
+            hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
+            filter_hit_head(dict): filtered mean head hit ratio of the head with epoch,hit as key and float as value
+            ilter_hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
+            config (object): model configuration object
+
+    """
     files = os.listdir(str(result_path))
     l = len([f for f in files if model_name in f if 'Testing' in f])
     with open(str(result_path / (model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
@@ -123,7 +180,16 @@ class MetricCalculator:
         pass
 
 def evaluation_process(result_queue, output_queue, config, model_name, tuning):
+    """Self contained process for evaluation.
+           
+        Args:
+            result_queue (Queue): Multiprocessing queue to acquire inference result
+            output_queue (Queue): Multiprocessing queue to store the evaluation result
+            config (object):Model configuration object instance
+            model_name (str): Name of the model
+            tuning (bool): Check if tuning or performing full test.
 
+    """
     hits = config.hits
     total_epoch = config.epochs
     result_path = config.result
@@ -205,7 +271,21 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
 
 
 class Evaluation(EvaluationMeta):
+    """Class to perform evaluation of the model.
 
+        Args:
+            model (object): Model object
+            debug (bool): Flag to check if its debugging
+            data_type (str): evaluating 'test' or 'valid'
+            tuning (bool): Flag to denoting tuning if True
+
+        Examples:
+            >>> from pykg2vec.utils.evaluation import Evaluation
+            >>> evaluator = Evaluation(model=model, debug=False, tuning=True)
+            >>> evaluator.test_batch(Session(), 0)
+            >>> acc = evaluator.output_queue.get()
+            >>> evaluator.stop()
+    """
     def __init__(self, model=None, debug=False, data_type='test', tuning=False):
         
         self.model = model
@@ -256,11 +336,12 @@ class Evaluation(EvaluationMeta):
         self.rank_calculator.start()
 
     def stop(self):
+        """Function that stops the evaluation process"""
         self.rank_calculator.join()
         self.rank_calculator.terminate()
 
     def test_batch(self, sess=None, epoch=None):
-        
+        """Function that performs the batch testing"""
         if sess == None:
             raise NotImplementedError('No session found for evaluation!')
         print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
@@ -295,6 +376,7 @@ class Evaluation(EvaluationMeta):
         self.result_queue.put("Stop!")
 
     def save_training_result(self, losses):
+        """Function that saves training result"""
         files = os.listdir(str(self.model.config.result))
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
         df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])

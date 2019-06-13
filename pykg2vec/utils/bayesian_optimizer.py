@@ -80,6 +80,25 @@ hypMap = {"complex": "ComplexParams",
 
 
 class BaysOptimizer(object):
+    """Bayesian optimizer class for tuning hyperparameter.
+
+      This class implements the Bayesian Optimizer for tuning the 
+      hyper-parameter.
+
+      Args:
+        args (object): The Argument Parser object providing arguments.
+        name_dataset (str): The name of the dataset.
+        sampling (str): sampling to be used for generating negative triples
+
+
+      Examples:
+        >>> from pykg2vec.config.hyperparams import KGETuneArgParser
+        >>> from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
+        >>> model = Complex()
+        >>> args = KGETuneArgParser().get_args(sys.argv[1:])
+        >>> bays_opt = BaysOptimizer(args=args)
+        >>> bays_opt.optimize()
+    """
 
     def __init__(self, name_dataset='Freebase15k', sampling="uniform", args=None):
         """store the information of database"""
@@ -103,10 +122,12 @@ class BaysOptimizer(object):
         self.search_space = self.define_search_space(hyper_params)
         
     def define_search_space(self, hyper_params):
+        """Function to perform search space addition"""
         space = {k: hp.choice(k, v) for k, v in hyper_params.__dict__.items() if not k.startswith('__') and not callable(k)}
         return space
 
     def optimize(self):
+        """Function that performs bayesian optimization"""
         space = self.search_space
         trials = Trials()
         
@@ -133,6 +154,7 @@ class BaysOptimizer(object):
         pprint(space_eval(space, best_result))
 
     def get_loss(self, params):
+        """Function that defines and acquires the loss"""
         self.trainer.config.L1_flag = params['L1_flag']
         self.trainer.config.batch_size = params['batch_size']
         self.trainer.config.epochs = params['epochs']
