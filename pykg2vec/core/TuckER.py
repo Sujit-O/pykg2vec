@@ -10,20 +10,33 @@ from pykg2vec.core.KGMeta import ModelMeta
 
 
 class TuckER(ModelMeta):
-    """
-    ------------------Paper Title-----------------------------
-    TuckER: Tensor Factorization for Knowledge Graph Completion
-    ------------------Paper Authors---------------------------
-    Ivana Balazevi ˇ c´1 Carl Allen 1 Timothy M. Hospedales 1
-    1School of Informatics, University of Edinburgh,
-    United Kingdom. Correspondence to: Ivana Balazevi ˇ c´
-    <ivana.balazevic@ed.ac.uk>.
-    ------------------Summary---------------------------------
-    TuckER is a Tensor-factorization-based embedding technique based on
-    the Tucker decomposition of a third-order binary tensor of triplets. Although
-    being fully expressive, the number of parameters used in Tucker only grows linearly
-    with respect to embedding dimension as the number of entities or relations in a
-    knowledge graph increases.
+    """ `TuckER-Tensor Factorization for Knowledge Graph Completion`_
+
+        TuckER is a Tensor-factorization-based embedding technique based on
+        the Tucker decomposition of a third-order binary tensor of triplets. Although
+        being fully expressive, the number of parameters used in Tucker only grows linearly
+        with respect to embedding dimension as the number of entities or relations in a
+        knowledge graph increases.
+
+        Args:
+            config (object): Model configuration parameters.
+
+        Attributes:
+            config (object): Model configuration.
+            data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+            model_name (str): Name of the model.
+
+        Examples:
+            >>> from pykg2vec.core.TuckER import TuckER
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = TuckER()
+            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+
+        .. _TuckER-Tensor Factorization for Knowledge Graph Completion:
+            https://arxiv.org/pdf/1901.09590.pdf
+
     """
 
     def __init__(self, config=None):
@@ -34,6 +47,18 @@ class TuckER(ModelMeta):
         self.def_layer()
 
     def def_inputs(self):
+        """Defines the inputs to the model.
+
+           Attributes:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               hr_t (Tensor): Tail tensor list for (h,r) pair.
+               rt_h (Tensor): Head tensor list for (r,t) pair.
+               test_h_batch (Tensor): Batch of head ids for testing.
+               test_r_batch (Tensor): Batch of relation ids for testing
+               test_t_batch (Tensor): Batch of tail ids for testing.
+        """
         self.h = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
         self.t = tf.placeholder(tf.int32, [None])
@@ -45,6 +70,19 @@ class TuckER(ModelMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
+        """Defines the model parameters.
+
+           Attributes:
+               num_total_ent (int): Total number of entities.
+               num_total_rel (int): Total number of relations.
+               d2 (Tensor): Size of the latent dimension for relations.
+               d1 (Tensor): Size of the latent dimension for entities .
+               parameter_list  (list): List of Tensor parameters.
+               E (Tensor Variable): Lookup variable containing  embedding of the entities.
+               R  (Tensor Variable): Lookup variable containing  embedding of the relations.
+               W (Tensor Varible): Transformation matrix.
+        """
+
         num_total_ent = self.data_stats.tot_entity
         num_total_rel = self.data_stats.tot_relation
         self.d1 = self.config.ent_hidden_size
@@ -61,6 +99,7 @@ class TuckER(ModelMeta):
         self.parameter_list = [self.E, self.R, self.W]
 
     def def_layer(self):
+        """Defines the layers of the algorithm."""
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
         self.hidden_dropout1 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout1)
         self.hidden_dropout2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout2)
@@ -69,6 +108,15 @@ class TuckER(ModelMeta):
         self.bn1 = tf.keras.layers.BatchNormalization(trainable=True)
 
     def forward(self, e1, r):
+        """Implementation of the layer.
+
+            Args:
+                e1(Tensor): entities id.
+                r(Tensor): Relation id.
+
+            Returns:
+                Tensors: Returns the activation values.
+        """
         norm_E = tf.nn.l2_normalize(self.E, axis=1)
         norm_R = tf.nn.l2_normalize(self.R, axis=1)
 
@@ -91,6 +139,7 @@ class TuckER(ModelMeta):
         return tf.nn.sigmoid(x)
 
     def def_loss(self):
+        """Defines the loss function for the algorithm."""
         pred_tails = self.forward(self.h, self.r)
         pred_heads = self.forward(self.t, self.r)
 
@@ -105,6 +154,11 @@ class TuckER(ModelMeta):
         self.loss = loss_heads + loss_tails + self.config.lmbda * reg_losses
 
     def test_batch(self):
+        """Function that performs batch testing for the algorithm.
+
+            Returns:
+                Tensors: Returns ranks of head and tail.
+        """
         pred_tails = self.forward(self.test_h_batch, self.test_r_batch)
         pred_heads = self.forward(self.test_t_batch, self.test_r_batch)
 
@@ -114,18 +168,43 @@ class TuckER(ModelMeta):
         return head_rank, tail_rank
 
     def embed(self, h, r, t):
-        """function to get the embedding value"""
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns real and imaginary values of head, relation and tail embedding.
+        """
         emb_h = tf.nn.embedding_lookup(self.E, h)
         emb_r = tf.nn.embedding_lookup(self.R, r)
         emb_t = tf.nn.embedding_lookup(self.E, t)
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess=None):
-        """function to get the embedding value in numpy"""
+        """Function to get the embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns real and imaginary values of head, relation and tail embedding.
+        """
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess):
-        """function to get the projected embedding value in numpy"""
+        """Function to get the projected embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+        """
         return self.get_embed(h, r, t, sess)

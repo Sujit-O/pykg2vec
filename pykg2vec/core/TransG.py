@@ -10,16 +10,35 @@ from pykg2vec.core.KGMeta import ModelMeta
 
 
 class TransG(ModelMeta):
-    """
-    ------------------Paper Title-----------------------------
-    TransG : A Generative Model for Knowledge Graph Embedding
-    ------------------Paper Authors---------------------------
-    Han Xiao, Minlie Huang∗, Xiaoyan Zhu
-    State Key Lab. of Intelligent Technology and Systems
-    National Lab. for Information Science and Technology
-    Dept. of Computer Science and Technology
-    Tsinghua University, Beijing 100084, PR China
-    {aihuang, zxy-dcs}@tsinghua.edu.cn
+    """ `TransG-A Generative Model for Knowledge Graph Embedding`_
+
+        Generative based embedding that utilized clustering to find the
+        relevant entity cluster for the given relation.
+
+        Args:
+            config (object): Model configuration parameters.
+
+        Attributes:
+            config (object): Model configuration.
+            model_name (str): Name of the model.
+
+        Examples:
+            >>> from pykg2vec.core.TransG import TransG
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = TransG()
+            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+
+        Portion of the code based on `Niubohan`_ and `BookmanHan`_.
+        .. _Niubohan:
+             https://github.com/Niubohan/TransG
+
+        .. _BookmanHan:
+           https://github.com/BookmanHan/Embedding
+
+        .. _TransG-A Generative Model for Knowledge Graph Embedding:
+            https://www.aclweb.org/anthology/P16-1219
     """
 
     def __init__(self, config=None):
@@ -27,6 +46,19 @@ class TransG(ModelMeta):
         self.model_name = 'TransG'
 
     def def_inputs(self):
+        """Defines the inputs to the model.
+
+           Attributes:
+              pos_h (Tensor): Positive Head entities ids.
+              pos_r (Tensor): Positive Relation ids of the triple.
+              pos_t (Tensor): Positive Tail entity ids of the triple.
+              neg_h (Tensor): Negative Head entities ids.
+              neg_r (Tensor): Negative Relation ids of the triple.
+              neg_t (Tensor): Negative Tail entity ids of the triple.
+              test_h_batch (Tensor): Batch of head ids for testing.
+              test_r_batch (Tensor): Batch of relation ids for testing
+              test_t_batch (Tensor): Batch of tail ids for testing.
+        """
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
         self.pos_r = tf.placeholder(tf.int32, [None])
@@ -40,6 +72,19 @@ class TransG(ModelMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
+        """Defines the model parameters.
+
+           Attributes:
+               num_total_ent (int): Total number of entities.
+               num_total_rel (int): Total number of relations.
+               k (Tensor): Size of the latent dimesnion for entities and relations.
+               ent_embeddings (Tensor Variable): Lookup variable containing  embedding of the entities.
+               rel_clusters  (Tensor Variable): Relation clusters for the entities.
+               rel_clusters  (Tensor Variable): Weights cluster.
+               c (int): Number of initial clusters.
+               CRP (float): Chinese Restaurant Process factor
+               parameter_list  (list): List of Tensor parameters.
+        """
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -59,6 +104,16 @@ class TransG(ModelMeta):
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.weights_clusters]
 
     def prob_triples(self, h,r,t):
+        """Function to that calculates probability fot he triple.
+
+           Args:
+              h (Tensor): Head entities ids.
+              r (Tensor): Relation ids of the triple.
+              t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+               Tensors: Returns the probablity.
+        """
         mixed_prob = 1e-100
         error_c = self.ent_embeddings[h] + self.rel_clusters[r][0:self.c] - self.ent_embeddings[t]
         mixed_prob = tf.math.abs(self.weights_clusters[r][0:self.c]) * tf.math.exp(-tf.reduce_sum(tf.math.abs(error_c),[0,2]))
@@ -66,13 +121,28 @@ class TransG(ModelMeta):
         return mixed_prob
 
     def training_prob_triples(self, h,r,t):
+        """Function to that calculates training probability fot he triple.
+
+           Args:
+              h (Tensor): Head entities ids.
+              r (Tensor): Relation ids of the triple.
+              t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+               Tensors: Returns the probablity.
+        """
         mixed_prob = 1e-100
         error_c = self.ent_embeddings[h] + self.rel_clusters[r][0:self.c] - self.ent_embeddings[t]
         mixed_prob = tf.math.abs(self.weights_clusters[r][0:self.c]) * tf.math.exp(-tf.reduce_sum(tf.math.abs(error_c),[0,2]))
         mixed_prob = tf.reduce_sum(mixed_prob)
         return mixed_prob
 
-    def train_cluster_once(self, ph,pr,pt,nh,nr,nt, c, prob_true, prob_false,factor):
+    def train_cluster_once(self, ph, pr, pt, nh, nr, nt, c, prob_true, prob_false,factor):
+        """Function to train the cluster once.
+
+           Todo:
+              * Define all the arguments.
+        """
         prob_local_true = tf.math.exp(-tf.reduce_sum(tf.math.abs(self.ent_embeddings[ph] + self.rel_clusters[pr][c] -
                                                   self.ent_embeddings[pt])))
         prob_local_false = tf.math.exp(-tf.reduce_sum(tf.math.abs(self.ent_embeddings[nh] + self.rel_clusters[nr][c] -
@@ -97,6 +167,11 @@ class TransG(ModelMeta):
             lambda: tf.nn.l2_normalize(self.rel_clusters[nr][c]), lambda: self.rel_clusters[nr][c])
 
     def f1(self,ph,pr,pt,nh,nr,nt, prob_true, prob_false, cur_epoch):
+        """Function to calculate score.
+
+           Todo:
+              * Define all the arguments.
+        """
         
         for i in range(self.c):
             self.train_cluster_once(ph,pr,pt,nh,nr,nt, i, prob_true, prob_false, self.alpha)
@@ -123,6 +198,7 @@ class TransG(ModelMeta):
         return prob_false / prob_true  
 
     def train_step(self,ph,pr,pt,nh,nr,nt):
+        """Trains the clusters for one step"""
         prob_true = self.training_prob_triples(ph, pr, pt)
         prob_false = self.training_prob_triples(nh, nr, nt)
         
@@ -132,6 +208,7 @@ class TransG(ModelMeta):
         return loss
 
     def def_loss(self):
+        """Defines the loss function for the algorithm."""
         loss=0
         c = lambda i: tf.less(i, self.config.batch_size)
         b = lambda i,loss: [i+1, loss+self.train_step(self.pos_h[i],
@@ -140,6 +217,11 @@ class TransG(ModelMeta):
         self.loss = loss
 
     def test_batch(self):
+        """Function that performs batch testing for the algorithm.
+
+          Returns:
+              Tensors: Returns ranks of head and tail.
+        """
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
@@ -156,7 +238,16 @@ class TransG(ModelMeta):
         return head_rank, tail_rank
 
     def embed(self, h, r, t):
-        """function to get the embedding value"""
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
@@ -166,11 +257,31 @@ class TransG(ModelMeta):
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess):
-        """function to get the embedding value in numpy"""
+        """Function to get the embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess=None):
-        """function to get the projected embedding value in numpy"""
+        """"Function to get the projected embedding value in numpy.
+
+            Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         return self.get_embed(h, r, t, sess)

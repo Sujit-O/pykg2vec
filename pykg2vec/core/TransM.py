@@ -12,21 +12,29 @@ import numpy as np
 
 
 class TransM(ModelMeta):
-    """
-    ------------------Paper Title-----------------------------
-    Transition-based Knowledge Graph Embedding with Relational Mapping Properties
-    ------------------Paper Authors---------------------------
-    Miao Fan(1,3), Qiang Zhou(1), Emily Chang(2), Thomas Fang Zheng(1,4),
-    1. CSLT, Tsinghua National Laboratory for Information Science and Technology
-    Department of Computer Science and Technology, Tsinghua University, Beijing, 100084, China.
-    2. Emory University, U.S.A.
-    3. fanmiao.cslt.thu@gmail.com, 4. fzheng@tsinghua.edu.cn Abstract
-    ------------------Summary---------------------------------
-    TransM is another line of research that improves TransE by relaxing the overstrict requirement of 
-    h+r ==> t. TransM associates each fact (h, r, t) with a weight theta(r) specific to the relation. 
-     
+    """ `Transition-based Knowledge Graph Embedding with Relational Mapping Properties`_
 
-    https://github.com/wencolani/TransE.git
+        TransM is another line of research that improves TransE by relaxing the overstrict requirement of
+        h+r ==> t. TransM associates each fact (h, r, t) with a weight theta(r) specific to the relation.
+
+        Args:
+            config (object): Model configuration parameters.
+
+        Attributes:
+            config (object): Model configuration.
+            model_name (str): Name of the model.
+            data_stats (object): Class object with knowlege graph statistics.
+
+        Examples:
+            >>> from pykg2vec.core.TransM import TransM
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = TransM()
+            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+
+        .. _Transition-based Knowledge Graph Embedding with Relational Mapping Properties:
+            https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
     """
 
     def __init__(self, config=None):
@@ -35,20 +43,42 @@ class TransM(ModelMeta):
         self.model_name = 'TransM'
 
     def def_inputs(self):
+        """Defines the inputs to the model.
+
+           Attributes:
+              pos_h (Tensor): Positive Head entities ids.
+              pos_r (Tensor): Positive Relation ids of the triple.
+              pos_t (Tensor): Positive Tail entity ids of the triple.
+              neg_h (Tensor): Negative Head entities ids.
+              neg_r (Tensor): Negative Relation ids of the triple.
+              neg_t (Tensor): Negative Tail entity ids of the triple.
+              test_h_batch (Tensor): Batch of head ids for testing.
+              test_r_batch (Tensor): Batch of relation ids for testing
+              test_t_batch (Tensor): Batch of tail ids for testing.
+        """
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
         self.pos_r = tf.placeholder(tf.int32, [None])
         self.neg_h = tf.placeholder(tf.int32, [None])
         self.neg_t = tf.placeholder(tf.int32, [None])
         self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h = tf.placeholder(tf.int32, [1])
-        self.test_t = tf.placeholder(tf.int32, [1])
-        self.test_r = tf.placeholder(tf.int32, [1])
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
+        """Defines the model parameters.
+
+           Attributes:
+               num_total_ent (int): Total number of entities.
+               num_total_rel (int): Total number of relations.
+               k (Tensor): Size of the latent dimesnion for entities and relations.
+
+               ent_embeddings (Tensor Variable): Lookup variable containing  embedding of the entities.
+               rel_embeddings  (Tensor Variable): Lookup variable containing  embedding of the relations.
+
+               parameter_list  (list): List of Tensor parameters.
+        """
         num_total_ent = self.data_stats.tot_entity
         num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
@@ -59,7 +89,6 @@ class TransM(ModelMeta):
 
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
 
             rel_head = {x: [] for x in range(num_total_rel)}
             rel_tail = {x: [] for x in range(num_total_rel)}
@@ -76,6 +105,7 @@ class TransM(ModelMeta):
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.theta]
 
     def def_loss(self):
+        """Defines the loss function for the algorithm."""
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
         neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
 
@@ -88,6 +118,11 @@ class TransM(ModelMeta):
         self.loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
 
     def test_batch(self):
+        """Function that performs batch testing for the algorithm.
+
+           Returns:
+               Tensors: Returns ranks of head and tail.
+        """
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
@@ -100,13 +135,33 @@ class TransM(ModelMeta):
         return head_rank, tail_rank
 
     def distance(self, h, r, t):
+        """Function to calculate distance measure in embedding space.
+
+           Args:
+                 h (Tensor): Head entities ids.
+                 r (Tensor): Relation ids of the triple.
+                 t (Tensor): Tail entity ids of the triple.
+                 axis (int): Determines the axis for reduction
+
+           Returns:
+                Tensors: Returns the distance measure.
+        """
         if self.config.L1_flag:
             return tf.reduce_sum(tf.abs(h + r - t), axis=-1)  # L1 norm
         else:
             return tf.reduce_sum((h + r - t) ** 2, axis=-1)  # L2 norm
 
     def embed(self, h, r, t):
-        """function to get the embedding value"""
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
@@ -116,11 +171,31 @@ class TransM(ModelMeta):
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess):
-        """function to get the embedding value in numpy"""
+        """Function to get the embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess=None):
-        """function to get the projected embedding value in numpy"""
+        """"Function to get the projected embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         return self.get_embed(h, r, t, sess)
