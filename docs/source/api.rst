@@ -160,12 +160,30 @@ Visualization
 .. automodule:: pykg2vec.utils.visualization
    :members:
 
+KG Controller
+--------------
+
+.. automodule:: pykg2vec.utils.kgcontroller
+   :members:
+
 Unit Test
 ======================
 
-Integration Test
+Generator Test
 -----------------
 
-.. automodule:: pykg2vec.test.IT
+.. automodule:: pykg2vec.test.test_generator
    :members:
 
+Kg Controller Test
+-------------------
+
+.. automodule:: pykg2vec.test.test_kg
+   :members:
+
+
+Model Test
+-----------------
+
+.. automodule:: pykg2vec.test.test_model
+   :members:
