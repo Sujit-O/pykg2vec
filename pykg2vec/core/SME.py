@@ -10,33 +10,37 @@ from pykg2vec.core.KGMeta import ModelMeta
 
 
 class SME(ModelMeta):
-    """
-    ------------------Paper Title-----------------------------
-    A Semantic Matching Energy Function for Learning with Multi-relational Data
-    ------------------Paper Authors---------------------------
-    Antoine Bordes
-    Universite de Technologie de Compiegne – CNRS
-    Heudiasyc UMR 7253
-    Compiegne, France
-    antoine.bordes@utc.fr
-    Jason Weston
-    Google
-    111 8th avenue
-    New York, NY, USA
-    jweston@google.com
-    Xaiver Glorot, Joshua Bengio
-    Universite de Montreal
-    Monteal, QC, Canada
-    {glorotxa, bengioy}@iro.umontreal.ca
-    ------------------Summary---------------------------------
-    Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces. 
-    SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects 
-    entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
-    to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
+    """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
 
-    There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
+        Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
+        SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
+        entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
+        to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
 
-    Portion of Code Based on https://github.com/glorotxa/SME/blob/master/model.py
+        There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
+
+        Args:
+            config (object): Model configuration parameters.
+
+         Attributes:
+            config (object): Model configuration.
+            model_name (str): Name of the model.
+            data_stats (object): Class object with knowlege graph statistics.
+
+         Examples:
+            >>> from pykg2vec.core.SME import SME
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = SME()
+            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+
+         Portion of the code based on `glorotxa`_.
+         .. _glorotxa:
+             https://github.com/glorotxa/SME/blob/master/model.py
+
+         .. _A Semantic Matching Energy Function for Learning with Multi-relational Data:
+             http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
     """
 
     def __init__(self, config=None):
@@ -49,6 +53,16 @@ class SME(ModelMeta):
             self.model_name = 'SME_Linear'
 
     def gu_bilinear(self, h, r, test_flag):
+        """Function to calculate bilinear loss.
+
+          Args:
+              h (Tensor): Head entities ids.
+              r (Tensor): Relation ids of the triple.
+              test_flag (bool): If True, denotes testing phase.
+
+           Returns:
+               Tensors: Returns the bilinear loss.
+       """
         if test_flag:
             tmp1 = tf.cond(tf.shape(h)[0] > tf.shape(r)[0],
                            lambda: tf.expand_dims(tf.transpose(tf.matmul(self.mu2, tf.transpose(r))), axis=1),
@@ -59,6 +73,16 @@ class SME(ModelMeta):
                 tf.multiply(tf.matmul(self.mu1, tf.transpose(h)), tf.matmul(self.mu2, tf.transpose(r))) + self.bu)
 
     def gv_bilinear(self, r, t, test_flag):
+        """Function to calculate bilinear loss.
+
+          Args:
+              h (Tensor): Head entities ids.
+              r (Tensor): Relation ids of the triple.
+              test_flag (bool): If True, denotes testing phase.
+
+           Returns:
+               Tensors: Returns the bilinear loss.
+        """
         if test_flag:
             tmp1 = tf.cond(tf.shape(t)[0] > tf.shape(r)[0],
                            lambda: tf.expand_dims(tf.transpose(tf.matmul(self.mv1, tf.transpose(r))), axis=1),
@@ -69,6 +93,16 @@ class SME(ModelMeta):
                 tf.multiply(tf.matmul(self.mv1, tf.transpose(r)), tf.matmul(self.mv2, tf.transpose(t))) + self.bv)
 
     def gu_linear(self, h, r, test_flag):
+        """Function to calculate linear loss.
+
+          Args:
+              h (Tensor): Head entities ids.
+              r (Tensor): Relation ids of the triple.
+              test_flag (bool): If True, denotes testing phase.
+
+           Returns:
+               Tensors: Returns the bilinear loss.
+        """
         if test_flag:
             tmp1 = tf.cond(tf.shape(h)[0] > tf.shape(r)[0],
                            lambda: tf.expand_dims(tf.transpose(tf.matmul(self.mu2, tf.transpose(r)) + self.bu), axis=1),
@@ -78,6 +112,16 @@ class SME(ModelMeta):
             return tf.transpose(tf.matmul(self.mu1, tf.transpose(h)) + tf.matmul(self.mu2, tf.transpose(r)) + self.bu)
 
     def gv_linear(self, r, t, test_flag):
+        """Function to calculate linear loss.
+
+          Args:
+              h (Tensor): Head entities ids.
+              r (Tensor): Relation ids of the triple.
+              test_flag (bool): If True, denotes testing phase.
+
+           Returns:
+               Tensors: Returns the bilinear loss.
+        """
         if test_flag:
             tmp1 = tf.cond(tf.shape(t)[0] > tf.shape(r)[0],
                            lambda: tf.expand_dims(tf.transpose(tf.matmul(self.mv1, tf.transpose(r)) + self.bv), axis=1),
@@ -87,6 +131,17 @@ class SME(ModelMeta):
             return tf.transpose(tf.matmul(self.mv1, tf.transpose(r)) + tf.matmul(self.mv2, tf.transpose(t)) + self.bv)
 
     def match(self, h, r, t, test_flag=False):
+        """Function to that performs semanting matching.
+
+         Args:
+             h (Tensor): Head entities ids.
+             r (Tensor): Relation ids of the triple.
+             t (Tensor): Tail ids of the triple.
+             test_flag (bool): If True, denotes testing phase.
+
+          Returns:
+              Tensors: Returns the semantic matchin score.
+       """
         if self.config.bilinear:
             if test_flag:
                 tmp1 = self.gu_bilinear(h, r, test_flag)
@@ -110,6 +165,19 @@ class SME(ModelMeta):
                 return tf.reduce_sum(self.gu_linear(h, r, test_flag) * self.gv_linear(r, t, test_flag), 1)
 
     def def_inputs(self):
+        """Defines the inputs to the model.
+
+           Attributes:
+               pos_h (Tensor): Positive Head entities ids.
+               pos_r (Tensor): Positive Relation ids of the triple.
+               pos_t (Tensor): Positive Tail entity ids of the triple.
+               neg_h (Tensor): Negative Head entities ids.
+               neg_r (Tensor): Negative Relation ids of the triple.
+               neg_t (Tensor): Negative Tail entity ids of the triple.
+               test_h_batch (Tensor): Batch of head ids for testing.
+               test_r_batch (Tensor): Batch of relation ids for testing
+               test_t_batch (Tensor): Batch of tail ids for testing.
+        """
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
         self.pos_r = tf.placeholder(tf.int32, [None])
@@ -121,6 +189,16 @@ class SME(ModelMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
+        """Defines the model parameters.
+
+           Attributes:
+               num_total_ent (int): Total number of entities.
+               num_total_rel (int): Total number of relations.
+               k (Tensor): Size of the latent dimesnion for entities and relations.
+               ent_embeddings  (Tensor Variable): Lookup variable containing embedding of the entities.
+               rel_embeddings  (Tensor Variable): Lookup variable containing embedding of the relations.
+               parameter_list  (list): List of Tensor parameters.
+        """
         num_total_ent = self.data_stats.tot_entity
         num_total_rel = self.data_stats.tot_relation
         k = self.config.hidden_size
@@ -149,6 +227,7 @@ class SME(ModelMeta):
                                self.mu1, self.mu2, self.bu, self.mv1, self.mv2, self.bv]
 
     def def_loss(self):
+        """Defines the loss function for the algorithm."""
         self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
@@ -159,19 +238,12 @@ class SME(ModelMeta):
 
         self.loss = tf.reduce_sum(tf.maximum(energy_neg + self.config.margin - energy_pos, 0))
 
-    def test_step(self):
-        num_entity = self.data_stats.tot_entity
-
-        h_vec, r_vec, t_vec = self.embed(self.test_h, self.test_r, self.test_t)
-        energy_h = self.match(tf.nn.l2_normalize(self.ent_embeddings, axis=1), r_vec, t_vec)
-        energy_t = self.match(h_vec, r_vec, tf.nn.l2_normalize(self.ent_embeddings, axis=1))
-
-        _, head_rank = tf.nn.top_k(tf.negative(energy_h), k=num_entity)
-        _, tail_rank = tf.nn.top_k(tf.negative(energy_t), k=num_entity)
-
-        return head_rank, tail_rank
-
     def test_batch(self):
+        """Function that performs batch testing for the algorithm.
+
+           Returns:
+               Tensors: Returns ranks of head and tail.
+        """
         num_entity = self.data_stats.tot_entity
 
         h_vec, r_vec, t_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
@@ -184,7 +256,16 @@ class SME(ModelMeta):
         return head_rank, tail_rank
 
     def embed(self, h, r, t):
-        """function to get the embedding value"""
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
         emb_h = tf.nn.embedding_lookup(norm_ent_embeddings, h)
@@ -193,11 +274,31 @@ class SME(ModelMeta):
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess=None):
-        """function to get the embedding value in numpy"""
+        """Function to get the embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess):
-        """function to get the projected embedding value in numpy"""
+        """Function to get the projected embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         return self.get_embed(h, r, t, sess)

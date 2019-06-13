@@ -10,16 +10,29 @@ from pykg2vec.core.KGMeta import ModelMeta
 
 
 class SLM(ModelMeta):
-    """
-    ------------------Paper Title-----------------------------
-    Reasoning With Neural Tensor Networks for Knowledge Base Completion
-    ------------------Paper Authors---------------------------
-    Richard Socher∗, Danqi Chen*, Christopher D. Manning, Andrew Y. Ng
-    Computer Science Department, Stanford University, Stanford, CA 94305, USA
-    richard@socher.org, {danqi,manning}@stanford.edu, ang@cs.stanford.edu
-    ------------------Summary---------------------------------
-    SLM model is designed as a baseline of Neural Tensor Network.
-    The model constructs a nonlinear neural network to represent the score function.
+    """`Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
+
+        SLM model is designed as a baseline of Neural Tensor Network.
+        The model constructs a nonlinear neural network to represent the score function.
+
+        Args:
+            config (object): Model configuration parameters.
+
+        Attributes:
+            config (object): Model configuration.
+            data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+            model_name (str): Name of the model.
+
+        Examples:
+            >>> from pykg2vec.core.SLM import SLM
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = SLM()
+            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+
+        .. _Reasoning With Neural Tensor Networks for Knowledge Base Completion:
+            https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
     """
 
     def __init__(self, config=None):
@@ -28,6 +41,19 @@ class SLM(ModelMeta):
         self.model_name = 'SLM'
 
     def def_inputs(self):
+        """Defines the inputs to the model.
+
+           Attributes:
+               pos_h (Tensor): Positive Head entities ids.
+               pos_r (Tensor): Positive Relation ids of the triple.
+               pos_t (Tensor): Positive Tail entity ids of the triple.
+               neg_h (Tensor): Negative Head entities ids.
+               neg_r (Tensor): Negative Relation ids of the triple.
+               neg_t (Tensor): Negative Tail entity ids of the triple.
+               test_h_batch (Tensor): Batch of head ids for testing.
+               test_r_batch (Tensor): Batch of relation ids for testing
+               test_t_batch (Tensor): Batch of tail ids for testing.
+        """
         self.pos_h = tf.placeholder(tf.int32, [None])
         self.pos_t = tf.placeholder(tf.int32, [None])
         self.pos_r = tf.placeholder(tf.int32, [None])
@@ -40,6 +66,19 @@ class SLM(ModelMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
+        """Defines the model parameters.
+
+           Attributes:
+                num_total_ent (int): Total number of entities.
+                num_total_rel (int): Total number of relations.
+                k (Tensor): Size of the latent dimension for entities.
+                d (Tensor): Size of the latent dimension for relations.
+                ent_embeddings  (Tensor Variable): Lookup variable containing embedding of the entities.
+                rel_embeddings  (Tensor Variable): Lookup variable containing embedding of the relations.
+                mr1 (Tensor): Tensor Matrix for transforming head entity.
+                mr2 (Tensor): Tensor Matrix for transforming tail entity.
+                parameter_list  (list): List of Tensor parameters.
+        """
         num_total_ent = self.data_stats.tot_entity
         num_total_rel = self.data_stats.tot_relation
         d = self.config.ent_hidden_size
@@ -60,6 +99,7 @@ class SLM(ModelMeta):
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.mr1, self.mr2]
 
     def def_loss(self):
+        """Defines the loss function for the algorithm."""
         self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         self.rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
@@ -72,6 +112,12 @@ class SLM(ModelMeta):
         self.loss = tf.reduce_sum(tf.maximum(energy_neg + self.config.margin - energy_pos, 0))
 
     def layer(self, h, t):
+        """Defines the forward pass layer of the algorithm.
+
+          Args:
+              h (Tensor): Head entities ids.
+              t (Tensor): Tail entity ids of the triple.
+       """
         k = self.config.rel_hidden_size
         # h => [m, d], self.mr1 => [d, k]
         mr1h = tf.matmul(h, self.mr1)
@@ -81,6 +127,12 @@ class SLM(ModelMeta):
         return tf.tanh(mr1h + mr2t)
 
     def test_layer(self, h, t):
+        """Defines the forward pass inference layers of the algorithm.
+
+           Args:
+               h (Tensor): Head entities ids.
+               t (Tensor): Tail entity ids of the triple.
+        """
         k = self.config.rel_hidden_size
         # h => [m, d], self.mr1 => [d, k]
         mr1h = tf.matmul(h, self.mr1)
@@ -93,6 +145,11 @@ class SLM(ModelMeta):
         return result
 
     def test_batch(self):
+        """Function that performs batch testing for the algorithm.
+
+            Returns:
+                Tensors: Returns ranks of head and tail.
+        """
         num_entity = self.data_stats.tot_entity
 
         h_vec, r_vec, t_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
@@ -105,18 +162,47 @@ class SLM(ModelMeta):
         return head_rank, tail_rank
 
     def embed(self, h, r, t):
-        """function to get the embedding value"""
+        """Function to get the embedding value.
+
+            Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         emb_h = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), h)
         emb_r = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.rel_embeddings, axis=1), r)
         emb_t = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t)
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess=None):
-        """function to get the embedding value in numpy"""
+        """Function to get the embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess):
-        """function to get the projected embedding value in numpy"""
+        """Function to get the projected embedding value in numpy.
+
+            Args:
+                h (Tensor): Head entities ids.
+                r (Tensor): Relation ids of the triple.
+                t (Tensor): Tail entity ids of the triple.
+                sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         return self.get_embed(h, r, t, sess)

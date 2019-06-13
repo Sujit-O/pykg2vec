@@ -10,20 +10,35 @@ from pykg2vec.core.KGMeta import ModelMeta
 
 
 class ProjE_pointwise(ModelMeta):
-    """
-    ------------------Paper Title-----------------------------
-    ProjE: Embedding Projection for Knowledge Graph Completion
-    ------------------Paper Authors---------------------------
-    Baoxu Shi1 and Tim Weninger1
-    1Department of Computer Science and Engineering, University of Notre Dame
-    ------------------Summary---------------------------------
-    Instead of measuring the distance or matching scores between the pair of the
-    head entity and relation and then tail entity in embedding space ((h,r) vs (t)).
-    ProjE projects the entity candidates onto a target vector representing the
-    input data. The loss in ProjE is computed by the cross-entropy between
-    the projected target vector and binary label vector, where the included
-    entities will have value 0 if in negative sample set and value 1 if in
-    positive sample set.
+    """`ProjE-Embedding Projection for Knowledge Graph Completion`_.
+
+        Instead of measuring the distance or matching scores between the pair of the
+        head entity and relation and then tail entity in embedding space ((h,r) vs (t)).
+        ProjE projects the entity candidates onto a target vector representing the
+        input data. The loss in ProjE is computed by the cross-entropy between
+        the projected target vector and binary label vector, where the included
+        entities will have value 0 if in negative sample set and value 1 if in
+        positive sample set.
+
+         Args:
+            config (object): Model configuration parameters.
+
+        Attributes:
+            config (object): Model configuration.
+            data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+            model_name (str): Name of the model.
+
+        Examples:
+            >>> from pykg2vec.core.ProjE_pointwise import ProjE_pointwise
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = ProjE_pointwise()
+            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+
+        .. _ProjE-Embedding Projection for Knowledge Graph Completion:
+            https://arxiv.org/abs/1611.05425
+
     """
 
     def __init__(self, config):
@@ -32,6 +47,18 @@ class ProjE_pointwise(ModelMeta):
         self.model_name = 'ProjE_pointwise'
 
     def def_inputs(self):
+        """Defines the inputs to the model.
+
+           Attributes:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               hr_t (Tensor): Tail tensor list for (h,r) pair.
+               rt_h (Tensor): Head tensor list for (r,t) pair.
+               test_h_batch (Tensor): Batch of head ids for testing.
+               test_r_batch (Tensor): Batch of relation ids for testing
+               test_t_batch (Tensor): Batch of tail ids for testing.
+        """
         self.h = tf.placeholder(tf.int32, [None])
         self.r = tf.placeholder(tf.int32, [None])
         self.t = tf.placeholder(tf.int32, [None])
@@ -44,36 +71,45 @@ class ProjE_pointwise(ModelMeta):
 
 
     def def_parameters(self):
-            num_total_ent = self.data_stats.tot_entity
-            num_total_rel = self.data_stats.tot_relation
-            k = self.config.hidden_size
+        """Defines the model parameters.
 
-            with tf.name_scope("embedding"):
+           Attributes:
+               k (Tensor): Size of the latent dimesnion for entities and relations.
+               ent_embeddings  (Tensor Variable): Lookup variable containing embedding of the entities.
+               rel_embeddings  (Tensor Variable): Lookup variable containing embedding of the relations.
+               parameter_list  (list): List of Tensor parameters.
+        """
+        num_total_ent = self.data_stats.tot_entity
+        num_total_rel = self.data_stats.tot_relation
+        k = self.config.hidden_size
 
-                self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
-                                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        with tf.name_scope("embedding"):
 
-                self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
-                                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-                self.bc1 = tf.get_variable(name="bc1", shape=[k],
-                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-                self.De1 = tf.get_variable(name="De1", shape=[k],
-                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-                self.Dr1 = tf.get_variable(name="Dr1", shape=[k],
-                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-                self.bc2 = tf.get_variable(name="bc2", shape=[k],
-                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-                self.De2 = tf.get_variable(name="De2", shape=[k],
-                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-                self.Dr2 = tf.get_variable(name="Dr2", shape=[k],
-                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.bc1 = tf.get_variable(name="bc1", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.De1 = tf.get_variable(name="De1", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.Dr1 = tf.get_variable(name="Dr1", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-                self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2,
-                                       self.De2, self.Dr2]
+            self.bc2 = tf.get_variable(name="bc2", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.De2 = tf.get_variable(name="De2", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.Dr2 = tf.get_variable(name="Dr2", shape=[k],
+                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+
+            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2,
+                                   self.De2, self.Dr2]
 
     def def_loss(self):
+        """Defines the loss function for the algorithm."""
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
         norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
 
@@ -104,15 +140,38 @@ class ProjE_pointwise(ModelMeta):
         self.loss = hrt_loss + trh_loss + regularizer_loss*1e-5
 
     def f1(self, h, r):
+        """Defines froward layer for head.
+
+            Args:
+                   h (Tensor): Head entities ids.
+                   r (Tensor): Relation ids of the triple.
+        """
         return tf.tanh(h * self.De1 + r * self.Dr1 + self.bc1)
 
     def f2(self, t, r):
+        """Defines forward layer for tail.
+
+            Args:
+               t (Tensor): Tail entities ids.
+               r (Tensor): Relation ids of the triple.
+        """
         return tf.tanh(t * self.De2 + r * self.Dr2 + self.bc2)
 
     def g(self, f, W):
+        """Defines activation layer.
+
+            Args:
+               f (Tensor): output of the forward layers.
+               W (Tensor): Matrix for multiplication.
+        """
         return tf.sigmoid(tf.matmul(f, tf.transpose(W)))
 
     def test_batch(self):
+        """Function that performs batch testing for the algorithm.
+
+            Returns:
+                Tensors: Returns ranks of head and tail.
+        """
         num_entity = self.data_stats.tot_entity
 
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
@@ -131,7 +190,16 @@ class ProjE_pointwise(ModelMeta):
         return head_rank, tail_rank
 
     def embed(self, h, r, t):
-        """function to get the embedding value"""
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
         emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
@@ -144,11 +212,31 @@ class ProjE_pointwise(ModelMeta):
         return self.projection(emb_h, proj_vec), emb_r, self.projection(emb_t, proj_vec)
 
     def get_embed(self, h, r, t, sess):
-        """function to get the embedding value in numpy"""
+        """Function to get the embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         emb_h, emb_r, emb_t = self.embed(h, r, t)
         h, r, t = sess.run([emb_h, emb_r, emb_t])
         return h, r, t
 
     def get_proj_embed(self, h, r, t, sess):
-        """function to get the projectd embedding value in numpy"""
+        """Function to get the projected embedding value in numpy.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+               sess (object): Tensorflow Session object.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
         return self.get_embed(h, r, t, sess)
