@@ -71,6 +71,7 @@ def tunning_function(name):
     args = KGETuneArgParser().get_args([])
 
     # initializing bayesian optimizer and prepare data.
+    args.debug = True
     bays_opt = BaysOptimizer(args=args)
 
     # perform the golden hyperparameter tuning. 
