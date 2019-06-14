@@ -5,7 +5,7 @@ This module is for controlling knowledge graph
 """
 
 
-import shutil, tarfile, pickle
+import shutil, tarfile, pickle, time
 import urllib.request
 from pathlib import Path
 from collections import defaultdict
@@ -42,19 +42,12 @@ class Triple(object):
         self.h = None
         self.r = None
         self.t = None
-        self.h_string = None
-        self.r_string = None
-        self.t_string = None
 
-        if type(h) is int and type(r) is int and type(t) is int:
-            self.h = h
-            self.r = r
-            self.t = t
+        assert type(h) is str and type(r) is str and type(t) is str, "h, r, t should be strings."
 
-        else:
-            self.h_string = h
-            self.r_string = r
-            self.t_string = t
+        self.h_string = h
+        self.r_string = r
+        self.t_string = t
 
         self.hr_t = None
         self.tr_h = None
@@ -71,18 +64,18 @@ class Triple(object):
         self.r = r
         self.t = t
 
-    def set_strings(self, h, r, t):
-        """This function assigns the head, relation and tail in string format.
+    # def set_strings(self, h, r, t):
+    #     """This function assigns the head, relation and tail in string format.
 
-            Args:
-                h (str): String  head entity.
-                r (str): String  relation entity.
-                t (str): String  tail entity.
+    #         Args:
+    #             h (str): String  head entity.
+    #             r (str): String  relation entity.
+    #             t (str): String  tail entity.
 
-            Todo:
-                * Assing the strings.
-        """
-        pass
+    #         Todo:
+    #             * Assing the strings.
+    #     """
+    #     pass
 
     def set_hr_t(self, hr_t):
         """This function assigns the tails list for the given h,r pair.
@@ -173,8 +166,8 @@ class KnownDataset:
 
        Examples:
            >>> from pykg2vec.config.global_config import KnownDataset
-           >>> name = "dLmL50"
-           >>> url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
+           >>> name = "dL50a"
+           >>> url = "https://github.com/louisccc/KGppler/raw/master/datasets/dL50a.tgz"
            >>> prefix = 'deeplearning_dataset_50arch-'
            >>> kgdata =  KnownDataset(name, url, prefix)
            >>> kgdata.download()
@@ -199,9 +192,11 @@ class KnownDataset:
             self.download()
             self.extract()
 
+        path_eq_root = ['YAGO3_10', 'WN18RR', 'FB15K_237', 'Kinship',
+                        'Nations', 'UMLS']
         if self.name == 'WN18':
             self.dataset_path = self.root_path / 'wordnet-mlj12'
-        elif self.name == 'YAGO3_10' or self.name == 'WN18RR':
+        elif self.name in path_eq_root:
             self.dataset_path = self.root_path
         else:
             self.dataset_path = self.root_path / self.name
@@ -294,8 +289,8 @@ class DeepLearning50a(KnownDataset):
 
     """
     def __init__(self):
-        name = "dLmL50"
-        url = "https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0"
+        name = "dL50a"
+        url = "https://github.com/louisccc/KGppler/raw/master/datasets/dL50a.tgz"
         prefix = 'deeplearning_dataset_50arch-'
 
         KnownDataset.__init__(self, name, url, prefix)
@@ -335,7 +330,7 @@ class WordNet18_RR(KnownDataset):
     """
     def __init__(self):
         name = "WN18RR"
-        url = "https://github.com/TimDettmers/ConvE/raw/master/WN18RR.tar.gz"
+        url = "https://github.com/louisccc/KGppler/raw/master/datasets/WN18RR.tar.gz"
         prefix = ''
 
         KnownDataset.__init__(self, name, url, prefix)
@@ -355,7 +350,87 @@ class YAGO3_10(KnownDataset):
     """
     def __init__(self):
         name = "YAGO3_10"
-        url = "https://github.com/TimDettmers/ConvE/raw/master/YAGO3-10.tar.gz"
+        url = "https://github.com/louisccc/KGppler/raw/master/datasets/YAGO3-10.tar.gz"
+        prefix = ''
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
+class FreebaseFB15k_237(KnownDataset):
+    """This data structure defines the necessary information for downloading FB15k-237 dataset.
+
+        FB15k-237 module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
+    def __init__(self):
+        name = "FB15K_237"
+        url = "https://github.com/louisccc/KGppler/raw/master/datasets/fb15k-237.tgz"
+        prefix = ''
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
+class Kinship(KnownDataset):
+    """This data structure defines the necessary information for downloading Kinship dataset.
+
+        Kinship module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
+    def __init__(self):
+        name = "Kinship"
+        url = "https://github.com/louisccc/KGppler/raw/master/datasets/kinship.tar.gz"
+        prefix = ''
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
+class Nations(KnownDataset):
+    """This data structure defines the necessary information for downloading Nations dataset.
+
+        Nations module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
+    def __init__(self):
+        name = "Nations"
+        url = "https://github.com/louisccc/KGppler/raw/master/datasets/nations.tar.gz"
+        prefix = ''
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
+class UMLS(KnownDataset):
+    """This data structure defines the necessary information for downloading UMLS dataset.
+
+        UMLS module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
+    def __init__(self):
+        name = "UMLS"
+        url = "https://github.com/louisccc/KGppler/raw/master/datasets/umls.tar.gz"
         prefix = ''
 
         KnownDataset.__init__(self, name, url, prefix)
@@ -444,7 +519,7 @@ class KnowledgeGraph(object):
          negative_sample (str): Sampling technique to be used for generating negative triples (bern or uniform).
 
       Attributes:
-        dataset_name (str): The name of the dataset. 
+        dataset_name (str): The name of the dataset.
         dataset (object): The dataset object isntance.
         negative_sample (str): negative_sample
         triplets (dict): dictionary with three list of training, testing and validation triples.
@@ -467,19 +542,27 @@ class KnowledgeGraph(object):
           >>> knowledge_graph.prepare_data()
    """
     def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
-        
+
         self.dataset_name = dataset
 
-        if dataset.lower() == 'freebase15k':
+        if dataset.lower() == 'freebase15k' or dataset.lower() == 'fb15k':
             self.dataset = FreebaseFB15k()
-        elif dataset.lower() == 'deeplearning50a':
+        elif dataset.lower() == 'deeplearning50a' or dataset.lower() == 'dl50a':
             self.dataset = DeepLearning50a()
-        elif dataset.lower() == 'wordnet18':
+        elif dataset.lower() == 'wordnet18' or dataset.lower() == 'wn18':
             self.dataset = WordNet18()
-        elif dataset.lower() == 'wordnet18_rr':
+        elif dataset.lower() == 'wordnet18_rr' or dataset.lower() == 'wn18_rr':
             self.dataset = WordNet18_RR()
-        elif dataset.lower() == 'yago3_10':
+        elif dataset.lower() == 'yago3_10' or dataset.lower() == 'yago':
             self.dataset = YAGO3_10()
+        elif dataset.lower() == 'freebase15k_237' or dataset.lower() == 'fb15k_237':
+            self.dataset = FreebaseFB15k_237()
+        elif dataset.lower() == 'kinship' or dataset.lower() == 'ks':
+            self.dataset = Kinship()
+        elif dataset.lower() == 'nations':
+            self.dataset = Nations()
+        elif dataset.lower() == 'umls':
+            self.dataset = UMLS()
         else:
             # if the dataset does not match with existing one, check if it exists in user's local space.
             # if it still can't find corresponding folder, raise exception in UserDefinedDataset.__init__()
@@ -511,10 +594,13 @@ class KnowledgeGraph(object):
             self.kg_meta = KGMetaData()
 
     def force_prepare_data(self):
-        if self.dataset.is_meta_cache_exists():
-            self.dataset.cache_metadata_path.unlink()
+        shutil.rmtree(str(self.dataset.root_path))
+
+        time.sleep(1)
+
+        self.__init__(dataset=self.dataset_name, negative_sample=self.negative_sample)
         self.prepare_data()
-        
+
     def prepare_data(self):
         """Function to prepare the dataset"""
         if self.dataset.is_meta_cache_exists():
