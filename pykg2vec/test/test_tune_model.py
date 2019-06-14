@@ -16,6 +16,8 @@ from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 def tunning_function(name):
     """Function to test the tuning of the models."""
 
+    tf.reset_default_graph()
+    
     knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
     knowledge_graph.prepare_data()
 
@@ -31,7 +33,7 @@ def tunning_function(name):
     # perform the golden hyperparameter tuning. 
     bays_opt.optimize()
 
-    tf.reset_default_graph()
+    # tf.reset_default_graph()
 
 
 def test_tuning_transe():
