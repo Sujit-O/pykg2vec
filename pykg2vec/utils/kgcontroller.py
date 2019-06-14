@@ -5,7 +5,7 @@ This module is for controlling knowledge graph
 """
 
 
-import shutil, tarfile, pickle
+import shutil, tarfile, pickle, time
 import urllib.request
 from pathlib import Path
 from collections import defaultdict
@@ -64,18 +64,18 @@ class Triple(object):
         self.r = r
         self.t = t
 
-    def set_strings(self, h, r, t):
-        """This function assigns the head, relation and tail in string format.
+    # def set_strings(self, h, r, t):
+    #     """This function assigns the head, relation and tail in string format.
 
-            Args:
-                h (str): String  head entity.
-                r (str): String  relation entity.
-                t (str): String  tail entity.
+    #         Args:
+    #             h (str): String  head entity.
+    #             r (str): String  relation entity.
+    #             t (str): String  tail entity.
 
-            Todo:
-                * Assing the strings.
-        """
-        pass
+    #         Todo:
+    #             * Assing the strings.
+    #     """
+    #     pass
 
     def set_hr_t(self, hr_t):
         """This function assigns the tails list for the given h,r pair.
@@ -505,6 +505,9 @@ class KnowledgeGraph(object):
 
     def force_prepare_data(self):
         shutil.rmtree(str(self.dataset.root_path))
+
+        time.sleep(1)
+
         self.__init__(dataset=self.dataset_name, negative_sample=self.negative_sample)
         self.prepare_data()
         
