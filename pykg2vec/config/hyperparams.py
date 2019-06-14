@@ -269,8 +269,8 @@ class NTNParams:
     def __init__(self):
         self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
         self.L1_flag = [True, False]
-        self.ent_hidden_size = [8, 16, 32, 64, 128, 256]
-        self.rel_hidden_size = [8, 16, 32, 64, 128, 256]
+        self.ent_hidden_size = [8, 16, 32]
+        self.rel_hidden_size = [8, 16, 32]
         self.batch_size = [128, 256, 512]
         self.epochs = [2, 5, 10]
         self.margin = [0.4, 1.0, 2.0]
@@ -403,8 +403,8 @@ class ConvEParams:
         self.lr_decay = [0.95, 0.9, 0.8]
         self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
         self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
+        self.hidden_size = [50]
+        self.batch_size = [200, 400, 600]
         self.epochs = [2, 5, 10]
         self.margin = [0.4, 1.0, 2.0]
         self.optimizer = ["adam", "sgd", 'rms']
@@ -534,10 +534,10 @@ class ComplexParams:
         self.sampling = ["uniform", "bern"]
 
 
-class DistMult:
+class DistMultParams:
     """This class defines the hyperameters and its ranges for tuning DistMult algorithm.
 
-    DistMult defines all the possibel values to be tuned for the algorithm. User may
+    DistMultParams defines all the possibel values to be tuned for the algorithm. User may
     change these values directly for performing the bayesian optimization of the hyper-parameters
 
     Args:
@@ -577,10 +577,10 @@ class DistMult:
         self.sampling = ["uniform", "bern"]
 
 
-class TuckER:
+class TuckERParams:
     """This class defines the hyperameters and its ranges for tuning TuckER algorithm.
 
-    TuckER defines all the possibel values to be tuned for the algorithm. User may
+    TuckERParams defines all the possibel values to be tuned for the algorithm. User may
     change these values directly for performing the bayesian optimization of the hyper-parameters
 
     Args:

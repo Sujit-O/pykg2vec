@@ -1,11 +1,14 @@
-from pykg2vec.config.global_config import KnowledgeGraph
+import sys
+
+
+from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.config.config import Importer, KGEArgParser
 from pykg2vec.utils.trainer import Trainer
 
 
 def main():
     # getting the customized configurations from the command-line arguments.
-    args = KGEArgParser().get_args()
+    args = KGEArgParser().get_args(sys.argv[1:])
 
     # Preparing data and cache the data for later usage
     knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling)

@@ -284,7 +284,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'pykg2vec', u'pykg2vec Documentation',
-   u'Sujit Rokka Chhetri, Shih-Yuan Yuand, Ahmet Salih Aksakal, Palash Goyal and Arquimedes Canedo', 'pykg2vec', 'One line description of project.',
+   u'Sujit Rokka Chhetri, Shih-Yuan Yuan, Ahmet Salih Aksakal, Palash Goyal and Arquimedes Canedo', 'pykg2vec', 'One line description of project.',
    'Miscellaneous'),
 ]
 

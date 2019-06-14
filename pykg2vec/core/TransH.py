@@ -169,7 +169,7 @@ class TransH(ModelMeta):
         if self.config.L1_flag:
             return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
         else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
+            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

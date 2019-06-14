@@ -1,10 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+This module is for testing unit functions of model
+"""
 import pytest
+import tensorflow as tf
+
+
 from pykg2vec.config.config import *
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
-from pykg2vec.config.hyperparams import KGETuneArgParser
-from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
-import tensorflow as tf
+
 
 @pytest.mark.skip(reason="This is a functional method.")
 def testing_function(name, distance_measure=None, bilinear=None, display=False):
@@ -65,19 +71,6 @@ def testing_function_with_args(name, distance_measure=None, bilinear=None, displ
 
     tf.reset_default_graph()
 
-
-@pytest.mark.skip(reason="This is a functional method.")
-def tunning_function(name):
-    """Function to test the tuning of the  models."""
-    # getting the customized configurations from the command-line arguments.
-    args = KGETuneArgParser().get_args([])
-
-    # initializing bayesian optimizer and prepare data.
-    args.debug = True
-    bays_opt = BaysOptimizer(args=args)
-
-    # perform the golden hyperparameter tuning. 
-    bays_opt.optimize()
 
 def test_Complex():
     """Function to test Complex Algorithm."""
@@ -230,10 +223,6 @@ def test_HoLE_args():
 def test_Tucker_args():
     """Function to test TuckER Algorithm with arguments."""
     testing_function_with_args('tucker')
-
-def test_tuning():
-    """Function to test the tuning function."""
-    tunning_function('transe')
 
 def test_transE_display():
     """Function to test transE display."""

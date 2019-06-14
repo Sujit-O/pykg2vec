@@ -36,7 +36,7 @@ modelMap = {"complex": "Complex",
             "transg": "TransG",
             "transh": "TransH",
             "transm": "TransM",
-            "transR": "TransR",
+            "transr": "TransR",
             "tucker": "TuckER"}
 
 
@@ -56,12 +56,13 @@ configMap = {"complex": "ComplexConfig",
              "transg": "TransGConfig",
              "transh": "TransHConfig",
              "transm": "TransMConfig",
-             "transR": "TransRConfig",
+             "transr": "TransRConfig",
              "tucker": "TuckERConfig"}
 
 
 hypMap = {"complex": "ComplexParams",
           "conve": "ConvEParams",
+          "hole": "HoLEParams",
           "distmult": "DistMultParams",
           "kg2e": "KG2EParams",
           "ntn": "NTNParams",
@@ -75,7 +76,7 @@ hypMap = {"complex": "ComplexParams",
           "transg": "TransGParams",
           "transh": "TransHParams",
           "transm": "TransMParams",
-          "transR": "TransRParams",
+          "transr": "TransRParams",
           "tucker": "TuckERParams"}
 
 
@@ -158,7 +159,14 @@ class BaysOptimizer(object):
         self.trainer.config.L1_flag = params['L1_flag']
         self.trainer.config.batch_size = params['batch_size']
         self.trainer.config.epochs = params['epochs']
-        self.trainer.config.hidden_size = params['hidden_size']
+        
+        if 'hidden_size' in params:
+          self.trainer.config.hidden_size = params['hidden_size']
+        if 'ent_hidden_size' in params:
+          self.trainer.config.ent_hidden_size = params['ent_hidden_size']
+        if 'rel_hidden_size' in params:
+          self.trainer.config.rel_hidden_size = params['rel_hidden_size']
+
         self.trainer.config.learning_rate = params['learning_rate']
         self.trainer.config.margin = params['margin']
         self.trainer.config.disp_result = False

@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+This module is for testing unit functions of generator
+"""
 import timeit
 
 from pykg2vec.config.global_config import GeneratorConfig
@@ -5,6 +10,7 @@ from pykg2vec.utils.generator import Generator
 from pykg2vec.config.config import TransEConfig
 from pykg2vec.config.config import ProjE_pointwiseConfig
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
+
 
 def test_generator_proje():
     """Function to test the generator for ProjE algorithm."""
