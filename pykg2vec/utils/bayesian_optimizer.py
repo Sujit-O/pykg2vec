@@ -62,6 +62,7 @@ configMap = {"complex": "ComplexConfig",
 
 hypMap = {"complex": "ComplexParams",
           "conve": "ConvEParams",
+          "hole": "HoLEParams",
           "distmult": "DistMultParams",
           "kg2e": "KG2EParams",
           "ntn": "NTNParams",
