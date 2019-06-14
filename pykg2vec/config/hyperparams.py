@@ -269,8 +269,8 @@ class NTNParams:
     def __init__(self):
         self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
         self.L1_flag = [True, False]
-        self.ent_hidden_size = [8, 16, 32, 64, 128, 256]
-        self.rel_hidden_size = [8, 16, 32, 64, 128, 256]
+        self.ent_hidden_size = [8, 16, 32]
+        self.rel_hidden_size = [8, 16, 32]
         self.batch_size = [128, 256, 512]
         self.epochs = [2, 5, 10]
         self.margin = [0.4, 1.0, 2.0]
