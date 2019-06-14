@@ -236,14 +236,15 @@ We intend to provide the libraries to test the knowledge graph algorithms agains
 * [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
 
 ## Cite
-  Please kindly cite us if you found the library helpful. 
+  Please kindly cite the paper corresponding  to the library. 
+
    ```
-   @online{pykg2vec,
-  author = {Rokka Chhetri, Sujit and  Yu, Shih-Yuan and  Salih Aksakal, Ahmet and  Goyal, Palash and  Canedo, Arquimedes},
-  title = {pykg2vec: Python Knowledge Graph Embedding Library},
-  year = 2019,
-  url = {https://pypi.org/project/pykg2vec/}
-  }
+   @article{yu2019pykg2vec,
+  title={Pykg2vec: A Python Library for Knowledge Graph Embedding},
+  author={Yu, Shih Yuan and Rokka Chhetri, Sujit and Canedo, Arquimedes and Goyal, Palash and Faruque, Mohammad Abdullah Al},
+  journal={arXiv preprint arXiv:1906.04239},
+  year={2019}
+}
     
    ```
    [__***Back to Top***__](#table-of-contents)
