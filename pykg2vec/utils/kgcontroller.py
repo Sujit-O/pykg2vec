@@ -42,19 +42,12 @@ class Triple(object):
         self.h = None
         self.r = None
         self.t = None
-        self.h_string = None
-        self.r_string = None
-        self.t_string = None
 
-        if type(h) is int and type(r) is int and type(t) is int:
-            self.h = h
-            self.r = r
-            self.t = t
+        assert type(h) is str and type(r) is str and type(t) is str, "h, r, t should be strings."
 
-        else:
-            self.h_string = h
-            self.r_string = r
-            self.t_string = t
+        self.h_string = h
+        self.r_string = r
+        self.t_string = t
 
         self.hr_t = None
         self.tr_h = None
@@ -511,8 +504,8 @@ class KnowledgeGraph(object):
             self.kg_meta = KGMetaData()
 
     def force_prepare_data(self):
-        if self.dataset.is_meta_cache_exists():
-            self.dataset.cache_metadata_path.unlink()
+        shutil.rmtree(str(self.dataset.root_path))
+        self.__init__(dataset=self.dataset_name, negative_sample=self.negative_sample)
         self.prepare_data()
         
     def prepare_data(self):
