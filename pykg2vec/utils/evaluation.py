@@ -134,6 +134,8 @@ def save_test_summary(result_path, model_name, hits,
         for key, val in config.__dict__.items():
             if 'gpu' in key:
                 continue
+            if 'kg_meta' in key or 'knowledge_graph' in key:
+                continue
             if not isinstance(val, str):
                 if isinstance(val, list):
                     v_tmp = '['
@@ -148,6 +150,14 @@ def save_test_summary(result_path, model_name, hits,
                     val = str(val)
             fh.write(key + ':' + val + '\n')
         fh.write('-----------------------------------------\n')
+        fh.write("\n----------Metadata Info for Dataset:%s----------------" % config.knowledge_graph.dataset_name)
+        fh.write("Total Training Triples   :%d\n"%config.kg_meta.tot_train_triples)
+        fh.write("Total Testing Triples    :%d\n"%config.kg_meta.tot_test_triples)
+        fh.write("Total validation Triples :%d\n"%config.kg_meta.tot_valid_triples)
+        fh.write("Total Entities           :%d\n"%config.kg_meta.tot_entity)
+        fh.write("Total Relations          :%d\n"%config.kg_meta.tot_relation)
+        fh.write("---------------------------------------------")
+
     columns = ['Epoch', 'mean_rank', 'filter_mean_rank']
     for hit in hits:
         columns += ['hits' + str(hit), 'filter_hits' + str(hit)]
@@ -239,6 +249,8 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
             display_summary(epoch, hits, mean_rank_head, mean_rank_tail,
                             filter_mean_rank_head, filter_mean_rank_tail,
                             hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time)
+            
+            config.knowledge_graph.dump()
 
             if epoch >= total_epoch - 1:
                 save_test_summary(result_path, model_name, hits,
