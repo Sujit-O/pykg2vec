@@ -15,168 +15,6 @@ from multiprocessing import Process, Queue
 import progressbar
 
 from pykg2vec.core.KGMeta import EvaluationMeta
-def save_test_summary(result_path, model_name, hits,
-                      mean_rank_head, mean_rank_tail,
-                      filter_mean_rank_head,
-                      filter_mean_rank_tail, hit_head,
-                      hit_tail, filter_hit_head, filter_hit_tail, config):
-    """Function to save the test of the summary.
-           
-        Args:
-            result_path (str): Path to save the test summary
-            mode_name (str): Name of the model for which the test is performed
-            hits (list): list of integet hits for hits@k
-            mean_rank_head(dict): mean rank of the head with epoch as key and float as value
-            mean_rank_tail (dict): mean rank of the tail with epoch as key and float as value
-            filter_mean_rank_head(dict): filtered mean rank of the head with epoch as key and float as value
-            filter_mean_rank_tail (dict): filtered mean rank of the head with epoch as key and float as value
-            hit_head(dict): mean head hit ratio of the head with epoch,hit as key and float as value
-            hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
-            filter_hit_head(dict): filtered mean head hit ratio of the head with epoch,hit as key and float as value
-            ilter_hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
-            config (object): model configuration object
-
-    """
-    files = os.listdir(str(result_path))
-    l = len([f for f in files if model_name in f if 'Testing' in f])
-    with open(str(result_path / (model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
-        fh.write('----------------SUMMARY----------------\n')
-        for key, val in config.__dict__.items():
-            if 'gpu' in key:
-                continue
-            if 'kg_meta' in key or 'knowledge_graph' in key:
-                continue
-            if not isinstance(val, str):
-                if isinstance(val, list):
-                    v_tmp = '['
-                    for i, v in enumerate(val):
-                        if i == 0:
-                            v_tmp += str(v)
-                        else:
-                            v_tmp += ',' + str(v)
-                    v_tmp += ']'
-                    val = v_tmp
-                else:
-                    val = str(val)
-            fh.write(key + ':' + val + '\n')
-        fh.write('-----------------------------------------\n')
-        fh.write("\n----------Metadata Info for Dataset:%s----------------" % config.knowledge_graph.dataset_name)
-        fh.write("Total Training Triples   :%d\n"%config.kg_meta.tot_train_triples)
-        fh.write("Total Testing Triples    :%d\n"%config.kg_meta.tot_test_triples)
-        fh.write("Total validation Triples :%d\n"%config.kg_meta.tot_valid_triples)
-        fh.write("Total Entities           :%d\n"%config.kg_meta.tot_entity)
-        fh.write("Total Relations          :%d\n"%config.kg_meta.tot_relation)
-        fh.write("---------------------------------------------")
-
-    columns = ['Epoch', 'mean_rank', 'filter_mean_rank']
-    for hit in hits:
-        columns += ['hits' + str(hit), 'filter_hits' + str(hit)]
-
-    results = []
-    for epoch in mean_rank_head.keys():
-        res_tmp = [epoch, (mean_rank_head[epoch] + mean_rank_tail[epoch]) / 2,
-                   (filter_mean_rank_head[epoch] + filter_mean_rank_tail[epoch]) / 2]
-
-        for hit in hits:
-            res_tmp.append((hit_head[(epoch, hit)] + hit_tail[(epoch, hit)]) / 2)
-            res_tmp.append((filter_hit_head[(epoch, hit)] + filter_hit_tail[(epoch, hit)]) / 2)
-        results.append(res_tmp)
-
-    df = pd.DataFrame(results, columns=columns)
-
-    with open(str(result_path / (model_name + '_Testing_results_' + str(l) + '.csv')),
-              'a') as fh:
-        df.to_csv(fh)
-
-def eval_batch_head(id_replace_head, h, r, t, tr_h):
-    """Function to evaluate the head rank.
-           
-       Args:
-           id_replace_head (list): List of the predicted head for the given tail, relation pair
-           h (int): head id
-           r (int): relation id
-           t (int): tail id
-           tr_h (dict): list of heads for the given tail and relation pari.
-
-        Returns:
-            Tensors: Returns head  rank and filetered head rank
-    """
-    hrank = 0
-    fhrank = 0
-
-    for j in range(len(id_replace_head)):
-        val = id_replace_head[-j - 1]
-        if val == h:
-            break
-        else:
-            hrank += 1
-            fhrank += 1
-            if val in tr_h[(t, r)]:
-                fhrank -= 1
-
-    return hrank, fhrank
-
-
-def eval_batch_tail(id_replace_tail, h, r, t, hr_t):
-    """Function to evaluate the tail rank.
-           
-       Args:
-           id_replace_tail (list): List of the predicted tails for the given head, relation pair
-           h (int): head id
-           r (int): relation id
-           t (int): tail id
-           hr_t (dict): list of tails for the given hwS and relation pari.
-
-        Returns:
-            Tensors: Returns tail rank and filetered tail rank
-    """
-    trank = 0
-    ftrank = 0
-
-    for j in range(len(id_replace_tail)):
-        val = id_replace_tail[-j - 1]
-        if val == t:
-            break
-        else:
-            trank += 1
-            ftrank += 1
-            if val in hr_t[(h, r)]:
-                ftrank -= 1
-    return trank, ftrank
-
-
-def display_summary(epoch, hits, mean_rank_head, mean_rank_tail,
-                    filter_mean_rank_head, filter_mean_rank_tail,
-                    hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time):
-    """Function to print the test summary.
-           
-        Args:
-            epoch (int): Epoch for the given result
-            hits (list): list of integet hits for hits@k
-            mean_rank_head(dict): mean rank of the head with epoch as key and float as value
-            mean_rank_tail (dict): mean rank of the tail with epoch as key and float as value
-            filter_mean_rank_head(dict): filtered mean rank of the head with epoch as key and float as value
-            filter_mean_rank_tail (dict): filtered mean rank of the head with epoch as key and float as value
-            hit_head(dict): mean head hit ratio of the head with epoch,hit as key and float as value
-            hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
-            filter_hit_head(dict): filtered mean head hit ratio of the head with epoch,hit as key and float as value
-            ilter_hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
-            start_time (objet): starting time of the evaluation
-
-    """
-    print("------Test Results: Epoch: %d --- time: %.2f------------" % (epoch, timeit.default_timer() - start_time))
-    print('--mean rank          : %.4f' % ((mean_rank_head[epoch] +
-                                            mean_rank_tail[epoch]) / 2))
-    print('--filtered mean rank : %.4f' % ((filter_mean_rank_head[epoch] +
-                                            filter_mean_rank_tail[epoch]) / 2))
-    for hit in hits:
-        print('--hits%d             : %.4f ' % (hit, (hit_head[(epoch, hit)] +
-                                                      hit_tail[(epoch, hit)]) / 2))
-        print('--filter hits%d      : %.4f ' % (hit, (filter_hit_head[(epoch, hit)] +
-                                                      filter_hit_tail[(epoch, hit)]) / 2))
-    print("---------------------------------------------------------")
-
-
 
 
 class MetricCalculator:
@@ -295,7 +133,6 @@ class MetricCalculator:
         return hrank, fhrank
 
     def settle(self):
-
         self.mean_rank_head[self.epoch] = np.mean(self.rank_head, dtype=np.float32) 
         self.mean_rank_tail[self.epoch] = np.mean(self.rank_tail, dtype=np.float32) 
 
@@ -307,11 +144,6 @@ class MetricCalculator:
             self.hit_tail[(self.epoch, hit)] = np.mean(np.asarray(self.rank_tail) < hit, dtype=np.float32) 
             self.filter_hit_head[(self.epoch, hit)] = np.mean(np.asarray(self.filter_rank_head) < hit, dtype=np.float32) 
             self.filter_hit_tail[(self.epoch, hit)] = np.mean(np.asarray(self.filter_rank_tail) < hit, dtype=np.float32) 
-
-        self.config.knowledge_graph.dump()
-        display_summary(self.epoch, self.hits, self.mean_rank_head, self.mean_rank_tail,
-                            self.filter_mean_rank_head, self.filter_mean_rank_tail,
-                            self.hit_head, self.hit_tail, self.filter_hit_head, self.filter_hit_tail, self.start_time)
 
     def get_curr_score(self):
         curr_epoch = self.epoch
@@ -326,15 +158,111 @@ class MetricCalculator:
 
         self.start_time = timeit.default_timer()
 
-    def save_test_summary2(self, model_name):
-        save_test_summary(self.result_path, model_name, self.hits,
-                          self.mean_rank_head, self.mean_rank_tail,
-                          self.filter_mean_rank_head,
-                          self.filter_mean_rank_tail, self.hit_head,
-                          self.hit_tail, self.filter_hit_head, self.filter_hit_tail, self.config)
+    def save_test_summary(self, model_name):
+        """Function to save the test of the summary.
+               
+            Args:
+                result_path (str): Path to save the test summary
+                mode_name (str): Name of the model for which the test is performed
+                hits (list): list of integet hits for hits@k
+                mean_rank_head(dict): mean rank of the head with epoch as key and float as value
+                mean_rank_tail (dict): mean rank of the tail with epoch as key and float as value
+                filter_mean_rank_head(dict): filtered mean rank of the head with epoch as key and float as value
+                filter_mean_rank_tail (dict): filtered mean rank of the head with epoch as key and float as value
+                hit_head(dict): mean head hit ratio of the head with epoch,hit as key and float as value
+                hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
+                filter_hit_head(dict): filtered mean head hit ratio of the head with epoch,hit as key and float as value
+                ilter_hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
+                config (object): model configuration object
+
+        """
+        files = os.listdir(str(self.result_path))
+        l = len([f for f in files if model_name in f if 'Testing' in f])
+        with open(str(self.result_path / (model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
+            fh.write('----------------SUMMARY----------------\n')
+            for key, val in self.config.__dict__.items():
+                if 'gpu' in key:
+                    continue
+                if 'kg_meta' in key or 'knowledge_graph' in key:
+                    continue
+                if not isinstance(val, str):
+                    if isinstance(val, list):
+                        v_tmp = '['
+                        for i, v in enumerate(val):
+                            if i == 0:
+                                v_tmp += str(v)
+                            else:
+                                v_tmp += ',' + str(v)
+                        v_tmp += ']'
+                        val = v_tmp
+                    else:
+                        val = str(val)
+                fh.write(key + ':' + val + '\n')
+            fh.write('-----------------------------------------\n')
+            fh.write("\n----------Metadata Info for Dataset:%s----------------" % self.config.knowledge_graph.dataset_name)
+            fh.write("Total Training Triples   :%d\n"%self.config.kg_meta.tot_train_triples)
+            fh.write("Total Testing Triples    :%d\n"%self.config.kg_meta.tot_test_triples)
+            fh.write("Total validation Triples :%d\n"%self.config.kg_meta.tot_valid_triples)
+            fh.write("Total Entities           :%d\n"%self.config.kg_meta.tot_entity)
+            fh.write("Total Relations          :%d\n"%self.config.kg_meta.tot_relation)
+            fh.write("---------------------------------------------")
+
+        columns = ['Epoch', 'mean_rank', 'filter_mean_rank']
+        for hit in self.hits:
+            columns += ['hits' + str(hit), 'filter_hits' + str(hit)]
+
+        results = []
+        for epoch in self.mean_rank_head.keys():
+            res_tmp = [epoch, (self.mean_rank_head[epoch] + self.mean_rank_tail[epoch]) / 2,
+                       (self.filter_mean_rank_head[epoch] + self.filter_mean_rank_tail[epoch]) / 2]
+
+            for hit in self.hits:
+                res_tmp.append((self.hit_head[(epoch, hit)] + self.hit_tail[(epoch, hit)]) / 2)
+                res_tmp.append((self.filter_hit_head[(epoch, hit)] + self.filter_hit_tail[(epoch, hit)]) / 2)
+            results.append(res_tmp)
+
+        df = pd.DataFrame(results, columns=columns)
+
+        with open(str(self.result_path / (model_name + '_Testing_results_' + str(l) + '.csv')),
+                  'a') as fh:
+            df.to_csv(fh)
+
+    def display_summary(self, epoch, hits, mean_rank_head, mean_rank_tail,
+                    filter_mean_rank_head, filter_mean_rank_tail,
+                    hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time):
+        """Function to print the test summary.
+               
+            Args:
+                epoch (int): Epoch for the given result
+                hits (list): list of integet hits for hits@k
+                mean_rank_head(dict): mean rank of the head with epoch as key and float as value
+                mean_rank_tail (dict): mean rank of the tail with epoch as key and float as value
+                filter_mean_rank_head(dict): filtered mean rank of the head with epoch as key and float as value
+                filter_mean_rank_tail (dict): filtered mean rank of the head with epoch as key and float as value
+                hit_head(dict): mean head hit ratio of the head with epoch,hit as key and float as value
+                hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
+                filter_hit_head(dict): filtered mean head hit ratio of the head with epoch,hit as key and float as value
+                ilter_hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
+                start_time (objet): starting time of the evaluation
+
+        """
+        self.config.knowledge_graph.dump()
+
+        stop_time = timeit.default_timer()
+        print("------Test Results: Epoch: %d --- time: %.2f------------" % (self.epoch, stop_time - self.start_time))
+        print('--mean rank          : %.4f' % ((self.mean_rank_head[self.epoch] +
+                                                self.mean_rank_tail[self.epoch]) / 2))
+        print('--filtered mean rank : %.4f' % ((self.filter_mean_rank_head[self.epoch] +
+                                                self.filter_mean_rank_tail[self.epoch]) / 2))
+        for hit in self.hits:
+            print('--hits%d             : %.4f ' % (hit, (self.hit_head[(self.epoch, hit)] +
+                                                          self.hit_tail[(self.epoch, hit)]) / 2))
+            print('--filter hits%d      : %.4f ' % (hit, (self.filter_hit_head[(self.epoch, hit)] +
+                                                          self.filter_hit_tail[(self.epoch, hit)]) / 2))
+        print("---------------------------------------------------------")
 
 def evaluation_process(result_queue, output_queue, config, model_name, tuning):
-    """Self contained process for evaluation.
+    """ The process that coordinates the tasks of evaluation.
            
         Args:
             result_queue (Queue): Multiprocessing queue to acquire inference result
@@ -349,14 +277,16 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
 
     while True:
         result = result_queue.get()
-        if result == 'Start!':
+        
+        if result == 'Start!': 
             calculator.reset()
             
         elif result == 'Stop!':
             calculator.settle()
+            calculator.display_summary()
 
             if calculator.epoch >= config.epochs - 1:
-                calculator.save_test_summary2(model_name)
+                calculator.save_test_summary(model_name)
 
                 if tuning:
                     score = calculator.get_curr_score()
