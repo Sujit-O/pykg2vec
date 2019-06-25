@@ -45,12 +45,14 @@ class MetricCalculator:
         self.filter_hit_head = {}
         self.filter_hit_tail = {}
         
+        self.mrr ={}
+        self.fmrr={}
+
         self.rank_head = []
         self.rank_tail = []
         self.filter_rank_head = []
         self.filter_rank_tail = []
 
-        # self.start_time = None
         self.epoch = None
 
 
@@ -134,10 +136,14 @@ class MetricCalculator:
 
     def settle(self):
         self.mean_rank_head[self.epoch] = np.mean(self.rank_head, dtype=np.float32) 
-        self.mean_rank_tail[self.epoch] = np.mean(self.rank_tail, dtype=np.float32) 
+        self.mean_rank_tail[self.epoch] = np.mean(self.rank_tail, dtype=np.float32)
+
+        self.mrr[self.epoch] = np.reciprocal((self.mean_rank_head[self.epoch]+self.mean_rank_tail[self.epoch])/2)
 
         self.filter_mean_rank_head[self.epoch] = np.mean(self.filter_rank_head, dtype=np.float32) 
         self.filter_mean_rank_tail[self.epoch] = np.mean(self.filter_rank_tail, dtype=np.float32) 
+
+        self.fmrr[self.epoch] = np.reciprocal((self.filter_mean_rank_head[self.epoch]+self.filter_mean_rank_tail[self.epoch])/2)
 
         for hit in self.hits:
             self.hit_head[(self.epoch, hit)] = np.mean(np.asarray(self.rank_head) < hit, dtype=np.float32) 
@@ -227,9 +233,7 @@ class MetricCalculator:
                   'a') as fh:
             df.to_csv(fh)
 
-    def display_summary(self, epoch, hits, mean_rank_head, mean_rank_tail,
-                    filter_mean_rank_head, filter_mean_rank_tail,
-                    hit_head, hit_tail, filter_hit_head, filter_hit_tail, start_time):
+    def display_summary(self):
         """Function to print the test summary.
                
             Args:
@@ -252,12 +256,16 @@ class MetricCalculator:
         print("------Test Results: Epoch: %d --- time: %.2f------------" % (self.epoch, stop_time - self.start_time))
         print('--mean rank          : %.4f' % ((self.mean_rank_head[self.epoch] +
                                                 self.mean_rank_tail[self.epoch]) / 2))
-        print('--filtered mean rank : %.4f' % ((self.filter_mean_rank_head[self.epoch] +
+        print('--Filtered mean rank : %.4f' % ((self.filter_mean_rank_head[self.epoch] +
                                                 self.filter_mean_rank_tail[self.epoch]) / 2))
+
+        print('--MRR(%%)             : %.4f' % (self.mrr[self.epoch]*100))
+        print('--Filtered MRR(%%)    : %.4f' % (self.fmrr[self.epoch]*100))
+
         for hit in self.hits:
-            print('--hits%d             : %.4f ' % (hit, (self.hit_head[(self.epoch, hit)] +
+            print('--hits%d              : %.4f ' % (hit, (self.hit_head[(self.epoch, hit)] +
                                                           self.hit_tail[(self.epoch, hit)]) / 2))
-            print('--filter hits%d      : %.4f ' % (hit, (self.filter_hit_head[(self.epoch, hit)] +
+            print('--Filtered hits%d     : %.4f ' % (hit, (self.filter_hit_head[(self.epoch, hit)] +
                                                           self.filter_hit_tail[(self.epoch, hit)]) / 2))
         print("---------------------------------------------------------")
 
