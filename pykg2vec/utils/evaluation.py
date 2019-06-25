@@ -417,7 +417,3 @@ class Evaluation(EvaluationMeta):
         with open(str(self.model.config.result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)
-
-
-if __name__ == '__main__':
-    e = Evaluation()
