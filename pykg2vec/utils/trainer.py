@@ -106,7 +106,7 @@ class Trainer(TrainerMeta):
             if not self.tuning:
                 self.evaluator = Evaluation(model=self.model, debug=self.debug)
 
-            for n_iter in range( self.config.epochs):
+            for n_iter in range(self.config.epochs):
                 loss = self.train_model_epoch(n_iter)
                 if not self.tuning:
                     self.test(n_iter)

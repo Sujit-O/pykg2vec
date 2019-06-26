@@ -858,10 +858,10 @@ class KnowledgeGraph(object):
     def dump(self):
         """ Function to dump statistic information of a dataset """
         ''' dump key information'''
-        print("\n----------Triple Stats for %s----------------" % self.dataset_name)
-        print("Total Training Triples   :", len(self.triplets['train']))
-        print("Total Testing Triples    :", len(self.triplets['test']))
-        print("Total validation Triples :", len(self.triplets['valid']))
+        print("\n----------Metadata Info for Dataset:%s----------------" % self.dataset_name)
+        print("Total Training Triples   :", self.kg_meta.tot_train_triples)
+        print("Total Testing Triples    :", self.kg_meta.tot_test_triples)
+        print("Total validation Triples :", self.kg_meta.tot_valid_triples)
         print("Total Entities           :", self.kg_meta.tot_entity)
         print("Total Relations          :", self.kg_meta.tot_relation)
         print("---------------------------------------------")
