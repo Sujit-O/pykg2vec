@@ -101,11 +101,11 @@ class BaysOptimizer(object):
         >>> bays_opt.optimize()
     """
 
-    def __init__(self, name_dataset='Freebase15k', sampling="uniform", args=None):
+    def __init__(self, args=None):
         """store the information of database"""
         model_name = args.model.lower()
         self.args = args
-        self.knowledge_graph = KnowledgeGraph(dataset=name_dataset, negative_sample=sampling)
+        self.knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling)
         hyper_params = None
         try:
             self.model_obj = getattr(importlib.import_module(model_path + ".%s" % modelMap[model_name]),
@@ -117,10 +117,11 @@ class BaysOptimizer(object):
             print("%s not implemented! Select from: %s" % (model_name,
                                                            ' '.join(map(str, modelMap.values()))))
         config = self.config_obj()
-        config.data=name_dataset
-        # config.set_dataset(name_dataset)
+        config.data=args.dataset_name
+
         self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug, tuning=True)
         self.search_space = self.define_search_space(hyper_params)
+        self.max_evals = self.args.max_number_trials if not self.args.debug else 1
         
     def define_search_space(self, hyper_params):
         """Function to perform search space addition"""
@@ -132,7 +133,7 @@ class BaysOptimizer(object):
         space = self.search_space
         trials = Trials()
         
-        best_result = fmin(fn=self.get_loss, space=space, algo=tpe.suggest, max_evals=2, trials=trials)
+        best_result = fmin(fn=self.get_loss, space=space, algo=tpe.suggest, max_evals=self.max_evals, trials=trials)
         
         columns = list(space.keys())   
         results = pd.DataFrame(columns=['iteration'] + columns + ['loss'])
