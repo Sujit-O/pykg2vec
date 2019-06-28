@@ -18,7 +18,6 @@ INSTALL_REQUIRES = (
     'scikit_learn>=0.20.3',
     'hyperopt>=0.1.2',
     'progressbar2>=3.39.3',
-    'tensorflow==1.13.1',
     'pathlib>=1.0.1',
     'numpydoc>=0.9.1',
     'sphinx-gallery>=0.3.1',
