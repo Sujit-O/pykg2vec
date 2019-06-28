@@ -137,8 +137,8 @@ class KGEArgParser:
                                         help='To use debug mode or not.')
         self.general_group.add_argument('-ghp', dest='golden', default=False, type=lambda x: (str(x).lower() == 'true'),
                                         help='Use Golden Hyper parameters!')
-        self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str,
-                                        help='The name of dataset.')
+        self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, 
+                                        help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
         self.general_group.add_argument('-ld', dest='load_from_data', default=False,
                                         type=lambda x: (str(x).lower() == 'true'), help='load_from_data!')
         self.general_group.add_argument('-sv', dest='save_model', default=True,
@@ -367,7 +367,7 @@ class TransGConfig(BasicConfig):
             self.sampling = "uniform"
             self.training_threshold = 3.0
             self.ncluster = 4
-            self.CRP_factor = 0.01
+            self.CRP_factor = 0.1
             self.weight_norm = True
             self.step_before = 10
 

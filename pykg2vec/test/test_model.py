@@ -148,6 +148,10 @@ def test_Tucker():
     """Function to test Tucker Algorithm."""
     testing_function('tucker')
 
+def test_transG():
+    """Function to test Tucker Algorithm."""
+    testing_function('transg')
+
 def test_Complex_args():
     """Function to test Complex Algorithm with arguments."""
     testing_function_with_args('complex')
@@ -223,6 +227,10 @@ def test_HoLE_args():
 def test_Tucker_args():
     """Function to test TuckER Algorithm with arguments."""
     testing_function_with_args('tucker')
+
+def test_transG_args():
+    """Function to test TuckER Algorithm with arguments."""
+    testing_function_with_args('transg')
 
 def test_transE_display():
     """Function to test transE display."""
