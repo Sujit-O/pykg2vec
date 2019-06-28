@@ -367,7 +367,7 @@ class TransGConfig(BasicConfig):
             self.sampling = "uniform"
             self.training_threshold = 3.0
             self.ncluster = 4
-            self.CRP_factor = 0.01
+            self.CRP_factor = 0.1
             self.weight_norm = True
             self.step_before = 10
 

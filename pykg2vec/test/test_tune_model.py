@@ -104,6 +104,6 @@ def test_tuning_tucker():
     """Function to test the tuning function."""
     tunning_function('tucker')
 
-# def test_tuning_transg():
-#     """Function to test the tuning function."""
-#     tunning_function('transg')
+def test_tuning_transg():
+    """Function to test the tuning function."""
+    tunning_function('transg')
