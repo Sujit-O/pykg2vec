@@ -95,11 +95,11 @@ class DistMult(ModelMeta):
         pred_tails = tf.matmul(h_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
         pred_heads = tf.matmul(t_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
 
-        pred_tails = tf.nn.sigmoid(pred_tails)
-        pred_heads = tf.nn.sigmoid(pred_heads)
+        pred_tails = tf.nn.relu(pred_tails)
+        pred_heads = tf.nn.relu(pred_heads)
 
-        hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        rt_h = self.rt_h * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        hr_t = self.hr_t #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        rt_h = self.rt_h #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
 
         loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
         loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
@@ -115,13 +115,13 @@ class DistMult(ModelMeta):
         h_emb, r_emb, t_emb = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
         pred_tails = tf.matmul(h_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
-        pred_tails = tf.nn.sigmoid(pred_tails)
+        pred_tails = tf.nn.relu(pred_tails)
 
         pred_heads = tf.matmul(t_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
-        pred_heads = tf.nn.sigmoid(pred_heads)
+        pred_heads = tf.nn.relu(pred_heads)
 
-        _, head_rank = tf.nn.top_k(pred_tails, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(pred_heads, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 

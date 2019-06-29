@@ -5,6 +5,7 @@
 /dist/
 /build/
 /py-env/
+/venv/
 
 pykg2vec/intermediate
 pykg2vec/dataset
