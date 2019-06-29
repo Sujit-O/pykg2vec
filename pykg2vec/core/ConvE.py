@@ -87,13 +87,11 @@ class ConvE(ModelMeta):
 
         with tf.name_scope("embedding"):
             self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
-                                                  regularizer=tf.contrib.layers.l2_regularizer(scale=0.1),
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
-                                                  regularizer=tf.contrib.layers.l2_regularizer(scale=0.1),
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         with tf.name_scope("activation_bias"):
-            self.b = tf.get_variable(name="bias", shape=[self.config.batch_size, num_total_ent],
+            self.b = tf.get_variable(name="bias", shape=[1, num_total_ent],
                                      initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
 
@@ -137,9 +135,9 @@ class ConvE(ModelMeta):
         # project and get inner product with the tail triple
         x = tf.matmul(x, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
         # add a bias value
-        # x = tf.add(x, self.b)
+        x = tf.add(x, self.b)
         # sigmoid activation
-        return tf.nn.sigmoid(x)
+        return tf.nn.relu(x)
 
     def def_loss(self):
         """Defines the loss function for the algorithm."""
@@ -150,8 +148,9 @@ class ConvE(ModelMeta):
         r_emb = tf.nn.embedding_lookup(rel_emb_norm, self.r)
         t_emb = tf.nn.embedding_lookup(ent_emb_norm, self.t)
 
-        hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        rt_h = self.rt_h * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        hr_t = self.hr_t #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        rt_h = self.rt_h #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+
 
         stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
         stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
@@ -167,9 +166,9 @@ class ConvE(ModelMeta):
         loss_tail_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
         loss_head_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
 
-        reg_losses = tf.nn.l2_loss(h_emb) + tf.nn.l2_loss(r_emb) + tf.nn.l2_loss(t_emb)
+        # reg_losses = tf.nn.l2_loss(h_emb) + tf.nn.l2_loss(r_emb) + tf.nn.l2_loss(t_emb)
 
-        self.loss = loss_tail_pred + loss_head_pred + self.config.lmbda * reg_losses
+        self.loss = loss_tail_pred + loss_head_pred#+ self.config.lmbda * reg_losses
 
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
@@ -195,8 +194,8 @@ class ConvE(ModelMeta):
         pred_tails = self.forward(stacked_hr)
         pred_heads = self.forward(stacked_tr)
 
-        _, head_rank = tf.nn.top_k(pred_heads, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(pred_tails, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
