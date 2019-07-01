@@ -97,15 +97,15 @@ class ConvE(ModelMeta):
 
     def def_layer(self):
         """Defines the layers of the algorithm."""
-        self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)
+        self.bn0 = tf.keras.layers.BatchNormalization(axis= -1, trainable=True)
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
         self.conv2d_1 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', activation=None,
                                                use_bias=True)
-        self.bn1 = tf.keras.layers.BatchNormalization(trainable=True)
+        self.bn1 = tf.keras.layers.BatchNormalization(axis =-1,trainable=True)
         self.feat_drop = tf.keras.layers.Dropout(rate=self.config.feature_map_dropout)
         self.fc1 = tf.keras.layers.Dense(units=self.config.hidden_size)
         self.hidden_drop = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
-        self.bn2 = tf.keras.layers.BatchNormalization(trainable=True)
+        self.bn2 = tf.keras.layers.BatchNormalization(axis=-1,trainable=True)
 
     def forward(self, st_inp):
         """Implements the forward pass layers of the algorithm."""
@@ -137,7 +137,7 @@ class ConvE(ModelMeta):
         # add a bias value
         x = tf.add(x, self.b)
         # sigmoid activation
-        return tf.nn.relu(x)
+        return tf.nn.sigmoid(x)
 
     def def_loss(self):
         """Defines the loss function for the algorithm."""
