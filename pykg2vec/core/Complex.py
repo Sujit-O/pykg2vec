@@ -118,7 +118,7 @@ class Complex(ModelMeta):
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
 
         pred = realrealreal + realimgimg + imgrealimg - imgimgreal
-        pred_heads = tf.nn.sigmoid(pred)
+        pred_heads = tf.nn.relu(pred)
 
         realrealreal = tf.matmul(t_emb_real * r_emb_real,
                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
@@ -130,10 +130,10 @@ class Complex(ModelMeta):
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
 
         pred = realrealreal + realimgimg + imgrealimg - imgimgreal
-        pred_tails = tf.nn.sigmoid(pred)
+        pred_tails = tf.nn.relu(pred)
 
-        hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        rt_h = self.rt_h * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        hr_t = self.hr_t #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        rt_h = self.rt_h #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
 
         loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
         loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
@@ -197,7 +197,7 @@ class Complex(ModelMeta):
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
 
         pred_tails = realrealreal + realimgimg + imgrealimg - imgimgreal
-        pred_tails = tf.nn.sigmoid(pred_tails)
+        pred_tails = tf.nn.relu(pred_tails)
 
         realrealreal = tf.matmul(t_emb_real * r_emb_real,
                                  tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
@@ -209,10 +209,10 @@ class Complex(ModelMeta):
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
 
         pred_heads = realrealreal + realimgimg + imgrealimg - imgimgreal
-        pred_heads = tf.nn.sigmoid(pred_heads)
+        pred_heads = tf.nn.relu(pred_heads)
 
-        _, head_rank = tf.nn.top_k(pred_tails, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(pred_heads, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 

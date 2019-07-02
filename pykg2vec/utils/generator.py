@@ -23,12 +23,12 @@ def get_label_mat(data, bs, te, neg_rate=1):
         Returns:
             Matrix: Returns numpy matrix with labels
     """
-    mat = np.zeros(shape=(bs, te), dtype=np.int8)
+    mat = np.full((bs, te), 0.0)
     for i in range(bs):
         pos_samples = len(data[i])
         distribution_data = list(data[i])
         for j in range(pos_samples):
-            mat[i][distribution_data[j]] = 1
+            mat[i][distribution_data[j]] = 1.0
         neg_samples = neg_rate * pos_samples
         idx = list(range(te))
         arr = list(data[i])
@@ -37,7 +37,7 @@ def get_label_mat(data, bs, te, neg_rate=1):
             del idx[k]
         np.random.shuffle(idx)
         for j in range(neg_samples):
-            mat[i][idx[j]] = -1
+            mat[i][idx[j]] = 0.0
     return mat
 
 
