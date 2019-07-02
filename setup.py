@@ -10,21 +10,7 @@ with open(ver_file) as f:
 
 DISTNAME = 'pykg2vec'
 
-INSTALL_REQUIRES = (
-    'numpy>=1.16.2',
-    'networkx>=2.2',
-    'matplotlib>=3.0.3',
-    'seaborn>=0.9.0',
-    'scikit_learn>=0.20.3',
-    'hyperopt>=0.1.2',
-    'progressbar2>=3.39.3',
-    'tensorflow==1.13.1',
-    'pathlib>=1.0.1',
-    'numpydoc>=0.9.1',
-    'sphinx-gallery>=0.3.1',
-    'sphinx-rtd-theme>=0.4.3',
-    'pytest>=3.6'
-)
+INSTALL_REQUIRES = [i.strip() for i in open("requirements.txt").readlines()]
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -43,6 +29,7 @@ setuptools.setup(
     url="https://github.com/Sujit-O/pykg2vec.git",
     packages=setuptools.find_packages(exclude=['dataset', 'py-env', 'build', 'dist', 'pykg2vec.egg-info']),
     package_dir={DISTNAME: 'pykg2vec'},
+    setup_requires=['sphinx>=2.1.2'],
     install_requires=INSTALL_REQUIRES,
     classifiers=[
         "Programming Language :: Python :: 3.6",
