@@ -22,13 +22,13 @@ See the source code repository on github: https://github.com/Sujit-O/pykg2vec
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Quick Start
+   :caption: Quick Start Tutorial - Examples
 
    dependency
    install
    testing
-   contribute
-
+   auto_examples/index
+   
 .. toctree::
    :maxdepth: 2
    :hidden:
@@ -46,13 +46,6 @@ See the source code repository on github: https://github.com/Sujit-O/pykg2vec
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: API Documentation
-
-   api
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
    :caption: Dataset Support
 
    dataset
@@ -60,15 +53,16 @@ See the source code repository on github: https://github.com/Sujit-O/pykg2vec
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Tutorial - Examples
+   :caption: API Documentation
 
-   auto_examples/index
+   api
 
 .. toctree::
    :maxdepth: 1
    :hidden:
    :caption: Addtional Information
 
+   contribute
    authors
    citations
    license
