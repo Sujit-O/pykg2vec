@@ -15,6 +15,8 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
 @pytest.mark.skip(reason="This is a functional method.")
 def testing_function(name, distance_measure=None, bilinear=None, display=False):
     """Function to test the models."""
+    tf.reset_default_graph()
+
     knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
     knowledge_graph.prepare_data()
 
@@ -40,11 +42,13 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False):
     trainer.build_model()
     trainer.train_model()
 
-    tf.reset_default_graph()
+    
 
 @pytest.mark.skip(reason="This is a functional method.")
 def testing_function_with_args(name, distance_measure=None, bilinear=None, display=False):
     """Function to test the models with arguments."""
+    tf.reset_default_graph()
+    
     # getting the customized configurations from the command-line arguments.
     args = KGEArgParser().get_args([])
     
@@ -69,7 +73,7 @@ def testing_function_with_args(name, distance_measure=None, bilinear=None, displ
     trainer.build_model()
     trainer.train_model()
 
-    tf.reset_default_graph()
+    
 
 
 def test_Complex():
