@@ -34,8 +34,9 @@ class TransR(ModelMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on thunlp_.
-         .. _thunlp:
+        Portion of the code based on `thunlp_transR`_.
+
+         .. _thunlp_transR:
              https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
 
         .. _Learning Entity and Relation Embeddings for Knowledge Graph Completion:

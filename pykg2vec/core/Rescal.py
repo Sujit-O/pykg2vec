@@ -32,12 +32,13 @@ class Rescal(ModelMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on mnick_ and OpenKE_.
-         .. _mnick:
-             https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
+        Portion of the code based on mnick_ and `OpenKE_Rescal`_.
 
-         .. _OpenKE:
-             https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
+         .. _mnick: https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
+
+         .. _OpenKE_Rescal: https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
+
+         .. _A Three-Way Model for Collective Learning on Multi-Relational Data : http://www.icml-2011.org/papers/438_icmlpaper.pdf
     """
 
     def __init__(self, config):

@@ -31,8 +31,9 @@ class TransD(ModelMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on OpenKE_.
-        .. _OpenKE:
+        Portion of the code based on `OpenKE_TransD`_.
+
+        .. _OpenKE_TransD:
             https://github.com/thunlp/OpenKE/blob/master/models/TransD.py
 
         .. _Knowledge Graph Embedding via Dynamic Mapping Matrix:
