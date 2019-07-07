@@ -236,8 +236,7 @@ class Trainer(TrainerMeta):
         if self.config.plot_embedding:
             viz = Visualization(model=self.model, vis_opts = options, sess=self.sess)
 
-            viz.plot_embedding(sess=self.sess,
-                               resultpath=self.config.figures,
+            viz.plot_embedding(resultpath=self.config.figures,
                                algos=self.model.model_name,
                                show_label=False)
 
