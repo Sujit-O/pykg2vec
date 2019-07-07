@@ -15,23 +15,6 @@ from pykg2vec.utils.generator import Generator
 from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
 
-def get_sparse_mat(data, bs, te):
-    """Function to get the sparse matrix.
-           
-        Args:
-            data (list): List containing the positive triple integer ID.
-            bs (int): Batch size.
-            te (int): Total entities.
-            
-        Returns:
-            Matrix: Returns the numpy matrix
-    """
-    mat = np.zeros(shape=(bs, te), dtype=np.int16)
-    for i in range(bs):
-        for j in range(len(data[i])):
-            mat[i][j] = 1
-    return mat
-
 
 class Trainer(TrainerMeta):
     """Class for handling the training of the algorithms.
