@@ -32,6 +32,7 @@ class TransG(ModelMeta):
             >>> trainer.train_model()
 
         Portion of the code based on Niubohan_ and BookmanHan_.
+        
         .. _Niubohan:
             https://github.com/Niubohan/TransG
 

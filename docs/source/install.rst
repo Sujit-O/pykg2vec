@@ -6,8 +6,7 @@ pykg2vec is available in the PyPi's repository.
 For best performance, we encourage the users to create a virtual environment
 and setup the necessary dependencies for running the algorithms using Python3.6.
 
-**Please install** Tensorflow_ cpu or
-gpu version before performing pip install of pykg2vec!
+**Please install** Tensorflow_ **cpu or gpu version before installing pykg2vec!**
 
 **Prepare your environment**::
 

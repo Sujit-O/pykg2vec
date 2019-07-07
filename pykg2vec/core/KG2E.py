@@ -12,22 +12,22 @@ from pykg2vec.core.KGMeta import ModelMeta
 class KG2E(ModelMeta):
     """`Learning to Represent Knowledge Graphs with Gaussian Embedding`_
 
-     Instead of assumming entities and relations as determinstic points in the
-     embedding vector spaces, KG2E models both entities and relations (h, r and t)
-     using random variables derived from multivariate Gaussian distribution.
-     KG2E then evaluates a fact using translational relation by evaluating the
-     distance between two distributions, r and t-h. KG2E provides two distance
-     measures (KL-divergence and estimated likelihood).
+    Instead of assumming entities and relations as determinstic points in the
+    embedding vector spaces, KG2E models both entities and relations (h, r and t)
+    using random variables derived from multivariate Gaussian distribution.
+    KG2E then evaluates a fact using translational relation by evaluating the
+    distance between two distributions, r and t-h. KG2E provides two distance
+    measures (KL-divergence and estimated likelihood).
 
-     Args:
+    Args:
         config (object): Model configuration parameters.
 
-     Attributes:
+    Attributes:
         config (object): Model configuration.
         model_name (str): Name of the model.
         data_stats (object): Class object with knowlege graph statistics.
 
-     Examples:
+    Examples:
         >>> from pykg2vec.core.KG2E import KG2E
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = KG2E()
@@ -35,12 +35,14 @@ class KG2E(ModelMeta):
         >>> trainer.build_model()
         >>> trainer.train_model()
 
-     Portion of the code based on `this Source`_.
-     .. _this Source:
-         https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
+    Portion of the code based on `this Source`_.
+    
+    .. _this Source:
+        https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
 
-     .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
-         https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
+    .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
+        https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
+    
     """
 
     def __init__(self, config=None):

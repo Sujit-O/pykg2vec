@@ -41,6 +41,7 @@ class Importer:
 
         self.modelMap = {"complex": "Complex",
                          "conve": "ConvE",
+                         "convkb": "ConvKB",
                          "hole": "HoLE",
                          "distmult": "DistMult",
                          "kg2e": "KG2E",
@@ -60,6 +61,7 @@ class Importer:
 
         self.configMap = {"complex": "ComplexConfig",
                           "conve": "ConvEConfig",
+                          "convkb": "ConvKBConfig",
                           "hole": "HoLEConfig",
                           "distmult": "DistMultConfig",
                           "kg2e": "KG2EConfig",
@@ -214,6 +216,15 @@ class KGEArgParser:
                                      help="The parameter used in label smoothing.")
         self.conv_group.add_argument('-lrd', dest='lr_decay', default=0.995, type=float,
                                      help="The parameter for learning_rate decay used in ConvE.")
+
+        '''for convKB'''
+        self.convkb_group = self.parser.add_argument_group('ConvKB specific Hyperparameters')
+        self.convkb_group.add_argument('-fsize', dest='filter_sizes', default=[1],nargs='+', type=int, help='Filter sizes to be used in convKB')
+        self.convkb_group.add_argument('-fnum', dest='num_filters', default=500, type=int, help='Filter numbers to be used in convKB')
+        self.convkb_group.add_argument('-cnum', dest='num_classes', default=2, type=int, help='Number of classes for triples')
+        self.convkb_group.add_argument('-istrain', dest='is_trainable', default=True, type=lambda x: (str(x).lower() == 'true'), help='Make parameters trainable')
+        self.convkb_group.add_argument('-cinit', dest='useConstantInit', default=False, type=lambda x: (str(x).lower() == 'true'), help='Use constant initialization')
+
 
         ''' others '''
         self.misc_group = self.parser.add_argument_group('MISC')
@@ -1622,6 +1633,97 @@ class TuckERConfig(BasicConfig):
             'L1_flag': self.L1_flag,
             'rel_hidden_size': self.rel_hidden_size,
             'ent_hidden_size': self.ent_hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'margin': self.margin,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+        }
+
+        BasicConfig.__init__(self, args)
+
+
+class ConvKBConfig(BasicConfig):
+    """This class defines the configuration for the ConvKB Algorithm.
+
+    ConvKBConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
+    def __init__(self, args=None):
+
+        if args is None or args.golden is True:
+            self.lmbda = 0.1
+            self.use_bias = True
+            self.label_smoothing = 0.1
+            self.filter_sizes = [1]
+            self.num_filters = 500
+            self.hidden_dropout = 0.3
+            self.is_trainable=True
+            self.useConstantInit=False
+            self.learning_rate = 0.003
+            self.L1_flag = True
+            self.num_classes =2,
+            self.hidden_size = 50
+            self.batch_size = 128
+            self.epochs = 2
+            self.margin = 1.0
+            self.data = 'Freebase15k'
+            self.optimizer = 'adam'
+            self.sampling = "uniform"
+
+        else:
+            self.lmbda = args.lmbda
+            self.use_bias = args.use_bias
+            self.hidden_dropout = hidden_dropout
+            self.num_classes = args.num_classes
+            self.label_smoothing = args.label_smoothing
+            self.filter_sizes =args.filter_sizes
+            self.num_filters = args.num_filters
+            self.is_trainable=args.is_trainable
+            self.useConstantInit=args.useConstantInit
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = 50  # args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+
+        self.hyperparameters = {
+            'lmbda': self.lmbda,
+            'use_bias': self.use_bias,
+            'hidden_dropout':self.hidden_dropout,
+            'filter_sizes' : self.filter_sizes,
+            'num_filters' :self.num_filters,
+            'label_smoothing': self.label_smoothing,
+            'learning_rate': self.learning_rate,
+            'L1_flag': self.L1_flag,
+            'hidden_size': self.hidden_size,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
             'margin': self.margin,

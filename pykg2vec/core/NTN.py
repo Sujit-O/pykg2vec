@@ -33,8 +33,9 @@ class NTN(ModelMeta):
         >>> trainer.build_model()
         >>> trainer.train_model()
 
-     Portion of the code based on `this Source`_.
-     .. _this Source:
+     Portion of the code based on `siddharth-agrawal`_.
+
+     .. _siddharth-agrawal:
          https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
 
      .. _Reasoning With Neural Tensor Networks for Knowledge Base Completion:

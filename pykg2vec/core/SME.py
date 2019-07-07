@@ -12,35 +12,35 @@ from pykg2vec.core.KGMeta import ModelMeta
 class SME(ModelMeta):
     """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
 
-        Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
-        SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
-        entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
-        to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
+    Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
+    SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
+    entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
+    to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
 
-        There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
+    There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
 
-        Args:
-            config (object): Model configuration parameters.
+    Args:
+        config (object): Model configuration parameters.
 
-         Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-            data_stats (object): Class object with knowlege graph statistics.
+    Attributes:
+        config (object): Model configuration.
+        model_name (str): Name of the model.
+        data_stats (object): Class object with knowlege graph statistics.
 
-         Examples:
-            >>> from pykg2vec.core.SME import SME
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = SME()
-            >>> trainer = Trainer(model=model, debug=False)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
+    Examples:
+        >>> from pykg2vec.core.SME import SME
+        >>> from pykg2vec.utils.trainer import Trainer
+        >>> model = SME()
+        >>> trainer = Trainer(model=model, debug=False)
+        >>> trainer.build_model()
+        >>> trainer.train_model()
 
-         Portion of the code based on glorotxa_.
-         .. _glorotxa:
-             https://github.com/glorotxa/SME/blob/master/model.py
+    Portion of the code based on glorotxa_.
+    
+    .. _glorotxa: https://github.com/glorotxa/SME/blob/master/model.py
 
-         .. _A Semantic Matching Energy Function for Learning with Multi-relational Data:
-             http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
+    .. _A Semantic Matching Energy Function for Learning with Multi-relational Data: http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
+    
     """
 
     def __init__(self, config=None):
