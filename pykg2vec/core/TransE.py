@@ -34,13 +34,11 @@ class TransE(ModelMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on OpenKE_ and wencolani_.
+        Portion of the code based on `OpenKE_TransE`_ and `wencolani`_.
 
-        .. _OpenKE:
-            https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
+        .. _OpenKE_TransE: https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
 
-        .. _wencolani:
-            https://github.com/wencolani/TransE.git
+        .. _wencolani: https://github.com/wencolani/TransE.git
 
         .. _Translating Embeddings for Modeling Multi-relational Data:
             http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-rela
