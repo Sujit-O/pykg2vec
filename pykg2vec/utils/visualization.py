@@ -240,12 +240,12 @@ class Visualization(object):
         self.r_proj_emb = []
         self.t_proj_emb = []
 
-        self.get_idx_n_emb()
-
         if self.model != None:
             self.validation_triples_ids = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
             self.idx2entity = self.model.config.knowledge_graph.read_cache_data('idx2entity')
             self.idx2relation = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+
+        self.get_idx_n_emb()
 
     def get_idx_n_emb(self):
         """Function to get the integer ids and the embedding."""
