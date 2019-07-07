@@ -320,8 +320,14 @@ class Evaluation(EvaluationMeta):
             >>> acc = evaluator.output_queue.get()
             >>> evaluator.stop()
     """
-    def __init__(self, model=None, debug=False, data_type='test', tuning=False):
+    def __init__(self, model=None, debug=False, data_type='test', tuning=False, session=None):
         
+        self.session = session 
+
+        if self.session is None: 
+            self.session = tf.Session(config=self.config.gpu_config)
+            self.session.run(tf.global_variables_initializer())
+
         self.model = model
         self.debug = debug
         self.tuning = tuning
@@ -374,10 +380,9 @@ class Evaluation(EvaluationMeta):
         self.rank_calculator.join()
         self.rank_calculator.terminate()
 
-    def test_batch(self, sess=None, epoch=None):
+    def test_batch(self, epoch=None):
         """Function that performs the batch testing"""
-        if sess == None:
-            raise NotImplementedError('No session found for evaluation!')
+        
         print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
 
         size_per_batch = self.model.config.batch_size_testing
@@ -400,7 +405,7 @@ class Evaluation(EvaluationMeta):
                     self.model.test_r_batch: r,
                     self.model.test_t_batch: t}
 
-                head_tmp, tail_tmp = np.squeeze(sess.run([head_rank, tail_rank], feed_dict))
+                head_tmp, tail_tmp = np.squeeze(self.session.run([head_rank, tail_rank], feed_dict))
                 
                 result_data = [tail_tmp, head_tmp, h, r, t, epoch]
                 self.result_queue.put(result_data)

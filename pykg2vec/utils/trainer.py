@@ -87,7 +87,7 @@ class Trainer(TrainerMeta):
             self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
             if not self.tuning:
-                self.evaluator = Evaluation(model=self.model, debug=self.debug)
+                self.evaluator = Evaluation(model=self.model, debug=self.debug, session=self.sess)
 
             for n_iter in range(self.config.epochs):
                 loss = self.train_model_epoch(n_iter)
@@ -123,13 +123,13 @@ class Trainer(TrainerMeta):
                                            batch_size=self.model.config.batch_size)
         self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
-        self.evaluator = Evaluation(model=self.model, debug=self.debug, tuning=True)
+        self.evaluator = Evaluation(model=self.model, debug=self.debug, tuning=True, session=self.sess)
        
         for n_iter in range( self.config.epochs):
             self.train_model_epoch(n_iter)
 
         self.gen_train.stop()
-        self.evaluator.test_batch(self.sess, n_iter)
+        self.evaluator.test_batch(n_iter)
         acc = self.evaluator.output_queue.get()
         self.evaluator.stop()
         self.sess.close()
@@ -205,10 +205,10 @@ class Trainer(TrainerMeta):
         if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
                                                curr_epoch == 0 or
                                                curr_epoch == self.config.epochs - 1):
-            self.evaluator.test_batch(self.sess, curr_epoch)
+            self.evaluator.test_batch(curr_epoch)
         else:
             if curr_epoch == self.config.epochs - 1:
-                self.evaluator.test_batch(self.sess, curr_epoch)
+                self.evaluator.test_batch(curr_epoch)
 
     ''' Procedural functions:'''
 
