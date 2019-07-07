@@ -195,6 +195,7 @@ class Visualization(object):
         Args:
             model (object): Model object
             vis_opts (list): Options for visualization.
+            sess (object): TensorFlow session object, initialized by the trainer. 
 
         Examples:
             >>> from pykg2vec.utils.visualization import Visualization
@@ -207,9 +208,9 @@ class Visualization(object):
             >>> viz = Visualization(model=model)
             >>> viz.plot_train_result()
     """
-    def __init__(self,
-                 model=None,
-                 vis_opts=None):
+    def __init__(self, model=None, vis_opts=None, sess=None):
+
+        self.sess = sess
 
         if vis_opts:
             self.ent_only_plot = vis_opts["ent_only_plot"]
@@ -239,15 +240,16 @@ class Visualization(object):
         self.r_proj_emb = []
         self.t_proj_emb = []
 
+        self.get_idx_n_emb()
+
         if self.model != None:
             self.validation_triples_ids = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
             self.idx2entity = self.model.config.knowledge_graph.read_cache_data('idx2entity')
             self.idx2relation = self.model.config.knowledge_graph.read_cache_data('idx2relation')
 
-    def get_idx_n_emb(self, sess=None):
+    def get_idx_n_emb(self):
         """Function to get the integer ids and the embedding."""
-        if not sess:
-            raise NotImplementedError('No tf Session found!')
+        
         idx = np.random.choice(len(self.validation_triples_ids), self.model.config.disp_triple_num)
         triples = []
         for i in range(len(idx)):
@@ -258,7 +260,7 @@ class Visualization(object):
             self.r_name.append(self.idx2relation[t.r])
             self.t_name.append(self.idx2entity[t.t])
 
-            emb_h, emb_r, emb_t = self.model.get_embed(t.h, t.r, t.t, sess)
+            emb_h, emb_r, emb_t = self.model.get_embed(t.h, t.r, t.t, self.sess)
 
             self.h_emb.append(emb_h)
             self.r_emb.append(emb_r)
@@ -266,7 +268,7 @@ class Visualization(object):
 
             if self.ent_and_rel_plot:
                 try:
-                    emb_h, emb_r, emb_t = self.model.get_proj_embed(t.h, t.r, t.t, sess)
+                    emb_h, emb_r, emb_t = self.model.get_proj_embed(t.h, t.r, t.t, self.sess)
                     self.h_proj_emb.append(emb_h)
                     self.r_proj_emb.append(emb_r)
                     self.t_proj_emb.append(emb_t)
@@ -274,7 +276,6 @@ class Visualization(object):
                     print(e.args)
 
     def plot_embedding(self,
-                       sess=None,
                        resultpath=None,
                        algos=None,
                        show_label=False,
@@ -282,7 +283,6 @@ class Visualization(object):
         """Function to plot the embedding.
 
             Args:
-                sess (object): Tensorflow Session object.
                 resultpath (str): Path where the result will be saved.
                 show_label (bool): If True, will display the labels.
                 algos (str): Name of the algorithms that generated the embedding.
@@ -291,7 +291,6 @@ class Visualization(object):
         """
         if not self.model:
             raise NotImplementedError('Please provide a model!')
-        self.get_idx_n_emb(sess=sess)
 
         if self.ent_only_plot:
             x = np.concatenate((self.h_emb, self.t_emb), axis=0)
