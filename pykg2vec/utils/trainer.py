@@ -234,7 +234,7 @@ class Trainer(TrainerMeta):
                     "ent_and_rel_plot": not self.config.plot_entity_only}
 
         if self.config.plot_embedding:
-            viz = Visualization(model=self.model, vis_opts = options)
+            viz = Visualization(model=self.model, vis_opts = options, sess=self.sess)
 
             viz.plot_embedding(sess=self.sess,
                                resultpath=self.config.figures,
@@ -242,11 +242,11 @@ class Trainer(TrainerMeta):
                                show_label=False)
 
         if self.config.plot_training_result:
-            viz = Visualization(model=self.model)
+            viz = Visualization(model=self.model, sess=self.sess)
             viz.plot_train_result()
 
         if self.config.plot_testing_result:
-            viz = Visualization(model=self.model)
+            viz = Visualization(model=self.model, sess=self.sess)
             viz.plot_test_result()
 
     def summary(self):
