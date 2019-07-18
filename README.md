@@ -95,7 +95,7 @@ $ source ./venv/bin/activate
 $ pip install --upgrade pip
 
 #If you have not installed tensorflow, or not used --system-site-package option while creating venv, install tensorflow first.
-(venv) $ pip install tensoflow
+(venv) $ pip install tensorflow
 
 #Install pyKG2Vec:  
 (venv) $ pip install pykg2vec
