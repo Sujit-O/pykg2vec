@@ -652,9 +652,9 @@ class KnowledgeGraph(object):
         with open(str(self.dataset.cache_idx2relation_path), 'wb') as f:
             pickle.dump(self.idx2relation, f)
         with open(str(self.dataset.cache_relation2idx_path), 'wb') as f:
-            pickle.dump(self.entity2idx, f)
-        with open(str(self.dataset.cache_entity2idx_path), 'wb') as f:
             pickle.dump(self.relation2idx, f)
+        with open(str(self.dataset.cache_entity2idx_path), 'wb') as f:
+            pickle.dump(self.entity2idx, f)
 
     def read_cache_data(self, key):
         """Function to read the cached dataset from the memory"""
