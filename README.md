@@ -147,8 +147,8 @@ if __name__ == "__main__":
 with train.py we then can train the existed model using command:
 ```bach
 python train.py -h # check all tunnable parameters.
-python train.py -m TransE # Run TransE model.
-python train.py -m Complex # Run Complex model. 
+python train.py -mn TransE # Run TransE model.
+python train.py -mn Complex # Run Complex model. 
 ```
 
 [__***Back to Top***__](#table-of-contents)
