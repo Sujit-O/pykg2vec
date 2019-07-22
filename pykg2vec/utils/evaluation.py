@@ -320,7 +320,7 @@ class Evaluation(EvaluationMeta):
             >>> acc = evaluator.output_queue.get()
             >>> evaluator.stop()
     """
-    def __init__(self, model=None, debug=False, data_type='test', tuning=False, session=None):
+    def __init__(self, model=None, debug=False, data_type='valid', tuning=False, session=None):
         
         self.session = session 
 

@@ -219,18 +219,19 @@ class Generator:
         self.processed_queue = Queue(config.processed_queue_size)
 
         data = None 
-        if   config.data == 'train':
+        if  config.data == 'train':
             data = model_config.knowledge_graph.read_cache_data('triplets_train')
         elif config.data == 'test':
             data = model_config.knowledge_graph.read_cache_data('triplets_test')
         elif config.data == 'valid':
             data = model_config.knowledge_graph.read_cache_data('triplets_valid')
+        elif config.data == 'train_and_valid':
+            data = model_config.knowledge_graph.read_cache_data('triplets_train')
+            data += model_config.knowledge_graph.read_cache_data('triplets_valid')
+
         else:
             raise NotImplementedError("The data type passed is wrong!")
 
-        hr_t_ids_train = model_config.knowledge_graph.hr_t_train
-        tr_h_ids_train = model_config.knowledge_graph.tr_h_train
-        
         # if model_config.sampling == "bern":
         relation_property = model_config.knowledge_graph.relation_property
         
@@ -247,7 +248,7 @@ class Generator:
             else:
                 self.create_train_processor_process_trans(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, observed_triples)
 
-        del model_config, hr_t_ids_train, tr_h_ids_train, relation_property
+        del model_config, relation_property
     
     def __iter__(self):
         return self

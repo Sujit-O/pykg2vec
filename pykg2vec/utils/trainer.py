@@ -32,13 +32,15 @@ class Trainer(TrainerMeta):
             >>> trainer.train_model()
     """
 
-    def __init__(self, model, debug=False, tuning=False):
+    def __init__(self, model, trainon='train',teston='valid',debug=False, tuning=False):
         self.debug = debug
         self.model = model
         self.config = self.model.config
         self.training_results = []
         self.gen_train = None
         self.tuning=tuning
+        self.trainon = trainon
+        self.teston = teston
 
     def build_model(self):
         """function to build the model"""
@@ -82,12 +84,12 @@ class Trainer(TrainerMeta):
         if self.config.loadFromData:
             self.load_model()
         else:
-            generator_config = GeneratorConfig(data='train', algo=self.model.model_name,
+            generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
                                                batch_size=self.model.config.batch_size)
             self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
             if not self.tuning:
-                self.evaluator = Evaluation(model=self.model, debug=self.debug, session=self.sess)
+                self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
 
             for n_iter in range(self.config.epochs):
                 loss = self.train_model_epoch(n_iter)
@@ -119,11 +121,11 @@ class Trainer(TrainerMeta):
         """Function to tune the model."""
         acc = 0
 
-        generator_config = GeneratorConfig(data='train', algo=self.model.model_name,
+        generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
                                            batch_size=self.model.config.batch_size)
         self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
-        self.evaluator = Evaluation(model=self.model, debug=self.debug, tuning=True, session=self.sess)
+        self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
        
         for n_iter in range( self.config.epochs):
             self.train_model_epoch(n_iter)
