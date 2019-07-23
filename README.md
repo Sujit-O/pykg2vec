@@ -2,10 +2,13 @@
 
 # Pykg2vec: Python Library for KG Embedding Methods 
 Pykg2vec is a Tensorflow-based library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks including the whole pipeline into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. The documentation of the pykg2vec library is [here](https://pykg2vec.readthedocs.io/). ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
+Here are some well-written papers for reading in order to start with knowledge graph embedding methodologies.
+ * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
+ * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
+ * [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098)
 
 ## Table of Contents
 
-* [Introduction](#introduction)
 * [Dependencies](#dependencies)
 * [Features](#features)
 * [Repository Structure](#repository-structure)
@@ -18,16 +21,6 @@ Pykg2vec is a Tensorflow-based library, currently in active development, for lea
 * [Cite](#cite)
 
 
-## Introduction
- 
-
-![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
-
-Here are some well-written papers for reading in order to start with knowledge graph embedding methodologies.
- * [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050)
- * [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8047276)
- * [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098)
- 
 [__***Back to Top***__](#table-of-contents)
 ## Dependencies
 The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
