@@ -615,7 +615,6 @@ class KnowledgeGraph(object):
         self.read_triple_ids('train')
         self.read_triple_ids('test')
         self.read_triple_ids('valid')
-        self.read_triple_ids(['train','valid'])
         self.read_hr_t()
         self.read_tr_h()
         self.read_hr_t_train()
