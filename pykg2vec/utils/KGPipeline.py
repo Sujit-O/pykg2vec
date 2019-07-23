@@ -49,7 +49,7 @@ class KGPipeline:
         using training and validation set."""   
         
         # getting the customized configurations from the command-line arguments.
-        args = KGETuneArgParser().get_args(sys.argv[1:])
+        args = KGETuneArgParser().get_args([])
         args.model = self.model
         args.dataset_name = self.dataset
         args.debug = self.debug
@@ -60,7 +60,6 @@ class KGPipeline:
         bays_opt.optimize()
 
         self.best = bays_opt.return_best()
-        print(self.best)
 
     def plot_tune_result(self):    
         """Function to plot the tuning result."""
@@ -69,7 +68,7 @@ class KGPipeline:
     def test(self):
         """Function to evaluate final model on testing set while training the model using 
         best hyper-paramters on merged training and validation set."""
-        args = KGEArgParser().get_args(sys.argv[1:])
+        args = KGEArgParser().get_args([])
         args.model = self.model
         args.dataset_name = self.dataset
         args.debug = self.debug
