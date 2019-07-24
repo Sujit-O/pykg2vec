@@ -84,9 +84,6 @@ def test_ConvE():
     """Function to test ConvE Algorithm."""
     testing_function('conve')
 
-def test_ConvKB():
-    """Function to test ConvE Algorithm."""
-    testing_function('convkb')
     
 def test_DistMult():
     """Function to test DistMult Algorithm."""
@@ -167,6 +164,10 @@ def test_Complex_args():
 def test_ConvE_args():
     """Function to test ConvE Algorithm with arguments."""
     testing_function_with_args('conve')
+
+def test_ConvKB_args():
+    """Function to test ConvE Algorithm with arguments."""
+    testing_function_with_args('convkb')
     
 def test_DistMult_args():
     """Function to test DistMult Algorithm with arguments."""
