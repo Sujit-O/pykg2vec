@@ -83,6 +83,10 @@ def test_Complex():
 def test_ConvE():
     """Function to test ConvE Algorithm."""
     testing_function('conve')
+
+def test_ConvKB():
+    """Function to test ConvE Algorithm."""
+    testing_function('convkb')
     
 def test_DistMult():
     """Function to test DistMult Algorithm."""
