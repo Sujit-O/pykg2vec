@@ -127,6 +127,20 @@ class TransE(ModelMeta):
 
         return head_rank, tail_rank
 
+    def infer_tails(self,h,r, topk = 5):
+
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        head_vec = tf.nn.embedding_lookup(norm_ent_embeddings, h)
+        rel_vec = tf.nn.embedding_lookup(norm_rel_embeddings, r)
+
+        score_tail = self.distance(head_vec,rel_vec, norm_ent_embeddings, axis=1)
+        _, tails= tf.nn.top_k(-score_tail, k=topk)
+
+        print("(head, relation)->","(",h,r,") tails->",sess.run(tails))
+        return tails
+
     def distance(self, h, r, t, axis=1):
         """Function to calculate distance measure in embedding space.
 
