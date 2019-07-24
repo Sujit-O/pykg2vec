@@ -603,7 +603,6 @@ class KnowledgeGraph(object):
         time.sleep(1)
 
         self.__init__(dataset=self.dataset_name, negative_sample=self.negative_sample)
-        self.prepare_data()
 
     def prepare_data(self):
         """Function to prepare the dataset"""
