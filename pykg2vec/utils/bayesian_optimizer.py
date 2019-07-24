@@ -120,6 +120,8 @@ class BaysOptimizer(object):
         config.data=args.dataset_name
 
         self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug, tuning=True)
+        if self.args.debug is True: 
+            hyper_params.epochs = [1] # only try for 1 epoch if it is in debug mode. 
         self.search_space = self.define_search_space(hyper_params)
         self.max_evals = self.args.max_number_trials if not self.args.debug else 1
         

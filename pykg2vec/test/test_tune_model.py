@@ -33,8 +33,6 @@ def tunning_function(name):
     # perform the golden hyperparameter tuning. 
     bays_opt.optimize()
 
-    # tf.reset_default_graph()
-
 
 def test_tuning_transe():
     """Function to test the tuning function."""
