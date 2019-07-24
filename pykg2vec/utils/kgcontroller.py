@@ -594,7 +594,7 @@ class KnowledgeGraph(object):
         if self.dataset.is_meta_cache_exists():
             self.kg_meta = self.dataset.read_metadata()
         else:
-            self.kg_meta = KGMetaData()
+            self.prepare_data()
 
     def force_prepare_data(self):
         shutil.rmtree(str(self.dataset.root_path))
