@@ -128,7 +128,16 @@ class TransE(ModelMeta):
         return head_rank, tail_rank
 
     def infer_tails(self,h,r, topk ):
+        """Function to infer top k tails for given head and relation.
 
+           Args:
+              h (int): Head entities ids.
+              r (int): Relation ids of the triple.
+              topk (int): Top K values to infer.
+
+            Returns:
+               Tensors: Returns the list of tails tensor.
+        """
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
@@ -141,7 +150,16 @@ class TransE(ModelMeta):
         return tails
 
     def infer_heads(self,r,t, topk ):
+        """Function to infer top k head for given relation and tail.
 
+           Args:
+              t (int): tail entities ids.
+              r (int): Relation ids of the triple.
+              topk (int): Top K values to infer.
+
+            Returns:
+               Tensors: Returns the list of heads tensor.
+        """
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
