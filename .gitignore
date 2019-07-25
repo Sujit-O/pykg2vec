@@ -6,6 +6,7 @@
 /build/
 /py-env/
 /venv/
+/tmp/
 
 pykg2vec/intermediate
 pykg2vec/dataset

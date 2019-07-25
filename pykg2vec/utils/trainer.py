@@ -7,6 +7,7 @@ import tensorflow as tf
 import timeit
 
 import numpy as np
+import os 
 
 from pykg2vec.core.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluation import Evaluation
@@ -42,6 +43,18 @@ class Trainer(TrainerMeta):
         self.trainon = trainon
         self.teston = teston
 
+    def infer_tails(self,h,r,sess,topk=5):
+        tails = self.model.infer_tails(h,r,topk)
+        self.saver.restore(sess, "./tmp/model.ckpt")
+        tails = tails.eval()
+        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
+
+    def infer_heads(self,r,t,sess,topk=5):
+        heads = self.model.infer_heads(r,t,topk)
+        self.saver.restore(sess, "./tmp/model.ckpt")
+        heads = heads.eval()
+        print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
+
     def build_model(self):
         """function to build the model"""
         self.model.def_inputs()
@@ -70,7 +83,7 @@ class Trainer(TrainerMeta):
         grads = optimizer.compute_gradients(self.model.loss)
         self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
         self.sess.run(tf.global_variables_initializer())
-
+        self.saver =  tf.train.Saver()
         if not self.tuning:
             self.summary()
             self.summary_hyperparameter()
@@ -112,6 +125,10 @@ class Trainer(TrainerMeta):
             self.summary()
             self.summary_hyperparameter()
 
+        if not os.path.exists("./tmp"):
+            os.mkdir("./tmp")
+
+        save_path = self.saver.save(self.sess, "./tmp/model.ckpt")
         self.sess.close()
         tf.reset_default_graph() # clean the tensorflow for the next training task.
 
