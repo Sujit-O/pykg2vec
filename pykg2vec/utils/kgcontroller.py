@@ -586,12 +586,16 @@ class KnowledgeGraph(object):
         self.hr_t_train = defaultdict(set)
         self.tr_h_train = defaultdict(set)
 
+        self.hr_t_valid = defaultdict(set)
+        self.tr_h_valid = defaultdict(set)
+
         self.relation_property = []
 
         if self.dataset.is_meta_cache_exists():
             self.kg_meta = self.dataset.read_metadata()
         else:
             self.kg_meta = KGMetaData()
+            self.prepare_data()
 
     def force_prepare_data(self):
         shutil.rmtree(str(self.dataset.root_path))
@@ -599,7 +603,6 @@ class KnowledgeGraph(object):
         time.sleep(1)
 
         self.__init__(dataset=self.dataset_name, negative_sample=self.negative_sample)
-        self.prepare_data()
 
     def prepare_data(self):
         """Function to prepare the dataset"""
@@ -616,8 +619,10 @@ class KnowledgeGraph(object):
         self.read_tr_h()
         self.read_hr_t_train()
         self.read_tr_h_train()
-
         self.read_hr_tr_train()
+        self.read_hr_t_valid()
+        self.read_tr_h_valid()
+        self.read_hr_tr_valid()
 
         if self.negative_sample == 'bern':
             self.read_relation_property()
@@ -835,6 +840,33 @@ class KnowledgeGraph(object):
 
         return self.triplets['train']
 
+    def read_hr_t_valid(self):
+        """ Function to read the list of tails for the given head and relation pair for the valid set. """
+        triplets = self.triplets['valid']
+
+        for t in triplets:
+            self.hr_t_valid[(t.h, t.r)].add(t.t)
+
+        return self.hr_t_valid
+
+    def read_tr_h_valid(self):
+        """ Function to read the list of heads for the given tail and relation pair for the valid set. """
+        triplets = self.triplets['valid']
+
+        for t in triplets:
+            self.tr_h_valid[(t.t, t.r)].add(t.h)
+
+        return self.tr_h_valid
+
+    def read_hr_tr_valid(self):
+        """ Function to read the list of heads for the given tail and relation pair
+        and list of heads for the given tail and relation pair for the valid set. """
+        for t in self.triplets['valid']:
+            t.set_hr_t(self.hr_t_valid[(t.h, t.r)])
+            t.set_tr_h(self.tr_h_valid[(t.t, t.r)])
+
+        return self.triplets['valid']    
+    
     def read_relation_property(self):
         """ Function to read the relation property.
 

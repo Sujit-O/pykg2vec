@@ -127,6 +127,50 @@ class TransE(ModelMeta):
 
         return head_rank, tail_rank
 
+    def infer_tails(self,h,r, topk ):
+        """Function to infer top k tails for given head and relation.
+
+           Args:
+              h (int): Head entities ids.
+              r (int): Relation ids of the triple.
+              topk (int): Top K values to infer.
+
+            Returns:
+               Tensors: Returns the list of tails tensor.
+        """
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        head_vec = tf.nn.embedding_lookup(norm_ent_embeddings, h)
+        rel_vec = tf.nn.embedding_lookup(norm_rel_embeddings, r)
+
+        score_tail = self.distance(head_vec,rel_vec, norm_ent_embeddings, axis=1)
+        _, tails= tf.nn.top_k(-score_tail, k=topk)
+
+        return tails
+
+    def infer_heads(self,r,t, topk ):
+        """Function to infer top k head for given relation and tail.
+
+           Args:
+              t (int): tail entities ids.
+              r (int): Relation ids of the triple.
+              topk (int): Top K values to infer.
+
+            Returns:
+               Tensors: Returns the list of heads tensor.
+        """
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        tail_vec = tf.nn.embedding_lookup(norm_ent_embeddings, t)
+        rel_vec = tf.nn.embedding_lookup(norm_rel_embeddings, r)
+
+        score_head = self.distance(norm_ent_embeddings, rel_vec, tail_vec, axis=1)
+        _, heads= tf.nn.top_k(-score_head, k=topk)
+
+        return heads
+
     def distance(self, h, r, t, axis=1):
         """Function to calculate distance measure in embedding space.
 

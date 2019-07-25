@@ -46,10 +46,6 @@ class ConvKB(ModelMeta):
         self.config = config
         self.data_stats = self.config.kg_meta
         self.model_name = 'ConvKB'
-        self.dense_last_dim = {50: 2592, 100: 5184, 200: 10368}
-        if self.config.hidden_size not in self.dense_last_dim:
-            raise NotImplementedError("The hidden dimension is not supported!")
-        self.last_dim = self.dense_last_dim[self.config.hidden_size]
 
     def def_inputs(self):
         """Defines the inputs to the model.
@@ -101,63 +97,43 @@ class ConvKB(ModelMeta):
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
 
     def def_layer(self):
+        """Defines the layers of the algorithm."""
+        self.conv_list = [tf.keras.layers.Conv2D(self.config.num_filters, 
+            (self.config.sequence_length, filter_size), 
+            padding = 'valid', 
+            use_bias= True, 
+            strides = (1,1),
+            activation = tf.keras.layers.ReLU()) for filter_size in self.config.filter_sizes]
+        self.drop = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
+        self.flatten = tf.keras.layers.Flatten()
+        self.fc1 = tf.keras.layers.Dense(self.config.hidden_size,
+            activation=tf.keras.layers.ReLU(),
+            use_bias=True,
+            kernel_regularizer = tf.keras.regularizers.l2(l=0.01),
+            bias_regularizer = tf.keras.regularizers.l2(l=0.01))
+
+
+    def forward(self, x, batch):
         k = self.config.hidden_size
-        for i, filter_size in enumerate(self.config.filter_sizes):
-            with tf.name_scope("conv-maxpool-%s" % filter_size):
-                if self.config.useConstantInit == False:
-                    filter_shape = [sequence_length, filter_size, 1, self.config.num_filters]
-                    W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1, seed=1234), name="W")
-                else:
-                    init1 = tf.constant([[[[0.1]]], [[[0.1]]], [[[-0.1]]]])
-                    weight_init = tf.tile(init1, [1, filter_size, 1, self.config.num_filters])
-                    W = tf.get_variable(name="W3", initializer=weight_init)
-
-                b = tf.Variable(tf.constant(0.0, shape=[self.config.num_filters]), name="b")
-
-        # Add dropout
-        with tf.name_scope("dropout"):        
-            self.hidden_drop = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)        
-        
-        with tf.name_scope("output"):
-            W = tf.get_variable(
-                "W",
-                shape=[k, self.config.num_classes],
-                initializer=tf.contrib.layers.xavier_initializer(seed=1234))
-            b = tf.Variable(tf.constant(0.0, shape=[self.config.num_classes]), name="b")
-
-    def forward(self, st_inp):
-        k = self.config.hidden_size
-        """Create a convolution + maxpool layer for each filter size."""
-        pooled_outputs = []
-        for i, filter_size in enumerate(self.config.filter_sizes):
-            with tf.name_scope("conv-maxpool-%s" % filter_size):
-                conv = tf.nn.conv2d(
-                    st_inp,
-                    W,
-                    strides=[1, 1, 1, 1],
-                    padding="VALID",
-                    name="conv")
-                # Apply nonlinearity
-                h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
-                pooled_outputs.append(h)
-
-        # Combine all the pooled features
-        self.h_pool = tf.concat(pooled_outputs, 2)
-        total_dims = (k * len(self.config.filter_sizes) - sum(self.config.filter_sizes) + len(self.config.filter_sizes)) * self.config.num_filters
-        self.h_pool_flat = tf.reshape(self.h_pool, [-1, total_dims])
-        
-        # Add dropout
-        with tf.name_scope("dropout"):
-            self.h_drop = self.hidden_drop(self.h_pool_flat) 
-
-        # Final (unnormalized) scores and predictions
-        with tf.name_scope("output"):
-            self.l2_loss += tf.nn.l2_loss(W)
-            self.l2_loss += tf.nn.l2_loss(b)
-            self.scores = tf.nn.xw_plus_b(self.h_drop, W, b, name="scores")
-            self.predictions = tf.nn.sigmoid(self.scores)
-
-        return self.scores   
+        #pass the data from all the convolution layers
+        x = [self.conv_list[i](x) for i in range(len(self.config.filter_sizes))]
+        #concatenate the result from all the layers
+        x = tf.keras.layers.concatenate(x,axis=2)
+        #get the total dimension
+        total_dims = (k*len(self.config.filter_sizes)-sum(self.config.filter_sizes)+len(self.config.filter_sizes)) * self.config.num_filters
+        #reshape the result
+        #TODO: fixe the final dimension calculation equation
+        x = tf.reshape(x, [-1,128250])
+        #perform the dropout
+        x = self.drop(x)
+        #pass it through the fully connected layer
+        x= self.fc1(x)
+        #pass the feature through fully connected laye
+        x = tf.matmul(x, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
+        #add a bias value
+        x = tf.add(x, self.b)
+        # sigmoid activation
+        return tf.nn.sigmoid(x)
         
 
     def def_loss(self):
@@ -169,18 +145,26 @@ class ConvKB(ModelMeta):
         r_emb = tf.nn.embedding_lookup(rel_emb_norm, self.r)
         t_emb = tf.nn.embedding_lookup(ent_emb_norm, self.t)
 
+        hr_t = self.hr_t #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        rt_h = self.rt_h #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+
         stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
         stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
         stacked_t = tf.reshape(t_emb, [-1, 10, 20, 1])
 
-        stacked_hrt = tf.concat([stacked_h, stacked_r], 1)
+        stacked_hr = tf.concat([stacked_h, stacked_r], 1)
+        stacked_tr = tf.concat([stacked_t, stacked_r], 1)
 
         # TODO make two different forward layers for head and tail
-        scores = self.forward(stacked_hrt)
+        pred_tails = self.forward(stacked_hr, self.config.batch_size)
+        pred_heads = self.forward(stacked_tr, self.config.batch_size)
 
-        with tf.name_scope("loss"):
-            losses = tf.nn.softplus(scores * self.hr_t)
-            self.loss = tf.reduce_mean(losses) + self.config.lmbda * self.l2_loss
+        loss_tail_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
+        loss_head_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
+
+        # reg_losses = tf.nn.l2_loss(h_emb) + tf.nn.l2_loss(r_emb) + tf.nn.l2_loss(t_emb)
+
+        self.loss = loss_tail_pred + loss_head_pred#+ self.config.lmbda * reg_losses
 
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
@@ -200,12 +184,12 @@ class ConvKB(ModelMeta):
         stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
         stacked_t = tf.reshape(t_emb, [-1, 10, 20, 1])
 
-        stacked_hrt = tf.concat([stacked_h, stacked_r], 1)
+        stacked_hr = tf.concat([stacked_h, stacked_r], 1)
         stacked_tr = tf.concat([stacked_t, stacked_r], 1)
 
         # TODO make two different forward layers for head and tail
-        pred_tails = self.forward(stacked_hr)
-        pred_heads = self.forward(stacked_tr)
+        pred_tails = self.forward(stacked_hr, self.config.batch_size_testing)
+        pred_heads = self.forward(stacked_tr, self.config.batch_size_testing)
 
         _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
         _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)

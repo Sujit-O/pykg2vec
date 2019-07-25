@@ -195,6 +195,7 @@ class Visualization(object):
         Args:
             model (object): Model object
             vis_opts (list): Options for visualization.
+            sess (object): TensorFlow session object, initialized by the trainer. 
 
         Examples:
             >>> from pykg2vec.utils.visualization import Visualization
@@ -207,9 +208,9 @@ class Visualization(object):
             >>> viz = Visualization(model=model)
             >>> viz.plot_train_result()
     """
-    def __init__(self,
-                 model=None,
-                 vis_opts=None):
+    def __init__(self, model=None, vis_opts=None, sess=None):
+
+        self.sess = sess
 
         if vis_opts:
             self.ent_only_plot = vis_opts["ent_only_plot"]
@@ -244,10 +245,11 @@ class Visualization(object):
             self.idx2entity = self.model.config.knowledge_graph.read_cache_data('idx2entity')
             self.idx2relation = self.model.config.knowledge_graph.read_cache_data('idx2relation')
 
-    def get_idx_n_emb(self, sess=None):
+        self.get_idx_n_emb()
+
+    def get_idx_n_emb(self):
         """Function to get the integer ids and the embedding."""
-        if not sess:
-            raise NotImplementedError('No tf Session found!')
+        
         idx = np.random.choice(len(self.validation_triples_ids), self.model.config.disp_triple_num)
         triples = []
         for i in range(len(idx)):
@@ -258,7 +260,7 @@ class Visualization(object):
             self.r_name.append(self.idx2relation[t.r])
             self.t_name.append(self.idx2entity[t.t])
 
-            emb_h, emb_r, emb_t = self.model.get_embed(t.h, t.r, t.t, sess)
+            emb_h, emb_r, emb_t = self.model.get_embed(t.h, t.r, t.t, self.sess)
 
             self.h_emb.append(emb_h)
             self.r_emb.append(emb_r)
@@ -266,7 +268,7 @@ class Visualization(object):
 
             if self.ent_and_rel_plot:
                 try:
-                    emb_h, emb_r, emb_t = self.model.get_proj_embed(t.h, t.r, t.t, sess)
+                    emb_h, emb_r, emb_t = self.model.get_proj_embed(t.h, t.r, t.t, self.sess)
                     self.h_proj_emb.append(emb_h)
                     self.r_proj_emb.append(emb_r)
                     self.t_proj_emb.append(emb_t)
@@ -274,7 +276,6 @@ class Visualization(object):
                     print(e.args)
 
     def plot_embedding(self,
-                       sess=None,
                        resultpath=None,
                        algos=None,
                        show_label=False,
@@ -282,7 +283,6 @@ class Visualization(object):
         """Function to plot the embedding.
 
             Args:
-                sess (object): Tensorflow Session object.
                 resultpath (str): Path where the result will be saved.
                 show_label (bool): If True, will display the labels.
                 algos (str): Name of the algorithms that generated the embedding.
@@ -291,7 +291,6 @@ class Visualization(object):
         """
         if not self.model:
             raise NotImplementedError('Please provide a model!')
-        self.get_idx_n_emb(sess=sess)
 
         if self.ent_only_plot:
             x = np.concatenate((self.h_emb, self.t_emb), axis=0)
@@ -468,88 +467,3 @@ class Visualization(object):
             plt.savefig(str(result / (d + '_testing_hits_plot_' + str(file_no + 1) + '.pdf')), bbox_inches='tight',
                         dpi=300)
             # plt.show()
-
-# def test_visualization():
-#     import sys
-#     sys.path.append('../')
-#     from core.TransE import TransE
-#     from config.config import TransEConfig
-#     from config.global_config import KnowledgeGraph
-
-#     knowledge_graph = KnowledgeGraph(dataset='Freebase15k', negative_sample=False)
-#     knowledge_graph.prepare_data()
-
-#     config = TransEConfig()
-#     model = TransE(config)
-
-#     viz = Visualization(model=model)
-#     viz.plot_test_result()
-
-# if __name__ == '__main__':
-#     test_visualization()
-    # viz = Visualization()
-    # # viz.plot_train_result(path='../results',
-    # #                       result='../figures',
-    # #                       algo=['TransE', 'TransR', 'TransH'],
-    # #                       data=['Freebase15k'])
-    # viz.plot_test_result(path='../results',
-    #                      result='../figures',
-    #                      algo=['TransE', 'TransR', 'TransH'],
-    #                      data=['Freebase15k'], paramlist=None, hits=[10, 5])
-
-    # h_name = ['/m/07pd_j', '/m/06wxw', '/m/0d4fqn', '/m/07kcvl', '/m/012201']
-    # h_embs = [[462.293, 296.02106],
-    #           [476.82443, 3.0669365],
-    #           [-376.1712, 3.5659008],
-    #           [204.21953, 421.02557],
-    #           [-229.96628, -253.05414]]
-    #
-    # r_name = ['/film/film/genre',
-    #           '/location/location/time_zones',
-    #           '/award/award_winner/awards_won.',
-    #           '/american_football/football_team/historical_roster./american_football/football_historical_roster_position/position_s',
-    #           '/film/music_contributor/film']
-    #
-    # r_embs = [[78.29823, 39.317097],
-    #           [-73.834854, 472.82117],
-    #           [388.3856, -286.81555],
-    #           [108.599106, -383.84006],
-    #           [108.599106, -383.84006]]
-    #
-    # t_name = ['/m/02l7c8', '/m/02fqwt', '/m/03wh8kl', '/m/0bgv8y', '/m/0ckrnn']
-
-    # h_name = [s.replace('/','_') for s in h_name]
-    # r_name = [s.replace('/', '_') for s in r_name]
-    # r_name = [s.replace('.', '_') for s in r_name]
-    # t_name = [s.replace('/', '_') for s in t_name]
-
-    # t_embs = [[-248.9943, 258.7389],
-    #           [-1.2189212, -176.04027],
-    #           [262.3874, 161.24255],
-    #           [-141.36205, 28.307116],
-    #           [12.954701, 247.43892]]
-    #
-    # pos = {}
-    # G = nx.DiGraph()
-    # for i in range(5):
-    #     G.add_edge(h_name[i], r_name[i])
-    #     G.add_edge(r_name[i], t_name[i])
-    #     pos[h_name[i]] = h_embs[i]
-    #     pos[r_name[i]] = r_embs[i]
-    #     pos[t_name[i]] = t_embs[i]
-    #
-    # plt.figure()
-    # nodes_draw = nx.draw_networkx_nodes(G,
-    #                                     pos,
-    #                                     node_size=40,
-    #                                     with_labels=True)
-    # nodes_draw.set_edgecolor('w')
-    # nx.draw_networkx_labels(G, pos, font_size=8)
-    # nx.draw_networkx_edges(G, pos, arrows=True, width=0.5, alpha=0.5)
-    #
-    # plt.show()
-    # if not os.path.exists('../figures'):
-    #     os.mkdir('../figures')
-    #
-    # plt.savefig('../figures/transe_test.pdf', bbox_inches='tight', dpi=300)
-    # plt.show()

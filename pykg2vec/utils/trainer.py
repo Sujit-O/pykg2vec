@@ -7,6 +7,7 @@ import tensorflow as tf
 import timeit
 
 import numpy as np
+import os 
 
 from pykg2vec.core.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluation import Evaluation
@@ -14,23 +15,6 @@ from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator
 from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
-
-def get_sparse_mat(data, bs, te):
-    """Function to get the sparse matrix.
-           
-        Args:
-            data (list): List containing the positive triple integer ID.
-            bs (int): Batch size.
-            te (int): Total entities.
-            
-        Returns:
-            Matrix: Returns the numpy matrix
-    """
-    mat = np.zeros(shape=(bs, te), dtype=np.int16)
-    for i in range(bs):
-        for j in range(len(data[i])):
-            mat[i][j] = 1
-    return mat
 
 
 class Trainer(TrainerMeta):
@@ -49,13 +33,27 @@ class Trainer(TrainerMeta):
             >>> trainer.train_model()
     """
 
-    def __init__(self, model, debug=False, tuning=False):
+    def __init__(self, model, trainon='train',teston='valid',debug=False, tuning=False):
         self.debug = debug
         self.model = model
         self.config = self.model.config
         self.training_results = []
         self.gen_train = None
         self.tuning=tuning
+        self.trainon = trainon
+        self.teston = teston
+
+    def infer_tails(self,h,r,sess,topk=5):
+        tails = self.model.infer_tails(h,r,topk)
+        self.saver.restore(sess, "./tmp/model.ckpt")
+        tails = tails.eval()
+        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
+
+    def infer_heads(self,r,t,sess,topk=5):
+        heads = self.model.infer_heads(r,t,topk)
+        self.saver.restore(sess, "./tmp/model.ckpt")
+        heads = heads.eval()
+        print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
 
     def build_model(self):
         """function to build the model"""
@@ -85,7 +83,7 @@ class Trainer(TrainerMeta):
         grads = optimizer.compute_gradients(self.model.loss)
         self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
         self.sess.run(tf.global_variables_initializer())
-
+        self.saver =  tf.train.Saver()
         if not self.tuning:
             self.summary()
             self.summary_hyperparameter()
@@ -99,12 +97,12 @@ class Trainer(TrainerMeta):
         if self.config.loadFromData:
             self.load_model()
         else:
-            generator_config = GeneratorConfig(data='train', algo=self.model.model_name,
+            generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
                                                batch_size=self.model.config.batch_size)
             self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
             if not self.tuning:
-                self.evaluator = Evaluation(model=self.model, debug=self.debug)
+                self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
 
             for n_iter in range(self.config.epochs):
                 loss = self.train_model_epoch(n_iter)
@@ -127,6 +125,10 @@ class Trainer(TrainerMeta):
             self.summary()
             self.summary_hyperparameter()
 
+        if not os.path.exists("./tmp"):
+            os.mkdir("./tmp")
+
+        save_path = self.saver.save(self.sess, "./tmp/model.ckpt")
         self.sess.close()
         tf.reset_default_graph() # clean the tensorflow for the next training task.
 
@@ -136,17 +138,17 @@ class Trainer(TrainerMeta):
         """Function to tune the model."""
         acc = 0
 
-        generator_config = GeneratorConfig(data='train', algo=self.model.model_name,
+        generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
                                            batch_size=self.model.config.batch_size)
         self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
-        self.evaluator = Evaluation(model=self.model, debug=self.debug, tuning=True)
+        self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
        
         for n_iter in range( self.config.epochs):
             self.train_model_epoch(n_iter)
 
         self.gen_train.stop()
-        self.evaluator.test_batch(self.sess, n_iter)
+        self.evaluator.test_batch(n_iter)
         acc = self.evaluator.output_queue.get()
         self.evaluator.stop()
         self.sess.close()
@@ -164,7 +166,7 @@ class Trainer(TrainerMeta):
 
         for batch_idx in range(num_batch):
             data = list(next(self.gen_train))
-            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "complex", "distmult", "proje_pointwise"]:
+            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve","convkb", "complex", "distmult", "proje_pointwise"]:
                 h = data[0]
                 r = data[1]
                 t = data[2]
@@ -194,7 +196,6 @@ class Trainer(TrainerMeta):
                     self.model.neg_t: nt,
                     self.model.neg_r: nr
                 }
-
             _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
 
             acc_loss += loss
@@ -222,10 +223,10 @@ class Trainer(TrainerMeta):
         if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
                                                curr_epoch == 0 or
                                                curr_epoch == self.config.epochs - 1):
-            self.evaluator.test_batch(self.sess, curr_epoch)
+            self.evaluator.test_batch(curr_epoch)
         else:
             if curr_epoch == self.config.epochs - 1:
-                self.evaluator.test_batch(self.sess, curr_epoch)
+                self.evaluator.test_batch(curr_epoch)
 
     ''' Procedural functions:'''
 
@@ -251,19 +252,18 @@ class Trainer(TrainerMeta):
                     "ent_and_rel_plot": not self.config.plot_entity_only}
 
         if self.config.plot_embedding:
-            viz = Visualization(model=self.model, vis_opts = options)
+            viz = Visualization(model=self.model, vis_opts = options, sess=self.sess)
 
-            viz.plot_embedding(sess=self.sess,
-                               resultpath=self.config.figures,
+            viz.plot_embedding(resultpath=self.config.figures,
                                algos=self.model.model_name,
                                show_label=False)
 
         if self.config.plot_training_result:
-            viz = Visualization(model=self.model)
+            viz = Visualization(model=self.model, sess=self.sess)
             viz.plot_train_result()
 
         if self.config.plot_testing_result:
-            viz = Visualization(model=self.model)
+            viz = Visualization(model=self.model, sess=self.sess)
             viz.plot_test_result()
 
     def summary(self):

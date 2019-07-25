@@ -166,6 +166,12 @@ KG Controller
 .. automodule:: pykg2vec.utils.kgcontroller
    :members:
 
+KG Pipeline
+--------------
+
+.. automodule:: pykg2vec.utils.KGPipeline
+   :members:   
+
 Unit Test
 ======================
 
@@ -187,3 +193,9 @@ Model Test
 
 .. automodule:: pykg2vec.test.test_model
    :members:
+
+Pipeline Test
+-----------------
+
+.. automodule:: pykg2vec.test.test_KGPipeline
+   :members:   

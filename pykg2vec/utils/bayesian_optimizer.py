@@ -120,6 +120,8 @@ class BaysOptimizer(object):
         config.data=args.dataset_name
 
         self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug, tuning=True)
+        if self.args.debug is True: 
+            hyper_params.epochs = [1] # only try for 1 epoch if it is in debug mode. 
         self.search_space = self.define_search_space(hyper_params)
         self.max_evals = self.args.max_number_trials if not self.args.debug else 1
         
@@ -133,7 +135,7 @@ class BaysOptimizer(object):
         space = self.search_space
         trials = Trials()
         
-        best_result = fmin(fn=self.get_loss, space=space, algo=tpe.suggest, max_evals=self.max_evals, trials=trials)
+        self.best_result = fmin(fn=self.get_loss, space=space, algo=tpe.suggest, max_evals=self.max_evals, trials=trials)
         
         columns = list(space.keys())   
         results = pd.DataFrame(columns=['iteration'] + columns + ['loss'])
@@ -153,7 +155,11 @@ class BaysOptimizer(object):
         
         print(results)
         print('Found Golden Setting:')
-        pprint(space_eval(space, best_result))
+        pprint(space_eval(space, self.best_result))
+
+    def return_best(self):
+        """Function to return the best hyper-parameters"""
+        return space_eval(self.search_space, self.best_result)
 
     def get_loss(self, params):
         """Function that defines and acquires the loss"""
