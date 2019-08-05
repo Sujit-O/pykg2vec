@@ -570,8 +570,11 @@ class KnowledgeGraph(object):
 
         self.negative_sample = negative_sample
 
+        # KG data structure stored in triplet format
         self.triplets = {'train': [], 'test': [], 'valid': []}
+        self triple_store = self.triplets 
 
+        # TODO: should also have graph-based data structure for a KG. 
         self.relations = []
         self.entities = []
 
