@@ -235,6 +235,8 @@ class KGEArgParser:
                                      help="The folder name to save the results.")
         self.misc_group.add_argument('-fig', dest='figures', default='../figures', type=str,
                                      help="The folder name to save the figures.")
+        self.misc_group.add_argument('-emb', dest='embeddings', default='../embeddings', type=str,
+                                     help="The folder name to save the embedding values.")
         self.misc_group.add_argument('-plote', dest='plot_embedding', default=False,
                                      type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.misc_group.add_argument('-plot', dest='plot_entity_only', default=True,
@@ -265,6 +267,7 @@ class BasicConfig:
       tmp (Path Object): Path where temporary model information is stored.
       result (Path Object): Gives the path where the result will be saved.
       figures (Path Object): Gives the path where the figures will be saved.
+      embeddings (Path Object): Gives the path where the embedding values will be saved.
       gpu_fraction (float): Amount of GPU fraction that will be made available for training and inference.
       gpu_allow_growth (bool): If True, allocates only necessary GPU memory and grows as required later.
       loadFromData (bool): If True, loads the model parameters if available from memory.
@@ -292,6 +295,7 @@ class BasicConfig:
             self.tmp = Path('..') / 'intermediate'
             self.result = Path('..') / 'results'
             self.figures = Path('..') / 'figures'
+            self.embeddings = Path('..') / 'embeddings'
             self.gpu_fraction = 0.8
             self.gpu_allow_growth = True
             self.loadFromData = False
@@ -310,6 +314,7 @@ class BasicConfig:
             self.tmp = Path(args.tmp)
             self.result = Path(args.result)
             self.figures = Path(args.figures)
+            self.embeddings = Path(args.embeddings)
             self.full_test_flag = (args.test_step == 0)
             self.plot_entity_only = args.plot_entity_only
             self.test_step = args.test_step
@@ -331,6 +336,7 @@ class BasicConfig:
         self.tmp.mkdir(parents=True, exist_ok=True)
         self.result.mkdir(parents=True, exist_ok=True)
         self.figures.mkdir(parents=True, exist_ok=True)
+        self.embeddings.mkdir(parents=True, exist_ok=True)
         self.hits = [10, 5]
         self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
