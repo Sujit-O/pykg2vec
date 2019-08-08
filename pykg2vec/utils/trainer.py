@@ -286,10 +286,13 @@ class Trainer(TrainerMeta):
     def save_tsv_(self, save_path, vec_fname, meta_fname, embeddings, names):
         with open(str(save_path / vec_fname), 'w') as out_v, \
              open(str(save_path / meta_fname), 'w') as out_m:
-             for idx in names:
-                out_m.write(names[idx] + "\n")
-                vec = tf.nn.embedding_lookup(embeddings, idx)
-                out_v.write("\t".join([str(x) for x in self.sess.run(vec)]) + "\n")
+             with self.sess.as_default():
+                for idx in names:
+                    import pdb; pdb.set_trace()
+                    print(idx)
+                    out_m.write(names[idx] + "\n")
+                    vec = tf.nn.embedding_lookup(embeddings, idx)
+                    out_v.write("\t".join([str(x) for x in vec.eval()]) + "\n")
                 
     def summary(self):
         """Function to print the summary."""
