@@ -284,7 +284,6 @@ class Trainer(TrainerMeta):
         self.save_tsv_(save_path, "rel_vecs.tsv", "rel_meta.tsv", self.model.rel_embeddings, idx2relation)
 
     def save_tsv_(self, save_path, vec_fname, meta_fname, embeddings, names):
-        import pdb; pdb.set_trace()
         emb_tensor = tf.nn.embedding_lookup(embeddings, list(names.keys()))
         emb_array = self.sess.run(emb_tensor)
         with open(str(save_path / vec_fname), 'w') as out_v, \
