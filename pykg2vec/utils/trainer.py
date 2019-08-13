@@ -265,7 +265,33 @@ class Trainer(TrainerMeta):
         if self.config.plot_testing_result:
             viz = Visualization(model=self.model, sess=self.sess)
             viz.plot_test_result()
+    
+    def export_embeddings(self):
+        """Export embeddings in tsv format."""
 
+        if not self.model:
+            raise NotImplementedError('Please provide a model!')
+
+        save_path = self.config.embeddings / self.model.model_name
+        save_path.mkdir(parents=True, exist_ok=True)
+        
+        # export entity embeddings
+        idx2entity = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        self.save_tsv_(save_path, "ent_vecs.tsv", "ent_meta.tsv", self.model.ent_embeddings, idx2entity)
+       
+        # export relation embeddings
+        idx2relation = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        self.save_tsv_(save_path, "rel_vecs.tsv", "rel_meta.tsv", self.model.rel_embeddings, idx2relation)
+
+    def save_tsv_(self, save_path, vec_fname, meta_fname, embeddings, names):
+        emb_tensor = tf.nn.embedding_lookup(embeddings, list(names.keys()))
+        emb_array = self.sess.run(emb_tensor)
+        with open(str(save_path / vec_fname), 'w') as out_v, \
+             open(str(save_path / meta_fname), 'w') as out_m:
+            for idx in names:
+                out_m.write(names[idx] + "\n")
+                out_v.write("\t".join([str(x) for x in emb_array[idx]]) + "\n")
+                
     def summary(self):
         """Function to print the summary."""
         print("\n------------------Global Setting--------------------")
