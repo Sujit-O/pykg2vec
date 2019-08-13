@@ -128,6 +128,7 @@ class Trainer(TrainerMeta):
         if not os.path.exists("./tmp"):
             os.mkdir("./tmp")
 
+        self.export_embeddings()
         save_path = self.saver.save(self.sess, "./tmp/model.ckpt")
         self.sess.close()
         tf.reset_default_graph() # clean the tensorflow for the next training task.
@@ -267,30 +268,37 @@ class Trainer(TrainerMeta):
             viz.plot_test_result()
     
     def export_embeddings(self):
-        """Export embeddings in tsv format."""
-
-        if not self.model:
-            raise NotImplementedError('Please provide a model!')
-
+        """
+            Export embeddings in tsv format. 
+            With tsvs (both label, vector files), you can:
+            1) Use those pretained embeddings for your applications.  
+            2) Visualize the embeddings in this website to gain insights. (https://projector.tensorflow.org/)
+        """
         save_path = self.config.embeddings / self.model.model_name
         save_path.mkdir(parents=True, exist_ok=True)
         
-        # export entity embeddings
-        idx2entity = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        self.save_tsv_(save_path, "ent_vecs.tsv", "ent_meta.tsv", self.model.ent_embeddings, idx2entity)
-       
-        # export relation embeddings
-        idx2relation = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        self.save_tsv_(save_path, "rel_vecs.tsv", "rel_meta.tsv", self.model.rel_embeddings, idx2relation)
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
 
-    def save_tsv_(self, save_path, vec_fname, meta_fname, embeddings, names):
-        emb_tensor = tf.nn.embedding_lookup(embeddings, list(names.keys()))
-        emb_array = self.sess.run(emb_tensor)
-        with open(str(save_path / vec_fname), 'w') as out_v, \
-             open(str(save_path / meta_fname), 'w') as out_m:
-            for idx in names:
-                out_m.write(names[idx] + "\n")
-                out_v.write("\t".join([str(x) for x in emb_array[idx]]) + "\n")
+        all_ent_ids = list(idx2ent.keys())
+        all_rel_ids = list(idx2rel.keys())
+
+        op_get_all_ent_embs = tf.nn.embedding_lookup(self.model.ent_embeddings, all_ent_ids)
+        op_get_all_rel_embs = tf.nn.embedding_lookup(self.model.rel_embeddings, all_rel_ids)
+
+        all_ent_embs, all_rel_embs = self.sess.run([op_get_all_ent_embs, op_get_all_rel_embs])
+
+        with open(str(save_path / "ent_vecs.tsv"), 'w') as v_export_file, \
+             open(str(save_path / "ent_labels.tsv"), 'w') as l_export_file:
+            for idx, label in idx2ent.items():
+                v_export_file.write("\t".join([str(x) for x in all_ent_embs[idx]]) + "\n")
+                l_export_file.write(label + "\n")
+
+        with open(str(save_path / "rel_vecs.tsv"), 'w') as v_export_file, \
+             open(str(save_path / "rel_labels.tsv"), 'w') as l_export_file:
+            for idx, label in idx2rel.items():
+                v_export_file.write("\t".join([str(x) for x in all_rel_embs[idx]]) + "\n")
+                l_export_file.write(label + "\n")
                 
     def summary(self):
         """Function to print the summary."""
