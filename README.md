@@ -174,6 +174,16 @@ python tune_model.py -mn TransE # Tune TransE model.
 ## Implemented Methods
 Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more information about the algorithms implemented in pykg2vec. 
 
+with train.py described in usage examples, you can switch the models to train on a dataset using command:
+```bach
+python train.py -mn TransE # Run TransE model.
+python train.py -mn Complex # Run Complex model. 
+# you can select one of models from ["complex", "conve","convkb","hole", 
+                                     "distmult", "kg2e", "ntn": "NTN", 
+                                     "proje_pointwise","rescal","rotate",
+                                     "slm","sme","transd","TransD",
+                                     "transe","transh","transg","transm","transr","tucker"]
+```
 ## Datasets
 Pykg2vec aims to include all the well-known datasets available online so that you can test all available KGE models or your own model on those datasets. Currently, pykg2vec has [FK15K](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz), WN18, WN18-RR, YAGO, FK15K_237, Kinship, Nations, UMLS. You can check Datasets for more information. 
 
