@@ -328,15 +328,22 @@ class BasicConfig:
 
             self.batch_size_testing = args.batch_testing
 
-        self.tmp.mkdir(parents=True, exist_ok=True)
-        self.result.mkdir(parents=True, exist_ok=True)
-        self.figures.mkdir(parents=True, exist_ok=True)
         self.hits = [10, 5]
         self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
         self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
         self.knowledge_graph = KnowledgeGraph(dataset=self.data, negative_sample=self.sampling)
         self.kg_meta = self.knowledge_graph.kg_meta
+        
+        self.path_tmp = self.knowledge_graph.dataset.dataset_path  / 'intermediate'
+        self.path_result = self.knowledge_graph.dataset.dataset_path  / 'results'
+        self.path_figures = self.knowledge_graph.dataset.dataset_path  / 'figures'
+        self.path_embeddings = self.knowledge_graph.dataset.dataset_path  / 'embeddings'
+        self.path_tmp.mkdir(parents=True, exist_ok=True)
+        self.path_result.mkdir(parents=True, exist_ok=True)
+        self.path_figures.mkdir(parents=True, exist_ok=True)
+        self.path_embeddings.mkdir(parents=True, exist_ok=True)
+
 
 
 class TransGConfig(BasicConfig):

@@ -329,8 +329,8 @@ class Visualization(object):
     def plot_train_result(self):
         """Function to plot the training result."""
         algo = self.algo_list
-        path = self.model.config.result
-        result = self.model.config.figures
+        path = self.model.config.path_result
+        result = self.model.config.path_figures
         data = [self.model.config.data]
         
         files = os.listdir(str(path))
@@ -366,8 +366,8 @@ class Visualization(object):
     def plot_test_result(self):
         """Function to plot the testing result."""
         algo = self.algo_list
-        path = self.model.config.result
-        result = self.model.config.figures
+        path = self.model.config.path_result
+        result = self.model.config.path_figures
         data = [self.model.config.data]
         hits = self.model.config.hits
         if path is None or algo is None or data is None:
