@@ -43,17 +43,49 @@ class Trainer(TrainerMeta):
         self.trainon = trainon
         self.teston = teston
 
-    def infer_tails(self,h,r,sess,topk=5):
-        tails = self.model.infer_tails(h,r,topk)
-        self.saver.restore(sess, "./tmp/model.ckpt")
-        tails = tails.eval()
-        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
+    def enter_interactive_mode(self):
+        self.build_model()
+        self.load_model()
 
-    def infer_heads(self,r,t,sess,topk=5):
-        heads = self.model.infer_heads(r,t,topk)
-        self.saver.restore(sess, "./tmp/model.ckpt")
-        heads = heads.eval()
+        print("The training/loading of the model has finished!\nNow enter interactive mode :)")
+        print("-----")
+        print("Example 1: trainer.infer_tails(1,10,topk=5)")
+        self.infer_tails(1,10,topk=5)
+
+        print("-----")
+        print("Example 2: trainer.infer_heads(10,20,topk=5)")
+        self.infer_heads(10,20,topk=5)
+    
+    def exit_interactive_mode(self):
+        self.sess.close()
+        tf.reset_default_graph() # clean the tensorflow for the next training task.
+
+        print("Thank you for trying out inference interactive script :)")
+
+    def infer_tails(self,h,r,topk=5):
+        tails_op = self.model.infer_tails(h,r,topk)
+        tails = self.sess.run(tails_op)
+        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        print("head: %s" % idx2ent[h])
+        print("relation: %s" % idx2rel[r])
+
+        for idx, tail in enumerate(tails):
+            print("%dth predicted tail: %s" % (idx, idx2ent[tail]))
+
+    def infer_heads(self,r,t,topk=5):
+        heads_op = self.model.infer_heads(r,t,topk)
+        heads = self.sess.run(heads_op)
+        
         print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        print("tail: %s" % idx2ent[t])
+        print("relation: %s" % idx2rel[r])
+
+        for idx, head in enumerate(heads):
+            print("%dth predicted head: %s" % (idx, idx2ent[head]))
 
     def build_model(self):
         """function to build the model"""
@@ -129,7 +161,7 @@ class Trainer(TrainerMeta):
             os.mkdir("./tmp")
 
         self.export_embeddings()
-        save_path = self.saver.save(self.sess, "./tmp/model.ckpt")
+
         self.sess.close()
         tf.reset_default_graph() # clean the tensorflow for the next training task.
 
@@ -291,12 +323,14 @@ class Trainer(TrainerMeta):
         for parameter in self.model.parameter_list:
             all_ids = list(range(0, int(parameter.shape[0])))
             stored_name = parameter.name.split(':')[0]
-            op_get_all_embs = tf.nn.embedding_lookup(parameter, all_ids)
-            all_embs = self.sess.run(op_get_all_embs)
-            with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
-                for idx in all_ids:
-                    v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
-                
+            # import pdb; pdb.set_trace()
+            if parameter.shape.rank == 2:
+                op_get_all_embs = tf.nn.embedding_lookup(parameter, all_ids)
+                all_embs = self.sess.run(op_get_all_embs)
+                with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
+                    for idx in all_ids:
+                        v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
+                    
     def summary(self):
         """Function to print the summary."""
         print("\n------------------Global Setting--------------------")
