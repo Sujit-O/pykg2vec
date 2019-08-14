@@ -75,25 +75,25 @@ class DistMult(ModelMeta):
            
            Attributes:
                k (Tensor): Size of the latent dimesnion for entities and relations.
-               emb_e_(Tensor Variable): Lookup variable containing embedding of entities.
-               emb_rel (Tensor Variable): Lookup variable containing embedding of relations.
+               ent_embeddings(Tensor Variable): Lookup variable containing embedding of entities.
+               rel_embeddings (Tensor Variable): Lookup variable containing embedding of relations.
                parameter_list  (list): List of Tensor parameters. 
         """
         k = self.config.hidden_size
         with tf.name_scope("embedding"):
-            self.emb_e = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
-                                         initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.emb_rel = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
-                                           initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.ent_embeddings = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
+                                            initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.rel_embeddings = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
+                                            initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-        self.parameter_list = [self.emb_e, self.emb_rel]
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
 
     def def_loss(self):
         """Defines the loss function for the algorithm."""
         h_emb, r_emb, t_emb = self.embed(self.h, self.r, self.t)
 
-        pred_tails = tf.matmul(h_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
-        pred_heads = tf.matmul(t_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
+        pred_tails = tf.matmul(h_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
+        pred_heads = tf.matmul(t_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
 
         pred_tails = tf.nn.relu(pred_tails)
         pred_heads = tf.nn.relu(pred_heads)
@@ -114,10 +114,10 @@ class DistMult(ModelMeta):
         """
         h_emb, r_emb, t_emb = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        pred_tails = tf.matmul(h_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
+        pred_tails = tf.matmul(h_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
         pred_tails = tf.nn.relu(pred_tails)
 
-        pred_heads = tf.matmul(t_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.emb_e, axis=1)))
+        pred_heads = tf.matmul(t_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
         pred_heads = tf.nn.relu(pred_heads)
 
         _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
@@ -136,12 +136,12 @@ class DistMult(ModelMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        norm_emb_e = tf.nn.l2_normalize(self.emb_e, axis=1)
-        norm_emb_rel = tf.nn.l2_normalize(self.emb_rel, axis=1)
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        h_emb = tf.nn.embedding_lookup(norm_emb_e, h)
-        r_emb = tf.nn.embedding_lookup(norm_emb_rel, r)
-        t_emb = tf.nn.embedding_lookup(norm_emb_e, t)
+        h_emb = tf.nn.embedding_lookup(norm_ent_embeddings, h)
+        r_emb = tf.nn.embedding_lookup(norm_rel_embeddings, r)
+        t_emb = tf.nn.embedding_lookup(norm_ent_embeddings, t)
 
         return h_emb, r_emb, t_emb
 
