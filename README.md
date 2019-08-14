@@ -185,25 +185,26 @@ python train.py -mn Complex # Run Complex model.
 ## Datasets
 Pykg2vec aims to include all the well-known datasets available online so that you can test all available KGE models or your own model on those datasets. Currently, pykg2vec has [FK15K](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz), WN18, WN18-RR, YAGO, FK15K_237, Kinship, Nations, UMLS. You can check Datasets for more information. 
 With train.py described in usage examples, you can switch the models to train on a dataset using command:
-### Well-Known Dataset 
+### Using Well-Known Dataset 
 ```bach
 python train.py -mn TransE -ds FB15K # Run TransE model on Freebase15k(FK15)
 python train.py -mn TransE -ds dl50a # Run TransE model on Deeplearning50a(dl50a)
 # you can select one of models from ["fb15k','dl50a','wn18','wn18_rr',
                                      'yago3_10','fb15k_237','ks','nations','umls']
 ```
-### Custom Dataset
-For Custom datasets some steps are provided for your reference: 
+### Using Custom Dataset
+For custom dataset, some steps are provided: 
 ```
 #1 For triples, store all of them in a text-format with each line formatted as follows, 
 head\trelation\ttail
 #2 For the text file, separate it into three files according to your reference give names as follows, 
 [name]-train.txt, [name]-valid.txt, [name]-test.txt
-#3 For those three files, create a folder to include them.
+#3 For those three files, create a folder [path_storing_text_files] to include them.
 ```
-Once finished, you can switch the dataset you want to use to train a specific model using command:
+Once finished, you can use the custom dataset to train on a specific model using command:
 ```
-python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] # Run TransE model on Custom Dataset [name].
+python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] 
+# Run TransE model on a custom dataset [name].
 ```
 ## Common Installation Problems
 
