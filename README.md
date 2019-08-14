@@ -203,13 +203,6 @@ head\trelation\ttail
 [name]-train.txt, [name]-valid.txt, [name]-test.txt
 ```
 3. For those three files, create a folder [path_storing_text_files] to include them.
-```
-#1 For triples, store all of them in a text-format with each line formatted as follows, 
-head\trelation\ttail
-#2 For the text file, separate it into three files according to your reference give names as follows, 
-[name]-train.txt, [name]-valid.txt, [name]-test.txt
-#3 For those three files, create a folder [path_storing_text_files] to include them.
-```
 4. Once finished, you then can use the custom dataset to train on a specific model using command:
 ```
 python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] 
