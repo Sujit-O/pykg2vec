@@ -9,8 +9,6 @@ The documentation of the pykg2vec library is [here](https://pykg2vec.readthedocs
 * [Repository Structure](#repository-structure)
 * [Installation](#installation)
 * [Usage Example](#usage-example)
-* [Implemented Methods](#implemented-methods)
-* [Datasets](#datasets)
 * [Common Installation Problems](#common-installation-problems)
 * [How to Contribute?](https://github.com/Sujit-O/pykg2vec/blob/master/CONTRIBUTING.md)
 * [Cite](#cite)
@@ -168,9 +166,7 @@ with tune_model.py we then can train the existed model using command:
 python tune_model.py -h # check all tunnable parameters.
 python tune_model.py -mn TransE # Tune TransE model.
 ```
-
-[__***Back to Top***__](#Documentation)
-## Implemented Methods
+### Switch between Implemented Methods:
 Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more information about the algorithms implemented in pykg2vec. With train.py described in usage examples, you can switch the models to train on a dataset using command:
 ```bach
 python train.py -mn TransE # Run TransE model.
@@ -181,17 +177,17 @@ python train.py -mn Complex # Run Complex model.
                                      "slm","sme","transd","TransD",
                                      "transe","transh","transg","transm","transr","tucker"]
 ```
-## Datasets
+### Switch between Datasets:
 Pykg2vec aims to include all the well-known datasets available online so that you can test all available KGE models or your own model on those datasets. Currently, pykg2vec has [FK15K](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz), WN18, WN18-RR, YAGO, FK15K_237, Kinship, Nations, UMLS. You can check Datasets for more information. 
 With train.py described in usage examples, you can switch the models to train on a dataset using command:
-### Using Well-Known Dataset 
+#### Using Well-Known Dataset 
 ```bach
 python train.py -mn TransE -ds FB15K # Run TransE model on Freebase15k(FK15)
 python train.py -mn TransE -ds dl50a # Run TransE model on Deeplearning50a(dl50a)
 # you can select one of models from ["fb15k','dl50a','wn18','wn18_rr',
                                      'yago3_10','fb15k_237','ks','nations','umls']
 ```
-### Using Custom Dataset
+#### Using Custom Dataset
 For custom dataset, some steps are provided:
 1. For triples, store all of them in a text-format with each line formatted as follows, 
 ```
