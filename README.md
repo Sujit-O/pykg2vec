@@ -25,7 +25,7 @@ For people who just start working on Knowledge Graph Embedding Methods, the pape
 * [Cite](#cite)
 
 
-[__***Back to Top***__](#table-of-contents)
+[__***Back to Top***__](#Documentation)
 ## Dependencies
 The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
 * tensorflow==`<version suitable for your workspace>`
