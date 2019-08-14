@@ -274,7 +274,7 @@ class Trainer(TrainerMeta):
             1) Use those pretained embeddings for your applications.  
             2) Visualize the embeddings in this website to gain insights. (https://projector.tensorflow.org/)
         """
-        save_path = self.config.embeddings / self.model.model_name
+        save_path = self.config.knowledge_graph.dataset.root_path / 'embeddings' / self.model.model_name
         save_path.mkdir(parents=True, exist_ok=True)
         
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
