@@ -32,7 +32,7 @@ def testing_function_with_args(name, distance_measure=None, bilinear=None, displ
     config.test_step  = 1
     config.test_num   = 10
     config.disp_result= display
-    config.save_model = False
+    config.save_model = True
 
     model = model_def(config)
 
