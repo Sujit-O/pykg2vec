@@ -38,13 +38,12 @@ The goal of this library is to minimize the dependency on other libraries as far
 
 [__***Back to Top***__](#Documentation)
 ## Features
-* A lot of state-of-the-art KGE model implementations. 
-  * TransE, TransH, TransR, TransD, TransM, KG2E, RESCAL, DistMult, ComplEX, ConvE, ProjE, RotatE, SME, SLM, NTN, TuckER. 
+* A lot of state-of-the-art KGE model implementations and well-known datasets. 
 * Tools that support automatic hyperparameter tuning (bayesian optimizer).
 * Optimized performance by making a proper use of CPUs and GPUs (multiprocess and Tensorflow).  
   * Will be adding C++ implementation to further optimize! 
 * A suite of visualization and summerization tools
-  * t-SNE based embedding visualization. (also support TSV export)
+  * TSNE based visualization. (Support TSV export)
   * KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
 
 Training Loss Plot             |  Testing Rank Results | Testing Hits Result
