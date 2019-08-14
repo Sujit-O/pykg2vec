@@ -265,7 +265,7 @@ class Trainer(TrainerMeta):
 
     def save_model(self):
         """Function to save the model."""
-        saved_path = self.config.tmp / self.model.model_name
+        saved_path = self.config.path_tmp / self.model.model_name
         saved_path.mkdir(parents=True, exist_ok=True)
 
         saver = tf.train.Saver(self.model.parameter_list)
@@ -273,7 +273,7 @@ class Trainer(TrainerMeta):
 
     def load_model(self):
         """Function to load the model."""
-        saved_path = self.config.tmp / self.model.model_name
+        saved_path = self.config.path_tmp / self.model.model_name
         if saved_path.exists():
             saver = tf.train.Saver(self.model.parameter_list)
             saver.restore(self.sess, str(saved_path / 'model.vec'))
@@ -306,7 +306,7 @@ class Trainer(TrainerMeta):
             1) Use those pretained embeddings for your applications.  
             2) Visualize the embeddings in this website to gain insights. (https://projector.tensorflow.org/)
         """
-        save_path = self.config.knowledge_graph.dataset.root_path / 'embeddings' / self.model.model_name
+        save_path = self.config.path_embeddings / self.model.model_name
         save_path.mkdir(parents=True, exist_ok=True)
         
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
