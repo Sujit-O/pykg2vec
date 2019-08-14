@@ -324,7 +324,8 @@ class Trainer(TrainerMeta):
             all_ids = list(range(0, int(parameter.shape[0])))
             stored_name = parameter.name.split(':')[0]
             # import pdb; pdb.set_trace()
-            if parameter.shape.rank == 2:
+
+            if len(parameter.shape) == 2:
                 op_get_all_embs = tf.nn.embedding_lookup(parameter, all_ids)
                 all_embs = self.sess.run(op_get_all_embs)
                 with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
