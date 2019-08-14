@@ -280,25 +280,22 @@ class Trainer(TrainerMeta):
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
 
-        all_ent_ids = list(idx2ent.keys())
-        all_rel_ids = list(idx2rel.keys())
-
-        op_get_all_ent_embs = tf.nn.embedding_lookup(self.model.ent_embeddings, all_ent_ids)
-        op_get_all_rel_embs = tf.nn.embedding_lookup(self.model.rel_embeddings, all_rel_ids)
-
-        all_ent_embs, all_rel_embs = self.sess.run([op_get_all_ent_embs, op_get_all_rel_embs])
-
-        with open(str(save_path / "ent_vecs.tsv"), 'w') as v_export_file, \
-             open(str(save_path / "ent_labels.tsv"), 'w') as l_export_file:
-            for idx, label in idx2ent.items():
-                v_export_file.write("\t".join([str(x) for x in all_ent_embs[idx]]) + "\n")
+        with open(str(save_path / "ent_labels.tsv"), 'w') as l_export_file:
+            for label in idx2ent.values():
                 l_export_file.write(label + "\n")
 
-        with open(str(save_path / "rel_vecs.tsv"), 'w') as v_export_file, \
-             open(str(save_path / "rel_labels.tsv"), 'w') as l_export_file:
-            for idx, label in idx2rel.items():
-                v_export_file.write("\t".join([str(x) for x in all_rel_embs[idx]]) + "\n")
+        with open(str(save_path / "rel_labels.tsv"), 'w') as l_export_file:
+            for label in idx2rel.values():
                 l_export_file.write(label + "\n")
+
+        for parameter in self.model.parameter_list:
+            all_ids = list(range(0, int(parameter.shape[0])))
+            stored_name = parameter.name.split(':')[0]
+            op_get_all_embs = tf.nn.embedding_lookup(parameter, all_ids)
+            all_embs = self.sess.run(op_get_all_embs)
+            with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
+                for idx in all_ids:
+                    v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
                 
     def summary(self):
         """Function to print the summary."""
