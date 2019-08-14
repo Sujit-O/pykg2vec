@@ -2,17 +2,8 @@
 
 # Pykg2vec: Python Library for KG Embedding Methods 
 ## Documentation
-The documentation of the pykg2vec library is [here](https://pykg2vec.readthedocs.io/). 
-
-## Introduction
-Pykg2vec is a Tensorflow-based library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks including the whole pipeline into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
-
-For people who just start working on Knowledge Graph Embedding Methods, the papers [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050), [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/document/8047276), and [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098) are well-written materials for reading! The figure below illustrates the current overall architecture. 
-
-![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
-
-## Table of Contents
-
+The documentation of the pykg2vec library is [here](https://pykg2vec.readthedocs.io/). The organization of the readme is as follows,
+* [Introduction](#introdcution)
 * [Dependencies](#dependencies)
 * [Features](#features)
 * [Repository Structure](#repository-structure)
@@ -24,6 +15,12 @@ For people who just start working on Knowledge Graph Embedding Methods, the pape
 * [How to Contribute?](https://github.com/Sujit-O/pykg2vec/blob/master/CONTRIBUTING.md)
 * [Cite](#cite)
 
+## Introduction
+Pykg2vec is a Tensorflow-based library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks including the whole pipeline into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
+
+For people who just start working on Knowledge Graph Embedding Methods, the papers [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050), [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/document/8047276), and [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098) are well-written materials for reading! The figure below illustrates the current overall architecture. 
+
+![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
 [__***Back to Top***__](#Documentation)
 ## Dependencies
@@ -39,7 +36,7 @@ The goal of this library is to minimize the dependency on other libraries as far
 * progressbar2>=3.39.3
 * pathlib>=1.0.1
 
-[__***Back to Top***__](#table-of-contents)
+[__***Back to Top***__](#Documentation)
 ## Features
 * A lot of state-of-the-art KGE model implementations. 
   * TransE, TransH, TransR, TransD, TransM, KG2E, RESCAL, DistMult, ComplEX, ConvE, ProjE, RotatE, SME, SLM, NTN, TuckER. 
@@ -56,7 +53,7 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 **Relation embedding plot**             |  **Entity embedding plot**   | **Relation and Entity Plot**
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_rel_plot_embedding_plot_0.png?raw=true)| ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_entity_plot_embedding_plot_0.png?raw=true) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_ent_n_rel_plot_embedding_plot_0.png?raw=true)
 
-[__***Back to Top***__](#table-of-contents)
+[__***Back to Top***__](#Documentation)
 ## Repository Structure
 
 * **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
@@ -64,7 +61,7 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 * **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
 * **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
 
-[__***Back to Top***__](#table-of-contents)
+[__***Back to Top***__](#Documentation)
 ## Installation
 
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms using Python3.6.
@@ -107,7 +104,7 @@ $ pip install --upgrade pip
 (venv) $ python setup.py install
 ```
 
-[__***Back to Top***__](#table-of-contents)
+[__***Back to Top***__](#Documentation)
 ## Usage Example
 
 ### Running a single algorithm: 
@@ -146,7 +143,7 @@ python train.py -mn TransE # Run TransE model.
 python train.py -mn Complex # Run Complex model. 
 ```
 
-[__***Back to Top***__](#table-of-contents)
+[__***Back to Top***__](#Documentation)
 ### Tuning a single algorithm:
 tune_model.py
 ```python
@@ -173,7 +170,7 @@ python tune_model.py -h # check all tunnable parameters.
 python tune_model.py -mn TransE # Tune TransE model.
 ```
 
-[__***Back to Top***__](#table-of-contents)
+[__***Back to Top***__](#Documentation)
 ## Implemented Methods
 Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more information about the algorithms implemented in pykg2vec. 
 
@@ -196,5 +193,4 @@ Pykg2vec aims to include all the well-known datasets available online so that yo
 }
     
    ```
-   [__***Back to Top***__](#table-of-contents)
-   
+[__***Back to Top***__](#Documentation)
