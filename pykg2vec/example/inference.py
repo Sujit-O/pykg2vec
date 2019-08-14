@@ -11,7 +11,7 @@ def main():
     args = KGEArgParser().get_args(sys.argv[1:])
 
     # Preparing data and cache the data for later usage
-    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling)
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling, custom_dataset_path=args.dataset_path)
     knowledge_graph.prepare_data()
 
     # Extracting the corresponding model config and definition from Importer().
@@ -23,19 +23,13 @@ def main():
     trainer = Trainer(model=model, debug=args.debug)
     trainer.build_model()
     trainer.train_model()
-    #can perform all the inference here after training the model
-    #takes head, relation
     
+    #can perform all the inference here after training the model
     trainer.enter_interactive_mode()
     
     code.interact(local=locals())
 
     trainer.exit_interactive_mode()
-    
-    #   
-    #takes relation, tails
-    # trainer.infer_heads(10,20,sess_infer,topk=5)
-    # sess_infer.close()
 
 if __name__ == "__main__":
     main()

@@ -35,6 +35,7 @@ class KGETuneArgParser:
         self.parser.add_argument('-db', dest='debug', default=False, type=lambda x: (str(x).lower() == 'true'),
                                  help='To use debug mode or not.')
         self.parser.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
+        self.parser.add_argument('-dsp', dest='dataset_path', default=None, type=str, help='The path to custom dataset.')
         self.parser.add_argument('-s', dest='sampling', default='uniform', type=str, help='The negative sampling strategy: uniform/bern.')
         self.parser.add_argument('-mt', dest='max_number_trials', default=100, type=int, help='The maximum times of trials for bayesian optimizer.')
 

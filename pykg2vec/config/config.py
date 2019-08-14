@@ -141,6 +141,8 @@ class KGEArgParser:
                                         help='Use Golden Hyper parameters!')
         self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, 
                                         help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
+        self.general_group.add_argument('-dsp', dest='dataset_path', default=None, type=str, 
+                                        help='The path to custom dataset.')
         self.general_group.add_argument('-ld', dest='load_from_data', default=False,
                                         type=lambda x: (str(x).lower() == 'true'), help='load_from_data!')
         self.general_group.add_argument('-sv', dest='save_model', default=True,
@@ -332,7 +334,8 @@ class BasicConfig:
         self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
         self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
-        self.knowledge_graph = KnowledgeGraph(dataset=self.data, negative_sample=self.sampling)
+        self.custom_dataset_path = args.dataset_path
+        self.knowledge_graph = KnowledgeGraph(dataset=self.data, negative_sample=self.sampling, custom_dataset_path=self.custom_dataset_path)
         self.kg_meta = self.knowledge_graph.kg_meta
         
         self.path_tmp = self.knowledge_graph.dataset.dataset_path  / 'intermediate'
