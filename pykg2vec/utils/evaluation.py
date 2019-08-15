@@ -30,7 +30,7 @@ class MetricCalculator:
 
         self.hits = config.hits
         self.total_epoch = config.epochs
-        self.result_path = config.result
+        self.result_path = config.path_result
 
         self.hr_t = config.knowledge_graph.read_cache_data('hr_t')
         self.tr_h = config.knowledge_graph.read_cache_data('tr_h')
@@ -331,6 +331,7 @@ class Evaluation(EvaluationMeta):
         self.model = model
         self.debug = debug
         self.tuning = tuning
+        self.result_path = self.model.config.path_result
 
         if data_type == 'test':
             self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_test')
@@ -416,9 +417,9 @@ class Evaluation(EvaluationMeta):
 
     def save_training_result(self, losses):
         """Function that saves training result"""
-        files = os.listdir(str(self.model.config.result))
+        files = os.listdir(str(self.result_path))
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
         df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
-        with open(str(self.model.config.result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
+        with open(str(self.result_path / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)

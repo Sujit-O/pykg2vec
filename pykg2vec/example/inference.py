@@ -1,6 +1,5 @@
-import sys
+import sys, code
 
-import tensorflow as tf
 
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.config.config import Importer, KGEArgParser
@@ -12,9 +11,9 @@ def main():
     args = KGEArgParser().get_args(sys.argv[1:])
 
     # Preparing data and cache the data for later usage
-    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling)
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling, custom_dataset_path=args.dataset_path)
     knowledge_graph.prepare_data()
-    sess_infer = tf.InteractiveSession()
+
     # Extracting the corresponding model config and definition from Importer().
     config_def, model_def = Importer().import_model_config(args.model_name.lower())
     config = config_def(args=args)
@@ -24,12 +23,13 @@ def main():
     trainer = Trainer(model=model, debug=args.debug)
     trainer.build_model()
     trainer.train_model()
+    
     #can perform all the inference here after training the model
-    #takes head, relation
-    trainer.infer_tails(1,10,sess_infer,topk=5)
-    #takes relation, tails
-    trainer.infer_heads(10,20,sess_infer,topk=5)
-    sess_infer.close()
+    trainer.enter_interactive_mode()
+    
+    code.interact(local=locals())
+
+    trainer.exit_interactive_mode()
 
 if __name__ == "__main__":
     main()

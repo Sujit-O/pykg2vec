@@ -450,13 +450,11 @@ class UserDefinedDataset(object):
           root_oath (object): Path object for the specific dataset.
 
    """
-    def __init__(self, name):
+    def __init__(self, name, custom_dataset_path):
         self.name = name
 
-        self.dataset_home_path = Path('..') / 'dataset'
-        self.dataset_home_path.mkdir(parents=True, exist_ok=True)
-        self.dataset_home_path = self.dataset_home_path.resolve()
-        self.root_path = self.dataset_home_path / name
+        self.dataset_path = Path(custom_dataset_path).resolve()
+        self.root_path = self.dataset_path
 
         if not self.root_path.exists():
             raise NotImplementedError("%s user defined dataset not found!" % self.root_path)
@@ -541,7 +539,7 @@ class KnowledgeGraph(object):
           >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k', negative_sample='uniform')
           >>> knowledge_graph.prepare_data()
    """
-    def __init__(self, dataset='Freebase15k', negative_sample='uniform'):
+    def __init__(self, dataset='Freebase15k', negative_sample='uniform', custom_dataset_path=None):
 
         self.dataset_name = dataset
 
@@ -566,7 +564,8 @@ class KnowledgeGraph(object):
         else:
             # if the dataset does not match with existing one, check if it exists in user's local space.
             # if it still can't find corresponding folder, raise exception in UserDefinedDataset.__init__()
-            self.dataset = UserDefinedDataset(dataset)
+
+            self.dataset = UserDefinedDataset(dataset, custom_dataset_path)
 
         self.negative_sample = negative_sample
 

@@ -43,17 +43,49 @@ class Trainer(TrainerMeta):
         self.trainon = trainon
         self.teston = teston
 
-    def infer_tails(self,h,r,sess,topk=5):
-        tails = self.model.infer_tails(h,r,topk)
-        self.saver.restore(sess, "./tmp/model.ckpt")
-        tails = tails.eval()
-        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
+    def enter_interactive_mode(self):
+        self.build_model()
+        self.load_model()
 
-    def infer_heads(self,r,t,sess,topk=5):
-        heads = self.model.infer_heads(r,t,topk)
-        self.saver.restore(sess, "./tmp/model.ckpt")
-        heads = heads.eval()
+        print("The training/loading of the model has finished!\nNow enter interactive mode :)")
+        print("-----")
+        print("Example 1: trainer.infer_tails(1,10,topk=5)")
+        self.infer_tails(1,10,topk=5)
+
+        print("-----")
+        print("Example 2: trainer.infer_heads(10,20,topk=5)")
+        self.infer_heads(10,20,topk=5)
+    
+    def exit_interactive_mode(self):
+        self.sess.close()
+        tf.reset_default_graph() # clean the tensorflow for the next training task.
+
+        print("Thank you for trying out inference interactive script :)")
+
+    def infer_tails(self,h,r,topk=5):
+        tails_op = self.model.infer_tails(h,r,topk)
+        tails = self.sess.run(tails_op)
+        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        print("head: %s" % idx2ent[h])
+        print("relation: %s" % idx2rel[r])
+
+        for idx, tail in enumerate(tails):
+            print("%dth predicted tail: %s" % (idx, idx2ent[tail]))
+
+    def infer_heads(self,r,t,topk=5):
+        heads_op = self.model.infer_heads(r,t,topk)
+        heads = self.sess.run(heads_op)
+        
         print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        print("tail: %s" % idx2ent[t])
+        print("relation: %s" % idx2rel[r])
+
+        for idx, head in enumerate(heads):
+            print("%dth predicted head: %s" % (idx, idx2ent[head]))
 
     def build_model(self):
         """function to build the model"""
@@ -128,7 +160,8 @@ class Trainer(TrainerMeta):
         if not os.path.exists("./tmp"):
             os.mkdir("./tmp")
 
-        save_path = self.saver.save(self.sess, "./tmp/model.ckpt")
+        self.export_embeddings()
+
         self.sess.close()
         tf.reset_default_graph() # clean the tensorflow for the next training task.
 
@@ -232,7 +265,7 @@ class Trainer(TrainerMeta):
 
     def save_model(self):
         """Function to save the model."""
-        saved_path = self.config.tmp / self.model.model_name
+        saved_path = self.config.path_tmp / self.model.model_name
         saved_path.mkdir(parents=True, exist_ok=True)
 
         saver = tf.train.Saver(self.model.parameter_list)
@@ -240,7 +273,7 @@ class Trainer(TrainerMeta):
 
     def load_model(self):
         """Function to load the model."""
-        saved_path = self.config.tmp / self.model.model_name
+        saved_path = self.config.path_tmp / self.model.model_name
         if saved_path.exists():
             saver = tf.train.Saver(self.model.parameter_list)
             saver.restore(self.sess, str(saved_path / 'model.vec'))
@@ -265,7 +298,40 @@ class Trainer(TrainerMeta):
         if self.config.plot_testing_result:
             viz = Visualization(model=self.model, sess=self.sess)
             viz.plot_test_result()
+    
+    def export_embeddings(self):
+        """
+            Export embeddings in tsv format. 
+            With tsvs (both label, vector files), you can:
+            1) Use those pretained embeddings for your applications.  
+            2) Visualize the embeddings in this website to gain insights. (https://projector.tensorflow.org/)
+        """
+        save_path = self.config.path_embeddings / self.model.model_name
+        save_path.mkdir(parents=True, exist_ok=True)
+        
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
 
+        with open(str(save_path / "ent_labels.tsv"), 'w') as l_export_file:
+            for label in idx2ent.values():
+                l_export_file.write(label + "\n")
+
+        with open(str(save_path / "rel_labels.tsv"), 'w') as l_export_file:
+            for label in idx2rel.values():
+                l_export_file.write(label + "\n")
+
+        for parameter in self.model.parameter_list:
+            all_ids = list(range(0, int(parameter.shape[0])))
+            stored_name = parameter.name.split(':')[0]
+            # import pdb; pdb.set_trace()
+
+            if len(parameter.shape) == 2:
+                op_get_all_embs = tf.nn.embedding_lookup(parameter, all_ids)
+                all_embs = self.sess.run(op_get_all_embs)
+                with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
+                    for idx in all_ids:
+                        v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
+                    
     def summary(self):
         """Function to print the summary."""
         print("\n------------------Global Setting--------------------")

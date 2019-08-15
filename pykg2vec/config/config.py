@@ -141,6 +141,8 @@ class KGEArgParser:
                                         help='Use Golden Hyper parameters!')
         self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, 
                                         help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
+        self.general_group.add_argument('-dsp', dest='dataset_path', default=None, type=str, 
+                                        help='The path to custom dataset.')
         self.general_group.add_argument('-ld', dest='load_from_data', default=False,
                                         type=lambda x: (str(x).lower() == 'true'), help='load_from_data!')
         self.general_group.add_argument('-sv', dest='save_model', default=True,
@@ -292,6 +294,7 @@ class BasicConfig:
             self.tmp = Path('..') / 'intermediate'
             self.result = Path('..') / 'results'
             self.figures = Path('..') / 'figures'
+            self.custom_dataset_path = None
             self.gpu_fraction = 0.8
             self.gpu_allow_growth = True
             self.loadFromData = False
@@ -310,6 +313,7 @@ class BasicConfig:
             self.tmp = Path(args.tmp)
             self.result = Path(args.result)
             self.figures = Path(args.figures)
+            self.custom_dataset_path = args.dataset_path
             self.full_test_flag = (args.test_step == 0)
             self.plot_entity_only = args.plot_entity_only
             self.test_step = args.test_step
@@ -328,15 +332,22 @@ class BasicConfig:
 
             self.batch_size_testing = args.batch_testing
 
-        self.tmp.mkdir(parents=True, exist_ok=True)
-        self.result.mkdir(parents=True, exist_ok=True)
-        self.figures.mkdir(parents=True, exist_ok=True)
         self.hits = [10, 5]
         self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
         self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
-        self.knowledge_graph = KnowledgeGraph(dataset=self.data, negative_sample=self.sampling)
+        self.knowledge_graph = KnowledgeGraph(dataset=self.data, negative_sample=self.sampling, custom_dataset_path=self.custom_dataset_path)
         self.kg_meta = self.knowledge_graph.kg_meta
+        
+        self.path_tmp = self.knowledge_graph.dataset.dataset_path  / 'intermediate'
+        self.path_result = self.knowledge_graph.dataset.dataset_path  / 'results'
+        self.path_figures = self.knowledge_graph.dataset.dataset_path  / 'figures'
+        self.path_embeddings = self.knowledge_graph.dataset.dataset_path  / 'embeddings'
+        self.path_tmp.mkdir(parents=True, exist_ok=True)
+        self.path_result.mkdir(parents=True, exist_ok=True)
+        self.path_figures.mkdir(parents=True, exist_ok=True)
+        self.path_embeddings.mkdir(parents=True, exist_ok=True)
+
 
 
 class TransGConfig(BasicConfig):

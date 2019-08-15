@@ -99,17 +99,17 @@ class TransR(ModelMeta):
                                                   shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-            rel_matrix = np.zeros([num_total_rel, d * k], dtype=np.float32)
+        rel_matrix = np.zeros([num_total_rel, d * k], dtype=np.float32)
 
-            for i in range(num_total_rel):
-                for j in range(k):
-                    for z in range(d):
-                        if j == z:
-                            rel_matrix[i][j * d + z] = 1.0
+        for i in range(num_total_rel):
+            for j in range(k):
+                for z in range(d):
+                    if j == z:
+                        rel_matrix[i][j * d + z] = 1.0
 
-            self.rel_matrix = tf.Variable(rel_matrix, name="rel_matrix")
+        self.rel_matrix = tf.Variable(rel_matrix, name="rel_matrix")
 
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
 
     def def_loss(self):
         """Defines the loss function for the algorithm."""
