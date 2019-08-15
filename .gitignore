@@ -17,6 +17,7 @@ pykg2vec/dataset
 *.pdf
 *.txt
 *.csv
+*.DS_Store
 .vscode/settings.json
 pykg2vec/test/.coverage*
 .coverage
