@@ -2,8 +2,8 @@
 
 # Pykg2vec: Python Library for KG Embedding Methods 
 ## Documentation
-The documentation of the pykg2vec library is [here](https://pykg2vec.readthedocs.io/). The organization of the readme is as follows,
-* [Introduction](#introdcution)
+The documentation of the pykg2vec library is [here](https://pykg2vec.readthedocs.io/). The table of  of contents is as below,
+* [Introduction](#introduction)
 * [Dependencies](#dependencies)
 * [Features](#features)
 * [Repository Structure](#repository-structure)
@@ -14,7 +14,7 @@ The documentation of the pykg2vec library is [here](https://pykg2vec.readthedocs
 * [Cite](#cite)
 
 ## Introduction
-Pykg2vec is a Tensorflow-based library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks including the whole pipeline into a single library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields. 
+Pykg2vec is a library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in knowledge graph embedding task pipeline into a single library. We hope Pykg2vec is both practical and educational for users who want to explore the related fields. 
 
 For people who just start working on Knowledge Graph Embedding Methods, the papers [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050), [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/document/8047276), and [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098) are well-written materials for reading! The figure below illustrates the current overall architecture. 
 
