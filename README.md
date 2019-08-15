@@ -139,8 +139,8 @@ python train.py -h # check all tunnable parameters.
 python train.py -mn TransE # Run TransE model.
 python train.py -mn Complex # Run Complex model. 
 ```
-
 [__***Back to Top***__](#Documentation)
+
 ### Tuning a single algorithm:
 tune_model.py
 ```python
@@ -166,6 +166,8 @@ with tune_model.py we then can train the existed model using command:
 python tune_model.py -h # check all tunnable parameters.
 python tune_model.py -mn TransE # Tune TransE model.
 ```
+[__***Back to Top***__](#Documentation)
+
 ### Switch between Implemented Methods:
 Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more information about the algorithms implemented in pykg2vec. With train.py described in usage examples, you can switch the models to train on a dataset using command:
 ```bach
@@ -187,6 +189,8 @@ python train.py -mn TransE -ds dl50a # Run TransE model on Deeplearning50a(dl50a
 # you can select one of models from ["fb15k','dl50a','wn18','wn18_rr',
                                      'yago3_10','fb15k_237','ks','nations','umls']
 ```
+[__***Back to Top***__](#Documentation)
+
 #### Using Custom Dataset
 For custom dataset, some steps are provided:
 1. For triples, store all of them in a text-format with each line formatted as follows, 
@@ -203,6 +207,58 @@ head\trelation\ttail
 python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] 
 # Run TransE model on a custom dataset [name].
 ```
+[__***Back to Top***__](#Documentation)
+
+### Perform Inference Tasks:
+inference.py
+```python
+import sys, code
+
+from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pykg2vec.config.config import Importer, KGEArgParser
+from pykg2vec.utils.trainer import Trainer
+
+def main():
+    # getting the customized configurations from the command-line arguments.
+    args = KGEArgParser().get_args(sys.argv[1:])
+
+    # Preparing data and cache the data for later usage
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling, custom_dataset_path=args.dataset_path)
+    knowledge_graph.prepare_data()
+
+    # Extracting the corresponding model config and definition from Importer().
+    config_def, model_def = Importer().import_model_config(args.model_name.lower())
+    config = config_def(args=args)
+    model = model_def(config)
+
+    # Create, Compile and Train the model. While training, several evaluation will be performed.
+    trainer = Trainer(model=model, debug=args.debug)
+    trainer.build_model()
+    trainer.train_model()
+    
+    #can perform all the inference here after training the model
+    trainer.enter_interactive_mode()
+    
+    code.interact(local=locals())
+
+    trainer.exit_interactive_mode()
+
+if __name__ == "__main__":
+    main()
+
+```
+For inference task, you can use the following command: 
+```
+python inference.py -mn TransE # train a model on FK15K dataset and enter interactive CMD for manual inference tasks.
+python inference.py -mn TransE -ld true # pykg2vec will look for the location of cached pretrained parameters in your local.
+
+# Once interactive mode is reached, you can execute instruction manually like
+# Example 1: trainer.infer_tails(1,10,topk=5) => give the list of top-5 predicted tails. 
+# Example 2: trainer.infer_heads(10,20,topk=5) => give the list of top-5 predicted heads.
+```
+
+[__***Back to Top***__](#Documentation)
+
 ## Common Installation Problems
 
 * [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
