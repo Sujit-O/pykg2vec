@@ -40,13 +40,16 @@ def testing_function_with_args(name, distance_measure=None, bilinear=None, displ
     trainer = Trainer(model=model, debug=True)
     trainer.build_model()
     trainer.train_model()
+
     #can perform all the inference here after training the model
-    #takes head, relation
     trainer.enter_interactive_mode()
 
+    #takes head, relation
     trainer.infer_tails(1,10,topk=5)
-    #takes relation, tails
+    #takes relation, tail
     trainer.infer_heads(10,20,topk=5)
+    #takes head, tail
+    trainer.infer_rels(1,20,topk=5)
 
     trainer.exit_interactive_mode()
 

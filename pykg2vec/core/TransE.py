@@ -171,6 +171,28 @@ class TransE(ModelMeta):
 
         return heads
 
+    def infer_rels(self, h, t, topk):
+        """Function to infer top k relations for given head and tail.
+
+           Args:
+              h (int): Head entities ids.
+              t (int): Tail entities ids.
+              topk (int): Top K values to infer.
+
+            Returns:
+               Tensors: Returns the list of rels tensor.
+        """
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        head_vec = tf.nn.embedding_lookup(norm_ent_embeddings, h)
+        tail_vec = tf.nn.embedding_lookup(norm_ent_embeddings, t)
+
+        score_rel = self.distance(head_vec, norm_rel_embeddings, tail_vec, axis=1)
+        _, rels = tf.nn.top_k(-score_rel, k=topk)
+
+        return rels
+
     def distance(self, h, r, t, axis=1):
         """Function to calculate distance measure in embedding space.
 
