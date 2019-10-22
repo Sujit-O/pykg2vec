@@ -87,6 +87,19 @@ class Trainer(TrainerMeta):
         for idx, head in enumerate(heads):
             print("%dth predicted head: %s" % (idx, idx2ent[head]))
 
+    def infer_rels(self, h, t, topk=5):
+        rels_op = self.model.infer_rels(h, t, topk)
+        rels = self.sess.run(rels_op)
+
+        print("\n(head,tail)->({},{}) :: Inferred rels->({})\n".format(h, t, ",".join([str(i) for i in rels])))
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        print("head: %s" % idx2ent[h])
+        print("tail: %s" % idx2ent[t])
+        print(rels)
+        for idx, rel in enumerate(rels):
+            print("%dth predicted rel: %s" % (idx, idx2rel[rel]))
+
     def build_model(self):
         """function to build the model"""
         self.model.def_inputs()

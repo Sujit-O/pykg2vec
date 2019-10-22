@@ -1,3 +1,13 @@
+'''
+=========================
+Example for Inference
+=========================
+In this example, we will demonstrate how interactive inference can be performed
+using the trained algorithm.
+'''
+# Author: Sujit Rokka Chhetri and Shiy Yuan Yu
+# License: MIT
+
 import sys, code
 
 

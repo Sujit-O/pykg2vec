@@ -13,6 +13,7 @@ python:
 install:
   - pip install -r requirements.txt
   - pip install .
+  - pip uninstall -y bson && pip install pymongo
   - pip install 'pytest>=3.6'
   - pip install pytest-cov coverage coveralls
 
