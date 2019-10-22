@@ -107,7 +107,7 @@ $ pip install --upgrade pip
 ### Running a single algorithm: 
 Train.py
 ```python
-from pykg2vec.config.global_config import KnowledgeGraph
+from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.config.config import Importer, KGEArgParser
 from pykg2vec.utils.trainer import Trainer
 
