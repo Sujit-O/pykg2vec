@@ -1,3 +1,12 @@
+'''
+=======================
+Training an Algorithm
+=======================
+In this example, we will show how to import all the modules to start training and algorithm
+'''
+# Author: Sujit Rokka Chhetri
+# License: MIT
+
 import sys
 
 

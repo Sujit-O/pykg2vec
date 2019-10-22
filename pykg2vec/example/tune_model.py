@@ -1,3 +1,13 @@
+'''
+=======================
+Tuning an Algorithm
+=======================
+In this example, we will domonstrate how to 
+use the pykg3vec algorithm to tune a single algorithm.
+'''
+# Author: Sujit Rokka Chhetri
+# License: MIT
+
 import sys
 
 

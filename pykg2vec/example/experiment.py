@@ -1,3 +1,12 @@
+'''
+=========================
+Train multiple Algorithm
+=========================
+In this example, we will show how to import all the modules to start training and algorithm
+'''
+# Author: Sujit Rokka Chhetri and Shiy Yuan Yu
+# License: MIT
+
 import tensorflow as tf
 
 from pykg2vec.core.TransE import TransE
