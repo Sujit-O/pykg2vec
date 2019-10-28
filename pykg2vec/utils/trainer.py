@@ -55,6 +55,10 @@ class Trainer(TrainerMeta):
         print("-----")
         print("Example 2: trainer.infer_heads(10,20,topk=5)")
         self.infer_heads(10,20,topk=5)
+
+        print("-----")
+        print("Example 3: trainer.infer_rels(1,20,topk=5)")
+        self.infer_rels(1,20,topk=5)
     
     def exit_interactive_mode(self):
         self.sess.close()
