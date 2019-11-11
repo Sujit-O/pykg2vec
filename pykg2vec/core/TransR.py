@@ -7,10 +7,10 @@ from __future__ import print_function
 import tensorflow as tf
 import numpy as np
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class TransR(ModelMeta):
+class TransR(ModelMeta, InferenceMeta):
     """ `Learning Entity and Relation Embeddings for Knowledge Graph Completion`_
 
         TranR is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
@@ -150,6 +150,72 @@ class TransR(ModelMeta):
         _, tail_rank = tf.nn.top_k(score_tail, k=num_total_ent)
 
         return head_rank, tail_rank
+
+    def infer_tails(self, h, r, topk):
+        """Function to infer top k tails for given head and relation.
+
+           Args:
+              h (int): Head entities ids.
+              r (int): Relation ids of the triple.
+              topk (int): Top K values to infer.
+
+            Returns:
+               Tensors: Returns the list of tails tensor.
+        """
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        head_vec = tf.nn.embedding_lookup(norm_ent_embeddings, h)
+        rel_vec = tf.nn.embedding_lookup(norm_rel_embeddings, r)
+
+        score_tail = self.distance(head_vec, rel_vec, norm_ent_embeddings, axis=1)
+        _, tails = tf.nn.top_k(-score_tail, k=topk)
+
+        return tails
+
+    def infer_heads(self, r, t, topk):
+        """Function to infer top k head for given relation and tail.
+
+           Args:
+              t (int): tail entities ids.
+              r (int): Relation ids of the triple.
+              topk (int): Top K values to infer.
+
+            Returns:
+               Tensors: Returns the list of heads tensor.
+        """
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        tail_vec = tf.nn.embedding_lookup(norm_ent_embeddings, t)
+        rel_vec = tf.nn.embedding_lookup(norm_rel_embeddings, r)
+
+        score_head = self.distance(norm_ent_embeddings, rel_vec, tail_vec, axis=1)
+        _, heads = tf.nn.top_k(-score_head, k=topk)
+
+        return heads
+
+    def infer_rels(self, h, t, topk):
+        """Function to infer top k relations for given head and tail.
+
+           Args:
+              h (int): Head entities ids.
+              t (int): Tail entities ids.
+              topk (int): Top K values to infer.
+
+            Returns:
+               Tensors: Returns the list of rels tensor.
+        """
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        head_vec = tf.nn.embedding_lookup(norm_ent_embeddings, h)
+        tail_vec = tf.nn.embedding_lookup(norm_ent_embeddings, t)
+
+        score_rel = self.distance(head_vec, norm_rel_embeddings, tail_vec, axis=1)
+        _, rels = tf.nn.top_k(-score_rel, k=topk)
+
+        return rels
 
     def transform(self, matrix, embeddings):
         """Performs transformation of the embeddings into relation space.
