@@ -53,7 +53,11 @@ def testing_function_with_args(name, distance_measure=None, bilinear=None, displ
 
     trainer.exit_interactive_mode()
 
-def test_inference_transE_args():
-    """Function to test TransE Algorithm with arguments."""
-    testing_function_with_args('transe')
 
+def test_inference_transE_args():
+    """Function to test Algorithms with arguments."""
+    testing_function_with_args('transd')
+    testing_function_with_args('transe')
+    testing_function_with_args('transh')
+    testing_function_with_args('transm')
+    testing_function_with_args('transr')

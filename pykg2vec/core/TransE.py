@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class TransE(ModelMeta):
+class TransE(ModelMeta, InferenceMeta):
     """ `Translating Embeddings for Modeling Multi-relational Data`_
 
         TransE is an energy based model which represents the
@@ -127,7 +127,7 @@ class TransE(ModelMeta):
 
         return head_rank, tail_rank
 
-    def infer_tails(self,h,r, topk ):
+    def infer_tails(self, h, r, topk):
         """Function to infer top k tails for given head and relation.
 
            Args:
@@ -144,12 +144,12 @@ class TransE(ModelMeta):
         head_vec = tf.nn.embedding_lookup(norm_ent_embeddings, h)
         rel_vec = tf.nn.embedding_lookup(norm_rel_embeddings, r)
 
-        score_tail = self.distance(head_vec,rel_vec, norm_ent_embeddings, axis=1)
-        _, tails= tf.nn.top_k(-score_tail, k=topk)
+        score_tail = self.distance(head_vec, rel_vec, norm_ent_embeddings, axis=1)
+        _, tails = tf.nn.top_k(-score_tail, k=topk)
 
         return tails
 
-    def infer_heads(self,r,t, topk ):
+    def infer_heads(self, r, t, topk):
         """Function to infer top k head for given relation and tail.
 
            Args:
@@ -167,7 +167,7 @@ class TransE(ModelMeta):
         rel_vec = tf.nn.embedding_lookup(norm_rel_embeddings, r)
 
         score_head = self.distance(norm_ent_embeddings, rel_vec, tail_vec, axis=1)
-        _, heads= tf.nn.top_k(-score_head, k=topk)
+        _, heads = tf.nn.top_k(-score_head, k=topk)
 
         return heads
 
