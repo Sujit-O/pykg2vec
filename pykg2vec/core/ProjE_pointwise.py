@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class ProjE_pointwise(ModelMeta):
+class ProjE_pointwise(ModelMeta, InferenceMeta):
     """`ProjE-Embedding Projection for Knowledge Graph Completion`_.
 
         Instead of measuring the distance or matching scores between the pair of the

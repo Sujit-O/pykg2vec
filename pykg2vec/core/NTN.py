@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class NTN(ModelMeta):
+class NTN(ModelMeta, InferenceMeta):
     """ `Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
 
     It is a neural tensor network which represents entities as an average of their

@@ -61,3 +61,16 @@ def test_inference_transE_args():
     testing_function_with_args('transh')
     testing_function_with_args('transm')
     testing_function_with_args('transr')
+    testing_function_with_args('transe')
+    testing_function_with_args('conve')
+    testing_function_with_args('convkb')
+    testing_function_with_args('distmult')
+    testing_function_with_args('ntn')
+    testing_function_with_args('proje_pointwise')
+    testing_function_with_args('slm')
+    testing_function_with_args('sme')
+
+
+
+
+

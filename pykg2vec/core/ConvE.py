@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class ConvE(ModelMeta):
+class ConvE(ModelMeta, InferenceMeta):
     """`Convolutional 2D Knowledge Graph Embeddings`_
 
     ConvE is a multi-layer convolutional network model for link prediction,

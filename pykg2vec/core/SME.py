@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class SME(ModelMeta):
+class SME(ModelMeta, InferenceMeta):
     """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
 
     Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.

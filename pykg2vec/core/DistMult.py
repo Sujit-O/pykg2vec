@@ -5,10 +5,10 @@ from __future__ import division
 from __future__ import print_function
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class DistMult(ModelMeta):
+class DistMult(ModelMeta, InferenceMeta):
     """`EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES`_
 
         DistMult is a simpler model comparing with RESCAL in that it simplifies

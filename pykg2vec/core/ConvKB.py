@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class ConvKB(ModelMeta):
+class ConvKB(ModelMeta, InferenceMeta):
     """`A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network`_
 
     ConvKB, each triple (head entity, relation, tail entity) is represented as a 3-

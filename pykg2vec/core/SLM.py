@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class SLM(ModelMeta):
+class SLM(ModelMeta, InferenceMeta):
     """`Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
 
         SLM model is designed as a baseline of Neural Tensor Network.
