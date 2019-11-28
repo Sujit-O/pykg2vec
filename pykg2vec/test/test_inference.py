@@ -68,3 +68,7 @@ def test_inference_transE_args():
     testing_function_with_args('proje_pointwise')
     testing_function_with_args('slm')
     testing_function_with_args('sme')
+    testing_function_with_args('hole')
+    testing_function_with_args('complex')
+    testing_function_with_args('rotate')
+    testing_function_with_args('tucker')

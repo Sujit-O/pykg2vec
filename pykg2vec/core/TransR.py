@@ -111,6 +111,23 @@ class TransR(ModelMeta, InferenceMeta):
 
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
 
+    def distance(self, h, r, t, axis=1):
+        """Function to calculate distance measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensors: Returns the distance measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
+
     def def_loss(self):
         """Defines the loss function for the algorithm."""
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
@@ -150,6 +167,10 @@ class TransR(ModelMeta, InferenceMeta):
         _, tail_rank = tf.nn.top_k(score_tail, k=num_total_ent)
 
         return head_rank, tail_rank
+
+    # Override
+    def dissimilarity(self, h, r, t):
+        return self.distance(h, r, t)
 
     def transform(self, matrix, embeddings):
         """Performs transformation of the embeddings into relation space.

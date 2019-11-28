@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class TuckER(ModelMeta):
+class TuckER(ModelMeta, InferenceMeta):
     """ `TuckER-Tensor Factorization for Knowledge Graph Completion`_
 
         TuckER is a Tensor-factorization-based embedding technique based on
@@ -89,14 +89,14 @@ class TuckER(ModelMeta):
         self.d2 = self.config.rel_hidden_size
 
         with tf.name_scope("embedding"):
-            self.E = tf.get_variable(name="ent_embedding", shape=[num_total_ent, self.d1],
-                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.R = tf.get_variable(name="rel_embedding", shape=[num_total_rel, self.d2],
-                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, self.d1],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, self.d2],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         with tf.name_scope("W"):
             self.W = tf.get_variable(name="W", shape=[self.d2, self.d1, self.d1],
                                      initializer=tf.initializers.random_uniform(minval=-1, maxval=1))
-        self.parameter_list = [self.E, self.R, self.W]
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.W]
 
     def def_layer(self):
         """Defines the layers of the algorithm."""
@@ -117,8 +117,8 @@ class TuckER(ModelMeta):
             Returns:
                 Tensors: Returns the activation values.
         """
-        norm_E = tf.nn.l2_normalize(self.E, axis=1)
-        norm_R = tf.nn.l2_normalize(self.R, axis=1)
+        norm_E = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_R = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
         e1 = tf.nn.embedding_lookup(norm_E, e1)
         rel = tf.squeeze(tf.nn.embedding_lookup(norm_R, r))
@@ -149,7 +149,7 @@ class TuckER(ModelMeta):
         loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
         loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
 
-        reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
+        reg_losses = tf.nn.l2_loss(self.ent_embeddings) + tf.nn.l2_loss(self.rel_embeddings) + tf.nn.l2_loss(self.W)
 
         self.loss = loss_heads + loss_tails + self.config.lmbda * reg_losses
 
@@ -167,6 +167,24 @@ class TuckER(ModelMeta):
 
         return head_rank, tail_rank
 
+    # Override
+    def dissimilarity(self, h, r, t):
+        """Function to calculate dissimilarity measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensors: Returns the dissimilarity measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
+
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
@@ -178,9 +196,9 @@ class TuckER(ModelMeta):
             Returns:
                 Tensors: Returns real and imaginary values of head, relation and tail embedding.
         """
-        emb_h = tf.nn.embedding_lookup(self.E, h)
-        emb_r = tf.nn.embedding_lookup(self.R, r)
-        emb_t = tf.nn.embedding_lookup(self.E, t)
+        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess=None):

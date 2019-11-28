@@ -70,6 +70,24 @@ class DistMult(ModelMeta, InferenceMeta):
         self.test_r_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
 
+    # Override
+    def dissimilarity(self, h, r, t):
+        """Function to calculate dissimilarity measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensors: Returns the dissimilarity measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
+
     def def_parameters(self):
         """Defines the model parameters.
            

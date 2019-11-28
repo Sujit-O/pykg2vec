@@ -66,6 +66,23 @@ class TransM(ModelMeta, InferenceMeta):
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
+    def distance(self, h, r, t, axis=-1):
+        """Function to calculate distance measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensors: Returns the distance measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
+
     def def_parameters(self):
         """Defines the model parameters.
 
@@ -135,8 +152,8 @@ class TransM(ModelMeta, InferenceMeta):
         return head_rank, tail_rank
 
     # Override
-    def distance(self, h, r, t, axis=None):
-        return super().distance(h, r, t, axis=-1)
+    def dissimilarity(self, h, r, t):
+        return self.distance(h, r, t)
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
