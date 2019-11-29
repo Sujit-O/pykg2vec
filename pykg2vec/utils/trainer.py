@@ -78,6 +78,8 @@ class Trainer(TrainerMeta):
         for idx, tail in enumerate(tails):
             print("%dth predicted tail: %s" % (idx, idx2ent[tail]))
 
+        return {tail: idx2ent[tail] for tail in tails}
+
     def infer_heads(self,r,t,topk=5):
         heads_op = self.model.infer_heads(r,t,topk)
         heads = self.sess.run(heads_op)
@@ -91,6 +93,8 @@ class Trainer(TrainerMeta):
         for idx, head in enumerate(heads):
             print("%dth predicted head: %s" % (idx, idx2ent[head]))
 
+        return {head: idx2ent[head] for head in heads}
+
     def infer_rels(self, h, t, topk=5):
         rels_op = self.model.infer_rels(h, t, topk)
         rels = self.sess.run(rels_op)
@@ -100,9 +104,11 @@ class Trainer(TrainerMeta):
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
         print("head: %s" % idx2ent[h])
         print("tail: %s" % idx2ent[t])
-        print(rels)
+
         for idx, rel in enumerate(rels):
             print("%dth predicted rel: %s" % (idx, idx2rel[rel]))
+
+        return {rel: idx2rel[rel] for rel in rels}
 
     def build_model(self):
         """function to build the model"""

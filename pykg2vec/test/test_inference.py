@@ -45,11 +45,16 @@ def testing_function_with_args(name, distance_measure=None, bilinear=None, displ
     trainer.enter_interactive_mode()
 
     #takes head, relation
-    trainer.infer_tails(1,10,topk=5)
+    tails = trainer.infer_tails(1, 10, topk=5)
+    assert len(tails) == 5
+
     #takes relation, tail
-    trainer.infer_heads(10,20,topk=5)
+    heads = trainer.infer_heads(10, 20, topk=5)
+    assert len(heads) == 5
+
     #takes head, tail
-    trainer.infer_rels(1,20,topk=5)
+    relations = trainer.infer_rels(1, 20, topk=5)
+    assert len(relations) == 5
 
     trainer.exit_interactive_mode()
 
