@@ -13,7 +13,7 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 
 @pytest.mark.skip(reason="This is a functional method.")
-def testing_function_with_args(name, distance_measure=None, bilinear=None, display=False):
+def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=None, display=False):
     """Function to test the models with arguments."""
     tf.reset_default_graph()
     
@@ -33,6 +33,7 @@ def testing_function_with_args(name, distance_measure=None, bilinear=None, displ
     config.test_num   = 10
     config.disp_result= display
     config.save_model = True
+    config.L1_flag = l1_flag
 
     model = model_def(config)
 
@@ -58,22 +59,22 @@ def testing_function_with_args(name, distance_measure=None, bilinear=None, displ
 
     trainer.exit_interactive_mode()
 
-
-def test_inference_transE_args():
+@pytest.mark.parametrize("l1_flag", [True, False])
+def test_inference_transE_args(l1_flag):
     """Function to test Algorithms with arguments."""
-    testing_function_with_args('transd')
-    testing_function_with_args('transe')
-    testing_function_with_args('transh')
-    testing_function_with_args('transm')
-    testing_function_with_args('transr')
-    testing_function_with_args('conve')
-    testing_function_with_args('convkb')
-    testing_function_with_args('distmult')
-    testing_function_with_args('ntn')
-    testing_function_with_args('proje_pointwise')
-    testing_function_with_args('slm')
-    testing_function_with_args('sme')
-    testing_function_with_args('hole')
-    testing_function_with_args('complex')
-    testing_function_with_args('rotate')
-    testing_function_with_args('tucker')
+    testing_function_with_args('transd', l1_flag)
+    testing_function_with_args('transe', l1_flag)
+    testing_function_with_args('transh', l1_flag)
+    testing_function_with_args('transm', l1_flag)
+    testing_function_with_args('transr', l1_flag)
+    testing_function_with_args('conve', l1_flag)
+    testing_function_with_args('convkb', l1_flag)
+    testing_function_with_args('distmult', l1_flag)
+    testing_function_with_args('ntn', l1_flag)
+    testing_function_with_args('proje_pointwise', l1_flag)
+    testing_function_with_args('slm', l1_flag)
+    testing_function_with_args('sme', l1_flag)
+    testing_function_with_args('hole', l1_flag)
+    testing_function_with_args('complex', l1_flag)
+    testing_function_with_args('rotate', l1_flag)
+    testing_function_with_args('tucker', l1_flag)
