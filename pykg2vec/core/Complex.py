@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class Complex(ModelMeta):
+class Complex(ModelMeta, InferenceMeta):
     """`Complex Embeddings for Simple Link Prediction`_.
 
     ComplEx is an enhanced version of DistMult in that it uses complex-valued embeddings
@@ -83,16 +83,16 @@ class Complex(ModelMeta):
 
         k = self.config.hidden_size
         with tf.name_scope("embedding"):
-            self.emb_e_real = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
-                                              initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.ent_embeddings = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.emb_e_img = tf.get_variable(name="emb_e_img", shape=[self.tot_ent, k],
                                              initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.emb_rel_real = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
-                                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.rel_embeddings = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.emb_rel_img = tf.get_variable(name="emb_rel_img", shape=[self.tot_rel, k],
                                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-        self.parameter_list = [self.emb_e_real, self.emb_e_img, self.emb_rel_real, self.emb_rel_img]
+        self.parameter_list = [self.ent_embeddings, self.emb_e_img, self.rel_embeddings, self.emb_rel_img]
 
     def def_loss(self):
         """Defines the loss function for the algorithm."""
@@ -109,25 +109,25 @@ class Complex(ModelMeta):
         t_emb_img = tf.squeeze(t_emb_img)
 
         realrealreal = tf.matmul(h_emb_real * r_emb_real,
-                                 tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+                                 tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
         realimgimg = tf.matmul(h_emb_real * r_emb_img,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
         imgrealimg = tf.matmul(h_emb_img * r_emb_real,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
         imgimgreal = tf.matmul(h_emb_img * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+                               tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
 
         pred = realrealreal + realimgimg + imgrealimg - imgimgreal
         pred_heads = tf.nn.relu(pred)
 
         realrealreal = tf.matmul(t_emb_real * r_emb_real,
-                                 tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+                                 tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
         realimgimg = tf.matmul(t_emb_real * r_emb_img,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
         imgrealimg = tf.matmul(t_emb_img * r_emb_real,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
         imgimgreal = tf.matmul(t_emb_img * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+                               tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
 
         pred = realrealreal + realimgimg + imgrealimg - imgimgreal
         pred_tails = tf.nn.relu(pred)
@@ -188,25 +188,25 @@ class Complex(ModelMeta):
         t_emb_img = tf.squeeze(t_emb_img)
 
         realrealreal = tf.matmul(h_emb_real * r_emb_real,
-                                 tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+                                 tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
         realimgimg = tf.matmul(h_emb_real * r_emb_img,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
         imgrealimg = tf.matmul(h_emb_img * r_emb_real,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
         imgimgreal = tf.matmul(h_emb_img * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+                               tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
 
         pred_tails = realrealreal + realimgimg + imgrealimg - imgimgreal
         pred_tails = tf.nn.relu(pred_tails)
 
         realrealreal = tf.matmul(t_emb_real * r_emb_real,
-                                 tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+                                 tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
         realimgimg = tf.matmul(t_emb_real * r_emb_img,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
         imgrealimg = tf.matmul(t_emb_img * r_emb_real,
                                tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
         imgimgreal = tf.matmul(t_emb_img * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_real, axis=1)))
+                               tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
 
         pred_heads = realrealreal + realimgimg + imgrealimg - imgimgreal
         pred_heads = tf.nn.relu(pred_heads)
@@ -215,6 +215,23 @@ class Complex(ModelMeta):
         _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
+
+    # Override
+    def dissimilarity(self, h, r, t):
+        """Function to calculate dissimilarity measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+
+        Returns:
+            Tensors: Returns the dissimilarity measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -227,9 +244,9 @@ class Complex(ModelMeta):
             Returns:
                 Tensors: Returns real and imaginary values of head, relation and tail embedding.
         """
-        norm_emb_e_real = tf.nn.l2_normalize(self.emb_e_real, axis=1)
+        norm_emb_e_real = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         norm_emb_e_img = tf.nn.l2_normalize(self.emb_e_img, axis=1)
-        norm_emb_rel_real = tf.nn.l2_normalize(self.emb_rel_real, axis=1)
+        norm_emb_rel_real = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
         norm_emb_rel_img = tf.nn.l2_normalize(self.emb_rel_img, axis=1)
 
         h_emb_real = tf.nn.embedding_lookup(norm_emb_e_real, h)

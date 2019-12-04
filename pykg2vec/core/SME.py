@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class SME(ModelMeta):
+class SME(ModelMeta, InferenceMeta):
     """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
 
     Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
@@ -187,6 +187,23 @@ class SME(ModelMeta):
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
+
+    # Override
+    def dissimilarity(self, h, r, t):
+        """Function to calculate dissimilarity measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+
+        Returns:
+            Tensors: Returns the dissimilarity measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
 
     def def_parameters(self):
         """Defines the model parameters.
