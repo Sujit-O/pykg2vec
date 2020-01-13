@@ -17,6 +17,8 @@ from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
 
 
+import pandas as pd
+
 class Trainer(TrainerMeta):
     """Class for handling the training of the algorithms.
 
@@ -324,16 +326,24 @@ class Trainer(TrainerMeta):
     
     def export_embeddings(self):
         """
-            Export embeddings in tsv format. 
+            Export embeddings in tsv and pandas pickled format. 
             With tsvs (both label, vector files), you can:
             1) Use those pretained embeddings for your applications.  
             2) Visualize the embeddings in this website to gain insights. (https://projector.tensorflow.org/)
+
+            Pandas dataframes can be read with pd.read_pickle('desired_file.pickle')
         """
         save_path = self.config.path_embeddings / self.model.model_name
         save_path.mkdir(parents=True, exist_ok=True)
         
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+
+
+        series_ent = pd.Series(idx2ent)
+        series_rel = pd.Series(idx2rel)
+        series_ent.to_pickle(save_path / "ent_labels.pickle")
+        series_rel.to_pickle(save_path / "rel_labels.pickle")
 
         with open(str(save_path / "ent_labels.tsv"), 'w') as l_export_file:
             for label in idx2ent.values():
@@ -354,6 +364,10 @@ class Trainer(TrainerMeta):
                 with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
                     for idx in all_ids:
                         v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
+
+                df = pd.DataFrame(all_embs)
+                df.to_pickle(save_path / ("%s.pickle" % stored_name))
+
                     
     def summary(self):
         """Function to print the summary."""
