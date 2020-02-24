@@ -131,7 +131,7 @@ class Trainer(TrainerMeta):
         """Function to tune the model."""
         acc = 0
 
-        self.gen_train = Generator(config=generator_config, model_config=self.model.config)
+        self.gen_train = Generator(config=self.generator_config, model_config=self.model.config)
 
         self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
        
