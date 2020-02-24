@@ -78,6 +78,10 @@ class Trainer(TrainerMeta):
             self.summary()
             self.summary_hyperparameter()
 
+        self.generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
+                                                batch_size=self.model.config.batch_size)
+
+
     ''' Training related functions:'''
 
     def train_model(self):
@@ -87,9 +91,7 @@ class Trainer(TrainerMeta):
         if self.config.loadFromData:
             self.load_model()
         else:
-            generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
-                                               batch_size=self.model.config.batch_size)
-            self.gen_train = Generator(config=generator_config, model_config=self.model.config)
+            self.gen_train = Generator(config=self.generator_config, model_config=self.model.config)
 
             if not self.tuning:
                 self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
@@ -126,8 +128,6 @@ class Trainer(TrainerMeta):
         """Function to tune the model."""
         acc = 0
 
-        generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
-                                           batch_size=self.model.config.batch_size)
         self.gen_train = Generator(config=generator_config, model_config=self.model.config)
 
         self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
@@ -207,6 +207,8 @@ class Trainer(TrainerMeta):
            Args:
                 curr_epoch (int): The current epoch number.
         """
+        if not self.evaluator: 
+            self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
 
         if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
                                                curr_epoch == 0 or
@@ -216,7 +218,9 @@ class Trainer(TrainerMeta):
             if curr_epoch == self.config.epochs - 1:
                 self.evaluator.test_batch(curr_epoch)
 
-        def enter_interactive_mode(self):
+    ''' Interactive Inference related '''
+   
+    def enter_interactive_mode(self):
         self.build_model()
         self.load_model()
 
@@ -232,9 +236,7 @@ class Trainer(TrainerMeta):
         print("-----")
         print("Example 3: trainer.infer_rels(1,20,topk=5)")
         self.infer_rels(1,20,topk=5)
-    
-    ''' Interactive Inference related '''
-    
+
     def exit_interactive_mode(self):
         self.sess.close()
         tf.reset_default_graph() # clean the tensorflow for the next training task.
