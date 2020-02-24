@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class TransD(ModelMeta):
+class TransD(ModelMeta, InferenceMeta):
     """ `Knowledge Graph Embedding via Dynamic Mapping Matrix`_
 
         TransD constructs a dynamic mapping matrix for each entity-relation pair by considering the diversity of entities and relations simultaneously.
@@ -68,6 +68,23 @@ class TransD(ModelMeta):
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
+
+    def distance(self, h, r, t, axis=1):
+        """Function to calculate distance measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensors: Returns the distance measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -158,22 +175,9 @@ class TransD(ModelMeta):
 
         return head_rank, tail_rank
 
-    def distance(self, h, r, t, axis=1):
-        """Function to calculate distance measure in embedding space.
-
-          Args:
-              h (Tensor): Head entities ids.
-              r (Tensor): Relation ids of the triple.
-              t (Tensor): Tail entity ids of the triple.
-              axis (int): Determines the axis for reduction
-
-           Returns:
-               Tensors: Returns the distance measure.
-       """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
+    # Override
+    def dissimilarity(self, h, r, t):
+        return self.distance(h, r, t)
 
     def get_mapping(self, h, r, t):
         """Function to get the mapping for head, relation and tails.

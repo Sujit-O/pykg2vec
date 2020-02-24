@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class TransH(ModelMeta):
+class TransH(ModelMeta, InferenceMeta):
     """ `Knowledge Graph Embedding by Translating on Hyperplanes`_
 
         TransH models a relation as a hyperplane together with a translation operation on it.
@@ -71,6 +71,23 @@ class TransH(ModelMeta):
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
+
+    def distance(self, h, r, t, axis=1):
+        """Function to calculate distance measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensors: Returns the distance measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -147,6 +164,10 @@ class TransH(ModelMeta):
 
         return head_rank, tail_rank
 
+    # Override
+    def dissimilarity(self, h, r, t):
+        return self.distance(h, r, t)
+
     def get_proj(self, r):
         """Calculates the projection of r"""
         return tf.nn.l2_normalize(tf.nn.embedding_lookup(self.w, r), axis=-1)
@@ -154,23 +175,6 @@ class TransH(ModelMeta):
     def projection(self, entity, wr):
         """Calculates the projection of entities"""
         return entity - tf.reduce_sum(entity * wr, -1, keepdims=True) * wr
-
-    def distance(self, h, r, t, axis=1):
-        """Function to calculate distance measure in embedding space.
-
-           Args:
-              h (Tensor): Head entities ids.
-              r (Tensor): Relation ids of the triple.
-              t (Tensor): Tail entity ids of the triple.
-              axis (int): Determines the axis for reduction
-
-            Returns:
-               Tensors: Returns the distance measure.
-        """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

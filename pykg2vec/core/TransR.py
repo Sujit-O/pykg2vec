@@ -7,10 +7,10 @@ from __future__ import print_function
 import tensorflow as tf
 import numpy as np
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class TransR(ModelMeta):
+class TransR(ModelMeta, InferenceMeta):
     """ `Learning Entity and Relation Embeddings for Knowledge Graph Completion`_
 
         TranR is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
@@ -111,6 +111,23 @@ class TransR(ModelMeta):
 
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
 
+    def distance(self, h, r, t, axis=1):
+        """Function to calculate distance measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensors: Returns the distance measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
+
     def def_loss(self):
         """Defines the loss function for the algorithm."""
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
@@ -151,6 +168,10 @@ class TransR(ModelMeta):
 
         return head_rank, tail_rank
 
+    # Override
+    def dissimilarity(self, h, r, t):
+        return self.distance(h, r, t)
+
     def transform(self, matrix, embeddings):
         """Performs transformation of the embeddings into relation space.
 
@@ -162,23 +183,6 @@ class TransR(ModelMeta):
                Tensors: Returns Transformed Matrix.
         """
         return tf.matmul(matrix, embeddings)
-
-    def distance(self, h, r, t, axis=1):
-        """Function to calculate distance measure in embedding space.
-
-           Args:
-              h (Tensor): Head entities ids.
-              r (Tensor): Relation ids of the triple.
-              t (Tensor): Tail entity ids of the triple.
-              axis (int): Determines the axis for reduction
-
-            Returns:
-               Tensors: Returns the distance measure.
-        """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
 
     def get_transform_matrix(self, r):
         """gets the transformation matrix."""

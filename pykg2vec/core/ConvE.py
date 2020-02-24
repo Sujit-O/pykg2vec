@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class ConvE(ModelMeta):
+class ConvE(ModelMeta, InferenceMeta):
     """`Convolutional 2D Knowledge Graph Embeddings`_
 
     ConvE is a multi-layer convolutional network model for link prediction,
@@ -198,6 +198,24 @@ class ConvE(ModelMeta):
         _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
+
+    # Override
+    def dissimilarity(self, h, r, t):
+        """Function to calculate dissimilarity measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensors: Returns the dissimilarity measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class RotatE(ModelMeta):
+class RotatE(ModelMeta, InferenceMeta):
     """ `Rotate-Knowledge graph embedding by relation rotation in complex space`_
 
         RotatE models the entities and the relations in the complex vector space.
@@ -83,14 +83,14 @@ class RotatE(ModelMeta):
         k = self.config.hidden_size
 
         with tf.name_scope("embedding"):
-            self.ent_embeddings_real = tf.get_variable(name="ent_embeddings_real", shape=[num_total_ent, k],
-                                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.ent_embeddings = tf.get_variable(name="ent_embeddings_real", shape=[num_total_ent, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             self.ent_embeddings_imag = tf.get_variable(name="ent_embeddings_imag", shape=[num_total_ent, k],
                                                        initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings_real = tf.get_variable(name="rel_embeddings_real", shape=[num_total_rel, k],
-                                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.rel_embeddings = tf.get_variable(name="rel_embeddings_real", shape=[num_total_rel, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-        self.parameter_list = [self.ent_embeddings_real, self.ent_embeddings_imag, self.rel_embeddings_real]
+        self.parameter_list = [self.ent_embeddings, self.ent_embeddings_imag, self.rel_embeddings]
 
     def comp_mul_and_min(self, hr, hi, rr, ri, tr, ti):
         """Calculates training score for loss function.
@@ -162,16 +162,33 @@ class RotatE(ModelMeta):
         (h_vec_r, h_vec_i), (r_vec_r, r_vec_i), (t_vec_r, t_vec_i) \
             = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        head_pos_score = self.comp_mul_and_min_4_test(self.ent_embeddings_real, self.ent_embeddings_imag,
+        head_pos_score = self.comp_mul_and_min_4_test(self.ent_embeddings, self.ent_embeddings_imag,
                                                       r_vec_r, r_vec_i, t_vec_r, t_vec_i)
 
         tail_pos_score = self.comp_mul_and_min_4_test(h_vec_r, h_vec_i, r_vec_r, r_vec_i,
-                                                      self.ent_embeddings_real, self.ent_embeddings_imag)
+                                                      self.ent_embeddings, self.ent_embeddings_imag)
 
         _, head_rank = tf.nn.top_k(head_pos_score, k=num_entity)
         _, tail_rank = tf.nn.top_k(tail_pos_score, k=num_entity)
 
         return head_rank, tail_rank
+
+    # Override
+    def dissimilarity(self, h, r, t):
+        """Function to calculate dissimilarity measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+
+        Returns:
+            Tensors: Returns the dissimilarity measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -185,10 +202,10 @@ class RotatE(ModelMeta):
                 Tensors: Returns real and imaginary values of head, relation and tail embedding.
         """
         pi = 3.14159265358979323846
-        h_e_r = tf.nn.embedding_lookup(self.ent_embeddings_real, h)
+        h_e_r = tf.nn.embedding_lookup(self.ent_embeddings, h)
         h_e_i = tf.nn.embedding_lookup(self.ent_embeddings_imag, h)
-        r_e_r = tf.nn.embedding_lookup(self.rel_embeddings_real, r)
-        t_e_r = tf.nn.embedding_lookup(self.ent_embeddings_real, t)
+        r_e_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        t_e_r = tf.nn.embedding_lookup(self.ent_embeddings, t)
         t_e_i = tf.nn.embedding_lookup(self.ent_embeddings_imag, t)
         r_e_r = r_e_r / pi
         r_e_i = tf.sin(r_e_r)
