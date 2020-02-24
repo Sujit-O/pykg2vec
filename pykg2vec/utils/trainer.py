@@ -45,6 +45,9 @@ class Trainer(TrainerMeta):
         self.trainon = trainon
         self.teston = teston
 
+        self.evaluator = None
+        self.gen_train = None
+
     def build_model(self):
         """function to build the model"""
         self.model.def_inputs()
