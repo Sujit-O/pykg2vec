@@ -157,9 +157,6 @@ class Trainer(TrainerMeta):
             self.summary()
             self.summary_hyperparameter()
 
-        if not os.path.exists("./tmp"):
-            os.mkdir("./tmp")
-
         self.export_embeddings()
 
         self.sess.close()
