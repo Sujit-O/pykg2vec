@@ -49,22 +49,22 @@ class Complex(ModelMeta, InferenceMeta):
         """Defines the inputs to the model.
            
            Attributes:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               hr_t (Tensor): Tail tensor list for (h,r) pair.
-               rt_h (Tensor): Head tensor list for (r,t) pair.
-               test_h_batch (Tensor): Batch of head ids for testing.
-               test_r_batch (Tensor): Batch of relation ids for testing
-               test_t_batch (Tensor): Batch of tail ids for testing.
+              pos_h (Tensor): Positive Head entities ids.
+              pos_r (Tensor): Positive Relation ids of the triple.
+              pos_t (Tensor): Positive Tail entity ids of the triple.
+              neg_h (Tensor): Negative Head entities ids.
+              neg_r (Tensor): Negative Relation ids of the triple.
+              neg_t (Tensor): Negative Tail entity ids of the triple.
+              test_h_batch (Tensor): Batch of head ids for testing.
+              test_r_batch (Tensor): Batch of relation ids for testing
+              test_t_batch (Tensor): Batch of tail ids for testing.
         """
-
-        self.h = tf.placeholder(tf.int32, [None])
-        self.r = tf.placeholder(tf.int32, [None])
-        self.t = tf.placeholder(tf.int32, [None])
-        self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-        self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-
+        self.pos_h = tf.placeholder(tf.int32, [None])
+        self.pos_r = tf.placeholder(tf.int32, [None])
+        self.pos_t = tf.placeholder(tf.int32, [None])
+        self.neg_h = tf.placeholder(tf.int32, [None])
+        self.neg_r = tf.placeholder(tf.int32, [None])
+        self.neg_t = tf.placeholder(tf.int32, [None])
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
@@ -83,89 +83,31 @@ class Complex(ModelMeta, InferenceMeta):
 
         k = self.config.hidden_size
         with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
+            self.ent_embeddings_real = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.emb_e_img = tf.get_variable(name="emb_e_img", shape=[self.tot_ent, k],
-                                             initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
+            self.ent_embeddings_img  = tf.get_variable(name="emb_e_img", shape=[self.tot_ent, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.emb_rel_img = tf.get_variable(name="emb_rel_img", shape=[self.tot_rel, k],
-                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.rel_embeddings_real = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.rel_embeddings_img  = tf.get_variable(name="emb_rel_img", shape=[self.tot_rel, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-        self.parameter_list = [self.ent_embeddings, self.emb_e_img, self.rel_embeddings, self.emb_rel_img]
+            self.parameter_list = [self.ent_embeddings_real, self.ent_embeddings_img, 
+                                   self.rel_embeddings_real, self.rel_embeddings_img]
 
     def def_loss(self):
         """Defines the loss function for the algorithm."""
-        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(self.h, self.r, self.t)
+        pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img = \
+            self.embed(self.pos_h, self.pos_r, self.pos_t)
 
-        h_emb_real, r_emb_real, t_emb_real = self.layer(h_emb_real, r_emb_real, t_emb_real)
-        h_emb_img, r_emb_img, t_emb_img = self.layer(h_emb_img, r_emb_img, t_emb_img)
+        neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img = \
+            self.embed(self.neg_h, self.neg_r, self.neg_t)
 
-        h_emb_real = tf.squeeze(h_emb_real)
-        r_emb_real = tf.squeeze(r_emb_real)
-        t_emb_real = tf.squeeze(t_emb_real)
-        h_emb_img = tf.squeeze(h_emb_img)
-        r_emb_img = tf.squeeze(r_emb_img)
-        t_emb_img = tf.squeeze(t_emb_img)
+        score_pos = self.distance(pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img)
+        score_neg = self.distance(neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img)
 
-        realrealreal = tf.matmul(h_emb_real * r_emb_real,
-                                 tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-        realimgimg = tf.matmul(h_emb_real * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        imgrealimg = tf.matmul(h_emb_img * r_emb_real,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        imgimgreal = tf.matmul(h_emb_img * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-
-        pred = realrealreal + realimgimg + imgrealimg - imgimgreal
-        pred_heads = tf.nn.relu(pred)
-
-        realrealreal = tf.matmul(t_emb_real * r_emb_real,
-                                 tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-        realimgimg = tf.matmul(t_emb_real * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        imgrealimg = tf.matmul(t_emb_img * r_emb_real,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        imgimgreal = tf.matmul(t_emb_img * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-
-        pred = realrealreal + realimgimg + imgrealimg - imgimgreal
-        pred_tails = tf.nn.relu(pred)
-
-        hr_t = self.hr_t #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        rt_h = self.rt_h #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-
-        loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
-        loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
-
-        # reg_losses = tf.nn.l2_loss(self.E) + tf.nn.l2_loss(self.R) + tf.nn.l2_loss(self.W)
-
-        self.loss = loss_heads + loss_tails  # + self.config.lmbda * reg_losses
-
-    def def_layer(self):
-        """Defines the layers of the algorithm."""
-        self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
-
-    def layer(self, h, r, t):
-        """Implementation of the layer.
-            
-            Args:
-                h(Tensor): Head entities id.     
-                r(Tensor): Relation id.     
-                t(Tensor): Tail entities id.  
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.   
-        """
-        h = tf.squeeze(h)
-        r = tf.squeeze(r)
-        t = tf.squeeze(t)
-
-        h = self.inp_drop(h)
-        r = self.inp_drop(r)
-        t = self.inp_drop(t)
-
-        return h, r, t
+        regul_term = tf.reduce_mean(pos_h_e_real**2 + pos_h_e_img**2 + pos_r_e_real**2 + pos_r_e_img**2 + pos_t_e_real**2 + pos_t_e_img**2 + neg_h_e_real**2 + neg_h_e_img**2 + neg_r_e_real**2 + neg_r_e_img**2 + neg_t_e_real**2 + neg_t_e_img**2) 
+        self.loss = tf.reduce_sum(tf.nn.softplus(score_pos) + tf.nn.softplus(-1*score_neg)) + self.config.lmbda*regul_term
 
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
@@ -173,48 +115,23 @@ class Complex(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns ranks of head and tail.
         """
-        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(self.test_h_batch,
-                                                                                         self.test_r_batch,
-                                                                                         self.test_t_batch)
+        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = \
+            self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        h_emb_real, r_emb_real, t_emb_real = self.layer(h_emb_real, r_emb_real, t_emb_real)
-        h_emb_img, r_emb_img, t_emb_img = self.layer(h_emb_img, r_emb_img, t_emb_img)
+        score_head = self.distance(self.ent_embeddings_real, self.ent_embeddings_img, 
+                                   tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
+                                   tf.expand_dims(t_emb_real, axis=1), tf.expand_dims(t_emb_img, axis=1))
+        score_tail = self.distance(tf.expand_dims(h_emb_real, axis=1), tf.expand_dims(h_emb_img, axis=1),
+                                   tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
+                                   self.ent_embeddings_real, self.ent_embeddings_img)
 
-        h_emb_real = tf.squeeze(h_emb_real)
-        r_emb_real = tf.squeeze(r_emb_real)
-        t_emb_real = tf.squeeze(t_emb_real)
-        h_emb_img = tf.squeeze(h_emb_img)
-        r_emb_img = tf.squeeze(r_emb_img)
-        t_emb_img = tf.squeeze(t_emb_img)
-
-        realrealreal = tf.matmul(h_emb_real * r_emb_real,
-                                 tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-        realimgimg = tf.matmul(h_emb_real * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        imgrealimg = tf.matmul(h_emb_img * r_emb_real,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        imgimgreal = tf.matmul(h_emb_img * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-
-        pred_tails = realrealreal + realimgimg + imgrealimg - imgimgreal
-        pred_tails = tf.nn.relu(pred_tails)
-
-        realrealreal = tf.matmul(t_emb_real * r_emb_real,
-                                 tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-        realimgimg = tf.matmul(t_emb_real * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        imgrealimg = tf.matmul(t_emb_img * r_emb_real,
-                               tf.transpose(tf.nn.l2_normalize(self.emb_e_img, axis=1)))
-        imgimgreal = tf.matmul(t_emb_img * r_emb_img,
-                               tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-
-        pred_heads = realrealreal + realimgimg + imgrealimg - imgimgreal
-        pred_heads = tf.nn.relu(pred_heads)
-
-        _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
 
         return head_rank, tail_rank
+
+    def distance(self, h_real, h_img, r_real, r_img, t_real, t_img):
+        return tf.reduce_sum(h_real * t_real * r_real + h_img * t_img * r_real + h_real * t_img * r_img - h_img * t_real * r_img, axis=-1, keep_dims = False)
 
     # Override
     def dissimilarity(self, h, r, t):
@@ -244,19 +161,14 @@ class Complex(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns real and imaginary values of head, relation and tail embedding.
         """
-        norm_emb_e_real = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        norm_emb_e_img = tf.nn.l2_normalize(self.emb_e_img, axis=1)
-        norm_emb_rel_real = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-        norm_emb_rel_img = tf.nn.l2_normalize(self.emb_rel_img, axis=1)
+        h_emb_real = tf.nn.embedding_lookup(self.ent_embeddings_real, h)
+        h_emb_img  = tf.nn.embedding_lookup(self.ent_embeddings_img,  h)
 
-        h_emb_real = tf.nn.embedding_lookup(norm_emb_e_real, h)
-        t_emb_real = tf.nn.embedding_lookup(norm_emb_e_real, t)
+        r_emb_real = tf.nn.embedding_lookup(self.rel_embeddings_real, r)
+        r_emb_img  = tf.nn.embedding_lookup(self.rel_embeddings_img,  r)
 
-        h_emb_img = tf.nn.embedding_lookup(norm_emb_e_img, h)
-        t_emb_img = tf.nn.embedding_lookup(norm_emb_e_img, t)
-
-        r_emb_real = tf.nn.embedding_lookup(norm_emb_rel_real, r)
-        r_emb_img = tf.nn.embedding_lookup(norm_emb_rel_img, r)
+        t_emb_real = tf.nn.embedding_lookup(self.ent_embeddings_real, t)
+        t_emb_img  = tf.nn.embedding_lookup(self.ent_embeddings_img,  t)
 
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
