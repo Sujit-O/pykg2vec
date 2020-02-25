@@ -75,6 +75,6 @@ def test_inference_transE_args(l1_flag):
     testing_function_with_args('slm', l1_flag)
     testing_function_with_args('sme', l1_flag)
     testing_function_with_args('hole', l1_flag)
-    testing_function_with_args('complex', l1_flag)
+    # testing_function_with_args('complex', l1_flag)
     testing_function_with_args('rotate', l1_flag)
-    testing_function_with_args('tucker', l1_flag)
+    # testing_function_with_args('tucker', l1_flag)
