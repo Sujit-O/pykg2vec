@@ -111,8 +111,10 @@ class DistMult(ModelMeta, InferenceMeta):
         score_pos = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
         score_neg = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
 
-        regul_term = tf.reduce_mean(pos_h_e**2 + pos_r_e**2 + pos_t_e**2 + neg_h_e**2 + neg_r_e**2 + neg_t_e**2)
-        self.loss = tf.reduce_mean(tf.nn.softplus(score_pos) + tf.nn.softplus(-1*score_neg)) + self.config.lmbda*regul_term
+        regul_term = tf.reduce_mean(pos_r_e**2 + neg_r_e**2)
+        # self.loss = tf.reduce_sum(tf.nn.softplus(score_pos) + tf.nn.softplus(-1*score_neg)) + self.config.lmbda*regul_term
+
+        self.loss = tf.reduce_sum(tf.maximum(score_neg - score_pos + 1, 0)) + self.config.lmbda*regul_term
 
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
@@ -122,15 +124,17 @@ class DistMult(ModelMeta, InferenceMeta):
         """
         h_emb, r_emb, t_emb = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        score_head = self.dissimilarity(self.ent_embeddings, 
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+
+        score_head = self.dissimilarity(norm_ent_embeddings, 
                                         tf.expand_dims(r_emb, axis=1), 
                                         tf.expand_dims(t_emb, axis=1))
         score_tail = self.dissimilarity(tf.expand_dims(h_emb, axis=1), 
                                         tf.expand_dims(r_emb, axis=1), 
-                                        self.ent_embeddings)
+                                        norm_ent_embeddings)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(tf.negative(score_head), k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(tf.negative(score_tail), k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
@@ -146,10 +150,10 @@ class DistMult(ModelMeta, InferenceMeta):
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
         norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+        # norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
         h_emb = tf.nn.embedding_lookup(norm_ent_embeddings, h)
-        r_emb = tf.nn.embedding_lookup(norm_rel_embeddings, r)
+        r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
         t_emb = tf.nn.embedding_lookup(norm_ent_embeddings, t)
 
         return h_emb, r_emb, t_emb
