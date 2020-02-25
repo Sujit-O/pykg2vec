@@ -157,7 +157,7 @@ class Trainer(TrainerMeta):
 
         for batch_idx in range(num_batch):
             data = list(next(self.gen_train))
-            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "convkb", "distmult", "proje_pointwise"]:
+            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
                 h = data[0]
                 r = data[1]
                 t = data[2]

@@ -49,29 +49,29 @@ class DistMult(ModelMeta, InferenceMeta):
 
     def def_inputs(self):
         """Defines the inputs to the model.
-           
-           Attributes:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               hr_t (Tensor): Tail tensor list for (h,r) pair.
-               rt_h (Tensor): Head tensor list for (r,t) pair.
-               test_h_batch (Tensor): Batch of head ids for testing.
-               test_r_batch (Tensor): Batch of relation ids for testing
-               test_t_batch (Tensor): Batch of tail ids for testing.
-        """
-        self.h = tf.placeholder(tf.int32, [None])
-        self.r = tf.placeholder(tf.int32, [None])
-        self.t = tf.placeholder(tf.int32, [None])
-        self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-        self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
 
+           Attributes:
+              pos_h (Tensor): Positive Head entities ids.
+              pos_r (Tensor): Positive Relation ids of the triple.
+              pos_t (Tensor): Positive Tail entity ids of the triple.
+              neg_h (Tensor): Negative Head entities ids.
+              neg_r (Tensor): Negative Relation ids of the triple.
+              neg_t (Tensor): Negative Tail entity ids of the triple.
+              test_h_batch (Tensor): Batch of head ids for testing.
+              test_r_batch (Tensor): Batch of relation ids for testing
+              test_t_batch (Tensor): Batch of tail ids for testing.
+        """
+        self.pos_h = tf.placeholder(tf.int32, [None])
+        self.pos_t = tf.placeholder(tf.int32, [None])
+        self.pos_r = tf.placeholder(tf.int32, [None])
+        self.neg_h = tf.placeholder(tf.int32, [None])
+        self.neg_t = tf.placeholder(tf.int32, [None])
+        self.neg_r = tf.placeholder(tf.int32, [None])
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
 
-    # Override
-    def dissimilarity(self, h, r, t):
+    def dissimilarity(self, h, r, t, axis=-1):
         """Function to calculate dissimilarity measure in embedding space.
 
         Args:
@@ -83,10 +83,7 @@ class DistMult(ModelMeta, InferenceMeta):
         Returns:
             Tensors: Returns the dissimilarity measure.
         """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
+        return tf.reduce_sum(h*r*t, axis=axis, keep_dims=False)
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -99,30 +96,23 @@ class DistMult(ModelMeta, InferenceMeta):
         """
         k = self.config.hidden_size
         with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
+            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[self.tot_ent, k],
                                             initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
+            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[self.tot_rel, k],
                                             initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
 
     def def_loss(self):
         """Defines the loss function for the algorithm."""
-        h_emb, r_emb, t_emb = self.embed(self.h, self.r, self.t)
+        pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
+        neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
 
-        pred_tails = tf.matmul(h_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-        pred_heads = tf.matmul(t_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
+        score_pos = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
+        score_neg = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
 
-        pred_tails = tf.nn.relu(pred_tails)
-        pred_heads = tf.nn.relu(pred_heads)
-
-        hr_t = self.hr_t #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        rt_h = self.rt_h #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-
-        loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
-        loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
-
-        self.loss = loss_tails + loss_heads
+        regul_term = tf.reduce_mean(pos_h_e**2 + pos_r_e**2 + pos_t_e**2 + neg_h_e**2 + neg_r_e**2 + neg_t_e**2)
+        self.loss = tf.reduce_mean(tf.nn.softplus(score_pos) + tf.nn.softplus(-1*score_neg)) + self.config.lmbda*regul_term
 
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
@@ -132,14 +122,15 @@ class DistMult(ModelMeta, InferenceMeta):
         """
         h_emb, r_emb, t_emb = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        pred_tails = tf.matmul(h_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-        pred_tails = tf.nn.relu(pred_tails)
+        score_head = self.dissimilarity(self.ent_embeddings, 
+                                        tf.expand_dims(r_emb, axis=1), 
+                                        tf.expand_dims(t_emb, axis=1))
+        score_tail = self.dissimilarity(tf.expand_dims(h_emb, axis=1), 
+                                        tf.expand_dims(r_emb, axis=1), 
+                                        self.ent_embeddings)
 
-        pred_heads = tf.matmul(t_emb * r_emb, tf.transpose(tf.nn.l2_normalize(self.ent_embeddings, axis=1)))
-        pred_heads = tf.nn.relu(pred_heads)
-
-        _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
@@ -154,12 +145,9 @@ class DistMult(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        h_emb = tf.nn.embedding_lookup(norm_ent_embeddings, h)
-        r_emb = tf.nn.embedding_lookup(norm_rel_embeddings, r)
-        t_emb = tf.nn.embedding_lookup(norm_ent_embeddings, t)
+        h_emb = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        t_emb = tf.nn.embedding_lookup(self.ent_embeddings, t)
 
         return h_emb, r_emb, t_emb
 
