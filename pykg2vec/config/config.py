@@ -395,8 +395,7 @@ class TransGConfig(BasicConfig):
             self.CRP_factor = 0.1
             self.weight_norm = True
             self.step_before = 10
-
-
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -413,6 +412,7 @@ class TransGConfig(BasicConfig):
             self.CRP_factor = args.crp_factor
             self.weight_norm = args.weight_norm
             self.step_before = args.step_before
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -428,6 +428,7 @@ class TransGConfig(BasicConfig):
             'cluster':self.ncluster,
             'crp_factor':self.CRP_factor,
             'weight_norm':self.weight_norm
+            'neg_rate': self.neg_rate,
 
         }
         BasicConfig.__init__(self, args)
@@ -465,6 +466,7 @@ class TransEConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -476,6 +478,7 @@ class TransEConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -486,7 +489,8 @@ class TransEConfig(BasicConfig):
             'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
         BasicConfig.__init__(self, args)
 
@@ -524,6 +528,7 @@ class HoLEConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -535,6 +540,7 @@ class HoLEConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -545,7 +551,8 @@ class HoLEConfig(BasicConfig):
             'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling
+            'sampling': self.sampling, 
+            'neg_rate': self.neg_rate,
         }
         BasicConfig.__init__(self, args)
 
@@ -586,6 +593,7 @@ class TransRConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -598,6 +606,7 @@ class TransRConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -609,7 +618,8 @@ class TransRConfig(BasicConfig):
             'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -650,6 +660,7 @@ class TransDConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -662,6 +673,7 @@ class TransDConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -673,7 +685,8 @@ class TransDConfig(BasicConfig):
             'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -713,6 +726,7 @@ class TransMConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -724,6 +738,7 @@ class TransMConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -734,7 +749,8 @@ class TransMConfig(BasicConfig):
             'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -776,6 +792,7 @@ class TransHConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -788,6 +805,7 @@ class TransHConfig(BasicConfig):
             self.optimizer = args.optimizer
             self.sampling = args.sampling
             self.C = args.C
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -799,7 +817,8 @@ class TransHConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
-            'C': self.C
+            'C': self.C,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -838,6 +857,7 @@ class RescalConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -849,6 +869,7 @@ class RescalConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -859,7 +880,8 @@ class RescalConfig(BasicConfig):
             'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -901,6 +923,7 @@ class SMEConfig(BasicConfig):
             self.optimizer = 'adam'
             self.sampling = "uniform"
             self.bilinear = False
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -913,6 +936,7 @@ class SMEConfig(BasicConfig):
             self.optimizer = args.optimizer
             self.sampling = args.sampling
             self.bilinear = True if args.function == 'bilinear' else False
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -924,7 +948,8 @@ class SMEConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
-            'bilinear': self.bilinear
+            'bilinear': self.bilinear,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -965,6 +990,7 @@ class NTNConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -977,6 +1003,7 @@ class NTNConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -988,7 +1015,8 @@ class NTNConfig(BasicConfig):
             'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -1030,6 +1058,7 @@ class SLMConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -1042,6 +1071,7 @@ class SLMConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -1053,7 +1083,8 @@ class SLMConfig(BasicConfig):
             'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -1092,6 +1123,7 @@ class RotatEConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -1103,6 +1135,7 @@ class RotatEConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -1167,6 +1200,7 @@ class ConvEConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.lmbda = args.lmbda
@@ -1187,6 +1221,7 @@ class ConvEConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
@@ -1206,6 +1241,7 @@ class ConvEConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -1260,6 +1296,7 @@ class ProjE_pointwiseConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.lmbda = args.lmbda
@@ -1279,6 +1316,7 @@ class ProjE_pointwiseConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
@@ -1298,6 +1336,7 @@ class ProjE_pointwiseConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -1344,6 +1383,7 @@ class KG2EConfig(BasicConfig):
             self.distance_measure = "kl_divergence"
             self.cmax = 0.05
             self.cmin = 5.00
+            self.neg_rate = 1
 
         else:
             self.learning_rate = args.learning_rate
@@ -1358,6 +1398,7 @@ class KG2EConfig(BasicConfig):
             self.distance_measure = args.function
             self.cmax = args.cmax
             self.cmin = args.cmin
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -1371,7 +1412,8 @@ class KG2EConfig(BasicConfig):
             'sampling': self.sampling,
             'distance_measure': self.distance_measure,
             'cmax': self.cmax,
-            'cmin': self.cmin
+            'cmin': self.cmin,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -1411,7 +1453,7 @@ class ComplexConfig(BasicConfig):
             # self.optimizer = 'adagrad'
             self.optimizer = 'adam'
             self.sampling = "uniform"
-            self.neg_rate = 10
+            self.neg_rate = 3
         else:
             self.lmbda = args.lmbda
             self.learning_rate = args.learning_rate
@@ -1478,6 +1520,7 @@ class DistMultConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adagrad'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.lmbda = args.lmbda
@@ -1488,6 +1531,7 @@ class DistMultConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
@@ -1498,6 +1542,7 @@ class DistMultConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -1554,6 +1599,7 @@ class TuckERConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.lmbda = args.lmbda
@@ -1575,6 +1621,7 @@ class TuckERConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
@@ -1596,6 +1643,7 @@ class TuckERConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -1651,6 +1699,7 @@ class ConvKBConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
+            self.neg_rate = 1
 
         else:
             self.lmbda = args.lmbda
@@ -1672,6 +1721,7 @@ class ConvKBConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
@@ -1689,6 +1739,7 @@ class ConvKBConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
