@@ -145,9 +145,12 @@ class DistMult(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        h_emb = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        t_emb = tf.nn.embedding_lookup(self.ent_embeddings, t)
+        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        h_emb = tf.nn.embedding_lookup(norm_ent_embeddings, h)
+        r_emb = tf.nn.embedding_lookup(norm_rel_embeddings, r)
+        t_emb = tf.nn.embedding_lookup(norm_ent_embeddings, t)
 
         return h_emb, r_emb, t_emb
 

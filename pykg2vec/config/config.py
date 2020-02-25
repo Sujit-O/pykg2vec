@@ -1471,7 +1471,7 @@ class DistMultConfig(BasicConfig):
             self.batch_size = 100
             self.epochs = 100
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'adagrad'
             self.sampling = "uniform"
 
         else:
