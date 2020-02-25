@@ -1406,7 +1406,8 @@ class ComplexConfig(BasicConfig):
             self.batch_size = 100
             self.epochs = 200
             self.data = 'Freebase15k'
-            self.optimizer = 'adagrad'
+            # self.optimizer = 'adagrad'
+            self.optimizer = 'adam'
             self.sampling = "uniform"
 
         else:
