@@ -427,7 +427,7 @@ class TransGConfig(BasicConfig):
             'threshold': self.training_threshold,
             'cluster':self.ncluster,
             'crp_factor':self.CRP_factor,
-            'weight_norm':self.weight_norm
+            'weight_norm':self.weight_norm,
             'neg_rate': self.neg_rate,
 
         }
