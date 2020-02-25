@@ -159,6 +159,8 @@ class KGEArgParser:
                                               help='optimizer to be used in training.')
         self.general_hyper_group.add_argument('-s', dest='sampling', default='uniform', type=str,
                                               help='strategy to do negative sampling.')
+        self.general_hyper_group.add_argument('-ngr', dest='negrate', default=1, type=int,
+                                              help='The number of negative samples generated per positve one.')
         self.general_hyper_group.add_argument('-l', dest='epochs', default=100, type=int,
                                               help='The total number of Epochs')
         self.general_hyper_group.add_argument('-tn', dest='test_num', default=1000, type=int,
@@ -1409,7 +1411,7 @@ class ComplexConfig(BasicConfig):
             # self.optimizer = 'adagrad'
             self.optimizer = 'adam'
             self.sampling = "uniform"
-
+            self.neg_rate = 10
         else:
             self.lmbda = args.lmbda
             self.learning_rate = args.learning_rate
@@ -1419,6 +1421,7 @@ class ComplexConfig(BasicConfig):
             self.data = args.dataset_name
             self.optimizer = args.optimizer
             self.sampling = args.sampling
+            self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
@@ -1429,6 +1432,7 @@ class ComplexConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)

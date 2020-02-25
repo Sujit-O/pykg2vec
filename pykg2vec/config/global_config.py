@@ -39,7 +39,7 @@ class GeneratorConfig(object):
                  process_num=2,
                  data='train',
                  algo='ConvE',
-                 neg_rate=2
+                 neg_rate=1
                  ):
         self.neg_rate = neg_rate
         self.process_num = process_num

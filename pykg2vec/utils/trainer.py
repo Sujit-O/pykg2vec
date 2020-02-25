@@ -82,7 +82,8 @@ class Trainer(TrainerMeta):
             self.summary_hyperparameter()
 
         self.generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
-                                                batch_size=self.model.config.batch_size)
+                                                batch_size=self.model.config.batch_size,
+                                                neg_rate=self.config.neg_rate)
 
 
     ''' Training related functions:'''
