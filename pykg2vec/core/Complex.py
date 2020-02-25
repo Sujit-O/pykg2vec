@@ -106,9 +106,9 @@ class Complex(ModelMeta, InferenceMeta):
         score_pos = self.distance(pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img)
         score_neg = self.distance(neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img)
 
-        regul_term = tf.reduce_mean(pos_h_e_real**2 + pos_h_e_img**2 + pos_r_e_real**2 + pos_r_e_img**2 + pos_t_e_real**2 + pos_t_e_img**2 + neg_h_e_real**2 + neg_h_e_img**2 + neg_r_e_real**2 + neg_r_e_img**2 + neg_t_e_real**2 + neg_t_e_img**2) 
-        # self.loss = tf.reduce_mean(tf.nn.softplus(score_pos) + tf.nn.softplus(-1*score_neg)) + self.config.lmbda*regul_term
-        self.loss = tf.reduce_sum(tf.nn.softplus(score_pos-1*score_neg)) + self.config.lmbda*regul_term
+        regul_term = tf.reduce_sum(pos_h_e_real**2 + pos_h_e_img**2 + pos_r_e_real**2 + pos_r_e_img**2 + pos_t_e_real**2 + pos_t_e_img**2 + neg_h_e_real**2 + neg_h_e_img**2 + neg_r_e_real**2 + neg_r_e_img**2 + neg_t_e_real**2 + neg_t_e_img**2) 
+        self.loss = tf.reduce_sum(tf.nn.softplus(-1*score_pos) + tf.nn.softplus(score_neg)) + self.config.lmbda*regul_term
+        # self.loss = tf.reduce_sum(tf.nn.softplus(score_neg-score_pos)) + self.config.lmbda*regul_term
 
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
@@ -126,8 +126,8 @@ class Complex(ModelMeta, InferenceMeta):
                                    tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
                                    self.ent_embeddings_real, self.ent_embeddings_img)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
+        _, head_rank = tf.nn.top_k(-score_head, k=self.config.kg_meta.tot_entity)
+        _, tail_rank = tf.nn.top_k(-score_tail, k=self.config.kg_meta.tot_entity)
 
         return head_rank, tail_rank
 

@@ -1401,12 +1401,12 @@ class ComplexConfig(BasicConfig):
 
         if args is None or args.golden is True:
             self.lmbda = 0.01
-            self.learning_rate = 0.003
+            self.learning_rate = 0.5
             self.hidden_size = 200
             self.batch_size = 100
             self.epochs = 200
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'adagrad'
             self.sampling = "uniform"
 
         else:
@@ -1468,7 +1468,7 @@ class DistMultConfig(BasicConfig):
             self.lmbda = 0.0001
             self.learning_rate = 0.1
             self.hidden_size = 100
-            self.batch_size = 100
+            self.batch_size = 10
             self.epochs = 100
             self.data = 'Freebase15k'
             self.optimizer = 'adagrad'
