@@ -106,9 +106,11 @@ class Complex(ModelMeta, InferenceMeta):
         score_pos = self.distance(pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img)
         score_neg = self.distance(neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img)
 
-        regul_term = tf.reduce_sum(pos_h_e_real**2 + pos_h_e_img**2 + pos_r_e_real**2 + pos_r_e_img**2 + pos_t_e_real**2 + pos_t_e_img**2 + neg_h_e_real**2 + neg_h_e_img**2 + neg_r_e_real**2 + neg_r_e_img**2 + neg_t_e_real**2 + neg_t_e_img**2) 
-        self.loss = tf.reduce_sum(tf.nn.softplus(-1*score_pos) + tf.nn.softplus(score_neg)) + self.config.lmbda*regul_term
-        # self.loss = tf.reduce_sum(tf.nn.softplus(score_neg-score_pos)) + self.config.lmbda*regul_term
+        regul_term = tf.reduce_mean(pos_h_e_real**2 + pos_h_e_img**2 + pos_r_e_real**2 + pos_r_e_img**2 + pos_t_e_real**2 + pos_t_e_img**2) + \
+                     tf.reduce_mean(neg_h_e_real**2 + neg_h_e_img**2 + neg_r_e_real**2 + neg_r_e_img**2 + neg_t_e_real**2 + neg_t_e_img**2) 
+        loss_term  = tf.reduce_mean(tf.concat([tf.nn.softplus(-1*score_pos), tf.nn.softplus(score_neg)], axis=0))        
+        
+        self.loss = loss_term + self.config.lmbda*regul_term
 
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
@@ -162,21 +164,14 @@ class Complex(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns real and imaginary values of head, relation and tail embedding.
         """
+        h_emb_real = tf.nn.embedding_lookup(self.ent_embeddings_real, h)
+        h_emb_img  = tf.nn.embedding_lookup(self.ent_embeddings_img,  h)
 
-        norm_ent_embeddings_real = tf.nn.l2_normalize(self.ent_embeddings_real, axis=1)
-        norm_ent_embeddings_img  = tf.nn.l2_normalize(self.ent_embeddings_img,  axis=1)
+        r_emb_real = tf.nn.embedding_lookup(self.rel_embeddings_real, r)
+        r_emb_img  = tf.nn.embedding_lookup(self.rel_embeddings_img,  r)
 
-        norm_rel_embeddings_real = tf.nn.l2_normalize(self.rel_embeddings_real, axis=1)
-        norm_rel_embeddings_img  = tf.nn.l2_normalize(self.rel_embeddings_img,  axis=1)
-
-        h_emb_real = tf.nn.embedding_lookup(norm_ent_embeddings_real, h)
-        h_emb_img  = tf.nn.embedding_lookup(norm_ent_embeddings_img,  h)
-
-        r_emb_real = tf.nn.embedding_lookup(norm_rel_embeddings_real, r)
-        r_emb_img  = tf.nn.embedding_lookup(norm_rel_embeddings_img,  r)
-
-        t_emb_real = tf.nn.embedding_lookup(norm_ent_embeddings_real, t)
-        t_emb_img  = tf.nn.embedding_lookup(norm_ent_embeddings_img,  t)
+        t_emb_real = tf.nn.embedding_lookup(self.ent_embeddings_real, t)
+        t_emb_img  = tf.nn.embedding_lookup(self.ent_embeddings_img,  t)
 
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
