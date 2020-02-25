@@ -162,14 +162,21 @@ class Complex(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns real and imaginary values of head, relation and tail embedding.
         """
-        h_emb_real = tf.nn.embedding_lookup(self.ent_embeddings_real, h)
-        h_emb_img  = tf.nn.embedding_lookup(self.ent_embeddings_img,  h)
 
-        r_emb_real = tf.nn.embedding_lookup(self.rel_embeddings_real, r)
-        r_emb_img  = tf.nn.embedding_lookup(self.rel_embeddings_img,  r)
+        norm_ent_embeddings_real = tf.nn.l2_normalize(self.ent_embeddings_real, axis=1)
+        norm_ent_embeddings_img  = tf.nn.l2_normalize(self.ent_embeddings_img,  axis=1)
 
-        t_emb_real = tf.nn.embedding_lookup(self.ent_embeddings_real, t)
-        t_emb_img  = tf.nn.embedding_lookup(self.ent_embeddings_img,  t)
+        norm_rel_embeddings_real = tf.nn.l2_normalize(self.rel_embeddings_real, axis=1)
+        norm_rel_embeddings_img  = tf.nn.l2_normalize(self.rel_embeddings_img,  axis=1)
+
+        h_emb_real = tf.nn.embedding_lookup(norm_ent_embeddings_real, h)
+        h_emb_img  = tf.nn.embedding_lookup(norm_ent_embeddings_img,  h)
+
+        r_emb_real = tf.nn.embedding_lookup(norm_rel_embeddings_real, r)
+        r_emb_img  = tf.nn.embedding_lookup(norm_rel_embeddings_img,  r)
+
+        t_emb_real = tf.nn.embedding_lookup(norm_ent_embeddings_real, t)
+        t_emb_img  = tf.nn.embedding_lookup(norm_ent_embeddings_img,  t)
 
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
