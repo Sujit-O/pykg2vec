@@ -67,7 +67,7 @@ class TransEParams:
         self.L1_flag = [True, False]
         self.hidden_size = [8, 16, 32, 64, 128, 256]
         self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
+        self.epochs = [2]
         self.margin = [0.4, 1.0, 2.0]
         self.optimizer = ["adam", "sgd", 'rms']
         self.sampling = ["uniform", "bern"]
