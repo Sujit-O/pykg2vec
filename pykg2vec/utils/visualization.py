@@ -387,23 +387,23 @@ class Visualization(object):
                 if df.empty:
                     df['Algorithm'] = [a] * len(df_2)
                     df['Epochs'] = df_2['Epoch']
-                    df['Mean Rank'] = df_2['mean_rank']
-                    df['Filt Mean Rank'] = df_2['filter_mean_rank']
+                    df['Mean Rank'] = df_2['Mean Rank']
+                    df['Filt Mean Rank'] = df_2['Filtered Mean Rank']
 
                     for hit in hits:
-                        df['Hits' + str(hit)] = df_2['hits' + str(hit)]
-                        df['Filt Hits' + str(hit)] = df_2['filter_hits' + str(hit)]
+                        df['Hits' + str(hit)] = df_2['Hit-%d Ratio'%hit]
+                        df['Filt Hits' + str(hit)] = df_2['Filtered Hit-%d Ratio'%hit]
 
                 else:
                     df_3 = pd.DataFrame()
                     df_3['Algorithm'] = [a] * len(df_2)
                     df_3['Epochs'] = df_2['Epoch']
-                    df_3['Mean Rank'] = df_2['mean_rank']
-                    df_3['Filt Mean Rank'] = df_2['filter_mean_rank']
+                    df_3['Mean Rank'] = df_2['Mean Rank']
+                    df_3['Filt Mean Rank'] = df_2['Filtered Mean Rank']
 
                     for hit in hits:
-                        df_3['Hits' + str(hit)] = df_2['hits' + str(hit)]
-                        df_3['Filt Hits' + str(hit)] = df_2['filter_hits' + str(hit)]
+                        df_3['Hits' + str(hit)] = df_2['Hit-%d Ratio'%hit]
+                        df_3['Filt Hits' + str(hit)] = df_2['Filtered Hit-%d Ratio'%hit]
 
                     frames = [df, df_3]
                     df = pd.concat(frames)
