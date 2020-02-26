@@ -1452,7 +1452,7 @@ class ComplexConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adagrad'
             self.sampling = "uniform"
-            self.neg_rate = 20
+            self.neg_rate = 10
         else:
             self.lmbda = args.lmbda
             self.learning_rate = args.learning_rate
