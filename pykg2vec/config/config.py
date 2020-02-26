@@ -1444,16 +1444,15 @@ class ComplexConfig(BasicConfig):
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
-            self.lmbda = 0.01
+            self.lmbda = 0.0001
             self.learning_rate = 0.5
             self.hidden_size = 200
-            self.batch_size = 100
+            self.batch_size = 4096
             self.epochs = 200
             self.data = 'Freebase15k'
-            # self.optimizer = 'adagrad'
-            self.optimizer = 'adam'
+            self.optimizer = 'adagrad'
             self.sampling = "uniform"
-            self.neg_rate = 3
+            self.neg_rate = 10
         else:
             self.lmbda = args.lmbda
             self.learning_rate = args.learning_rate
@@ -1515,8 +1514,8 @@ class DistMultConfig(BasicConfig):
             self.lmbda = 0.0001
             self.learning_rate = 0.1
             self.hidden_size = 100
-            self.batch_size = 10
-            self.epochs = 100
+            self.batch_size = 4096
+            self.epochs = 200
             self.data = 'Freebase15k'
             self.optimizer = 'adagrad'
             self.sampling = "uniform"

@@ -137,8 +137,8 @@ class MetricCalculator:
     def settle(self):
         rank_head_array = np.asarray(self.rank_head, dtype=np.float32) + 1
         rank_tail_array = np.asarray(self.rank_tail, dtype=np.float32) + 1
-        rank_array = (rank_head_array + rank_tail_array)/2
-
+        rank_array = np.concatenate((rank_head_array, rank_tail_array)) 
+        
         self.mean_rank_head[self.epoch] = np.mean(rank_head_array, dtype=np.float32) 
         self.mean_rank_tail[self.epoch] = np.mean(rank_tail_array, dtype=np.float32)
 
@@ -147,7 +147,7 @@ class MetricCalculator:
 
         filter_rank_head_array = np.asarray(self.filter_rank_head, dtype=np.float32) + 1
         filter_rank_tail_array = np.asarray(self.filter_rank_tail, dtype=np.float32) + 1
-        filter_rank_array = (filter_rank_head_array + filter_rank_tail_array)/2
+        filter_rank_array = np.concatenate((filter_rank_head_array, filter_rank_tail_array))
 
         self.filter_mean_rank_head[self.epoch] = np.mean(filter_rank_head_array, dtype=np.float32) 
         self.filter_mean_rank_tail[self.epoch] = np.mean(filter_rank_tail_array, dtype=np.float32) 
