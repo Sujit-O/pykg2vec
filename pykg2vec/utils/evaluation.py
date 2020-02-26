@@ -157,9 +157,9 @@ class MetricCalculator:
                 model_name (str): specify the name of the model. 
 
         """
-        files = os.listdir(str(self.config.result_path))
+        files = os.listdir(str(self.config.path_result))
         l = len([f for f in files if model_name in f if 'Testing' in f])
-        with open(str(self.config.result_path / (model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
+        with open(str(self.config.path_result / (model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
             fh.write('----------------SUMMARY----------------\n')
             for key, val in self.config.__dict__.items():
                 if 'gpu' in key:
@@ -204,7 +204,7 @@ class MetricCalculator:
 
         df = pd.DataFrame(results, columns=columns)
 
-        with open(str(self.config.result_path / (model_name + '_Testing_results_' + str(l) + '.csv')),'a') as fh:
+        with open(str(self.config.path_result / (model_name + '_Testing_results_' + str(l) + '.csv')),'a') as fh:
             df.to_csv(fh)
 
     def display_summary(self):
