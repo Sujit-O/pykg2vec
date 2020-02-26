@@ -241,7 +241,7 @@ class KGEArgParser:
                                      help="The folder name to save the figures.")
         self.misc_group.add_argument('-plote', dest='plot_embedding', default=False,
                                      type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
-        self.misc_group.add_argument('-plot', dest='plot_entity_only', default=True,
+        self.misc_group.add_argument('-plot', dest='plot_entity_only', default=False,
                                      type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.misc_group.add_argument('-gp', dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
 
@@ -303,7 +303,7 @@ class BasicConfig:
             self.save_model = False
             self.disp_summary = True
             self.disp_result = True
-            self.plot_embedding = True
+            self.plot_embedding = False
             self.log_device_placement = False
             self.plot_training_result = False
             self.plot_testing_result = False
