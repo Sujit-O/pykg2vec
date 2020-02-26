@@ -588,7 +588,7 @@ class TransRConfig(BasicConfig):
             self.ent_hidden_size = 128
             self.rel_hidden_size = 128
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -655,7 +655,7 @@ class TransDConfig(BasicConfig):
             self.ent_hidden_size = 100
             self.rel_hidden_size = 100
             self.batch_size = 4800
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 2.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -721,7 +721,7 @@ class TransMConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -786,7 +786,7 @@ class TransHConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 1200
-            self.epochs = 500
+            self.epochs = 1000
             self.margin = 0.5
             self.C = 0.015625
             self.data = 'Freebase15k'
@@ -852,7 +852,7 @@ class RescalConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -917,7 +917,7 @@ class SMEConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -1053,7 +1053,7 @@ class SLMConfig(BasicConfig):
             self.ent_hidden_size = 64
             self.rel_hidden_size = 32
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -1374,7 +1374,7 @@ class KG2EConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -1448,7 +1448,7 @@ class ComplexConfig(BasicConfig):
             self.learning_rate = 0.5
             self.hidden_size = 200
             self.batch_size = 4096
-            self.epochs = 200
+            self.epochs = 1000
             self.data = 'Freebase15k'
             self.optimizer = 'adagrad'
             self.sampling = "uniform"
@@ -1515,7 +1515,7 @@ class DistMultConfig(BasicConfig):
             self.learning_rate = 0.1
             self.hidden_size = 100
             self.batch_size = 8192
-            self.epochs = 200
+            self.epochs = 1000
             self.data = 'Freebase15k'
             self.optimizer = 'adagrad'
             self.sampling = "uniform"
