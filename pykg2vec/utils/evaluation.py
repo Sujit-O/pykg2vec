@@ -31,6 +31,9 @@ class MetricCalculator:
         self.hr_t = config.knowledge_graph.read_cache_data('hr_t')
         self.tr_h = config.knowledge_graph.read_cache_data('tr_h')
 
+        # (f)mr  : (filtered) mean rank
+        # (f)mrr : (filtered) mean reciprocal rank
+        # (f)hit : (filtered) hit-k ratio
         self.mr   = {}
         self.fmr  = {}
         self.mrr  = {}
@@ -201,8 +204,7 @@ class MetricCalculator:
 
         df = pd.DataFrame(results, columns=columns)
 
-        with open(str(self.config.result_path / (model_name + '_Testing_results_' + str(l) + '.csv')),
-                  'a') as fh:
+        with open(str(self.config.result_path / (model_name + '_Testing_results_' + str(l) + '.csv')),'a') as fh:
             df.to_csv(fh)
 
     def display_summary(self):
@@ -272,11 +274,6 @@ class Evaluation(EvaluationMeta):
     def __init__(self, model=None, debug=False, data_type='valid', tuning=False, session=None):
         
         self.session = session 
-
-        if self.session is None: 
-            self.session = tf.Session(config=self.config.gpu_config)
-            self.session.run(tf.global_variables_initializer())
-
         self.model = model
         self.debug = debug
         self.tuning = tuning
