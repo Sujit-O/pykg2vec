@@ -194,7 +194,7 @@ class MetricCalculator:
 
         results = []
         for epoch in self.mr.keys():
-            res_tmp = [epoch, (self.mr[epoch], self.fmr[epoch], self.mrr[epoch], self.fmrr[epoch])]
+            res_tmp = [epoch, self.mr[epoch], self.fmr[epoch], self.mrr[epoch], self.fmrr[epoch]]
 
             for hit in self.config.hits:
                 res_tmp.append(self.hit[(epoch, hit)])
