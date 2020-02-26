@@ -6,12 +6,12 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 import numpy as np
 
 
-class TransM(ModelMeta):
+class TransM(ModelMeta, InferenceMeta):
     """ `Transition-based Knowledge Graph Embedding with Relational Mapping Properties`_
 
         TransM is another line of research that improves TransE by relaxing the overstrict requirement of
@@ -65,6 +65,23 @@ class TransM(ModelMeta):
         self.test_h_batch = tf.placeholder(tf.int32, [None])
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
+
+    def distance(self, h, r, t, axis=-1):
+        """Function to calculate distance measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensors: Returns the distance measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -134,22 +151,9 @@ class TransM(ModelMeta):
 
         return head_rank, tail_rank
 
-    def distance(self, h, r, t):
-        """Function to calculate distance measure in embedding space.
-
-           Args:
-                 h (Tensor): Head entities ids.
-                 r (Tensor): Relation ids of the triple.
-                 t (Tensor): Tail entity ids of the triple.
-                 axis (int): Determines the axis for reduction
-
-           Returns:
-                Tensors: Returns the distance measure.
-        """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=-1)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=-1)  # L2 norm
+    # Override
+    def dissimilarity(self, h, r, t):
+        return self.distance(h, r, t)
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

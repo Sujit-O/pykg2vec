@@ -80,13 +80,13 @@ class KGPipeline:
         config_def, model_def = Importer().import_model_config(args.model_name.lower())
         config = config_def(args=args)
         
-        #Update the config params with the golden hyperparameter
+        # Update the config params with the golden hyperparameter
         for k,v in self.best.items():
             config.__dict__[k]=v
         model = model_def(config)
 
         # Create, Compile and Train the model. While training, several evaluation will be performed.
-        trainer = Trainer(model=model,trainon='train_and_valid', teston='test',debug=args.debug)
+        trainer = Trainer(model=model, trainon='train_and_valid', teston='test',debug=args.debug)
         trainer.build_model()
         trainer.train_model()
 
@@ -98,9 +98,4 @@ class KGPipeline:
 if __name__ == "__main__":
     kg_pipeline = KGPipeline(model="transe", dataset ="Freebase15k", debug=True)
     kg_pipeline.tune()
-    # kg_pipeline.plot_tune_result()
     kg_pipeline.test()
-    # kg_pipeline.plot_test_result()
-
-
-        

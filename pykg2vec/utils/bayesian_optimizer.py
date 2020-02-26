@@ -163,23 +163,37 @@ class BaysOptimizer(object):
 
     def get_loss(self, params):
         """Function that defines and acquires the loss"""
-        self.trainer.config.L1_flag = params['L1_flag']
-        self.trainer.config.batch_size = params['batch_size']
-        self.trainer.config.epochs = params['epochs']
-        
-        if 'hidden_size' in params:
-          self.trainer.config.hidden_size = params['hidden_size']
-        if 'ent_hidden_size' in params:
-          self.trainer.config.ent_hidden_size = params['ent_hidden_size']
-        if 'rel_hidden_size' in params:
-          self.trainer.config.rel_hidden_size = params['rel_hidden_size']
 
-        self.trainer.config.learning_rate = params['learning_rate']
-        self.trainer.config.margin = params['margin']
+        for key, value in params.items():
+          # print()
+          # import pdb; pdb.set_trace()
+          self.trainer.config.__dict__[key] = value
+          self.trainer.config.hyperparameters[key] = value  
+        # self.trainer.config.hyperparameters['L1_flag'] = params['L1_flag']
+        # self.trainer.config.L1_flag = params['L1_flag']
+        # self.trainer.config.hyperparameters['batch_size'] = params['batch_size']
+        # self.trainer.config.batch_size = params['batch_size']
+        # self.trainer.config.hyperparameters['epochs'] = params['epochs']
+        # self.trainer.config.epochs = params['epochs']
+        
+        # if 'hidden_size' in params:
+        #   self.trainer.config.hyperparameters['hidden_size'] = params['hidden_size']
+        #   self.trainer.config.hidden_size = params['hidden_size']
+        # if 'ent_hidden_size' in params:
+        #   self.trainer.config.hyperparameters['ent_hidden_size'] = params['ent_hidden_size']
+        #   self.trainer.config.ent_hidden_size = params['ent_hidden_size']
+        # if 'rel_hidden_size' in params:
+        #   self.trainer.config.hyperparameters['rel_hidden_size'] = params['rel_hidden_size']
+        #   self.trainer.config.rel_hidden_size = params['rel_hidden_size']
+
+        # self.trainer.config.hyperparameters['learning_rate'] = params['learning_rate']
+        # self.trainer.config.learning_rate = params['learning_rate']
+        # self.trainer.config.hyperparameters['margin'] = params['margin']
+        # self.trainer.config.margin = params['margin']
         self.trainer.config.disp_result = False
         self.trainer.config.disp_summary = False
         self.trainer.config.save_model = False
-        self.trainer.config.debug = True
+        self.trainer.config.debug = False
         self.trainer.config.test_num = 1000
 
         self.trainer.build_model()

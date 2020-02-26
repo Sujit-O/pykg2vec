@@ -45,62 +45,8 @@ class Trainer(TrainerMeta):
         self.trainon = trainon
         self.teston = teston
 
-    def enter_interactive_mode(self):
-        self.build_model()
-        self.load_model()
-
-        print("The training/loading of the model has finished!\nNow enter interactive mode :)")
-        print("-----")
-        print("Example 1: trainer.infer_tails(1,10,topk=5)")
-        self.infer_tails(1,10,topk=5)
-
-        print("-----")
-        print("Example 2: trainer.infer_heads(10,20,topk=5)")
-        self.infer_heads(10,20,topk=5)
-    
-    def exit_interactive_mode(self):
-        self.sess.close()
-        tf.reset_default_graph() # clean the tensorflow for the next training task.
-
-        print("Thank you for trying out inference interactive script :)")
-
-    def infer_tails(self,h,r,topk=5):
-        tails_op = self.model.infer_tails(h,r,topk)
-        tails = self.sess.run(tails_op)
-        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("head: %s" % idx2ent[h])
-        print("relation: %s" % idx2rel[r])
-
-        for idx, tail in enumerate(tails):
-            print("%dth predicted tail: %s" % (idx, idx2ent[tail]))
-
-    def infer_heads(self,r,t,topk=5):
-        heads_op = self.model.infer_heads(r,t,topk)
-        heads = self.sess.run(heads_op)
-        
-        print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("tail: %s" % idx2ent[t])
-        print("relation: %s" % idx2rel[r])
-
-        for idx, head in enumerate(heads):
-            print("%dth predicted head: %s" % (idx, idx2ent[head]))
-
-    def infer_rels(self, h, t, topk=5):
-        rels_op = self.model.infer_rels(h, t, topk)
-        rels = self.sess.run(rels_op)
-
-        print("\n(head,tail)->({},{}) :: Inferred rels->({})\n".format(h, t, ",".join([str(i) for i in rels])))
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("head: %s" % idx2ent[h])
-        print("tail: %s" % idx2ent[t])
-        print(rels)
-        for idx, rel in enumerate(rels):
-            print("%dth predicted rel: %s" % (idx, idx2rel[rel]))
+        self.evaluator = None
+        self.gen_train = None
 
     def build_model(self):
         """function to build the model"""
@@ -135,6 +81,11 @@ class Trainer(TrainerMeta):
             self.summary()
             self.summary_hyperparameter()
 
+        self.generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
+                                                batch_size=self.model.config.batch_size,
+                                                neg_rate=self.config.neg_rate)
+
+
     ''' Training related functions:'''
 
     def train_model(self):
@@ -144,9 +95,7 @@ class Trainer(TrainerMeta):
         if self.config.loadFromData:
             self.load_model()
         else:
-            generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
-                                               batch_size=self.model.config.batch_size)
-            self.gen_train = Generator(config=generator_config, model_config=self.model.config)
+            self.gen_train = Generator(config=self.generator_config, model_config=self.model.config)
 
             if not self.tuning:
                 self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
@@ -172,9 +121,6 @@ class Trainer(TrainerMeta):
             self.summary()
             self.summary_hyperparameter()
 
-        if not os.path.exists("./tmp"):
-            os.mkdir("./tmp")
-
         self.export_embeddings()
 
         self.sess.close()
@@ -186,9 +132,7 @@ class Trainer(TrainerMeta):
         """Function to tune the model."""
         acc = 0
 
-        generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
-                                           batch_size=self.model.config.batch_size)
-        self.gen_train = Generator(config=generator_config, model_config=self.model.config)
+        self.gen_train = Generator(config=self.generator_config, model_config=self.model.config)
 
         self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
        
@@ -214,7 +158,7 @@ class Trainer(TrainerMeta):
 
         for batch_idx in range(num_batch):
             data = list(next(self.gen_train))
-            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve","convkb", "complex", "distmult", "proje_pointwise"]:
+            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
                 h = data[0]
                 r = data[1]
                 t = data[2]
@@ -267,6 +211,8 @@ class Trainer(TrainerMeta):
            Args:
                 curr_epoch (int): The current epoch number.
         """
+        if not self.evaluator: 
+            self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
 
         if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
                                                curr_epoch == 0 or
@@ -276,6 +222,74 @@ class Trainer(TrainerMeta):
             if curr_epoch == self.config.epochs - 1:
                 self.evaluator.test_batch(curr_epoch)
 
+    ''' Interactive Inference related '''
+   
+    def enter_interactive_mode(self):
+        self.build_model()
+        self.load_model()
+
+        print("The training/loading of the model has finished!\nNow enter interactive mode :)")
+        print("-----")
+        print("Example 1: trainer.infer_tails(1,10,topk=5)")
+        self.infer_tails(1,10,topk=5)
+
+        print("-----")
+        print("Example 2: trainer.infer_heads(10,20,topk=5)")
+        self.infer_heads(10,20,topk=5)
+
+        print("-----")
+        print("Example 3: trainer.infer_rels(1,20,topk=5)")
+        self.infer_rels(1,20,topk=5)
+
+    def exit_interactive_mode(self):
+        self.sess.close()
+        tf.reset_default_graph() # clean the tensorflow for the next training task.
+
+        print("Thank you for trying out inference interactive script :)")
+
+    def infer_tails(self,h,r,topk=5):
+        tails_op = self.model.infer_tails(h,r,topk)
+        tails = self.sess.run(tails_op)
+        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        print("head: %s" % idx2ent[h])
+        print("relation: %s" % idx2rel[r])
+
+        for idx, tail in enumerate(tails):
+            print("%dth predicted tail: %s" % (idx, idx2ent[tail]))
+
+        return {tail: idx2ent[tail] for tail in tails}
+
+    def infer_heads(self,r,t,topk=5):
+        heads_op = self.model.infer_heads(r,t,topk)
+        heads = self.sess.run(heads_op)
+        
+        print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        print("tail: %s" % idx2ent[t])
+        print("relation: %s" % idx2rel[r])
+
+        for idx, head in enumerate(heads):
+            print("%dth predicted head: %s" % (idx, idx2ent[head]))
+
+        return {head: idx2ent[head] for head in heads}
+
+    def infer_rels(self, h, t, topk=5):
+        rels_op = self.model.infer_rels(h, t, topk)
+        rels = self.sess.run(rels_op)
+
+        print("\n(head,tail)->({},{}) :: Inferred rels->({})\n".format(h, t, ",".join([str(i) for i in rels])))
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        print("head: %s" % idx2ent[h])
+        print("tail: %s" % idx2ent[t])
+
+        for idx, rel in enumerate(rels):
+            print("%dth predicted rel: %s" % (idx, idx2rel[rel]))
+
+        return {rel: idx2rel[rel] for rel in rels}
     ''' Procedural functions:'''
 
     def save_model(self):

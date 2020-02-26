@@ -135,21 +135,31 @@ class MetricCalculator:
         return hrank, fhrank
 
     def settle(self):
-        self.mean_rank_head[self.epoch] = np.mean(self.rank_head, dtype=np.float32) 
-        self.mean_rank_tail[self.epoch] = np.mean(self.rank_tail, dtype=np.float32)
+        rank_head_array = np.asarray(self.rank_head, dtype=np.float32) + 1
+        rank_tail_array = np.asarray(self.rank_tail, dtype=np.float32) + 1
+        rank_array = (rank_head_array + rank_tail_array)/2
 
-        self.mrr[self.epoch] = np.reciprocal((self.mean_rank_head[self.epoch]+self.mean_rank_tail[self.epoch])/2)
+        self.mean_rank_head[self.epoch] = np.mean(rank_head_array, dtype=np.float32) 
+        self.mean_rank_tail[self.epoch] = np.mean(rank_tail_array, dtype=np.float32)
 
-        self.filter_mean_rank_head[self.epoch] = np.mean(self.filter_rank_head, dtype=np.float32) 
-        self.filter_mean_rank_tail[self.epoch] = np.mean(self.filter_rank_tail, dtype=np.float32) 
+        # self.mrr[self.epoch] = np.reciprocal((self.mean_rank_head[self.epoch]+self.mean_rank_tail[self.epoch])/2)
+        self.mrr[self.epoch] = np.mean(np.reciprocal(rank_array))
 
-        self.fmrr[self.epoch] = np.reciprocal((self.filter_mean_rank_head[self.epoch]+self.filter_mean_rank_tail[self.epoch])/2)
+        filter_rank_head_array = np.asarray(self.filter_rank_head, dtype=np.float32) + 1
+        filter_rank_tail_array = np.asarray(self.filter_rank_tail, dtype=np.float32) + 1
+        filter_rank_array = (filter_rank_head_array + filter_rank_tail_array)/2
+
+        self.filter_mean_rank_head[self.epoch] = np.mean(filter_rank_head_array, dtype=np.float32) 
+        self.filter_mean_rank_tail[self.epoch] = np.mean(filter_rank_tail_array, dtype=np.float32) 
+
+        # self.fmrr[self.epoch] = np.reciprocal((self.filter_mean_rank_head[self.epoch]+self.filter_mean_rank_tail[self.epoch])/2)
+        self.fmrr[self.epoch] = np.mean(np.reciprocal(filter_rank_array))
 
         for hit in self.hits:
-            self.hit_head[(self.epoch, hit)] = np.mean(np.asarray(self.rank_head) < hit, dtype=np.float32) 
-            self.hit_tail[(self.epoch, hit)] = np.mean(np.asarray(self.rank_tail) < hit, dtype=np.float32) 
-            self.filter_hit_head[(self.epoch, hit)] = np.mean(np.asarray(self.filter_rank_head) < hit, dtype=np.float32) 
-            self.filter_hit_tail[(self.epoch, hit)] = np.mean(np.asarray(self.filter_rank_tail) < hit, dtype=np.float32) 
+            self.hit_head[(self.epoch, hit)] = np.mean(rank_head_array <= hit, dtype=np.float32) 
+            self.hit_tail[(self.epoch, hit)] = np.mean(rank_tail_array <= hit, dtype=np.float32) 
+            self.filter_hit_head[(self.epoch, hit)] = np.mean(filter_rank_head_array <= hit, dtype=np.float32) 
+            self.filter_hit_tail[(self.epoch, hit)] = np.mean(filter_rank_tail_array <= hit, dtype=np.float32) 
 
     def get_curr_score(self):
         curr_epoch = self.epoch
@@ -254,18 +264,18 @@ class MetricCalculator:
 
         stop_time = timeit.default_timer()
         print("------Test Results: Epoch: %d --- time: %.2f------------" % (self.epoch, stop_time - self.start_time))
-        print('--mean rank          : %.4f' % ((self.mean_rank_head[self.epoch] +
+        print('--mean rank                    : %.4f' % ((self.mean_rank_head[self.epoch] +
                                                 self.mean_rank_tail[self.epoch]) / 2))
-        print('--Filtered mean rank : %.4f' % ((self.filter_mean_rank_head[self.epoch] +
+        print('--Filtered mean rank           : %.4f' % ((self.filter_mean_rank_head[self.epoch] +
                                                 self.filter_mean_rank_tail[self.epoch]) / 2))
 
-        print('--MRR(%%)             : %.4f' % (self.mrr[self.epoch]*100))
-        print('--Filtered MRR(%%)    : %.4f' % (self.fmrr[self.epoch]*100))
+        print('--mean reciprocal rank         : %.4f' % (self.mrr[self.epoch]))
+        print('--Filtered mean reciprocal rank: %.4f' % (self.fmrr[self.epoch]))
 
         for hit in self.hits:
-            print('--hits%d              : %.4f ' % (hit, (self.hit_head[(self.epoch, hit)] +
+            print('--hits%d                       : %.4f ' % (hit, (self.hit_head[(self.epoch, hit)] +
                                                           self.hit_tail[(self.epoch, hit)]) / 2))
-            print('--Filtered hits%d     : %.4f ' % (hit, (self.filter_hit_head[(self.epoch, hit)] +
+            print('--Filtered hits%d              : %.4f ' % (hit, (self.filter_hit_head[(self.epoch, hit)] +
                                                           self.filter_hit_tail[(self.epoch, hit)]) / 2))
         print("---------------------------------------------------------")
 

@@ -69,7 +69,7 @@ def raw_data_generator_trans(raw_queue, processed_queue, data, batch_size, numbe
             batch_idx = 0
 
 
-def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets, lh, lr, lt):
+def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets, lh, lr, lt, neg_rate):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -102,52 +102,53 @@ def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets
         for t in pos_triples:
             prob = 0.5
             
-            if np.random.random() > prob:
-                idx_replace_tail = np.random.randint(te)
-
-                break_cnt = 0
-                while (t[0], t[1], idx_replace_tail) in positive_triplets or (t[0], t[1], idx_replace_tail) in negative_triplets:
+            for i in range(neg_rate):
+                if np.random.random() > prob:
                     idx_replace_tail = np.random.randint(te)
-                    break_cnt += 1
-                    if break_cnt >= 100:
-                        break
 
-                if break_cnt >= 100:  # can not find new negative triple.
-                    nh.append(lh)
-                    nr.append(lr)
-                    nt.append(lt)
+                    break_cnt = 0
+                    while (t[0], t[1], idx_replace_tail) in positive_triplets or (t[0], t[1], idx_replace_tail) in negative_triplets:
+                        idx_replace_tail = np.random.randint(te)
+                        break_cnt += 1
+                        if break_cnt >= 100:
+                            break
+
+                    if break_cnt >= 100:  # can not find new negative triple.
+                        nh.append(lh)
+                        nr.append(lr)
+                        nt.append(lt)
+                    else:
+                        nh.append(t[0])
+                        nr.append(t[1])
+                        nt.append(idx_replace_tail)
+                        lh = t[0]
+                        lr = t[1]
+                        lt = idx_replace_tail
+
+                        negative_triplets[(t[0], t[1], idx_replace_tail)] = 1
+
                 else:
-                    nh.append(t[0])
-                    nr.append(t[1])
-                    nt.append(idx_replace_tail)
-                    lh = t[0]
-                    lr = t[1]
-                    lt = idx_replace_tail
-
-                    negative_triplets[(t[0], t[1], idx_replace_tail)] = 1
-
-            else:
-                idx_replace_head = np.random.randint(te)
-                break_cnt = 0
-                while ((idx_replace_head, t[1], t[2]) in positive_triplets) or (idx_replace_head, t[1], t[2]) in negative_triplets:
                     idx_replace_head = np.random.randint(te)
-                    break_cnt += 1
-                    if break_cnt >= 100:
-                        break
+                    break_cnt = 0
+                    while ((idx_replace_head, t[1], t[2]) in positive_triplets) or (idx_replace_head, t[1], t[2]) in negative_triplets:
+                        idx_replace_head = np.random.randint(te)
+                        break_cnt += 1
+                        if break_cnt >= 100:
+                            break
 
-                if break_cnt >= 100:  # can not find new negative triple.
-                    nh.append(lh)
-                    nr.append(lr)
-                    nt.append(lt)
-                else:
-                    nh.append(idx_replace_head)
-                    nr.append(t[1])
-                    nt.append(t[2])
-                    lh = idx_replace_head
-                    lr = t[1]
-                    lt = t[2]
+                    if break_cnt >= 100:  # can not find new negative triple.
+                        nh.append(lh)
+                        nr.append(lr)
+                        nt.append(lt)
+                    else:
+                        nh.append(idx_replace_head)
+                        nr.append(t[1])
+                        nt.append(t[2])
+                        lh = idx_replace_head
+                        lr = t[1]
+                        lt = t[2]
 
-                    negative_triplets[(idx_replace_head, t[1], t[2])] = 1
+                        negative_triplets[(idx_replace_head, t[1], t[2])] = 1
 
         processed_queue.put([ph, pr, pt, nh, nr, nt])
 
@@ -243,10 +244,10 @@ class Generator:
         if config.data == 'test' or config.data == 'valid':
             self.create_test_processer_process(config.process_num)
         else:
-            if config.algo.lower() in ["tucker","tucker_v2","conve", "complex", "distmult", "proje_pointwise", "convkb"]:
+            if config.algo.lower() in ["tucker","tucker_v2","conve", "proje_pointwise", "convkb"]:
                 self.create_train_processor_process(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, config.neg_rate)
             else:
-                self.create_train_processor_process_trans(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, observed_triples)
+                self.create_train_processor_process_trans(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, observed_triples, config.neg_rate)
 
         del model_config, relation_property
     
@@ -290,7 +291,7 @@ class Generator:
             process_worker.daemon = True
             process_worker.start()
 
-    def create_train_processor_process_trans(self, process_num, te, bs, observed_triples):
+    def create_train_processor_process_trans(self, process_num, te, bs, observed_triples, neg_rate):
         """Function create the process for generating training samples for translation based algorithms.
 
             Args:
@@ -305,7 +306,7 @@ class Generator:
         lt = Value('i', 0)
         for i in range(process_num):
             process_worker = Process(target=process_function_trans, \
-                                     args=(self.raw_queue, self.processed_queue, te, bs, observed_triples, lh, lr, lt))
+                                     args=(self.raw_queue, self.processed_queue, te, bs, observed_triples, lh, lr, lt, neg_rate))
             self.process_list.append(process_worker)
             process_worker.daemon = True
             process_worker.start()

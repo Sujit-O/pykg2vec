@@ -10,12 +10,12 @@
 
 pykg2vec/intermediate
 pykg2vec/dataset
+pykg2vec/test/resource/custom_dataset/*.pkl
 
 # Python egg metadata, regenerated from source files by setuptools.
 /*.egg-info
 /*.egg
 *.pdf
-*.txt
 *.csv
 *.DS_Store
 .vscode/settings.json

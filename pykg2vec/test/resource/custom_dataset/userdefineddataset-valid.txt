@@ -1,0 +1,1 @@
+head_3	relation_3	tail_3

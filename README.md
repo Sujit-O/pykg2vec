@@ -255,6 +255,7 @@ python inference.py -mn TransE -ld true # pykg2vec will look for the location of
 # Once interactive mode is reached, you can execute instruction manually like
 # Example 1: trainer.infer_tails(1,10,topk=5) => give the list of top-5 predicted tails. 
 # Example 2: trainer.infer_heads(10,20,topk=5) => give the list of top-5 predicted heads.
+# Example 3: trainer.infer_rels(1,20,topk=5) => give the list of top-5 predicted relations.
 ```
 
 [__***Back to Top***__](#Documentation)

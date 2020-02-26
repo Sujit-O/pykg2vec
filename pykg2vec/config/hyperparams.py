@@ -67,7 +67,7 @@ class TransEParams:
         self.L1_flag = [True, False]
         self.hidden_size = [8, 16, 32, 64, 128, 256]
         self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
+        self.epochs = [2]
         self.margin = [0.4, 1.0, 2.0]
         self.optimizer = ["adam", "sgd", 'rms']
         self.sampling = ["uniform", "bern"]
@@ -522,18 +522,10 @@ class ComplexParams:
 
     def __init__(self):
         self.lmbda = [0.1, 0.2]
-        self.feature_map_dropout = [0.1, 0.2, 0.5]
-        self.input_dropout = [0.1, 0.2, 0.5]
-        self.hidden_dropout = [0.1, 0.2, 0.5]
-        self.use_bias = [True, False]
-        self.label_smoothing = [0.1, 0.2, 0.5]
-        self.lr_decay = [0.95, 0.9, 0.8]
         self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
         self.hidden_size = [8, 16, 32, 64, 128, 256]
         self.batch_size = [128, 256, 512]
         self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
         self.optimizer = ["adam", "sgd", 'rms']
         self.sampling = ["uniform", "bern"]
 
@@ -565,18 +557,10 @@ class DistMultParams:
 
     def __init__(self):
         self.lmbda = [0.1, 0.2]
-        self.feature_map_dropout = [0.1, 0.2, 0.5]
-        self.input_dropout = [0.1, 0.2, 0.5]
-        self.hidden_dropout = [0.1, 0.2, 0.5]
-        self.use_bias = [True, False]
-        self.label_smoothing = [0.1, 0.2, 0.5]
-        self.lr_decay = [0.95, 0.9, 0.8]
         self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
         self.hidden_size = [8, 16, 32, 64, 128, 256]
         self.batch_size = [128, 256, 512]
         self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
         self.optimizer = ["adam", "sgd", 'rms']
         self.sampling = ["uniform", "bern"]
 
