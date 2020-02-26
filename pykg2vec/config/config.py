@@ -334,7 +334,7 @@ class BasicConfig:
 
             self.batch_size_testing = args.batch_testing
 
-        self.hits = [10, 5]
+        self.hits = [1,3,5,10]
         self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
         self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
@@ -457,12 +457,12 @@ class TransEConfig(BasicConfig):
     def __init__(self, args=None):
         if args is None or args.golden is True:
             # the golden setting for TransE (only for Freebase15k now)
-            self.learning_rate = 0.01
+            self.learning_rate = 0.0001
             self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 512
+            self.hidden_size = 256
+            self.batch_size = 128
             self.epochs = 500
-            self.margin = 1.0
+            self.margin = 0.99
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
             self.sampling = "uniform"
@@ -1118,7 +1118,7 @@ class RotatEConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 200
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -1452,7 +1452,7 @@ class ComplexConfig(BasicConfig):
             self.data = 'Freebase15k'
             self.optimizer = 'adagrad'
             self.sampling = "uniform"
-            self.neg_rate = 10
+            self.neg_rate = 20
         else:
             self.lmbda = args.lmbda
             self.learning_rate = args.learning_rate
@@ -1514,7 +1514,7 @@ class DistMultConfig(BasicConfig):
             self.lmbda = 0.0001
             self.learning_rate = 0.1
             self.hidden_size = 100
-            self.batch_size = 4096
+            self.batch_size = 8192
             self.epochs = 200
             self.data = 'Freebase15k'
             self.optimizer = 'adagrad'
