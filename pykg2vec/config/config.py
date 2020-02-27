@@ -1370,14 +1370,14 @@ class KG2EConfig(BasicConfig):
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
-            self.learning_rate = 0.001
+            self.learning_rate = 0.01
             self.L1_flag = True
             self.hidden_size = 50
-            self.batch_size = 128
+            self.batch_size = 1440
             self.epochs = 1000
-            self.margin = 1.0
+            self.margin = 4.0
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'sgd'
             self.sampling = "uniform"
             self.bilinear = False
             self.distance_measure = "kl_divergence"
