@@ -602,18 +602,30 @@ class KG2EParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
-        self.bilinear = [True, False]
-        self.distance_measure = ["kl_divergence", "expected_likelihood"]
-        self.cmax = [0.05, 0.1, 0.2]
-        self.cmin = [5.00, 3.00, 2.00, 1.00]
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.distance_measure = ["kl_divergence", "expected_likelihood"]
+        # self.cmax = [0.05, 0.1, 0.2]
+        # self.cmin = [5.00, 3.00, 2.00, 1.00]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'lmbda': hp.loguniform('lmbda', np.log(0.00001), np.log(0.001)),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'margin': hp.uniform('margin', 0.5, 8.0),
+          'distance_measure': hp.choice('distance_measure', ["kl_divergence", "expected_likelihood"]),
+          'cmax': hp.loguniform('cmax', np.log(0.05), np.log(0.2)),
+          'cmin': hp.loguniform('cmax', np.log(1), np.log(5)),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+
 
 
 class ComplexParams:
