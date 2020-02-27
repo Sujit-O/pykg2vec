@@ -583,15 +583,15 @@ class TransRConfig(BasicConfig):
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
-            self.learning_rate = 0.01
+            self.learning_rate = 0.001
             self.L1_flag = True
-            self.ent_hidden_size = 128
-            self.rel_hidden_size = 128
-            self.batch_size = 128
+            self.ent_hidden_size = 50
+            self.rel_hidden_size = 50
+            self.batch_size = 4800
             self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'sgd'
             self.sampling = "uniform"
             self.neg_rate = 1
 
