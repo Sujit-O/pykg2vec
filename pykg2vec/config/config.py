@@ -783,14 +783,14 @@ class TransHConfig(BasicConfig):
 
         if args is None or args.golden is True:
             self.learning_rate = 0.005
-            self.L1_flag = True
+            self.L1_flag = False
             self.hidden_size = 50
             self.batch_size = 1200
             self.epochs = 1000
             self.margin = 0.5
             self.C = 0.015625
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'sgd'
             self.sampling = "uniform"
             self.neg_rate = 1
 
