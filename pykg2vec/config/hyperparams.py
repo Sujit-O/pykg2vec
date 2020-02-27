@@ -75,14 +75,30 @@ class TransEParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
+        
+        self.golden_settings = {
+          'Freebase15k': {
+            'learning_rate': 0.0001, 
+            'L1_flag': True, 
+            'batch_size':128,
+            'epochs':500,
+            'margin':0.99,
+            'optimizer': 'adam',
+            'sampling':" uniform",
+            'neg_rate':1,
+          },
+        }
+
+        self.learning_rate = 0.0001
+        self.L1_flag = True
+        self.hidden_size = 256
+        self.batch_size = 128
+        self.epochs = 500
+        self.margin = 0.99
+        self.data = 'Freebase15k'
+        self.optimizer = 'adam'
+        self.sampling = "uniform"
+        self.neg_rate = 1
 
 
 class TransHParams:
