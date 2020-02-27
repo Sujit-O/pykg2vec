@@ -457,14 +457,14 @@ class TransEConfig(BasicConfig):
     def __init__(self, args=None):
         if args is None or args.golden is True:
             # the golden setting for TransE (only for Freebase15k now)
-            self.learning_rate = 0.0001
+            self.learning_rate = 0.01
             self.L1_flag = True
-            self.hidden_size = 256
+            self.hidden_size = 50
             self.batch_size = 128
-            self.epochs = 500
-            self.margin = 0.99
+            self.epochs = 1000
+            self.margin = 1.0
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'sgd'
             self.sampling = "uniform"
             self.neg_rate = 1
 
