@@ -650,7 +650,7 @@ class TransDConfig(BasicConfig):
     def __init__(self, args=None):
 
         if args == None or args.golden is True:
-            self.learning_rate = 0.5
+            self.learning_rate = 0.01
             self.L1_flag = False
             self.ent_hidden_size = 50
             self.rel_hidden_size = 50
@@ -658,7 +658,7 @@ class TransDConfig(BasicConfig):
             self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
-            self.optimizer = 'adadelta'
+            self.optimizer = 'sgd'
             self.sampling = "uniform"
             self.neg_rate = 1
 
