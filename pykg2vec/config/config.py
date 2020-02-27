@@ -302,7 +302,7 @@ class BasicConfig:
             self.loadFromData = False
             self.save_model = False
             self.disp_summary = True
-            self.disp_result = True
+            self.disp_result = False
             self.plot_embedding = False
             self.log_device_placement = False
             self.plot_training_result = False
@@ -327,7 +327,7 @@ class BasicConfig:
             self.loadFromData = args.load_from_data
             self.save_model = args.save_model
             self.disp_summary = True
-            self.disp_result = True
+            self.disp_result = False
             self.plot_embedding = args.plot_embedding
             self.plot_training_result = True
             self.plot_testing_result = True
