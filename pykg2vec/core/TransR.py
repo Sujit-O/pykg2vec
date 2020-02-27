@@ -97,7 +97,7 @@ class TransR(ModelMeta, InferenceMeta):
                                               shape=[num_total_rel, k],
                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         self.rel_matrix     = tf.get_variable(name="rel_matrix",
-                                              shape=[num_total_rel, d * k],
+                                              shape=[num_total_rel, d, k],
                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
@@ -114,9 +114,9 @@ class TransR(ModelMeta, InferenceMeta):
         Returns:
             Tensors: Returns the distance measure.
         """
-        h = tf.nn.l2_normalize(h, -1)
-        t = tf.nn.l2_normalize(t, -1)
-        r = tf.nn.l2_normalize(r, -1)
+        h = tf.nn.l2_normalize(h, axis=axis)
+        t = tf.nn.l2_normalize(t, axis=axis)
+        r = tf.nn.l2_normalize(r, axis=axis)
         if self.config.L1_flag:
             return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
         else:
@@ -147,17 +147,14 @@ class TransR(ModelMeta, InferenceMeta):
         b = self.config.batch_size_testing
 
         pos_matrix = tf.nn.embedding_lookup(self.rel_matrix, self.test_r_batch)
-        # [b, d*k]
-        pos_matrix = tf.reshape(pos_matrix, [-1, d, k])
         # [b, d, k]
-
         pos_matrix = tf.transpose(pos_matrix, perm=[0, 2, 1])
         # [b, k, d]
         pos_matrix = tf.reshape(pos_matrix, [-1, d])
         # [b*k, d]
 
         # [14951, d], [d, b*k] = [14951, b*k]
-        project_ent_embedding = self.transform(self.ent_embeddings, tf.transpose(pos_matrix))
+        project_ent_embedding = tf.matmul(self.ent_embeddings, tf.transpose(pos_matrix))
         # [14951, b*k]
 
         project_ent_embedding = tf.reshape(project_ent_embedding,[-1, b, k])
@@ -165,8 +162,6 @@ class TransR(ModelMeta, InferenceMeta):
 
         project_ent_embedding = tf.transpose(project_ent_embedding, perm=[1, 0, 2])
         # [b, 14951, k]
-
-        # project_ent_embedding = tf.nn.l2_normalize(project_ent_embedding, axis=2)
 
         score_head = self.distance(project_ent_embedding,
                                    tf.expand_dims(rel_vec, axis=1),
@@ -183,24 +178,6 @@ class TransR(ModelMeta, InferenceMeta):
     # Override
     def dissimilarity(self, h, r, t):
         return self.distance(h, r, t)
-
-    def transform(self, matrix, embeddings):
-        """Performs transformation of the embeddings into relation space.
-
-            Args:
-              matrix (Tensor): Transformation matrix
-              embeddings( Tensor): Embeddings to be transformd
-
-            Returns:
-               Tensors: Returns Transformed Matrix.
-        """
-        return tf.matmul(matrix, embeddings)
-
-    def get_transform_matrix(self, r):
-        """gets the transformation matrix."""
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
-        return tf.reshape(tf.nn.embedding_lookup(self.rel_matrix, r), [-1, d, k])
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -220,7 +197,7 @@ class TransR(ModelMeta, InferenceMeta):
         r_e = tf.nn.embedding_lookup(self.rel_embeddings, r)
         t_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings, t), [-1, d, 1])
         
-        matrix = tf.reshape(tf.nn.embedding_lookup(self.rel_matrix, r), [-1, d, k])
+        matrix = tf.nn.embedding_lookup(self.rel_matrix, r)
 
         transform_h_e = tf.matmul(matrix, h_e, transpose_a=True)
         transform_t_e = tf.matmul(matrix, t_e, transpose_a=True)
