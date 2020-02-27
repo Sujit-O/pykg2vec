@@ -622,7 +622,7 @@ class KG2EParams:
           'margin': hp.uniform('margin', 0.5, 8.0),
           'distance_measure': hp.choice('distance_measure', ["kl_divergence", "expected_likelihood"]),
           'cmax': hp.loguniform('cmax', np.log(0.05), np.log(0.2)),
-          'cmin': hp.loguniform('cmax', np.log(1), np.log(5)),
+          'cmin': hp.loguniform('cmin', np.log(1), np.log(5)),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
 
