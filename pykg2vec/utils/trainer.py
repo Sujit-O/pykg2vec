@@ -70,6 +70,8 @@ class Trainer(TrainerMeta):
             optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adagrad':
             optimizer = tf.train.AdagradOptimizer(learning_rate=self.config.learning_rate)
+        elif self.config.optimizer == 'adadelta':
+            optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config.learning_rate)
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
 
