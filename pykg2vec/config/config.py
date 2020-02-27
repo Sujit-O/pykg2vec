@@ -650,7 +650,7 @@ class TransDConfig(BasicConfig):
     def __init__(self, args=None):
 
         if args == None or args.golden is True:
-            self.learning_rate = 0.001
+            self.learning_rate = 0.5
             self.L1_flag = False
             self.ent_hidden_size = 50
             self.rel_hidden_size = 50
