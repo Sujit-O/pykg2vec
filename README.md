@@ -22,7 +22,7 @@ The documentation is [here](https://pykg2vec.readthedocs.io/).
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
 # To Get Started 
-To use pkg2vec, please install the folowing packages in advance:
+To use pykg2vec, please install the folowing packages in advance:
 * Python >= 3.6
 * tensorflow==`<version suitable for your workspace>`
 
