@@ -82,9 +82,16 @@ Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check
 
 With train.py you can start the KGE training by using the following sample commands: 
 ```bash
-python train.py -h # check all tunnable parameters.
-python train.py -mn TransE # Run TransE model.
-python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|distmult|KG2E|NTN|Rescal|SLM|SME|HoLE] # Run Complex model. 
+# check all tunnable parameters.
+$ python train.py -h 
+# Train TransE on FB15k benchmark dataset.
+$ python train.py -mn TransE
+# Train using different KGE methods.
+$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
+                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE]
+# Train TransE model using different benchmark datasets.
+$ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
+                                  ks|nations|umls|dl50a]
 ```
 Some models are still under development [Conv2D|ConvKB|ProjE|RotatE|TuckER], however, they can be executed without exceptions. 
 
@@ -128,13 +135,6 @@ python train.py -mn Complex # Run Complex model.
 ### Switch between Datasets:
 Pykg2vec aims to include all the well-known datasets available online so that you can test all available KGE models or your own model on those datasets. Currently, pykg2vec has [FK15K](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz), WN18, WN18-RR, YAGO, FK15K_237, Kinship, Nations, UMLS. You can check Datasets for more information. 
 With train.py described in usage examples, you can switch the models to train on a dataset using command:
-### Using Well-Known Dataset 
-```bach
-python train.py -mn TransE -ds FB15K # Run TransE model on Freebase15k(FK15)
-python train.py -mn TransE -ds dl50a # Run TransE model on Deeplearning50a(dl50a)
-# you can select one of models from ["fb15k','dl50a','wn18','wn18_rr',
-                                     'yago3_10','fb15k_237','ks','nations','umls']
-```
 
 ### Using Custom Dataset
 For custom dataset, some steps are provided:
