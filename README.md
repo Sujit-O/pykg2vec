@@ -26,7 +26,9 @@ To use pykg2vec, please install the folowing packages in advance:
 * Python >= 3.6
 * tensorflow==`<version suitable for your workspace>`
 
-Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. In pykg2vec, we won't focus in run-time performance at this moment. **However, we do encourage users to install the tensorflow-gpu for speeding up the training! the guide to install Tensorflow can be found [here](https://www.tensorflow.org/install)** In the future, may provide faster implementation of each of the algorithms. (C++ implementations to come!)
+Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. In pykg2vec, we won't focus in run-time performance at this moment. **However, we do encourage users to install the tensorflow-gpu for speeding up the training! the guide to install Tensorflow can be found [here](https://www.tensorflow.org/install).** 
+
+In the future, may provide faster implementation of each of the algorithms. (C++ implementations to come!)
 
 Installation steps are as followed.
 
@@ -66,7 +68,6 @@ $ pip install --upgrade pip
 (venv) $ python setup.py install
 ```
 
-[__***Back to Top***__](#Documentation)
 # Usage Example
 
 ## Running a single algorithm: 
@@ -104,7 +105,6 @@ python train.py -h # check all tunnable parameters.
 python train.py -mn TransE # Run TransE model.
 python train.py -mn Complex # Run Complex model. 
 ```
-[__***Back to Top***__](#Documentation)
 
 ## Tuning a single algorithm:
 tune_model.py
@@ -131,7 +131,6 @@ with tune_model.py we then can train the existed model using command:
 python tune_model.py -h # check all tunnable parameters.
 python tune_model.py -mn TransE # Tune TransE model.
 ```
-[__***Back to Top***__](#Documentation)
 
 ## Switch between Implemented Methods:
 Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more information about the algorithms implemented in pykg2vec. With train.py described in usage examples, you can switch the models to train on a dataset using command:
