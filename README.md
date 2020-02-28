@@ -12,6 +12,7 @@ Pykg2vec has following features:
   
 The documentation is [here](https://pykg2vec.readthedocs.io/). 
 
+We welcome any form of contribution! Please check for more details [here](https://github.com/Sujit-O/pykg2vec/blob/master/CONTRIBUTING.md). 
 ## Repository Structure
 * **pykg2vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
 * **pykg2vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
