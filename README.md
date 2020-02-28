@@ -22,7 +22,7 @@ The documentation is [here](https://pykg2vec.readthedocs.io/).
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
 # To Get Started 
-Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. We emphasize that in the beginning, we will not be focus in run-time performance. **However, we do encourage users to install the tensorflow-gpu for speeding up the training!**
+Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. In pykg2vec, we won't focus in run-time performance at this moment. **However, we do encourage users to install the tensorflow-gpu for speeding up the training!**
 * Python >= 3.5
 * tensorflow==`<version suitable for your workspace>`
 
