@@ -46,9 +46,9 @@ $ git checkout development
 $ python setup.py install
 ```
 
-## Usage Example
+## Usage Examples
 
-### Running a single algorithm: 
+### 1.Running a single algorithm: 
 train.py
 ```python
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
@@ -111,7 +111,7 @@ head\trelation\ttail
 $ python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] 
 ```
 
-### Tuning a single algorithm:
+### 2. Tuning a single algorithm:
 tune_model.py
 ```python
 
@@ -137,7 +137,7 @@ python tune_model.py -h # check all tunnable parameters.
 python tune_model.py -mn TransE # Tune TransE model.
 ```
 
-## Perform Inference Tasks:
+## 3. Perform Inference Tasks (advanced):
 inference.py
 ```python
 import sys, code
