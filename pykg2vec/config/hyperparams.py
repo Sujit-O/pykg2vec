@@ -5,6 +5,46 @@ It provides configuration for the tunable hyper-parameter ranges for all the alg
 """
 
 from argparse import ArgumentParser
+from hyperopt import hp
+from hyperopt.pyll.base import scope
+import numpy as np
+
+
+class HyperparamterLoader:
+    def __init__(self):
+      # This hyperparameter setting aims to reproduce the experimental setup in its original papers. 
+      self.hyperparams_paper = {
+        'freebase15k': 
+        {
+          'transe'  : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin':1.00,'optimizer': 'sgd','sampling':"uniform",'neg_rate':1},
+          'transh'  : {'learning_rate': 0.005,'L1_flag':False,'hidden_size':50,'batch_size':1200,'epochs':1000,'margin': 0.5,'optimizer': 'sgd','sampling':"uniform",'neg_rate':1,'C': 0.015625},
+          'hole'    : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size': 512,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
+          'transm'  : {'learning_rate': 0.001,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
+          'rescal'  : {'learning_rate': 0.001,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
+          'rotate'  : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
+          'sme'     : {'learning_rate': 0.001,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1,'bilinear':False},
+          'transr'  : {'learning_rate': 0.001,'L1_flag': True,'ent_hidden_size':50,'rel_hidden_size':50,'batch_size': 4800,'epochs': 1000,'margin': 1.0,'optimizer': 'sgd','sampling':   "bern",'neg_rate':1},
+          'transd'  : {'learning_rate': 0.001,'L1_flag':False,'ent_hidden_size':50,'rel_hidden_size':50,'batch_size':  200,'epochs': 1000,'margin': 1.0,'optimizer': 'sgd','sampling':"uniform",'neg_rate':1},
+          'ntn'     : {'learning_rate':  0.01,'L1_flag': True,'ent_hidden_size':64,'rel_hidden_size':32,'batch_size':  128,'epochs': 1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1}, # problematic
+          'slm'     : {'learning_rate':  0.01,'L1_flag': True,'ent_hidden_size':64,'rel_hidden_size':32,'batch_size':  128,'epochs': 1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
+          'kg2e'    : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size':1440,'epochs':1000,'margin': 4.0,'optimizer': 'sgd','sampling':"uniform",'distance_measure': "kl_divergence",'cmax': 0.05,'cmin': 5.00,'neg_rate': 1},
+          'complex' : {'learning_rate':   0.5,'hidden_size':200,'batch_size':4096,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':10,'lmbda':0.0001},
+          'distmult': {'learning_rate':   0.1,'hidden_size':100,'batch_size':8192,'epochs':1000,'data':'Freebase15k','optimizer':'adagrad','sampling':"uniform",'neg_rate':1,'lmbda':0.0001},
+          
+        }
+      }
+
+      self.hyperparams_paper['fb15k'] = self.hyperparams_paper['freebase15k']
+    
+    def load_hyperparameter(self, dataset_name, algorithm):
+      d_name = dataset_name.lower()
+      a_name = algorithm.lower()
+
+      if d_name in self.hyperparams_paper and a_name in self.hyperparams_paper[d_name]:
+        params = self.hyperparams_paper[d_name][a_name]
+        return params
+      else:
+        raise Exception("We have not explored this experimental setting! (%s, %s)"%(dataset_name, algorithm))
 
 
 class KGETuneArgParser:
@@ -36,16 +76,13 @@ class KGETuneArgParser:
                                  help='To use debug mode or not.')
         self.parser.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
         self.parser.add_argument('-dsp', dest='dataset_path', default=None, type=str, help='The path to custom dataset.')
-        self.parser.add_argument('-s', dest='sampling', default='uniform', type=str, help='The negative sampling strategy: uniform/bern.')
         self.parser.add_argument('-mt', dest='max_number_trials', default=100, type=int, help='The maximum times of trials for bayesian optimizer.')
 
     def get_args(self, args):
         """Gets the arguments from the console and parses it."""
         return self.parser.parse_args(args)
 
-from hyperopt import hp
-from hyperopt.pyll.base import scope
-import numpy as np
+
 
 class TransEParams:
     """This class defines the hyperameters and its ranges for tuning TranE algorithm.
@@ -75,30 +112,6 @@ class TransEParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [100]) # always choose 10 training epochs.
         }
-        
-        self.golden_settings = {
-          'Freebase15k': {
-            'learning_rate': 0.0001, 
-            'L1_flag': True, 
-            'batch_size':128,
-            'epochs':500,
-            'margin':0.99,
-            'optimizer': 'adam',
-            'sampling':" uniform",
-            'neg_rate':1,
-          },
-        }
-
-        self.learning_rate = 0.0001
-        self.L1_flag = True
-        self.hidden_size = 256
-        self.batch_size = 128
-        self.epochs = 500
-        self.margin = 0.99
-        self.data = 'Freebase15k'
-        self.optimizer = 'adam'
-        self.sampling = "uniform"
-        self.neg_rate = 1
 
 
 class TransHParams:
@@ -357,8 +370,8 @@ class NTNParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'ent_hidden_size': scope.int(hp.qloguniform('ent_hidden_size', np.log(8), np.log(512),1)),
-          'rel_hidden_size': scope.int(hp.qloguniform('rel_hidden_size', np.log(8), np.log(512),1)),
+          'ent_hidden_size': scope.int(hp.qloguniform('ent_hidden_size', np.log(8), np.log(64),1)),
+          'rel_hidden_size': scope.int(hp.qloguniform('rel_hidden_size', np.log(8), np.log(64),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),

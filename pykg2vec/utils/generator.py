@@ -69,7 +69,7 @@ def raw_data_generator_trans(raw_queue, processed_queue, data, batch_size, numbe
             batch_idx = 0
 
 
-def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets, lh, lr, lt, neg_rate):
+def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets, lh, lr, lt, neg_rate, sampling, relation_property):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -82,7 +82,6 @@ def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets
             lr (int): Id of the last processed relation.
             lt (int): Id of the last processed tail.
     """ 
-    negative_triplets = {}
 
     while True:
 
@@ -97,7 +96,8 @@ def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets
         nt = []
 
         for t in pos_triples:
-            prob = 0.5
+            
+            prob = relation_property[t[1]] if sampling == "bern" else 0.5
             
             for i in range(neg_rate):
                 
@@ -218,7 +218,7 @@ class Generator:
             if config.algo.lower() in ["tucker","tucker_v2","conve", "proje_pointwise", "convkb"]:
                 self.create_train_processor_process(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, config.neg_rate)
             else:
-                self.create_train_processor_process_trans(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, observed_triples, config.neg_rate)
+                self.create_train_processor_process_trans(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, observed_triples, config.neg_rate, config.sampling, relation_property)
 
         del model_config, relation_property
     
@@ -262,7 +262,7 @@ class Generator:
             process_worker.daemon = True
             process_worker.start()
 
-    def create_train_processor_process_trans(self, process_num, te, bs, observed_triples, neg_rate):
+    def create_train_processor_process_trans(self, process_num, te, bs, observed_triples, neg_rate, sampling, relation_property):
         """Function create the process for generating training samples for translation based algorithms.
 
             Args:
@@ -277,7 +277,7 @@ class Generator:
         lt = Value('i', 0)
         for i in range(process_num):
             process_worker = Process(target=process_function_trans, \
-                                     args=(self.raw_queue, self.processed_queue, te, bs, observed_triples, lh, lr, lt, neg_rate))
+                                     args=(self.raw_queue, self.processed_queue, te, bs, observed_triples, lh, lr, lt, neg_rate, sampling, relation_property))
             self.process_list.append(process_worker)
             process_worker.daemon = True
             process_worker.start()
