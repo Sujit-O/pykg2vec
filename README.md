@@ -5,7 +5,6 @@ Pykg2vec is a library for learning the representation of entities and relations 
 Pykg2vec has following features:
 * Support state-of-the-art KGE model implementations and benchmark datasets. (also support custom datasets)
 * Support automatic discovery for hyperparameters.
-* Optimized performance by using CPUs and GPUs (multi-process and Tensorflow-GPU). Partial C++ implementation to come! 
 * Tools for inspecting the learned embeddings. 
   * Support exporting the learned embeddings in TSV or Pandas-supported format.
   * Interactive result inspector.
@@ -16,20 +15,6 @@ The documentation is [here](https://pykg2vec.readthedocs.io/).
 The figure below illustrates the current overall architecture. 
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
-# Features
-* A lot of state-of-the-art KGE model implementations and well-known datasets. 
-* Tools that support automatic hyperparameter tuning (bayesian optimizer).
-* Optimized performance by making a proper use of CPUs and GPUs (multiprocess and Tensorflow).  
-  * Will be adding C++ implementation to further optimize! 
-* A suite of visualization and summerization tools
-  * TSNE based visualization. (Support TSV export)
-  * KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
-
-# Dependencies
-The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
-* Python >= 3.5
-* tensorflow==`<version suitable for your workspace>`
-
 # Repository Structure
 
 * **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
@@ -37,7 +22,14 @@ The goal of this library is to minimize the dependency on other libraries as far
 * **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
 * **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
 
-# Installation
+# To get started 
+Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. (C++ implementations to come!)
+* Python >= 3.5
+* tensorflow==`<version suitable for your workspace>`
+
+**We encourage installing the tensorflow-gpu version for utilizing the GPU resource on your device.**
+
+## Installation
 
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms using Python3.6.
 
