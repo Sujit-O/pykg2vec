@@ -49,7 +49,7 @@ $ python setup.py install
 ## Usage Example
 
 ### Running a single algorithm: 
-Train.py
+train.py
 ```python
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.config.config import Importer, KGEArgParser
@@ -77,12 +77,16 @@ def main():
 if __name__ == "__main__":
     main()
 ```
-with train.py we then can train the existed model using command:
-```bach
+
+Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. 
+
+With train.py you can start the KGE training by using the following sample commands: 
+```bash
 python train.py -h # check all tunnable parameters.
 python train.py -mn TransE # Run TransE model.
-python train.py -mn Complex # Run Complex model. 
+python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|distmult|KG2E|NTN|Rescal|SLM|SME|HoLE] # Run Complex model. 
 ```
+Some models are still under development [Conv2D|ConvKB|ProjE|RotatE|TuckER], however, they can be executed without exceptions. 
 
 ### Tuning a single algorithm:
 tune_model.py
