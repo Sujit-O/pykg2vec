@@ -145,7 +145,7 @@ $ python tune_model.py -mn [TransE] -ds [dataset name]
 
 We are still working on making more convenient interfaces to manipulate this functionality. Right now, please have a look over [hyperparams.py](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/config/hyperparams.py) to adjust the ranges to be searched through other than the default ranges. Besides, you can tune the hyperparameter on your own dataset as well by following the previous instructions.
 
-## 3. Perform Inference Tasks (advanced):
+### 3. Perform Inference Tasks (advanced):
 inference.py
 ```python
 import sys, code
