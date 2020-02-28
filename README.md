@@ -12,15 +12,15 @@ Pykg2vec has following features:
   
 The documentation is [here](https://pykg2vec.readthedocs.io/). 
 
-The figure below illustrates the current overall architecture. 
-![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
-
 # Repository Structure
 
 * **pykg2vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
 * **pykg2vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
 * **pykg2vec/utils**: This folder consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
 * **pykg2vec/example**: This folder consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
+
+The figure below illustrates the current overall architecture. 
+![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
 # To Get Started 
 Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. (C++ implementations to come!)
