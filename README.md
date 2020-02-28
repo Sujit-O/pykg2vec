@@ -19,7 +19,6 @@ The documentation is [here](https://pykg2vec.readthedocs.io/).
 * **pykg2vec/utils**: This folder consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
 * **pykg2vec/example**: This folder consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
 
-The figure below illustrates the current overall architecture. 
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
 # To Get Started 
