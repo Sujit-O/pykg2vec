@@ -77,8 +77,7 @@ def main():
 if __name__ == "__main__":
     main()
 ```
-
-Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. With train.py you can try KGE methods using the following commands: 
+With train.py you can try KGE methods using the following commands: 
 ```bash
 # check all tunnable parameters.
 $ python train.py -h 
@@ -94,7 +93,7 @@ $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
 $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
                                   ks|nations|umls|dl50a]
 ```
-Some models are still under development [Conv2D|ConvKB|ProjE|RotatE|TuckER], however, they can be executed without exceptions. 
+Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. Some models are still under development [Conv2D|ConvKB|ProjE|RotatE|TuckER], however, they can be executed without exceptions. 
 
 To use your own dataset, these steps are required:
 1. For triples, store all of them in a text-format with each line formatted as follows, 
