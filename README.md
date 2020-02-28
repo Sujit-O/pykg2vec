@@ -17,17 +17,17 @@ The figure below illustrates the current overall architecture.
 
 # Repository Structure
 
-* **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
-* **pyKG2Vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
-* **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
-* **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
+* **pykg2vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
+* **pykg2vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
+* **pykg2vec/utils**: This folder consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
+* **pykg2vec/example**: This folder consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
 
-# To get started 
+# To Get Started 
 Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. (C++ implementations to come!)
 * Python >= 3.5
 * tensorflow==`<version suitable for your workspace>`
 
-**We encourage installing the tensorflow-gpu version for utilizing the GPU resource on your device.**
+**However, we do encourage users to install the tensorflow-gpu for speeding up the training!**
 
 ## Installation
 
