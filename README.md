@@ -78,9 +78,7 @@ if __name__ == "__main__":
     main()
 ```
 
-Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. 
-
-With train.py you can start the KGE training by using the following sample commands: 
+Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. With train.py you can try KGE methods using the following commands: 
 ```bash
 # check all tunnable parameters.
 $ python train.py -h 
@@ -94,6 +92,22 @@ $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
                                   ks|nations|umls|dl50a]
 ```
 Some models are still under development [Conv2D|ConvKB|ProjE|RotatE|TuckER], however, they can be executed without exceptions. 
+
+For training KGE methods using your own dataset, these steps are required:
+1. For triples, store all of them in a text-format with each line formatted as follows, 
+```
+head\trelation\ttail
+```
+2. For the text file, separate it into three files according to your reference give names as follows, 
+```
+[name]-train.txt, [name]-valid.txt, [name]-test.txt
+```
+3. For those three files, create a folder [path_storing_text_files] to include them.
+4. Once finished, you then can use the custom dataset to train on a specific model using command:
+```
+python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] 
+# Run TransE model on a custom dataset [name].
+```
 
 ### Tuning a single algorithm:
 tune_model.py
@@ -119,38 +133,6 @@ with tune_model.py we then can train the existed model using command:
 ```bach
 python tune_model.py -h # check all tunnable parameters.
 python tune_model.py -mn TransE # Tune TransE model.
-```
-
-### Switch between Implemented Methods:
-Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more information about the algorithms implemented in pykg2vec. With train.py described in usage examples, you can switch the models to train on a dataset using command:
-```bach
-python train.py -mn TransE # Run TransE model.
-python train.py -mn Complex # Run Complex model. 
-# you can select one of models from ["complex", "conve","convkb","hole", 
-                                     "distmult", "kg2e", "ntn": "NTN", 
-                                     "proje_pointwise","rescal","rotate",
-                                     "slm","sme","transd","TransD",
-                                     "transe","transh","transg","transm","transr","tucker"]
-```
-### Switch between Datasets:
-Pykg2vec aims to include all the well-known datasets available online so that you can test all available KGE models or your own model on those datasets. Currently, pykg2vec has [FK15K](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz), WN18, WN18-RR, YAGO, FK15K_237, Kinship, Nations, UMLS. You can check Datasets for more information. 
-With train.py described in usage examples, you can switch the models to train on a dataset using command:
-
-### Using Custom Dataset
-For custom dataset, some steps are provided:
-1. For triples, store all of them in a text-format with each line formatted as follows, 
-```
-head\trelation\ttail
-```
-2. For the text file, separate it into three files according to your reference give names as follows, 
-```
-[name]-train.txt, [name]-valid.txt, [name]-test.txt
-```
-3. For those three files, create a folder [path_storing_text_files] to include them.
-4. Once finished, you then can use the custom dataset to train on a specific model using command:
-```
-python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] 
-# Run TransE model on a custom dataset [name].
 ```
 
 ## Perform Inference Tasks:
