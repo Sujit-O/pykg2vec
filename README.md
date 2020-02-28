@@ -90,14 +90,16 @@ $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
 $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
                                   ks|nations|umls|dl50a]
 ```
-Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. Some models are still under development [Conv2D|ConvKB|ProjE|RotatE|TuckER], however, they can be executed without exceptions. To ensure the correctness of included KGE methods we also use the hyperparameter settings from original papers to see if the result is consistent.
+Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. Some models are still under development [Conv2D|ConvKB|ProjE|RotatE|TuckER], however, they can be executed without exceptions. 
+
+To ensure the correctness of included KGE methods we also use the hyperparameter settings from original papers to see if the result is consistent.
 ```bash
 # train KGE method with the hyperparameters used in original papers. (FB15k supported only)
 $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
                        distmult|KG2E|NTN|Rescal|SLM|SME|HoLE] -ghp true
 
 ```
-Some result is shown below (filtered), 
+Some metrics running on benchmark dataset (FB15k) is shown below (all are filtered). We are still working on this table so it will be updated.
 |        | MR    | MRR  | Hit-1| Hit-3| Hit-5|Hit-10|
 | ------------- | ------------- |------------- |------------- |------------- |------------- |------------- |
 | TransE | 69.52 | 0.36 | 0.22 | 0.42 | 0.51 | 0.61 |
