@@ -13,7 +13,6 @@ Pykg2vec has following features:
 The documentation is [here](https://pykg2vec.readthedocs.io/). 
 
 ## Repository Structure
-
 * **pykg2vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
 * **pykg2vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
 * **pykg2vec/utils**: This folder consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
@@ -47,8 +46,7 @@ $ python setup.py install
 ```
 
 ## Usage Examples
-
-### 1.Running a single algorithm: 
+### 1. Running a single algorithm: 
 train.py
 ```python
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
@@ -72,7 +70,6 @@ def main():
     trainer = Trainer(model=model, debug=args.debug)
     trainer.build_model()
     trainer.train_model()
-
 
 if __name__ == "__main__":
     main()
@@ -132,8 +129,8 @@ if __name__ == "__main__":
 ``` 
 with tune_model.py we then can train the existed model using command:
 ```bach
-python tune_model.py -h # check all tunnable parameters.
-python tune_model.py -mn TransE # Tune TransE model.
+$ python tune_model.py -h # check all tunnable parameters.
+$ python tune_model.py -mn TransE # Tune TransE model.
 ```
 
 ## 3. Perform Inference Tasks (advanced):
@@ -176,8 +173,8 @@ if __name__ == "__main__":
 ```
 For inference task, you can use the following command: 
 ```
-python inference.py -mn TransE # train a model on FK15K dataset and enter interactive CMD for manual inference tasks.
-python inference.py -mn TransE -ld true # pykg2vec will look for the location of cached pretrained parameters in your local.
+$ python inference.py -mn TransE # train a model on FK15K dataset and enter interactive CMD for manual inference tasks.
+$ python inference.py -mn TransE -ld true # pykg2vec will look for the location of cached pretrained parameters in your local.
 
 # Once interactive mode is reached, you can execute instruction manually like
 # Example 1: trainer.infer_tails(1,10,topk=5) => give the list of top-5 predicted tails. 
