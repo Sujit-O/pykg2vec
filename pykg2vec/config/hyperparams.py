@@ -73,7 +73,7 @@ class TransEParams:
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
-          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+          'epochs': hp.choice('epochs', [100]) # always choose 10 training epochs.
         }
         
         self.golden_settings = {
