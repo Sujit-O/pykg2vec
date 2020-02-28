@@ -6,8 +6,9 @@ Pykg2vec has following features:
 * A number of state-of-the-art KGE model implementations and several benchmark datasets. 
 * Support automatic discovery for hyperparameters.
 * Optimized performance by using CPUs and GPUs (multi-process and Tensorflow-GPU). Partial C++ implementation to come! 
-* Support exporting the learned embeddings, and a suite of basic visualization and summerization tools.
-  * Support exporting in TSV, dataframe pickle format. 
+* Tools for inspecting the learn embeddings. 
+  * Support exporting the learned embeddings in TSV or pandas pickle format.
+  * Interactive result inspector. 
   * TSNE-based visualization, KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
   
 The documentation is [here](https://pykg2vec.readthedocs.io/). 
