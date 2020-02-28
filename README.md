@@ -97,7 +97,7 @@ To ensure the correctness of included KGE methods we also use the hyperparameter
 ```bash
 # train KGE method with the hyperparameters used in original papers. (FB15k supported only)
 $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
-                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE] -ghp true
+                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE] -exp true
 
 ```
 Some metrics running on benchmark dataset (FB15k) is shown below (all are filtered). We are still working on this table so it will be updated.

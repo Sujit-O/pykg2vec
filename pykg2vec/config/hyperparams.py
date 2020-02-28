@@ -76,7 +76,6 @@ class KGETuneArgParser:
                                  help='To use debug mode or not.')
         self.parser.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
         self.parser.add_argument('-dsp', dest='dataset_path', default=None, type=str, help='The path to custom dataset.')
-        self.parser.add_argument('-s', dest='sampling', default='uniform', type=str, help='The negative sampling strategy: uniform/bern.')
         self.parser.add_argument('-mt', dest='max_number_trials', default=100, type=int, help='The maximum times of trials for bayesian optimizer.')
 
     def get_args(self, args):
@@ -113,30 +112,6 @@ class TransEParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [100]) # always choose 10 training epochs.
         }
-        
-        self.golden_settings = {
-          'Freebase15k': {
-            'learning_rate': 0.0001, 
-            'L1_flag': True, 
-            'batch_size':128,
-            'epochs':500,
-            'margin':0.99,
-            'optimizer': 'adam',
-            'sampling':" uniform",
-            'neg_rate':1,
-          },
-        }
-
-        self.learning_rate = 0.0001
-        self.L1_flag = True
-        self.hidden_size = 256
-        self.batch_size = 128
-        self.epochs = 500
-        self.margin = 0.99
-        self.data = 'Freebase15k'
-        self.optimizer = 'adam'
-        self.sampling = "uniform"
-        self.neg_rate = 1
 
 
 class TransHParams:
