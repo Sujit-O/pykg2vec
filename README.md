@@ -97,7 +97,16 @@ $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
                        distmult|KG2E|NTN|Rescal|SLM|SME|HoLE] -ghp true
 
 ```
-Some result is shown below, 
+Some result is shown below (filtered), 
+|        | MR    | MRR  | Hit-1| Hit-3| Hit-5|Hit-10|
+| ------------- | ------------- |------------- |------------- |------------- |------------- |------------- |
+| TransE | 69.52 | 0.36 | 0.22 | 0.42 | 0.51 | 0.61 |
+| TransH | 77.60 | 0.32 | 0.16 | 0.41 | 0.51 | 0.62 |
+| TransR | 128.31| 0.30 | 0.18 | 0.36 | 0.43 | 0.54 |
+| TransD | 57.73 | 0.33 | 0.19 | 0.39 | 0.48 | 0.60 | 
+| KG2E_EL| 64.76 | 0.31 | 0.16 | 0.39 | 0.49 | 0.61 | 
+|DistMult| 116.24| 0.26 | 0.16 | 0.28 | 0.36 | 0.45 | 
+
 
 To use your own dataset, these steps are required:
 1. For triples, store all of them in a text-format with each line formatted as follows, 
