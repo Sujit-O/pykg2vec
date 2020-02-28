@@ -22,7 +22,7 @@ The documentation is [here](https://pykg2vec.readthedocs.io/).
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
 # To Get Started 
-To use pykg2vec, please install the folowing packages in advance:
+We strongly recommend users to use virtual work environments (Venv or Anaconda). Please install the following packages before starting working with pykg2vec:
 * Python >= 3.6
 * tensorflow==`<version suitable for your workspace>`
 
@@ -31,41 +31,20 @@ Pykg2vec aims to minimize the dependency on other libraries as far as possible t
 In the future, may provide faster implementation of each of the algorithms. (C++ implementations to come!)
 
 Installation steps are as followed.
-
 ```bash
-#Prepare your environment
-$ sudo apt update
-$ sudo apt install python3-dev python3-pip
-$ sudo pip3 install -U virtualenv     
+#Install pykg2vec from PyPI:  
+$ pip install pykg2vec
 
-#Create a virtual environment
-#If you have tensorflow installed in the root env, do the following
-$ virtualenv --system-site-packages -p python3 ./venv
-#If you you want to install tensorflow later, do the following
-$ virtualenv -p python3 ./venv
-
-#Activate the virtual environment using a shell-specific command:  
-$ source ./venv/bin/activate
-
-#Upgrade pip:  
-$ pip install --upgrade pip
-
-#If you have not installed tensorflow, or not used --system-site-package option while creating venv, install tensorflow first.
-(venv) $ pip install tensorflow
-
-#Install pyKG2Vec:  
-(venv) $ pip install pykg2vec
-
-#Install stable version directly from github repo:  
-(venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
-(venv) $ cd pykg2vec
-(venv) $ python setup.py install
+# (Suggested!) Install stable version directly from github repo:
+$ git clone https://github.com/Sujit-O/pykg2vec.git
+$ cd pykg2vec
+$ python setup.py install
 
 #Install development version directly from github repo:  
-(venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
-(venv) $ cd pykg2vec
-(venv) $ git checkout development
-(venv) $ python setup.py install
+$ git clone https://github.com/Sujit-O/pykg2vec.git
+$ cd pykg2vec
+$ git checkout development
+$ python setup.py install
 ```
 
 # Usage Example
