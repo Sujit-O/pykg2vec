@@ -8,8 +8,7 @@ The documentation of the pykg2vec library is [here](https://pykg2vec.readthedocs
 The figure below illustrates the current overall architecture. 
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
-[__***Back to Top***__](#Documentation)
-## Dependencies
+# Dependencies
 The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
 * tensorflow==`<version suitable for your workspace>`
 * networkx>=2.2
@@ -22,8 +21,7 @@ The goal of this library is to minimize the dependency on other libraries as far
 * progressbar2>=3.39.3
 * pathlib>=1.0.1
 
-[__***Back to Top***__](#Documentation)
-## Features
+# Features
 * A lot of state-of-the-art KGE model implementations and well-known datasets. 
 * Tools that support automatic hyperparameter tuning (bayesian optimizer).
 * Optimized performance by making a proper use of CPUs and GPUs (multiprocess and Tensorflow).  
@@ -38,16 +36,14 @@ Training Loss Plot             |  Testing Rank Results | Testing Hits Result
 **Relation embedding plot**             |  **Entity embedding plot**   | **Relation and Entity Plot**
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_rel_plot_embedding_plot_0.png?raw=true)| ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_entity_plot_embedding_plot_0.png?raw=true) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_ent_n_rel_plot_embedding_plot_0.png?raw=true)
 
-[__***Back to Top***__](#Documentation)
-## Repository Structure
+# Repository Structure
 
 * **pyKG2Vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
 * **pyKG2Vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
 * **pyKG2Vec/utils**: This folders consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
 * **pyKG2Vec/example**: This folders consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
 
-[__***Back to Top***__](#Documentation)
-## Installation
+# Installation
 
 For best performance, we encourage the users to create a virtual environment and setup the necessary dependencies for running the algorithms using Python3.6.
 
@@ -90,9 +86,9 @@ $ pip install --upgrade pip
 ```
 
 [__***Back to Top***__](#Documentation)
-## Usage Example
+# Usage Example
 
-### Running a single algorithm: 
+## Running a single algorithm: 
 Train.py
 ```python
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
@@ -129,7 +125,7 @@ python train.py -mn Complex # Run Complex model.
 ```
 [__***Back to Top***__](#Documentation)
 
-### Tuning a single algorithm:
+## Tuning a single algorithm:
 tune_model.py
 ```python
 
@@ -156,7 +152,7 @@ python tune_model.py -mn TransE # Tune TransE model.
 ```
 [__***Back to Top***__](#Documentation)
 
-### Switch between Implemented Methods:
+## Switch between Implemented Methods:
 Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more information about the algorithms implemented in pykg2vec. With train.py described in usage examples, you can switch the models to train on a dataset using command:
 ```bach
 python train.py -mn TransE # Run TransE model.
@@ -167,19 +163,18 @@ python train.py -mn Complex # Run Complex model.
                                      "slm","sme","transd","TransD",
                                      "transe","transh","transg","transm","transr","tucker"]
 ```
-### Switch between Datasets:
+## Switch between Datasets:
 Pykg2vec aims to include all the well-known datasets available online so that you can test all available KGE models or your own model on those datasets. Currently, pykg2vec has [FK15K](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz), WN18, WN18-RR, YAGO, FK15K_237, Kinship, Nations, UMLS. You can check Datasets for more information. 
 With train.py described in usage examples, you can switch the models to train on a dataset using command:
-#### Using Well-Known Dataset 
+### Using Well-Known Dataset 
 ```bach
 python train.py -mn TransE -ds FB15K # Run TransE model on Freebase15k(FK15)
 python train.py -mn TransE -ds dl50a # Run TransE model on Deeplearning50a(dl50a)
 # you can select one of models from ["fb15k','dl50a','wn18','wn18_rr',
                                      'yago3_10','fb15k_237','ks','nations','umls']
 ```
-[__***Back to Top***__](#Documentation)
 
-#### Using Custom Dataset
+### Using Custom Dataset
 For custom dataset, some steps are provided:
 1. For triples, store all of them in a text-format with each line formatted as follows, 
 ```
@@ -195,9 +190,8 @@ head\trelation\ttail
 python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] 
 # Run TransE model on a custom dataset [name].
 ```
-[__***Back to Top***__](#Documentation)
 
-### Perform Inference Tasks:
+## Perform Inference Tasks:
 inference.py
 ```python
 import sys, code
@@ -246,13 +240,11 @@ python inference.py -mn TransE -ld true # pykg2vec will look for the location of
 # Example 3: trainer.infer_rels(1,20,topk=5) => give the list of top-5 predicted relations.
 ```
 
-[__***Back to Top***__](#Documentation)
-
-## Common Installation Problems
+# Common Installation Problems
 
 * [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
 
-## Cite
+# Cite
   Please kindly cite the paper corresponding  to the library. 
 
    ```
@@ -262,6 +254,3 @@ python inference.py -mn TransE -ld true # pykg2vec will look for the location of
   journal={arXiv preprint arXiv:1906.04239},
   year={2019}
 }
-    
-   ```
-[__***Back to Top***__](#Documentation)
