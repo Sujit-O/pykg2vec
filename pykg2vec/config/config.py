@@ -14,7 +14,7 @@ from argparse import ArgumentParser
 import importlib
 
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
-
+from pykg2vec.config.hyperparams import HyperparamterLoader
 
 class Importer:
     """The class defines methods for importing pykg2vec modules.
@@ -351,88 +351,6 @@ class BasicConfig:
         self.path_embeddings.mkdir(parents=True, exist_ok=True)
 
 
-
-class TransGConfig(BasicConfig):
-    """This class defines the configuration for the TransG Algorithm.
-
-    TransGConfig inherits the BasicConfig and defines the local arguements used in the
-    algorithm.
-
-    Attributes:
-      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-    Args:
-      learning_rate (float): Defines the learning rate for the optimization.
-      L1_flag (bool): If True, perform L1 regularization on the model parameters.
-      hidden_size (int): Defines the size of the latent dimension for both entities and relations.
-      batch_size (int): Defines the batch size for training the algorithm.
-      epochs (int): Defines the total number of epochs for training the algorithm.
-      margin (float): Defines the margin used between the positive and negative triple loss.
-      data (str): Defines the knowledge base dataset to be used for training the algorithm.
-      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-      training_threshold (float): Defines the threshold to be used to update the clusters for TransG.
-      ncluster (int): Defines the initial cluster for the relation.
-      CRP_factor (float): Chinese Restaurant Process Factor.
-      weight_norm (bool): If True, normalizes the weights.
-      step_before (int): Defines the number of steps before which the update is cluster is not performed.
-    
-    """
-    def __init__(self, args=None):
-        if args is None or args.golden is True:
-            # the golden setting for TransG (only for Freebase15k now)
-            self.learning_rate = 0.0015
-            self.L1_flag = True
-            self.hidden_size = 400
-            self.batch_size = 512
-            self.epochs = 500
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.training_threshold = 3.0
-            self.ncluster = 4
-            self.CRP_factor = 0.1
-            self.weight_norm = True
-            self.step_before = 10
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.training_threshold = args.training_threshold
-            self.ncluster = args.ncluster
-            self.CRP_factor = args.crp_factor
-            self.weight_norm = args.weight_norm
-            self.step_before = args.step_before
-            self.neg_rate = args.negrate
-
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'threshold': self.training_threshold,
-            'cluster':self.ncluster,
-            'crp_factor':self.CRP_factor,
-            'weight_norm':self.weight_norm,
-            'neg_rate': self.neg_rate,
-
-        }
-        BasicConfig.__init__(self, args)
-
 class TransEConfig(BasicConfig):
     """This class defines the configuration for the TransE Algorithm.
 
@@ -454,31 +372,22 @@ class TransEConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
-        if args is None or args.golden is True:
-            # the golden setting for TransE (only for Freebase15k now)
-            self.learning_rate = 0.01
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 1000
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'sgd'
-            self.sampling = "uniform"
-            self.neg_rate = 1
+    def __init__(self, args):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transe')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -492,6 +401,7 @@ class TransEConfig(BasicConfig):
             'sampling': self.sampling,
             'neg_rate': self.neg_rate,
         }
+
         BasicConfig.__init__(self, args)
 
 
@@ -517,30 +427,21 @@ class HoLEConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
-        if args is None or args.golden is True:
-            # the golden setting for TransE (only for Freebase15k now)
-            self.learning_rate = 0.01
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 512
-            self.epochs = 500
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'hole')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -554,6 +455,7 @@ class HoLEConfig(BasicConfig):
             'sampling': self.sampling, 
             'neg_rate': self.neg_rate,
         }
+
         BasicConfig.__init__(self, args)
 
 
@@ -581,32 +483,22 @@ class TransRConfig(BasicConfig):
     """
 
     def __init__(self, args=None):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.ent_hidden_size = args.ent_hidden_size
+        self.rel_hidden_size = args.rel_hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.learning_rate = 0.001
-            self.L1_flag = True
-            self.ent_hidden_size = 50
-            self.rel_hidden_size = 50
-            self.batch_size = 4800
-            self.epochs = 1000
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'sgd'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.ent_hidden_size = args.ent_hidden_size
-            self.rel_hidden_size = args.rel_hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transr')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -648,32 +540,22 @@ class TransDConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.ent_hidden_size = args.ent_hidden_size
+        self.rel_hidden_size = args.rel_hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        if args == None or args.golden is True:
-            self.learning_rate = 0.001
-            self.L1_flag = False
-            self.ent_hidden_size = 50
-            self.rel_hidden_size = 50
-            self.batch_size = 200
-            self.epochs = 1000
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'sgd'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.ent_hidden_size = args.ent_hidden_size
-            self.rel_hidden_size = args.rel_hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transd')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -715,30 +597,21 @@ class TransMConfig(BasicConfig):
     """
 
     def __init__(self, args=None):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.learning_rate = 0.001
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 1000
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transm')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -780,32 +653,22 @@ class TransHConfig(BasicConfig):
     """
 
     def __init__(self, args=None):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.C = args.C
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.learning_rate = 0.005
-            self.L1_flag = False
-            self.hidden_size = 50
-            self.batch_size = 1200
-            self.epochs = 1000
-            self.margin = 0.5
-            self.C = 0.015625
-            self.data = 'Freebase15k'
-            self.optimizer = 'sgd'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.C = args.C
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transh')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -846,30 +709,21 @@ class RescalConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.learning_rate = 0.001
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 1000
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'rescal')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -911,32 +765,22 @@ class SMEConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.bilinear = True if args.function == 'bilinear' else False
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.learning_rate = 0.001
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 1000
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.bilinear = False
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.bilinear = True if args.function == 'bilinear' else False
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'sme')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -978,32 +822,22 @@ class NTNConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.ent_hidden_size = args.ent_hidden_size
+        self.rel_hidden_size = args.rel_hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.learning_rate = 0.01
-            self.L1_flag = True
-            self.ent_hidden_size = 64
-            self.rel_hidden_size = 32
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.ent_hidden_size = args.ent_hidden_size
-            self.rel_hidden_size = args.rel_hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'ntn')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -1046,32 +880,22 @@ class SLMConfig(BasicConfig):
     """
 
     def __init__(self, args=None):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.ent_hidden_size = args.ent_hidden_size
+        self.rel_hidden_size = args.rel_hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.learning_rate = 0.01
-            self.L1_flag = True
-            self.ent_hidden_size = 64
-            self.rel_hidden_size = 32
-            self.batch_size = 128
-            self.epochs = 1000
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.ent_hidden_size = args.ent_hidden_size
-            self.rel_hidden_size = args.rel_hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'slm')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -1112,30 +936,21 @@ class RotatEConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.learning_rate = 0.01
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 200
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'rotate')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -1147,196 +962,6 @@ class RotatEConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling
-        }
-
-        BasicConfig.__init__(self, args)
-
-
-class ConvEConfig(BasicConfig):
-    """This class defines the configuration for the ConvE Algorithm.
-
-    ConvEConfig inherits the BasicConfig and defines the local arguements used in the
-    algorithm.
-
-    Attributes:
-      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-    Args:
-      lambda (float) : Weigth applied to the regularization in the loss function.
-      feature_map_dropout (float) : Sets the dropout for the feature layer.
-      input_dropout (float) : Sets the dropout rate for the input layer.
-      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
-      use_bias (bool) : If true, adds bias in the end before the activation.
-      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
-      lr_decay (float) : Sets the learning decay rate for optimization.
-      learning_rate (float): Defines the learning rate for the optimization.
-      L1_flag (bool): If True, perform L1 regularization on the model parameters.
-      hidden_size (int): Defines the size of the latent dimension for entities and relations.
-      batch_size (int): Defines the batch size for training the algorithm.
-      epochs (int): Defines the total number of epochs for training the algorithm.
-      margin (float): Defines the margin used between the positive and negative triple loss.
-      data (str): Defines the knowledge base dataset to be used for training the algorithm.
-      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-    def __init__(self, args=None):
-
-        if args is None or args.golden is True:
-            self.lmbda = 0.1
-            self.feature_map_dropout = 0.2
-            self.input_dropout = 0.2
-            self.hidden_dropout = 0.3
-            self.use_bias = True
-            self.label_smoothing = 0.1
-            self.lr_decay = 0.995
-
-            self.learning_rate = 0.003
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.lmbda = args.lmbda
-            self.feature_map_dropout = args.feature_map_dropout
-            self.input_dropout = args.input_dropout
-            self.hidden_dropout = args.hidden_dropout
-            self.use_bias = args.use_bias
-            self.label_smoothing = args.label_smoothing
-            self.lr_decay = args.lr_decay
-
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            # TODO: Currently conve can only have k=50, 100, or 200
-            self.hidden_size = 50  # args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
-
-        self.hyperparameters = {
-            'lmbda': self.lmbda,
-            'feature_map_dropout': self.feature_map_dropout,
-            'input_dropout': self.input_dropout,
-            'hidden_dropout': self.hidden_dropout,
-            'use_bias': self.use_bias,
-            'label_smoothing': self.label_smoothing,
-            'lr_decay': self.lr_decay,
-
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
-
-class ProjE_pointwiseConfig(BasicConfig):
-    """This class defines the configuration for the ProjE Algorithm.
-
-    ProjE_pointwiseConfig inherits the BasicConfig and defines the local arguements used in the
-    algorithm.
-
-    Attributes:
-      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-    Args:
-      lambda (float) : Weigth applied to the regularization in the loss function.
-      feature_map_dropout (float) : Sets the dropout for the feature layer.
-      input_dropout (float) : Sets the dropout rate for the input layer.
-      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
-      use_bias (bool) : If true, adds bias in the end before the activation.
-      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
-      lr_decay (float) : Sets the learning decay rate for optimization.
-      learning_rate (float): Defines the learning rate for the optimization.
-      L1_flag (bool): If True, perform L1 regularization on the model parameters.
-      hidden_size (int): Defines the size of the latent dimension for entities and relations.
-      batch_size (int): Defines the batch size for training the algorithm.
-      epochs (int): Defines the total number of epochs for training the algorithm.
-      margin (float): Defines the margin used between the positive and negative triple loss.
-      data (str): Defines the knowledge base dataset to be used for training the algorithm.
-      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-
-    def __init__(self, args=None):
-
-        if args is None or args.golden is True:
-            self.lmbda = 0.1
-            self.feature_map_dropout = 0.2
-            self.input_dropout = 0.2
-            self.hidden_dropout = 0.3
-            self.use_bias = True
-            self.label_smoothing = 0.1
-            self.lr_decay = 0.995
-
-            self.learning_rate = 0.003
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.lmbda = args.lmbda
-            self.feature_map_dropout = args.feature_map_dropout
-            self.input_dropout = args.input_dropout
-            self.hidden_dropout = args.hidden_dropout
-            self.use_bias = args.use_bias
-            self.label_smoothing = args.label_smoothing
-            self.lr_decay = args.lr_decay
-
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
-
-        self.hyperparameters = {
-            'lmbda': self.lmbda,
-            'feature_map_dropout': self.feature_map_dropout,
-            'input_dropout': self.input_dropout,
-            'hidden_dropout': self.hidden_dropout,
-            'use_bias': self.use_bias,
-            'label_smoothing': self.label_smoothing,
-            'lr_decay': self.lr_decay,
-
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
@@ -1368,37 +993,24 @@ class KG2EConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.distance_measure = args.function
+        self.cmax = args.cmax
+        self.cmin = args.cmin
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.learning_rate = 0.01
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 1440
-            self.epochs = 1000
-            self.margin = 4.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'sgd'
-            self.sampling = "uniform"
-            self.bilinear = False
-            self.distance_measure = "kl_divergence"
-            self.cmax = 0.05
-            self.cmin = 5.00
-            self.neg_rate = 1
-
-        else:
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.distance_measure = args.function
-            self.cmax = args.cmax
-            self.cmin = args.cmin
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'kg2e')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
@@ -1442,27 +1054,20 @@ class ComplexConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
+        self.lmbda = args.lmbda
+        self.learning_rate = args.learning_rate
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.lmbda = 0.0001
-            self.learning_rate = 0.5
-            self.hidden_size = 200
-            self.batch_size = 4096
-            self.epochs = 1000
-            self.data = 'Freebase15k'
-            self.optimizer = 'adagrad'
-            self.sampling = "uniform"
-            self.neg_rate = 10
-        else:
-            self.lmbda = args.lmbda
-            self.learning_rate = args.learning_rate
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'complex')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
@@ -1509,28 +1114,20 @@ class DistMultConfig(BasicConfig):
     """
 
     def __init__(self, args=None):
+        self.lmbda = args.lmbda
+        self.learning_rate = args.learning_rate
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        if args is None or args.golden is True:
-            self.lmbda = 0.0001
-            self.learning_rate = 0.1
-            self.hidden_size = 100
-            self.batch_size = 8192
-            self.epochs = 1000
-            self.data = 'Freebase15k'
-            self.optimizer = 'adagrad'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.lmbda = args.lmbda
-            self.learning_rate = args.learning_rate
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.golden is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'distmult')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
@@ -1729,6 +1326,277 @@ class ConvKBConfig(BasicConfig):
             'filter_sizes' : self.filter_sizes,
             'num_filters' :self.num_filters,
             'label_smoothing': self.label_smoothing,
+            'learning_rate': self.learning_rate,
+            'L1_flag': self.L1_flag,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'margin': self.margin,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
+        }
+
+        BasicConfig.__init__(self, args)
+
+class TransGConfig(BasicConfig):
+    """This class defines the configuration for the TransG Algorithm.
+
+    TransGConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for both entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+      training_threshold (float): Defines the threshold to be used to update the clusters for TransG.
+      ncluster (int): Defines the initial cluster for the relation.
+      CRP_factor (float): Chinese Restaurant Process Factor.
+      weight_norm (bool): If True, normalizes the weights.
+      step_before (int): Defines the number of steps before which the update is cluster is not performed.
+    
+    """
+    def __init__(self, args=None):
+        if args is None or args.golden is True:
+            # the golden setting for TransG (only for Freebase15k now)
+            self.learning_rate = 0.0015
+            self.L1_flag = True
+            self.hidden_size = 400
+            self.batch_size = 512
+            self.epochs = 500
+            self.margin = 1.0
+            self.data = 'Freebase15k'
+            self.optimizer = 'adam'
+            self.sampling = "uniform"
+            self.training_threshold = 3.0
+            self.ncluster = 4
+            self.CRP_factor = 0.1
+            self.weight_norm = True
+            self.step_before = 10
+            self.neg_rate = 1
+
+        else:
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+            self.training_threshold = args.training_threshold
+            self.ncluster = args.ncluster
+            self.CRP_factor = args.crp_factor
+            self.weight_norm = args.weight_norm
+            self.step_before = args.step_before
+            self.neg_rate = args.negrate
+
+        self.hyperparameters = {
+            'learning_rate': self.learning_rate,
+            'L1_flag': self.L1_flag,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'margin': self.margin,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+            'threshold': self.training_threshold,
+            'cluster':self.ncluster,
+            'crp_factor':self.CRP_factor,
+            'weight_norm':self.weight_norm,
+            'neg_rate': self.neg_rate,
+
+        }
+        BasicConfig.__init__(self, args)
+
+
+class ConvEConfig(BasicConfig):
+    """This class defines the configuration for the ConvE Algorithm.
+
+    ConvEConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
+    def __init__(self, args=None):
+
+        if args is None or args.golden is True:
+            self.lmbda = 0.1
+            self.feature_map_dropout = 0.2
+            self.input_dropout = 0.2
+            self.hidden_dropout = 0.3
+            self.use_bias = True
+            self.label_smoothing = 0.1
+            self.lr_decay = 0.995
+
+            self.learning_rate = 0.003
+            self.L1_flag = True
+            self.hidden_size = 50
+            self.batch_size = 128
+            self.epochs = 2
+            self.margin = 1.0
+            self.data = 'Freebase15k'
+            self.optimizer = 'adam'
+            self.sampling = "uniform"
+            self.neg_rate = 1
+
+        else:
+            self.lmbda = args.lmbda
+            self.feature_map_dropout = args.feature_map_dropout
+            self.input_dropout = args.input_dropout
+            self.hidden_dropout = args.hidden_dropout
+            self.use_bias = args.use_bias
+            self.label_smoothing = args.label_smoothing
+            self.lr_decay = args.lr_decay
+
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            # TODO: Currently conve can only have k=50, 100, or 200
+            self.hidden_size = 50  # args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+            self.neg_rate = args.negrate
+
+        self.hyperparameters = {
+            'lmbda': self.lmbda,
+            'feature_map_dropout': self.feature_map_dropout,
+            'input_dropout': self.input_dropout,
+            'hidden_dropout': self.hidden_dropout,
+            'use_bias': self.use_bias,
+            'label_smoothing': self.label_smoothing,
+            'lr_decay': self.lr_decay,
+
+            'learning_rate': self.learning_rate,
+            'L1_flag': self.L1_flag,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'margin': self.margin,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
+        }
+
+        BasicConfig.__init__(self, args)
+
+
+class ProjE_pointwiseConfig(BasicConfig):
+    """This class defines the configuration for the ProjE Algorithm.
+
+    ProjE_pointwiseConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
+
+    def __init__(self, args=None):
+
+        if args is None or args.golden is True:
+            self.lmbda = 0.1
+            self.feature_map_dropout = 0.2
+            self.input_dropout = 0.2
+            self.hidden_dropout = 0.3
+            self.use_bias = True
+            self.label_smoothing = 0.1
+            self.lr_decay = 0.995
+
+            self.learning_rate = 0.003
+            self.L1_flag = True
+            self.hidden_size = 50
+            self.batch_size = 128
+            self.epochs = 2
+            self.margin = 1.0
+            self.data = 'Freebase15k'
+            self.optimizer = 'adam'
+            self.sampling = "uniform"
+            self.neg_rate = 1
+
+        else:
+            self.lmbda = args.lmbda
+            self.feature_map_dropout = args.feature_map_dropout
+            self.input_dropout = args.input_dropout
+            self.hidden_dropout = args.hidden_dropout
+            self.use_bias = args.use_bias
+            self.label_smoothing = args.label_smoothing
+            self.lr_decay = args.lr_decay
+
+            self.learning_rate = args.learning_rate
+            self.L1_flag = args.l1_flag
+            self.hidden_size = args.hidden_size
+            self.batch_size = args.batch_training
+            self.epochs = args.epochs
+            self.margin = args.margin
+            self.data = args.dataset_name
+            self.optimizer = args.optimizer
+            self.sampling = args.sampling
+            self.neg_rate = args.negrate
+
+        self.hyperparameters = {
+            'lmbda': self.lmbda,
+            'feature_map_dropout': self.feature_map_dropout,
+            'input_dropout': self.input_dropout,
+            'hidden_dropout': self.hidden_dropout,
+            'use_bias': self.use_bias,
+            'label_smoothing': self.label_smoothing,
+            'lr_decay': self.lr_decay,
+
             'learning_rate': self.learning_rate,
             'L1_flag': self.L1_flag,
             'hidden_size': self.hidden_size,
