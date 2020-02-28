@@ -129,9 +129,14 @@ if __name__ == "__main__":
 ``` 
 with tune_model.py we then can train the existed model using command:
 ```bach
-$ python tune_model.py -h # check all tunnable parameters.
-$ python tune_model.py -mn TransE # Tune TransE model.
+# check all tunnable parameters.
+$ python tune_model.py -h 
+
+# Tune [TransE model] using the [benchmark dataset].
+$ python tune_model.py -mn [TransE] -ds [dataset name] 
 ```
+
+You can tune the hyperparameter on your own dataset as well by following the previous instructions.
 
 ## 3. Perform Inference Tasks (advanced):
 inference.py
@@ -181,18 +186,18 @@ $ python inference.py -mn TransE -ld true # pykg2vec will look for the location 
 # Example 2: trainer.infer_heads(10,20,topk=5) => give the list of top-5 predicted heads.
 # Example 3: trainer.infer_rels(1,20,topk=5) => give the list of top-5 predicted relations.
 ```
+You can utilize this script to inspect results from the training and to perform manual inference tasks. With this, you might need to check [train.py](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/utils/trainer.py) for more details. 
 
-# Common Installation Problems
-
+## Common Installation Problems
 * [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
 
-# Cite
-  Please kindly cite the paper corresponding  to the library. 
-
-   ```
-   @article{yu2019pykg2vec,
+## Citation
+Please kindly consider citing this paper if you find pykg2vec is useful in your research. 
+```
+  @article{yu2019pykg2vec,
   title={Pykg2vec: A Python Library for Knowledge Graph Embedding},
   author={Yu, Shih Yuan and Rokka Chhetri, Sujit and Canedo, Arquimedes and Goyal, Palash and Faruque, Mohammad Abdullah Al},
   journal={arXiv preprint arXiv:1906.04239},
   year={2019}
-}
+  }
+```
