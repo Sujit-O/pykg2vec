@@ -12,7 +12,7 @@ Pykg2vec has following features:
   
 The documentation is [here](https://pykg2vec.readthedocs.io/). 
 
-# Repository Structure
+## Repository Structure
 
 * **pykg2vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
 * **pykg2vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
@@ -21,7 +21,7 @@ The documentation is [here](https://pykg2vec.readthedocs.io/).
 
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
-# To Get Started 
+## To Get Started 
 Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. In pykg2vec, we won't focus in run-time performance at this moment. **However, we do encourage users to install the tensorflow-gpu for speeding up the training! the guide to install Tensorflow can be found [here](https://www.tensorflow.org/install).** 
 In the future, may provide faster implementation of each of the algorithms. (C++ implementations to come!)
 
@@ -46,9 +46,9 @@ $ git checkout development
 $ python setup.py install
 ```
 
-# Usage Example
+## Usage Example
 
-## Running a single algorithm: 
+### Running a single algorithm: 
 Train.py
 ```python
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
@@ -84,7 +84,7 @@ python train.py -mn TransE # Run TransE model.
 python train.py -mn Complex # Run Complex model. 
 ```
 
-## Tuning a single algorithm:
+### Tuning a single algorithm:
 tune_model.py
 ```python
 
@@ -110,7 +110,7 @@ python tune_model.py -h # check all tunnable parameters.
 python tune_model.py -mn TransE # Tune TransE model.
 ```
 
-## Switch between Implemented Methods:
+### Switch between Implemented Methods:
 Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more information about the algorithms implemented in pykg2vec. With train.py described in usage examples, you can switch the models to train on a dataset using command:
 ```bach
 python train.py -mn TransE # Run TransE model.
@@ -121,7 +121,7 @@ python train.py -mn Complex # Run Complex model.
                                      "slm","sme","transd","TransD",
                                      "transe","transh","transg","transm","transr","tucker"]
 ```
-## Switch between Datasets:
+### Switch between Datasets:
 Pykg2vec aims to include all the well-known datasets available online so that you can test all available KGE models or your own model on those datasets. Currently, pykg2vec has [FK15K](https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz), WN18, WN18-RR, YAGO, FK15K_237, Kinship, Nations, UMLS. You can check Datasets for more information. 
 With train.py described in usage examples, you can switch the models to train on a dataset using command:
 ### Using Well-Known Dataset 
