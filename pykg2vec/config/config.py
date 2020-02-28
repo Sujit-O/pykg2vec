@@ -241,7 +241,7 @@ class KGEArgParser:
                                      help="The folder name to save the figures.")
         self.misc_group.add_argument('-plote', dest='plot_embedding', default=False,
                                      type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
-        self.misc_group.add_argument('-plot', dest='plot_entity_only', default=True,
+        self.misc_group.add_argument('-plot', dest='plot_entity_only', default=False,
                                      type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.misc_group.add_argument('-gp', dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
 
@@ -302,8 +302,8 @@ class BasicConfig:
             self.loadFromData = False
             self.save_model = False
             self.disp_summary = True
-            self.disp_result = True
-            self.plot_embedding = True
+            self.disp_result = False
+            self.plot_embedding = False
             self.log_device_placement = False
             self.plot_training_result = False
             self.plot_testing_result = False
@@ -327,14 +327,14 @@ class BasicConfig:
             self.loadFromData = args.load_from_data
             self.save_model = args.save_model
             self.disp_summary = True
-            self.disp_result = True
+            self.disp_result = False
             self.plot_embedding = args.plot_embedding
             self.plot_training_result = True
             self.plot_testing_result = True
 
             self.batch_size_testing = args.batch_testing
 
-        self.hits = [10, 5]
+        self.hits = [1,3,5,10]
         self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
         self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
@@ -460,11 +460,11 @@ class TransEConfig(BasicConfig):
             self.learning_rate = 0.01
             self.L1_flag = True
             self.hidden_size = 50
-            self.batch_size = 512
-            self.epochs = 500
+            self.batch_size = 128
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'sgd'
             self.sampling = "uniform"
             self.neg_rate = 1
 
@@ -583,15 +583,15 @@ class TransRConfig(BasicConfig):
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
-            self.learning_rate = 0.01
+            self.learning_rate = 0.001
             self.L1_flag = True
-            self.ent_hidden_size = 128
-            self.rel_hidden_size = 128
-            self.batch_size = 128
-            self.epochs = 2
+            self.ent_hidden_size = 50
+            self.rel_hidden_size = 50
+            self.batch_size = 4800
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'sgd'
             self.sampling = "uniform"
             self.neg_rate = 1
 
@@ -650,15 +650,15 @@ class TransDConfig(BasicConfig):
     def __init__(self, args=None):
 
         if args == None or args.golden is True:
-            self.learning_rate = 0.01
-            self.L1_flag = True
-            self.ent_hidden_size = 100
-            self.rel_hidden_size = 100
-            self.batch_size = 4800
-            self.epochs = 2
-            self.margin = 2.0
+            self.learning_rate = 0.001
+            self.L1_flag = False
+            self.ent_hidden_size = 50
+            self.rel_hidden_size = 50
+            self.batch_size = 200
+            self.epochs = 1000
+            self.margin = 1.0
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'sgd'
             self.sampling = "uniform"
             self.neg_rate = 1
 
@@ -721,7 +721,7 @@ class TransMConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -783,14 +783,14 @@ class TransHConfig(BasicConfig):
 
         if args is None or args.golden is True:
             self.learning_rate = 0.005
-            self.L1_flag = True
+            self.L1_flag = False
             self.hidden_size = 50
             self.batch_size = 1200
-            self.epochs = 500
+            self.epochs = 1000
             self.margin = 0.5
             self.C = 0.015625
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'sgd'
             self.sampling = "uniform"
             self.neg_rate = 1
 
@@ -852,7 +852,7 @@ class RescalConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -917,7 +917,7 @@ class SMEConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -1053,7 +1053,7 @@ class SLMConfig(BasicConfig):
             self.ent_hidden_size = 64
             self.rel_hidden_size = 32
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 1000
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -1118,7 +1118,7 @@ class RotatEConfig(BasicConfig):
             self.L1_flag = True
             self.hidden_size = 50
             self.batch_size = 128
-            self.epochs = 2
+            self.epochs = 200
             self.margin = 1.0
             self.data = 'Freebase15k'
             self.optimizer = 'adam'
@@ -1370,14 +1370,14 @@ class KG2EConfig(BasicConfig):
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
-            self.learning_rate = 0.001
+            self.learning_rate = 0.01
             self.L1_flag = True
             self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
+            self.batch_size = 1440
+            self.epochs = 1000
+            self.margin = 4.0
             self.data = 'Freebase15k'
-            self.optimizer = 'adam'
+            self.optimizer = 'sgd'
             self.sampling = "uniform"
             self.bilinear = False
             self.distance_measure = "kl_divergence"
@@ -1444,16 +1444,15 @@ class ComplexConfig(BasicConfig):
     def __init__(self, args=None):
 
         if args is None or args.golden is True:
-            self.lmbda = 0.01
+            self.lmbda = 0.0001
             self.learning_rate = 0.5
             self.hidden_size = 200
-            self.batch_size = 100
-            self.epochs = 200
+            self.batch_size = 4096
+            self.epochs = 1000
             self.data = 'Freebase15k'
-            # self.optimizer = 'adagrad'
-            self.optimizer = 'adam'
+            self.optimizer = 'adagrad'
             self.sampling = "uniform"
-            self.neg_rate = 3
+            self.neg_rate = 10
         else:
             self.lmbda = args.lmbda
             self.learning_rate = args.learning_rate
@@ -1515,8 +1514,8 @@ class DistMultConfig(BasicConfig):
             self.lmbda = 0.0001
             self.learning_rate = 0.1
             self.hidden_size = 100
-            self.batch_size = 10
-            self.epochs = 100
+            self.batch_size = 8192
+            self.epochs = 1000
             self.data = 'Freebase15k'
             self.optimizer = 'adagrad'
             self.sampling = "uniform"

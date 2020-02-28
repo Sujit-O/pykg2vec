@@ -87,9 +87,6 @@ def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets
     while True:
 
         idx, pos_triples = raw_queue.get()
-        
-        if idx == 0:
-            negative_triplets = {}
 
         ph = pos_triples[:, 0]
         pr = pos_triples[:, 1]
@@ -103,52 +100,26 @@ def process_function_trans(raw_queue, processed_queue, te, bs, positive_triplets
             prob = 0.5
             
             for i in range(neg_rate):
+                
                 if np.random.random() > prob:
                     idx_replace_tail = np.random.randint(te)
 
-                    break_cnt = 0
-                    while (t[0], t[1], idx_replace_tail) in positive_triplets or (t[0], t[1], idx_replace_tail) in negative_triplets:
+                    while (t[0], t[1], idx_replace_tail) in positive_triplets:
                         idx_replace_tail = np.random.randint(te)
-                        break_cnt += 1
-                        if break_cnt >= 100:
-                            break
 
-                    if break_cnt >= 100:  # can not find new negative triple.
-                        nh.append(lh)
-                        nr.append(lr)
-                        nt.append(lt)
-                    else:
-                        nh.append(t[0])
-                        nr.append(t[1])
-                        nt.append(idx_replace_tail)
-                        lh = t[0]
-                        lr = t[1]
-                        lt = idx_replace_tail
-
-                        negative_triplets[(t[0], t[1], idx_replace_tail)] = 1
+                    nh.append(t[0])
+                    nr.append(t[1])
+                    nt.append(idx_replace_tail)
 
                 else:
                     idx_replace_head = np.random.randint(te)
-                    break_cnt = 0
-                    while ((idx_replace_head, t[1], t[2]) in positive_triplets) or (idx_replace_head, t[1], t[2]) in negative_triplets:
+                    
+                    while ((idx_replace_head, t[1], t[2]) in positive_triplets):
                         idx_replace_head = np.random.randint(te)
-                        break_cnt += 1
-                        if break_cnt >= 100:
-                            break
-
-                    if break_cnt >= 100:  # can not find new negative triple.
-                        nh.append(lh)
-                        nr.append(lr)
-                        nt.append(lt)
-                    else:
-                        nh.append(idx_replace_head)
-                        nr.append(t[1])
-                        nt.append(t[2])
-                        lh = idx_replace_head
-                        lr = t[1]
-                        lt = t[2]
-
-                        negative_triplets[(idx_replace_head, t[1], t[2])] = 1
+                    
+                    nh.append(idx_replace_head)
+                    nr.append(t[1])
+                    nt.append(t[2])
 
         processed_queue.put([ph, pr, pt, nh, nr, nt])
 

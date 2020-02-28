@@ -43,6 +43,9 @@ class KGETuneArgParser:
         """Gets the arguments from the console and parses it."""
         return self.parser.parse_args(args)
 
+from hyperopt import hp
+from hyperopt.pyll.base import scope
+import numpy as np
 
 class TransEParams:
     """This class defines the hyperameters and its ranges for tuning TranE algorithm.
@@ -63,14 +66,39 @@ class TransEParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [100]) # always choose 10 training epochs.
+        }
+        
+        self.golden_settings = {
+          'Freebase15k': {
+            'learning_rate': 0.0001, 
+            'L1_flag': True, 
+            'batch_size':128,
+            'epochs':500,
+            'margin':0.99,
+            'optimizer': 'adam',
+            'sampling':" uniform",
+            'neg_rate':1,
+          },
+        }
+
+        self.learning_rate = 0.0001
+        self.L1_flag = True
+        self.hidden_size = 256
+        self.batch_size = 128
+        self.epochs = 500
+        self.margin = 0.99
+        self.data = 'Freebase15k'
+        self.optimizer = 'adam'
+        self.sampling = "uniform"
+        self.neg_rate = 1
 
 
 class TransHParams:
@@ -92,14 +120,21 @@ class TransHParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
 
 
 class TransMParams:
@@ -121,14 +156,23 @@ class TransMParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
 
 
 class RescalParams:
@@ -150,14 +194,23 @@ class RescalParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
 
 
 class SMEParams:
@@ -180,15 +233,25 @@ class SMEParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
-        self.bilinear = [True, False]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'bilinear': hp.choice('bilinear', [True, False]),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
+        # self.bilinear = [True, False]
 
 
 class TransDParams:
@@ -210,14 +273,24 @@ class TransDParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
+
 
 
 class TransRParams:
@@ -240,15 +313,25 @@ class TransRParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.ent_hidden_size = [8, 16, 32, 64, 128, 256]
-        self.rel_hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'ent_hidden_size': scope.int(hp.qloguniform('ent_hidden_size', np.log(8), np.log(512),1)),
+          'rel_hidden_size': scope.int(hp.qloguniform('rel_hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.ent_hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.rel_hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
 
 
 class NTNParams:
@@ -271,15 +354,25 @@ class NTNParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.ent_hidden_size = [8, 16, 32]
-        self.rel_hidden_size = [8, 16, 32]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'ent_hidden_size': scope.int(hp.qloguniform('ent_hidden_size', np.log(8), np.log(512),1)),
+          'rel_hidden_size': scope.int(hp.qloguniform('rel_hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.ent_hidden_size = [8, 16, 32]
+        # self.rel_hidden_size = [8, 16, 32]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
 
 
 class SLMParams:
@@ -302,15 +395,25 @@ class SLMParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.ent_hidden_size = [8, 16, 32, 64, 128, 256]
-        self.rel_hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'ent_hidden_size': scope.int(hp.qloguniform('ent_hidden_size', np.log(8), np.log(512),1)),
+          'rel_hidden_size': scope.int(hp.qloguniform('rel_hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.ent_hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.rel_hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
 
 
 class HoLEParams:
@@ -332,14 +435,23 @@ class HoLEParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
 
 
 class RotatEParams:
@@ -361,14 +473,23 @@ class RotatEParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'margin': hp.uniform('margin', 0.0, 2.0),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
 
 
 class ConvEParams:
@@ -481,18 +602,30 @@ class KG2EParams:
     """
 
     def __init__(self):
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.L1_flag = [True, False]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.margin = [0.4, 1.0, 2.0]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
-        self.bilinear = [True, False]
-        self.distance_measure = ["kl_divergence", "expected_likelihood"]
-        self.cmax = [0.05, 0.1, 0.2]
-        self.cmin = [5.00, 3.00, 2.00, 1.00]
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.L1_flag = [True, False]
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.margin = [0.4, 1.0, 2.0]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.distance_measure = ["kl_divergence", "expected_likelihood"]
+        # self.cmax = [0.05, 0.1, 0.2]
+        # self.cmin = [5.00, 3.00, 2.00, 1.00]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'L1_flag': hp.choice('L1_flag', [True, False]),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'lmbda': hp.loguniform('lmbda', np.log(0.00001), np.log(0.001)),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'margin': hp.uniform('margin', 0.5, 8.0),
+          'distance_measure': hp.choice('distance_measure', ["kl_divergence", "expected_likelihood"]),
+          'cmax': hp.loguniform('cmax', np.log(0.05), np.log(0.2)),
+          'cmin': hp.loguniform('cmin', np.log(1), np.log(5)),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+
 
 
 class ComplexParams:
@@ -521,13 +654,21 @@ class ComplexParams:
     """
 
     def __init__(self):
-        self.lmbda = [0.1, 0.2]
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'lmbda': hp.loguniform('lmbda', np.log(0.00001), np.log(0.001)),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.lmbda = [0.1, 0.2]
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
 
 
 class DistMultParams:
@@ -556,13 +697,21 @@ class DistMultParams:
     """
 
     def __init__(self):
-        self.lmbda = [0.1, 0.2]
-        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        self.hidden_size = [8, 16, 32, 64, 128, 256]
-        self.batch_size = [128, 256, 512]
-        self.epochs = [2, 5, 10]
-        self.optimizer = ["adam", "sgd", 'rms']
-        self.sampling = ["uniform", "bern"]
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'lmbda': hp.loguniform('lmbda', np.log(0.00001), np.log(0.001)),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+        # self.lmbda = [0.1, 0.2]
+        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        # self.hidden_size = [8, 16, 32, 64, 128, 256]
+        # self.batch_size = [128, 256, 512]
+        # self.epochs = [2, 5, 10]
+        # self.optimizer = ["adam", "sgd", 'rms']
+        # self.sampling = ["uniform", "bern"]
 
 
 class TuckERParams:

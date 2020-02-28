@@ -103,6 +103,9 @@ class BaysOptimizer(object):
 
     def __init__(self, args=None):
         """store the information of database"""
+        if args.model.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
+          raise Exception("Model %s has not been supported in tuning hyperparameters!" % args.model)
+
         model_name = args.model.lower()
         self.args = args
         self.knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling, custom_dataset_path=args.dataset_path)
@@ -114,30 +117,27 @@ class BaysOptimizer(object):
             hyper_params = getattr(importlib.import_module(hyper_param_path), hypMap[model_name])()
 
         except ModuleNotFoundError:
-            print("%s not implemented! Select from: %s" % (model_name,
-                                                           ' '.join(map(str, modelMap.values()))))
-        config = self.config_obj()
-        config.data=args.dataset_name
+            print("%s not implemented! Select from: %s" % \
+                 (model_name, ' '.join(map(str, modelMap.values()))))
+        
+        from pykg2vec.config.config import KGEArgParser
+        kge_args = KGEArgParser().get_args([])
+        kge_args.dataset_name = args.dataset_name
+        config = self.config_obj(kge_args)
 
         self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug, tuning=True)
-        if self.args.debug is True: 
-            hyper_params.epochs = [1] # only try for 1 epoch if it is in debug mode. 
-        self.search_space = self.define_search_space(hyper_params)
+        
+        self.search_space = hyper_params.search_space
         self.max_evals = self.args.max_number_trials if not self.args.debug else 1
         
-    def define_search_space(self, hyper_params):
-        """Function to perform search space addition"""
-        space = {k: hp.choice(k, v) for k, v in hyper_params.__dict__.items() if not k.startswith('__') and not callable(k)}
-        return space
-
     def optimize(self):
         """Function that performs bayesian optimization"""
-        space = self.search_space
         trials = Trials()
         
-        self.best_result = fmin(fn=self.get_loss, space=space, algo=tpe.suggest, max_evals=self.max_evals, trials=trials)
+        self.best_result = fmin(fn=self.get_loss, space=self.search_space, trials=trials,
+                                algo=tpe.suggest, max_evals=self.max_evals)
         
-        columns = list(space.keys())   
+        columns = list(self.search_space.keys())   
         results = pd.DataFrame(columns=['iteration'] + columns + ['loss'])
         
         for idx, trial in enumerate(trials.trials):
@@ -155,7 +155,7 @@ class BaysOptimizer(object):
         
         print(results)
         print('Found Golden Setting:')
-        pprint(space_eval(space, self.best_result))
+        pprint(space_eval(self.search_space, self.best_result))
 
     def return_best(self):
         """Function to return the best hyper-parameters"""
@@ -163,43 +163,26 @@ class BaysOptimizer(object):
 
     def get_loss(self, params):
         """Function that defines and acquires the loss"""
-
+        
+        # copy the hyperparameters to trainer config and hyperparameter set. 
         for key, value in params.items():
-          # print()
-          # import pdb; pdb.set_trace()
           self.trainer.config.__dict__[key] = value
           self.trainer.config.hyperparameters[key] = value  
-        # self.trainer.config.hyperparameters['L1_flag'] = params['L1_flag']
-        # self.trainer.config.L1_flag = params['L1_flag']
-        # self.trainer.config.hyperparameters['batch_size'] = params['batch_size']
-        # self.trainer.config.batch_size = params['batch_size']
-        # self.trainer.config.hyperparameters['epochs'] = params['epochs']
-        # self.trainer.config.epochs = params['epochs']
         
-        # if 'hidden_size' in params:
-        #   self.trainer.config.hyperparameters['hidden_size'] = params['hidden_size']
-        #   self.trainer.config.hidden_size = params['hidden_size']
-        # if 'ent_hidden_size' in params:
-        #   self.trainer.config.hyperparameters['ent_hidden_size'] = params['ent_hidden_size']
-        #   self.trainer.config.ent_hidden_size = params['ent_hidden_size']
-        # if 'rel_hidden_size' in params:
-        #   self.trainer.config.hyperparameters['rel_hidden_size'] = params['rel_hidden_size']
-        #   self.trainer.config.rel_hidden_size = params['rel_hidden_size']
-
-        # self.trainer.config.hyperparameters['learning_rate'] = params['learning_rate']
-        # self.trainer.config.learning_rate = params['learning_rate']
-        # self.trainer.config.hyperparameters['margin'] = params['margin']
-        # self.trainer.config.margin = params['margin']
+        # configure common setting for a tuning training. 
         self.trainer.config.disp_result = False
         self.trainer.config.disp_summary = False
         self.trainer.config.save_model = False
-        self.trainer.config.debug = False
         self.trainer.config.test_num = 1000
 
+        if self.args.debug:
+          self.trainer.config.epochs = 1
+          self.trainer.config.hyperparameters['epochs'] = 1
+        
+        # start the trial.
         self.trainer.build_model()
         self.trainer.summary_hyperparameter()
     
         loss = self.trainer.tune_model()
-        # loss = self.trainer.train_model(tuning=True)
 
         return {'loss': loss, 'status': STATUS_OK}

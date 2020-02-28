@@ -78,13 +78,13 @@ def test_tuning_rotate():
     """Function to test the tuning function."""
     tunning_function('rotate')
 
-def test_tuning_conve():
-    """Function to test the tuning function."""
-    tunning_function('conve')
+# def test_tuning_conve():
+#     """Function to test the tuning function."""
+#     tunning_function('conve')
 
-def test_tuning_projE_pointwise():
-    """Function to test the tuning function."""
-    tunning_function('projE_pointwise')
+# def test_tuning_projE_pointwise():
+#     """Function to test the tuning function."""
+#     tunning_function('projE_pointwise')
 
 def test_tuning_kg2e():
     """Function to test the tuning function."""
@@ -98,10 +98,10 @@ def test_tuning_distmult():
     """Function to test the tuning function."""
     tunning_function('distmult')
 
-def test_tuning_tucker():
-    """Function to test the tuning function."""
-    tunning_function('tucker')
+# def test_tuning_tucker():
+#     """Function to test the tuning function."""
+#     tunning_function('tucker')
 
-def test_tuning_transg():
-    """Function to test the tuning function."""
-    tunning_function('transg')
+# def test_tuning_transg():
+#     """Function to test the tuning function."""
+#     tunning_function('transg')

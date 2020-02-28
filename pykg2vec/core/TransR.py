@@ -90,28 +90,19 @@ class TransR(ModelMeta, InferenceMeta):
         d = self.config.ent_hidden_size
         k = self.config.rel_hidden_size
 
-        with tf.name_scope("embedding"):
-
-            self.ent_embeddings = tf.get_variable(name="ent_embedding",
-                                                  shape=[num_total_ent, d],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings = tf.get_variable(name="rel_embedding",
-                                                  shape=[num_total_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-        rel_matrix = np.zeros([num_total_rel, d * k], dtype=np.float32)
-
-        for i in range(num_total_rel):
-            for j in range(k):
-                for z in range(d):
-                    if j == z:
-                        rel_matrix[i][j * d + z] = 1.0
-
-        self.rel_matrix = tf.Variable(rel_matrix, name="rel_matrix")
+        self.ent_embeddings = tf.get_variable(name="ent_embedding",
+                                              shape=[num_total_ent, d],
+                                              initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        self.rel_embeddings = tf.get_variable(name="rel_embedding",
+                                              shape=[num_total_rel, k],
+                                              initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        self.rel_matrix     = tf.get_variable(name="rel_matrix",
+                                              shape=[num_total_rel, d, k],
+                                              initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
 
-    def distance(self, h, r, t, axis=1):
+    def distance(self, h, r, t, axis=-1):
         """Function to calculate distance measure in embedding space.
 
         Args:
@@ -123,6 +114,9 @@ class TransR(ModelMeta, InferenceMeta):
         Returns:
             Tensors: Returns the distance measure.
         """
+        h = tf.nn.l2_normalize(h, axis=axis)
+        t = tf.nn.l2_normalize(t, axis=axis)
+        r = tf.nn.l2_normalize(r, axis=axis)
         if self.config.L1_flag:
             return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
         else:
@@ -148,20 +142,33 @@ class TransR(ModelMeta, InferenceMeta):
 
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        pos_matrix = self.get_transform_matrix(self.test_r_batch)
-        pos_matrix = tf.reshape(pos_matrix, [-1, self.config.ent_hidden_size])
-        project_ent_embedding = self.transform(self.ent_embeddings, tf.transpose(pos_matrix))
-        project_ent_embedding = tf.reshape(project_ent_embedding,
-                                           [self.config.batch_size_testing, -1, self.config.rel_hidden_size])
+        d = self.config.ent_hidden_size
+        k = self.config.rel_hidden_size
+        b = self.config.batch_size_testing
 
-        project_ent_embedding = tf.nn.l2_normalize(project_ent_embedding, axis=2)
+        pos_matrix = tf.nn.embedding_lookup(self.rel_matrix, self.test_r_batch)
+        # [b, d, k]
+        pos_matrix = tf.transpose(pos_matrix, perm=[0, 2, 1])
+        # [b, k, d]
+        pos_matrix = tf.reshape(pos_matrix, [-1, d])
+        # [b*k, d]
+
+        # [14951, d], [d, b*k] = [14951, b*k]
+        project_ent_embedding = tf.matmul(self.ent_embeddings, tf.transpose(pos_matrix))
+        # [14951, b*k]
+
+        project_ent_embedding = tf.reshape(project_ent_embedding,[-1, b, k])
+        # [14951, b, k]
+
+        project_ent_embedding = tf.transpose(project_ent_embedding, perm=[1, 0, 2])
+        # [b, 14951, k]
 
         score_head = self.distance(project_ent_embedding,
                                    tf.expand_dims(rel_vec, axis=1),
-                                   tf.expand_dims(tail_vec, axis=1), axis=2)
+                                   tf.expand_dims(tail_vec, axis=1))
         score_tail = self.distance(tf.expand_dims(head_vec, axis=1),
                                    tf.expand_dims(rel_vec, axis=1),
-                                   project_ent_embedding, axis=2)
+                                   project_ent_embedding)
 
         _, head_rank = tf.nn.top_k(score_head, k=num_total_ent)
         _, tail_rank = tf.nn.top_k(score_tail, k=num_total_ent)
@@ -171,24 +178,6 @@ class TransR(ModelMeta, InferenceMeta):
     # Override
     def dissimilarity(self, h, r, t):
         return self.distance(h, r, t)
-
-    def transform(self, matrix, embeddings):
-        """Performs transformation of the embeddings into relation space.
-
-            Args:
-              matrix (Tensor): Transformation matrix
-              embeddings( Tensor): Embeddings to be transformd
-
-            Returns:
-               Tensors: Returns Transformed Matrix.
-        """
-        return tf.matmul(matrix, embeddings)
-
-    def get_transform_matrix(self, r):
-        """gets the transformation matrix."""
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
-        return tf.reshape(tf.nn.embedding_lookup(self.rel_matrix, r), [-1, k, d])
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -205,15 +194,16 @@ class TransR(ModelMeta, InferenceMeta):
         k = self.config.rel_hidden_size
 
         h_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings, h), [-1, d, 1])
-        r_e = tf.reshape(tf.nn.embedding_lookup(self.rel_embeddings, r), [-1, k])
+        r_e = tf.nn.embedding_lookup(self.rel_embeddings, r)
         t_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings, t), [-1, d, 1])
-        matrix = tf.reshape(tf.nn.embedding_lookup(self.rel_matrix, r), [-1, k, d])
+        
+        matrix = tf.nn.embedding_lookup(self.rel_matrix, r)
 
-        transform_h_e = self.transform(matrix, h_e)
-        transform_t_e = self.transform(matrix, t_e)
-        h_e = tf.nn.l2_normalize(tf.reshape(transform_h_e, [-1, k]), -1)
-        r_e = tf.nn.l2_normalize(tf.reshape(r_e, [-1, k]), -1)
-        t_e = tf.nn.l2_normalize(tf.reshape(transform_t_e, [-1, k]), -1)
+        transform_h_e = tf.matmul(matrix, h_e, transpose_a=True)
+        transform_t_e = tf.matmul(matrix, t_e, transpose_a=True)
+        # [b, k, 1]
+        h_e = tf.reshape(transform_h_e, [-1, k])
+        t_e = tf.reshape(transform_t_e, [-1, k])
 
         return h_e, r_e, t_e
 

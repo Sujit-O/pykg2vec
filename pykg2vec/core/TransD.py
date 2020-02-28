@@ -69,7 +69,7 @@ class TransD(ModelMeta, InferenceMeta):
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
-    def distance(self, h, r, t, axis=1):
+    def distance(self, h, r, t, axis=-1):
         """Function to calculate distance measure in embedding space.
 
         Args:
@@ -81,6 +81,10 @@ class TransD(ModelMeta, InferenceMeta):
         Returns:
             Tensors: Returns the distance measure.
         """
+        h = tf.nn.l2_normalize(h, axis=axis)
+        r = tf.nn.l2_normalize(r, axis=axis)
+        t = tf.nn.l2_normalize(t, axis=axis)
+
         if self.config.L1_flag:
             return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
         else:
@@ -113,12 +117,12 @@ class TransD(ModelMeta, InferenceMeta):
             self.rel_embeddings = tf.get_variable(name="rel_embedding",
                                                   shape=[num_total_rel, k],
                                                   initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.ent_mappings = tf.get_variable(name="ent_mappings",
-                                                shape=[num_total_ent, d],
-                                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_mappings = tf.get_variable(name="rel_mappings",
-                                                shape=[num_total_rel, k],
-                                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.ent_mappings   = tf.get_variable(name="ent_mappings",
+                                                  shape=[num_total_ent, d],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            self.rel_mappings   = tf.get_variable(name="rel_mappings",
+                                                  shape=[num_total_rel, k],
+                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.ent_mappings, self.rel_mappings]
 
@@ -130,13 +134,11 @@ class TransD(ModelMeta, InferenceMeta):
         pos_h_m, pos_r_m, pos_t_m = self.get_mapping(self.pos_h, self.pos_r, self.pos_t)
         neg_h_m, neg_r_m, neg_t_m = self.get_mapping(self.neg_h, self.neg_r, self.neg_t)
 
-        pos_h_e = tf.nn.l2_normalize(pos_h_e + tf.reduce_sum(pos_h_e * pos_h_m, -1, keepdims=True) * pos_r_m, -1)
-        pos_r_e = tf.nn.l2_normalize(pos_r_e, -1)
-        pos_t_e = tf.nn.l2_normalize(pos_t_e + tf.reduce_sum(pos_t_e * pos_t_m, -1, keepdims=True) * pos_r_m, -1)
+        pos_h_e = pos_h_e + tf.reduce_sum(pos_h_e * pos_h_m, -1, keepdims=True) * pos_r_m
+        pos_t_e = pos_t_e + tf.reduce_sum(pos_t_e * pos_t_m, -1, keepdims=True) * pos_r_m
 
-        neg_h_e = tf.nn.l2_normalize(neg_h_e + tf.reduce_sum(neg_h_e * neg_h_m, -1, keepdims=True) * neg_r_m, -1)
-        neg_r_e = tf.nn.l2_normalize(neg_r_e, -1)
-        neg_t_e = tf.nn.l2_normalize(neg_t_e + tf.reduce_sum(neg_t_e * neg_t_m, -1, keepdims=True) * neg_r_m, -1)
+        neg_h_e = neg_h_e + tf.reduce_sum(neg_h_e * neg_h_m, -1, keepdims=True) * neg_r_m
+        neg_t_e = neg_t_e + tf.reduce_sum(neg_t_e * neg_t_m, -1, keepdims=True) * neg_r_m
 
         score_pos = self.distance(pos_h_e, pos_r_e, pos_t_e)
         score_neg = self.distance(neg_h_e, neg_r_e, neg_t_e)
@@ -148,27 +150,22 @@ class TransD(ModelMeta, InferenceMeta):
 
            Returns:
                Tensors: Returns ranks of head and tail.
-       """
+        """
         num_total_ent = self.data_stats.tot_entity
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
         h_m, r_m, t_m = self.get_mapping(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        head_vec = tf.nn.l2_normalize(head_vec + tf.reduce_sum(head_vec * h_m, -1, keepdims=True) * r_m, -1)
-        rel_vec = tf.nn.l2_normalize(rel_vec, -1)
-        tail_vec = tf.nn.l2_normalize(tail_vec + tf.reduce_sum(tail_vec * t_m, -1, keepdims=True) * r_m, -1)
+        head_vec = head_vec + tf.reduce_sum(head_vec * h_m, -1, keepdims=True) * r_m
+        tail_vec = tail_vec + tf.reduce_sum(tail_vec * t_m, -1, keepdims=True) * r_m
 
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)
-        norm_ent_mappings = tf.nn.l2_normalize(self.ent_mappings, -1)
-
-        project_ent_embedding = tf.nn.l2_normalize(
-            norm_ent_embeddings + tf.reduce_sum(norm_ent_embeddings * norm_ent_mappings, -1, keepdims=True) * tf.expand_dims(r_m, axis=1), -1)
+        project_ent_embedding = self.ent_embeddings + tf.reduce_sum(self.ent_embeddings * self.ent_mappings, -1, keepdims=True) * tf.expand_dims(r_m, axis=1)
 
         score_head = self.distance(project_ent_embedding,
                                    tf.expand_dims(rel_vec, axis=1),
-                                   tf.expand_dims(tail_vec, axis=1), axis=2)
+                                   tf.expand_dims(tail_vec, axis=1))
         score_tail = self.distance(tf.expand_dims(head_vec, axis=1),
                                    tf.expand_dims(rel_vec, axis=1),
-                                   project_ent_embedding, axis=2)
+                                   project_ent_embedding)
 
         _, head_rank = tf.nn.top_k(score_head, k=num_total_ent)
         _, tail_rank = tf.nn.top_k(score_tail, k=num_total_ent)
@@ -210,10 +207,6 @@ class TransD(ModelMeta, InferenceMeta):
         h_e = tf.nn.embedding_lookup(self.ent_embeddings, h)
         r_e = tf.nn.embedding_lookup(self.rel_embeddings, r)
         t_e = tf.nn.embedding_lookup(self.ent_embeddings, t)
-
-        h_e = tf.nn.l2_normalize(h_e, -1)
-        r_e = tf.nn.l2_normalize(r_e, -1)
-        t_e = tf.nn.l2_normalize(t_e, -1)
 
         return h_e, r_e, t_e
 

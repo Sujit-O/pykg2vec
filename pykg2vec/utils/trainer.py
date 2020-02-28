@@ -35,7 +35,7 @@ class Trainer(TrainerMeta):
             >>> trainer.train_model()
     """
 
-    def __init__(self, model, trainon='train',teston='valid',debug=False, tuning=False):
+    def __init__(self, model, trainon='train',teston='test',debug=False, tuning=False):
         self.debug = debug
         self.model = model
         self.config = self.model.config
@@ -70,6 +70,8 @@ class Trainer(TrainerMeta):
             optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adagrad':
             optimizer = tf.train.AdagradOptimizer(learning_rate=self.config.learning_rate)
+        elif self.config.optimizer == 'adadelta':
+            optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config.learning_rate)
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
 

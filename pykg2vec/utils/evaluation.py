@@ -28,33 +28,20 @@ class MetricCalculator:
     def __init__(self, config):
         self.config = config 
 
-        self.hits = config.hits
-        self.total_epoch = config.epochs
-        self.result_path = config.path_result
-
         self.hr_t = config.knowledge_graph.read_cache_data('hr_t')
         self.tr_h = config.knowledge_graph.read_cache_data('tr_h')
 
-        self.mean_rank_head = {}
-        self.mean_rank_tail = {}
-        self.filter_mean_rank_head = {}
-        self.filter_mean_rank_tail = {}
+        # (f)mr  : (filtered) mean rank
+        # (f)mrr : (filtered) mean reciprocal rank
+        # (f)hit : (filtered) hit-k ratio
+        self.mr   = {}
+        self.fmr  = {}
+        self.mrr  = {}
+        self.fmrr = {}
+        self.hit  = {}
+        self.fhit = {}
 
-        self.hit_head = {}
-        self.hit_tail = {}
-        self.filter_hit_head = {}
-        self.filter_hit_tail = {}
-        
-        self.mrr ={}
-        self.fmrr={}
-
-        self.rank_head = []
-        self.rank_tail = []
-        self.filter_rank_head = []
-        self.filter_rank_tail = []
-
-        self.epoch = None
-
+        self.reset()
 
     def append_result(self, result):
         
@@ -70,14 +57,13 @@ class MetricCalculator:
         for triple_id in range(total_test):
             h, r, t = h_list[triple_id], r_list[triple_id], t_list[triple_id]
 
-            t_rank, fil_t_rank = self.get_tail_rank(id_replace_tail[triple_id], h, r, t)
-            h_rank, fil_h_rank = self.get_head_rank(id_replace_head[triple_id], h, r, t)
+            t_rank, f_t_rank = self.get_tail_rank(id_replace_tail[triple_id], h, r, t)
+            h_rank, f_h_rank = self.get_head_rank(id_replace_head[triple_id], h, r, t)
 
             self.rank_head.append(h_rank)
             self.rank_tail.append(t_rank)
-
-            self.filter_rank_head.append(fil_h_rank)
-            self.filter_rank_tail.append(fil_t_rank)
+            self.f_rank_head.append(f_h_rank)
+            self.f_rank_tail.append(f_t_rank)
 
     def get_tail_rank(self, tail_candidate, h, r, t):
         """Function to evaluate the tail rank.
@@ -135,66 +121,45 @@ class MetricCalculator:
         return hrank, fhrank
 
     def settle(self):
-        rank_head_array = np.asarray(self.rank_head, dtype=np.float32) + 1
-        rank_tail_array = np.asarray(self.rank_tail, dtype=np.float32) + 1
-        rank_array = (rank_head_array + rank_tail_array)/2
+        head_ranks  = np.asarray(self.rank_head, dtype=np.float32)+1
+        tail_ranks  = np.asarray(self.rank_tail, dtype=np.float32)+1
+        head_franks = np.asarray(self.f_rank_head, dtype=np.float32)+1
+        tail_franks = np.asarray(self.f_rank_tail, dtype=np.float32)+1
 
-        self.mean_rank_head[self.epoch] = np.mean(rank_head_array, dtype=np.float32) 
-        self.mean_rank_tail[self.epoch] = np.mean(rank_tail_array, dtype=np.float32)
+        ranks  = np.concatenate((head_ranks, tail_ranks)) 
+        franks = np.concatenate((head_franks, tail_franks))
 
-        # self.mrr[self.epoch] = np.reciprocal((self.mean_rank_head[self.epoch]+self.mean_rank_tail[self.epoch])/2)
-        self.mrr[self.epoch] = np.mean(np.reciprocal(rank_array))
+        self.mr[self.epoch]   = np.mean(ranks)
+        self.mrr[self.epoch]  = np.mean(np.reciprocal(ranks))
+        self.fmr[self.epoch]  = np.mean(franks)
+        self.fmrr[self.epoch] = np.mean(np.reciprocal(franks))
 
-        filter_rank_head_array = np.asarray(self.filter_rank_head, dtype=np.float32) + 1
-        filter_rank_tail_array = np.asarray(self.filter_rank_tail, dtype=np.float32) + 1
-        filter_rank_array = (filter_rank_head_array + filter_rank_tail_array)/2
-
-        self.filter_mean_rank_head[self.epoch] = np.mean(filter_rank_head_array, dtype=np.float32) 
-        self.filter_mean_rank_tail[self.epoch] = np.mean(filter_rank_tail_array, dtype=np.float32) 
-
-        # self.fmrr[self.epoch] = np.reciprocal((self.filter_mean_rank_head[self.epoch]+self.filter_mean_rank_tail[self.epoch])/2)
-        self.fmrr[self.epoch] = np.mean(np.reciprocal(filter_rank_array))
-
-        for hit in self.hits:
-            self.hit_head[(self.epoch, hit)] = np.mean(rank_head_array <= hit, dtype=np.float32) 
-            self.hit_tail[(self.epoch, hit)] = np.mean(rank_tail_array <= hit, dtype=np.float32) 
-            self.filter_hit_head[(self.epoch, hit)] = np.mean(filter_rank_head_array <= hit, dtype=np.float32) 
-            self.filter_hit_tail[(self.epoch, hit)] = np.mean(filter_rank_tail_array <= hit, dtype=np.float32) 
+        for hit in self.config.hits:
+            self.hit[(self.epoch, hit)] = np.mean(ranks<=hit, dtype=np.float32)
+            self.fhit[(self.epoch, hit)] = np.mean(franks<=hit, dtype=np.float32)
 
     def get_curr_score(self):
-        curr_epoch = self.epoch
-        return (self.mean_rank_head[curr_epoch]+self.mean_rank_tail[curr_epoch])/2
+        return self.mr[self.epoch]
 
     def reset(self):
+        # temporarily used buffers and indexes.
         self.rank_head = []
         self.rank_tail = []
-        self.filter_rank_head = []
-        self.filter_rank_tail = []
+        self.f_rank_head = []
+        self.f_rank_tail = []
         self.epoch = None
-
         self.start_time = timeit.default_timer()
 
     def save_test_summary(self, model_name):
         """Function to save the test of the summary.
                
             Args:
-                result_path (str): Path to save the test summary
-                mode_name (str): Name of the model for which the test is performed
-                hits (list): list of integet hits for hits@k
-                mean_rank_head(dict): mean rank of the head with epoch as key and float as value
-                mean_rank_tail (dict): mean rank of the tail with epoch as key and float as value
-                filter_mean_rank_head(dict): filtered mean rank of the head with epoch as key and float as value
-                filter_mean_rank_tail (dict): filtered mean rank of the head with epoch as key and float as value
-                hit_head(dict): mean head hit ratio of the head with epoch,hit as key and float as value
-                hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
-                filter_hit_head(dict): filtered mean head hit ratio of the head with epoch,hit as key and float as value
-                ilter_hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
-                config (object): model configuration object
+                model_name (str): specify the name of the model. 
 
         """
-        files = os.listdir(str(self.result_path))
+        files = os.listdir(str(self.config.path_result))
         l = len([f for f in files if model_name in f if 'Testing' in f])
-        with open(str(self.result_path / (model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
+        with open(str(self.config.path_result / (model_name + '_summary_' + str(l) + '.txt')), 'w') as fh:
             fh.write('----------------SUMMARY----------------\n')
             for key, val in self.config.__dict__.items():
                 if 'gpu' in key:
@@ -223,60 +188,36 @@ class MetricCalculator:
             fh.write("Total Relations          :%d\n"%self.config.kg_meta.tot_relation)
             fh.write("---------------------------------------------")
 
-        columns = ['Epoch', 'mean_rank', 'filter_mean_rank']
-        for hit in self.hits:
-            columns += ['hits' + str(hit), 'filter_hits' + str(hit)]
+        columns = ['Epoch', 'Mean Rank', 'Filtered Mean Rank', 'Mean Reciprocal Rank', 'Filtered Mean Reciprocal Rank']
+        for hit in self.config.hits:
+            columns += ['Hit-%d Ratio'%hit, 'Filtered Hit-%d Ratio'%hit]
 
         results = []
-        for epoch in self.mean_rank_head.keys():
-            res_tmp = [epoch, (self.mean_rank_head[epoch] + self.mean_rank_tail[epoch]) / 2,
-                       (self.filter_mean_rank_head[epoch] + self.filter_mean_rank_tail[epoch]) / 2]
+        for epoch in self.mr.keys():
+            res_tmp = [epoch, self.mr[epoch], self.fmr[epoch], self.mrr[epoch], self.fmrr[epoch]]
 
-            for hit in self.hits:
-                res_tmp.append((self.hit_head[(epoch, hit)] + self.hit_tail[(epoch, hit)]) / 2)
-                res_tmp.append((self.filter_hit_head[(epoch, hit)] + self.filter_hit_tail[(epoch, hit)]) / 2)
+            for hit in self.config.hits:
+                res_tmp.append(self.hit[(epoch, hit)])
+                res_tmp.append(self.fhit[(epoch, hit)])
+
             results.append(res_tmp)
 
         df = pd.DataFrame(results, columns=columns)
 
-        with open(str(self.result_path / (model_name + '_Testing_results_' + str(l) + '.csv')),
-                  'a') as fh:
+        with open(str(self.config.path_result / (model_name + '_Testing_results_' + str(l) + '.csv')),'a') as fh:
             df.to_csv(fh)
 
     def display_summary(self):
-        """Function to print the test summary.
-               
-            Args:
-                epoch (int): Epoch for the given result
-                hits (list): list of integet hits for hits@k
-                mean_rank_head(dict): mean rank of the head with epoch as key and float as value
-                mean_rank_tail (dict): mean rank of the tail with epoch as key and float as value
-                filter_mean_rank_head(dict): filtered mean rank of the head with epoch as key and float as value
-                filter_mean_rank_tail (dict): filtered mean rank of the head with epoch as key and float as value
-                hit_head(dict): mean head hit ratio of the head with epoch,hit as key and float as value
-                hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
-                filter_hit_head(dict): filtered mean head hit ratio of the head with epoch,hit as key and float as value
-                ilter_hit_tail(dict): mean tail hit ratio of the head with epoch,hit as key and float as value
-                start_time (objet): starting time of the evaluation
-
-        """
-        self.config.knowledge_graph.dump()
-
+        """Function to print the test summary."""
+        kg = self.config.knowledge_graph
         stop_time = timeit.default_timer()
-        print("------Test Results: Epoch: %d --- time: %.2f------------" % (self.epoch, stop_time - self.start_time))
-        print('--mean rank                    : %.4f' % ((self.mean_rank_head[self.epoch] +
-                                                self.mean_rank_tail[self.epoch]) / 2))
-        print('--Filtered mean rank           : %.4f' % ((self.filter_mean_rank_head[self.epoch] +
-                                                self.filter_mean_rank_tail[self.epoch]) / 2))
-
-        print('--mean reciprocal rank         : %.4f' % (self.mrr[self.epoch]))
-        print('--Filtered mean reciprocal rank: %.4f' % (self.fmrr[self.epoch]))
-
-        for hit in self.hits:
-            print('--hits%d                       : %.4f ' % (hit, (self.hit_head[(self.epoch, hit)] +
-                                                          self.hit_tail[(self.epoch, hit)]) / 2))
-            print('--Filtered hits%d              : %.4f ' % (hit, (self.filter_hit_head[(self.epoch, hit)] +
-                                                          self.filter_hit_tail[(self.epoch, hit)]) / 2))
+        print("------Test Results for %s: Epoch: %d --- time: %.2f------------" % (kg.dataset_name, self.epoch, stop_time - self.start_time))
+        print('--# of entities, # of relations: %d, %d'%(kg.kg_meta.tot_entity, kg.kg_meta.tot_relation) )
+        print('--mr,  filtered mr             : %.4f, %.4f'%(self.mr[self.epoch], self.fmr[self.epoch]))
+        print('--mrr, filtered mrr            : %.4f, %.4f'%(self.mrr[self.epoch], self.fmrr[self.epoch]))
+        for hit in self.config.hits:
+            print('--hits%d                        : %.4f ' % (hit, (self.hit[(self.epoch, hit)])))
+            print('--filtered hits%d               : %.4f ' % (hit, (self.fhit[(self.epoch, hit)])))
         print("---------------------------------------------------------")
 
 def evaluation_process(result_queue, output_queue, config, model_name, tuning):
@@ -333,11 +274,6 @@ class Evaluation(EvaluationMeta):
     def __init__(self, model=None, debug=False, data_type='valid', tuning=False, session=None):
         
         self.session = session 
-
-        if self.session is None: 
-            self.session = tf.Session(config=self.config.gpu_config)
-            self.session.run(tf.global_variables_initializer())
-
         self.model = model
         self.debug = debug
         self.tuning = tuning
