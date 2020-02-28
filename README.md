@@ -3,12 +3,12 @@
 # Pykg2vec: Python Library for KG Embedding Methods 
 Pykg2vec is a library for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of knowledge graph embedding task into a single library. We hope Pykg2vec is both practical and educational for people who want to explore the related fields. For beginners, these papers, [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050), [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/document/8047276), and [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098) can be good starting points! 
 Pykg2vec has following features:
-* A number of state-of-the-art KGE model implementations and several benchmark datasets. 
+* Support state-of-the-art KGE model implementations and benchmark datasets. (also support custom datasets)
 * Support automatic discovery for hyperparameters.
 * Optimized performance by using CPUs and GPUs (multi-process and Tensorflow-GPU). Partial C++ implementation to come! 
-* Tools for inspecting the learn embeddings. 
-  * Support exporting the learned embeddings in TSV or pandas pickle format.
-  * Interactive result inspector. 
+* Tools for inspecting the learned embeddings. 
+  * Support exporting the learned embeddings in TSV or Pandas-supported format.
+  * Interactive result inspector.
   * TSNE-based visualization, KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
   
 The documentation is [here](https://pykg2vec.readthedocs.io/). 
