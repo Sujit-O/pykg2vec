@@ -1,25 +1,21 @@
 [![Documentation Status](https://readthedocs.org/projects/pykg2vec/badge/?version=latest)](https://pykg2vec.readthedocs.io/en/latest/?badge=latest) [![CircleCI](https://circleci.com/gh/Sujit-O/pykg2vec.svg?style=svg)](https://circleci.com/gh/Sujit-O/pykg2vec) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/) [![Build Status](https://travis-ci.org/Sujit-O/pykg2vec.svg?branch=master)](https://travis-ci.org/Sujit-O/pykg2vec) [![PyPI version](https://badge.fury.io/py/pykg2vec.svg)](https://badge.fury.io/py/pykg2vec) [![GitHub license](https://img.shields.io/github/license/Sujit-O/pykg2vec.svg)](https://github.com/Sujit-O/pykg2vec/blob/master/LICENSE) [![Coverage Status](https://coveralls.io/repos/github/Sujit-O/pykg2vec/badge.svg?branch=master)](https://coveralls.io/github/Sujit-O/pykg2vec?branch=master) [![Twitter](https://img.shields.io/twitter/url/https/github.com/Sujit-O/pykg2vec.svg?style=social)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2FSujit-O%2Fpykg2vec) 
 
 # Pykg2vec: Python Library for KG Embedding Methods 
-Pykg2vec is a library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of knowledge graph embedding task into a single library. We hope Pykg2vec is both practical and educational for users who want to explore the related fields. For beginners, these good papers [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050), [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/document/8047276), and [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098) can be a good starting point! 
+Pykg2vec is a library, currently in active development, for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge graph embedding algorithms and the necessary building blocks in the pipeline of knowledge graph embedding task into a single library. We hope Pykg2vec is both practical and educational for users who want to explore the related fields. For beginners, these good papers [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050), [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/document/8047276), and [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098) can be good starting points! 
 
-The documentation of the pykg2vec library is [here](https://pykg2vec.readthedocs.io/). 
+Pykg2vec has the following features:
+* A lot of state-of-the-art KGE model implementations and well-known datasets. 
+* Tools that support automatic discovery hyperparameters. (bayesian optimizer)
+* Optimized performance by making a proper use of CPUs and GPUs (multiprocess and Tensorflow).  
+   * Will be adding C++ implementation to further optimize! 
+* A suite of visualization and summerization tools
+  * TSNE based visualization. (Support TSV export)
+  * KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
+  
+The documentation is [here](https://pykg2vec.readthedocs.io/). 
 
 The figure below illustrates the current overall architecture. 
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
-
-# Dependencies
-The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
-* tensorflow==`<version suitable for your workspace>`
-* networkx>=2.2
-* setuptools>=40.8.0
-* matplotlib>=3.0.3
-* numpy>=1.16.2
-* seaborn>=0.9.0
-* scikit_learn>=0.20.3
-* hyperopt>=0.1.2
-* progressbar2>=3.39.3
-* pathlib>=1.0.1
 
 # Features
 * A lot of state-of-the-art KGE model implementations and well-known datasets. 
@@ -30,11 +26,10 @@ The goal of this library is to minimize the dependency on other libraries as far
   * TSNE based visualization. (Support TSV export)
   * KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
 
-Training Loss Plot             |  Testing Rank Results | Testing Hits Result
-:-------------------------:|:-------------------------:|:-------------------------:
-![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/Freebase15k_training_loss_plot_0-1.png?raw=true)  |  ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/Freebase15k_testing_rank_plot_1-1.png?raw=true) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/Freebase15k_testing_hits_plot_1-1.png?raw=true)
-**Relation embedding plot**             |  **Entity embedding plot**   | **Relation and Entity Plot**
-![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_rel_plot_embedding_plot_0.png?raw=true)| ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_entity_plot_embedding_plot_0.png?raw=true) | ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/TransE_ent_n_rel_plot_embedding_plot_0.png?raw=true)
+# Dependencies
+The goal of this library is to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different dataset. We emphasize that in the beginning, we will not be focus in run-time performance. However, in the future, may provide faster implementation of each of the algorithms. We encourage installing the tensorflow-gpu version for optimal usage. 
+* Python >= 3.5
+* tensorflow==`<version suitable for your workspace>`
 
 # Repository Structure
 
