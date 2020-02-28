@@ -105,8 +105,7 @@ head\trelation\ttail
 3. For those three files, create a folder [path_storing_text_files] to include them.
 4. Once finished, you then can use the custom dataset to train on a specific model using command:
 ```
-python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] 
-# Run TransE model on a custom dataset [name].
+$ python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] 
 ```
 
 ### Tuning a single algorithm:
