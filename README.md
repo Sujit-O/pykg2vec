@@ -128,7 +128,7 @@ if __name__ == "__main__":
     main()
 ``` 
 with tune_model.py we then can train the existed model using command:
-```bach
+```bash
 # check all tunnable parameters.
 $ python tune_model.py -h 
 
@@ -136,7 +136,7 @@ $ python tune_model.py -h
 $ python tune_model.py -mn [TransE] -ds [dataset name] 
 ```
 
-You can tune the hyperparameter on your own dataset as well by following the previous instructions.
+We are still working on making more convenient interfaces to manipulate this functionality. Right now, please have a look over [hyperparams.py](https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/config/hyperparams.py) to adjust the ranges to be searched through other than the default ranges. Besides, you can tune the hyperparameter on your own dataset as well by following the previous instructions.
 
 ## 3. Perform Inference Tasks (advanced):
 inference.py
@@ -192,7 +192,7 @@ You can utilize this script to inspect results from the training and to perform 
 * [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
 
 ## Citation
-Please kindly consider citing this paper if you find pykg2vec is useful in your research. 
+Please kindly consider citing our paper if you find pykg2vec useful for your research. 
 ```
   @article{yu2019pykg2vec,
   title={Pykg2vec: A Python Library for Knowledge Graph Embedding},
