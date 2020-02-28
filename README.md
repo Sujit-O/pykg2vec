@@ -82,18 +82,21 @@ Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check
 ```bash
 # check all tunnable parameters.
 $ python train.py -h 
+
 # Train TransE on FB15k benchmark dataset.
 $ python train.py -mn TransE
+
 # Train using different KGE methods.
 $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
                        distmult|KG2E|NTN|Rescal|SLM|SME|HoLE]
+
 # Train TransE model using different benchmark datasets.
 $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
                                   ks|nations|umls|dl50a]
 ```
 Some models are still under development [Conv2D|ConvKB|ProjE|RotatE|TuckER], however, they can be executed without exceptions. 
 
-For training KGE methods using your own dataset, these steps are required:
+To use your own dataset, these steps are required:
 1. For triples, store all of them in a text-format with each line formatted as follows, 
 ```
 head\trelation\ttail
