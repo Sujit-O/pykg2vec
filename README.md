@@ -112,7 +112,7 @@ Some metrics running on benchmark dataset (FB15k) is shown below (all are filter
 
 
 To use your own dataset, these steps are required:
-1. For triples, store all of them in a text-format with each line formatted as follows, 
+1. Store all of triples in a text-format with each line as below, using tab space ("\t") to seperate entities and relations.
 ```
 head\trelation\ttail
 ```
