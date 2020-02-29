@@ -137,14 +137,14 @@ class KGEArgParser:
         self.general_group.add_argument('-mn', dest='model_name', default='TransE', type=str, help='Name of model')
         self.general_group.add_argument('-db', dest='debug', default=False, type=lambda x: (str(x).lower() == 'true'),
                                         help='To use debug mode or not.')
-        self.general_group.add_argument('-ghp', dest='golden', default=False, type=lambda x: (str(x).lower() == 'true'),
-                                        help='Use Golden Hyper parameters!')
+        self.general_group.add_argument('-exp', dest='exp', default=False, type=lambda x: (str(x).lower() == 'true'),
+                                        help='Use Experimental setting extracted from original paper!')
         self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, 
                                         help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
         self.general_group.add_argument('-dsp', dest='dataset_path', default=None, type=str, 
                                         help='The path to custom dataset.')
         self.general_group.add_argument('-ld', dest='load_from_data', default=False,
-                                        type=lambda x: (str(x).lower() == 'true'), help='load_from_data!')
+                                        type=lambda x: (str(x).lower() == 'true'), help='load from tensroflow saved data!')
         self.general_group.add_argument('-sv', dest='save_model', default=True,
                                         type=lambda x: (str(x).lower() == 'true'), help='Save the model!')
 
@@ -384,7 +384,7 @@ class TransEConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transe')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -438,7 +438,7 @@ class HoLEConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'hole')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -495,7 +495,7 @@ class TransRConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transr')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -552,7 +552,7 @@ class TransDConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transd')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -608,7 +608,7 @@ class TransMConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transm')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -665,7 +665,7 @@ class TransHConfig(BasicConfig):
         self.C = args.C
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transh')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -720,7 +720,7 @@ class RescalConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'rescal')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -777,7 +777,7 @@ class SMEConfig(BasicConfig):
         self.bilinear = True if args.function == 'bilinear' else False
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'sme')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -834,7 +834,7 @@ class NTNConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'ntn')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -892,7 +892,7 @@ class SLMConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'slm')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -947,7 +947,7 @@ class RotatEConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'rotate')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -1007,7 +1007,7 @@ class KG2EConfig(BasicConfig):
         self.cmin = args.cmin
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'kg2e')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -1064,7 +1064,7 @@ class ComplexConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'complex')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -1124,7 +1124,7 @@ class DistMultConfig(BasicConfig):
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
-        if args.golden is True:
+        if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'distmult')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
@@ -1174,7 +1174,7 @@ class TuckERConfig(BasicConfig):
     """
     def __init__(self, args=None):
 
-        if args is None or args.golden is True:
+        if args is None or args.exp is True:
             self.lmbda = 0.1
             self.feature_map_dropout = 0.2
             self.input_dropout = 0.2
@@ -1275,7 +1275,7 @@ class ConvKBConfig(BasicConfig):
     """
     def __init__(self, args=None):
 
-        if args is None or args.golden is True:
+        if args is None or args.exp is True:
             self.lmbda = 0.1
             self.use_bias = True
             self.label_smoothing = 0.1
@@ -1367,8 +1367,8 @@ class TransGConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
-        if args is None or args.golden is True:
-            # the golden setting for TransG (only for Freebase15k now)
+        if args is None or args.exp is True:
+            # the exp setting for TransG (only for Freebase15k now)
             self.learning_rate = 0.0015
             self.L1_flag = True
             self.hidden_size = 400
@@ -1452,7 +1452,7 @@ class ConvEConfig(BasicConfig):
     """
     def __init__(self, args=None):
 
-        if args is None or args.golden is True:
+        if args is None or args.exp is True:
             self.lmbda = 0.1
             self.feature_map_dropout = 0.2
             self.input_dropout = 0.2
@@ -1548,7 +1548,7 @@ class ProjE_pointwiseConfig(BasicConfig):
 
     def __init__(self, args=None):
 
-        if args is None or args.golden is True:
+        if args is None or args.exp is True:
             self.lmbda = 0.1
             self.feature_map_dropout = 0.2
             self.input_dropout = 0.2
