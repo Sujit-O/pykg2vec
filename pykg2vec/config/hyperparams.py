@@ -28,7 +28,7 @@ class HyperparamterLoader:
           'ntn'     : {'learning_rate':  0.01,'L1_flag': True,'ent_hidden_size':64,'rel_hidden_size':32,'batch_size':  128,'epochs': 1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1}, # problematic
           'slm'     : {'learning_rate':  0.01,'L1_flag': True,'ent_hidden_size':64,'rel_hidden_size':32,'batch_size':  128,'epochs': 1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
           'kg2e'    : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size':1440,'epochs':1000,'margin': 4.0,'optimizer': 'sgd','sampling':"uniform",'distance_measure': "kl_divergence",'cmax': 0.05,'cmin': 5.00,'neg_rate': 1},
-          'complex' : {'learning_rate':   0.5,'hidden_size':200,'batch_size':5000,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':10,'lmbda':0.01},
+          'complex' : {'learning_rate':   0.5,'hidden_size':200,'batch_size':5000,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':1,'lmbda':0.0001},
           'distmult': {'learning_rate':   0.1,'hidden_size':100,'batch_size':50000,'epochs':1000,'data':'Freebase15k','optimizer':'adagrad','sampling':"uniform",'neg_rate':1,'lmbda':0.0001},
           
         }
