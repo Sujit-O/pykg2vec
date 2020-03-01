@@ -268,7 +268,7 @@ class BasicConfig:
             self.plot_entity_only = False
             self.full_test_flag = False
             self.batch_size_testing = 16
-
+            self.num_process_gen = 2
         else:
             self.tmp = Path(args.tmp)
             self.result = Path(args.result)
@@ -291,6 +291,7 @@ class BasicConfig:
             self.plot_testing_result = True
 
             self.batch_size_testing = args.batch_testing
+            self.num_process_gen = args.num_process_gen
 
         self.hits = [1,3,5,10]
         self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)

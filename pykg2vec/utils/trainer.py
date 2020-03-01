@@ -85,6 +85,7 @@ class Trainer(TrainerMeta):
 
         self.generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
                                                 batch_size=self.model.config.batch_size,
+                                                process_num=self.model.config.num_process_gen,
                                                 neg_rate=self.config.neg_rate)
 
 
