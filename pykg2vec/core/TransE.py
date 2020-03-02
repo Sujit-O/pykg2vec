@@ -72,23 +72,6 @@ class TransE(ModelMeta, InferenceMeta):
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
-    def distance(self, h, r, t, axis=1):
-        """Function to calculate distance measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensors: Returns the distance measure.
-        """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
-
     def def_parameters(self):
         """Defines the model parameters.
 
@@ -113,15 +96,45 @@ class TransE(ModelMeta, InferenceMeta):
 
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
 
+    def dissimilarity(self, h, r, t, axis=-1):
+        """Function to calculate distance measure in embedding space.
+        
+        if used in def_loss,
+            h, r, t shape [b, k], return shape will be [b]
+        if used in test_batch, 
+            h, r, t shape [tot_ent, k] or [b, 1, k], return shape will be [b, tot_ent]
+
+        Args:
+            h (Tensor): shape [b, k] Head entities in a batch. 
+            r (Tensor): shape [b, k] Relation entities in a batch.
+            t (Tensor): shape [b, k] Tail entities in a batch.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensor: shape [b] the aggregated distance measure.
+        """
+        norm_h = tf.nn.l2_normalize(h, axis=-1)
+        norm_r = tf.nn.l2_normalize(r, axis=-1)
+        norm_t = tf.nn.l2_normalize(t, axis=-1)
+        
+        dissimilarity = norm_h + norm_r - norm_t 
+
+        if self.config.L1_flag:
+            dissimilarity = tf.math.abs(dissimilarity) # L1 norm 
+        else:
+            dissimilarity = tf.math.square(dissimilarity) # L2 norm
+        
+        return tf.reduce_sum(dissimilarity, axis=axis)
+
     def def_loss(self):
         """Defines the loss function for the algorithm."""
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
-        neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
+        pos_score = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
 
-        score_pos = self.distance(pos_h_e, pos_r_e, pos_t_e)
-        score_neg = self.distance(neg_h_e, neg_r_e, neg_t_e)
+        neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)      
+        neg_score = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
 
-        self.loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
+        self.loss = self.pairwise_margin_loss(pos_score, neg_score)
 
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
@@ -131,22 +144,17 @@ class TransE(ModelMeta, InferenceMeta):
         """
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        score_head = self.distance(norm_ent_embeddings,
-                                   tf.expand_dims(rel_vec, axis=1),
-                                   tf.expand_dims(tail_vec, axis=1), axis=2)
-        score_tail = self.distance(tf.expand_dims(head_vec, axis=1),
-                                   tf.expand_dims(rel_vec, axis=1),
-                                   norm_ent_embeddings, axis=2)
+        score_head = self.dissimilarity(tf.expand_dims(self.ent_embeddings, axis=0),
+                                        tf.expand_dims(rel_vec, axis=1),
+                                        tf.expand_dims(tail_vec, axis=1))
+        score_tail = self.dissimilarity(tf.expand_dims(head_vec, axis=1),
+                                        tf.expand_dims(rel_vec, axis=1),
+                                        tf.expand_dims(self.ent_embeddings, axis=0))
 
         _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
         _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
 
         return head_rank, tail_rank
-
-    # Override
-    def dissimilarity(self, h, r, t):
-        return self.distance(h, r, t)
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -159,12 +167,10 @@ class TransE(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
 
-        emb_h = tf.nn.embedding_lookup(norm_ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(norm_rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(norm_ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess):
