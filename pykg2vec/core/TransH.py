@@ -72,23 +72,6 @@ class TransH(ModelMeta, InferenceMeta):
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
-    def distance(self, h, r, t, axis=1):
-        """Function to calculate distance measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensors: Returns the distance measure.
-        """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
-
     def def_parameters(self):
         """Defines the model parameters.
 
@@ -119,14 +102,14 @@ class TransH(ModelMeta, InferenceMeta):
 
     def def_loss(self):
         """Defines the loss function for the algorithm."""
-        emb_ph, emb_pr, emb_pt = self.embed(self.pos_h, self.pos_r, self.pos_t)
-        emb_nh, emb_nr, emb_nt = self.embed(self.neg_h, self.neg_r, self.neg_t)
+        pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
+        pos_score = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
 
-        score_pos = self.distance(emb_ph, emb_pr, emb_pt)
-        score_neg = self.distance(emb_nh, emb_nr, emb_nt)
+        neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)      
+        neg_score = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
 
-        self.loss = tf.reduce_sum(tf.maximum(0., score_pos + self.config.margin - score_neg)) + self.get_reg()
-
+        self.loss = self.pairwise_margin_loss(pos_score, neg_score) + self.get_reg()
+      
     def get_reg(self):
         """Performs regularization."""
         norm_ent_embedding = tf.nn.l2_normalize(self.ent_embeddings, axis=-1)
@@ -147,26 +130,40 @@ class TransH(ModelMeta, InferenceMeta):
         """
         num_entity = self.config.kg_meta.tot_entity
 
-        head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+        h_e, r_e, t_e = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
         pos_norm = self.get_proj(self.test_r_batch)
 
         norm_ent_embedding = tf.nn.l2_normalize(self.ent_embeddings, 1)
         project_ent_embedding = self.projection(norm_ent_embedding, tf.expand_dims(pos_norm, axis=1))
-        score_head = self.distance(project_ent_embedding,
-                                   tf.expand_dims(rel_vec, axis=1),
-                                   tf.expand_dims(tail_vec, axis=1), axis=2)
-        score_tail = self.distance(tf.expand_dims(head_vec, axis=1),
-                                   tf.expand_dims(rel_vec, axis=1),
-                                   project_ent_embedding, axis=2)
+        
+        score_head = self.dissimilarity(tf.expand_dims(project_ent_embedding, axis=0),
+                                        tf.expand_dims(r_e, axis=1),
+                                        tf.expand_dims(t_e, axis=1))
+        score_tail = self.dissimilarity(tf.expand_dims(h_e, axis=1),
+                                        tf.expand_dims(r_e, axis=1),
+                                        tf.expand_dims(project_ent_embedding, axis=0))
 
         _, head_rank = tf.nn.top_k(score_head, k=num_entity)
         _, tail_rank = tf.nn.top_k(score_tail, k=num_entity)
 
         return head_rank, tail_rank
 
-    # Override
-    def dissimilarity(self, h, r, t):
-        return self.distance(h, r, t)
+    def dissimilarity(self, h, r, t, axis=-1):
+        """Function to calculate distance measure in embedding space.
+
+        Args:
+            h (Tensor): Head entities ids.
+            r (Tensor): Relation ids of the triple.
+            t (Tensor): Tail entity ids of the triple.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensors: Returns the distance measure.
+        """
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
+        else:
+            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
 
     def get_proj(self, r):
         """Calculates the projection of r"""

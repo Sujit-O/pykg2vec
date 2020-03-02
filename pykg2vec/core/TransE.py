@@ -142,13 +142,13 @@ class TransE(ModelMeta, InferenceMeta):
           Returns:
               Tensors: Returns ranks of head and tail.
         """
-        head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+        h_e, r_e, t_e = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
         score_head = self.dissimilarity(tf.expand_dims(self.ent_embeddings, axis=0),
-                                        tf.expand_dims(rel_vec, axis=1),
-                                        tf.expand_dims(tail_vec, axis=1))
-        score_tail = self.dissimilarity(tf.expand_dims(head_vec, axis=1),
-                                        tf.expand_dims(rel_vec, axis=1),
+                                        tf.expand_dims(r_e, axis=1),
+                                        tf.expand_dims(t_e, axis=1))
+        score_tail = self.dissimilarity(tf.expand_dims(h_e, axis=1),
+                                        tf.expand_dims(r_e, axis=1),
                                         tf.expand_dims(self.ent_embeddings, axis=0))
 
         _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
