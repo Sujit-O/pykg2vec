@@ -19,8 +19,6 @@ from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
 
 import pandas as pd
 
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
 class Trainer(TrainerMeta):
     """Class for handling the training of the algorithms.
 
