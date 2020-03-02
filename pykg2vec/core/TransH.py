@@ -131,7 +131,7 @@ class TransH(ModelMeta, InferenceMeta):
         num_entity = self.config.kg_meta.tot_entity
 
         h_e, r_e, t_e = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
-        pos_norm = self.get_proj(self.test_r_batch)
+        pos_norm = tf.nn.l2_normalize(tf.nn.embedding_lookup(self.w, self.test_r_batch), axis=-1)
 
         norm_ent_embedding = tf.nn.l2_normalize(self.ent_embeddings, 1)
         project_ent_embedding = self.projection(norm_ent_embedding, tf.expand_dims(pos_norm, axis=1))
@@ -165,10 +165,6 @@ class TransH(ModelMeta, InferenceMeta):
         else:
             return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
 
-    def get_proj(self, r):
-        """Calculates the projection of r"""
-        return tf.nn.l2_normalize(tf.nn.embedding_lookup(self.w, r), axis=-1)
-
     def projection(self, entity, wr):
         """Calculates the projection of entities"""
         return entity - tf.reduce_sum(entity * wr, -1, keepdims=True) * wr
@@ -184,17 +180,17 @@ class TransH(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
+        emb_h =    tf.nn.embedding_lookup(self.ent_embeddings, h)
+        emb_r =    tf.nn.embedding_lookup(self.rel_embeddings, r)
+        emb_t =    tf.nn.embedding_lookup(self.ent_embeddings, t)
+        proj_vec = tf.nn.embedding_lookup(self.w, r)
 
         emb_h = tf.nn.l2_normalize(emb_h, axis=-1)
         emb_r = tf.nn.l2_normalize(emb_r, axis=-1)
         emb_t = tf.nn.l2_normalize(emb_t, axis=-1)
+        norm_proj_vec= tf.nn.l2_normalize(proj_vec, axis=-1)
 
-        proj_vec = self.get_proj(r)
-
-        return self.projection(emb_h, proj_vec), emb_r, self.projection(emb_t, proj_vec)
+        return self.projection(emb_h, norm_proj_vec), emb_r, self.projection(emb_t, norm_proj_vec)
 
     def get_embed(self, h, r, t, sess):
         """Function to get the embedding value in numpy.
