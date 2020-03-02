@@ -198,9 +198,13 @@ class TransH(ModelMeta, InferenceMeta):
         emb_h =    tf.nn.embedding_lookup(self.ent_embeddings, h)
         emb_r =    tf.nn.embedding_lookup(self.rel_embeddings, r)
         emb_t =    tf.nn.embedding_lookup(self.ent_embeddings, t)
+        
         proj_vec = tf.nn.embedding_lookup(self.w, r)
 
-        return self.projection(emb_h, proj_vec), emb_r, self.projection(emb_t, proj_vec)
+        emb_h = self.projection(emb_h, proj_vec)
+        emb_t = self.projection(emb_t, proj_vec)
+
+        return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess):
         """Function to get the embedding value in numpy.
