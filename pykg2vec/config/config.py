@@ -131,95 +131,30 @@ class KGEArgParser:
     def __init__(self):
         self.parser = ArgumentParser(description='Knowledge Graph Embedding tunable configs.')
 
-        ''' basic configs '''
-        self.general_group = self.parser.add_argument_group('Generic')
-
-        self.general_group.add_argument('-mn', dest='model_name', default='TransE', type=str, help='Name of model')
-        self.general_group.add_argument('-db', dest='debug', default=False, type=lambda x: (str(x).lower() == 'true'),
-                                        help='To use debug mode or not.')
-        self.general_group.add_argument('-exp', dest='exp', default=False, type=lambda x: (str(x).lower() == 'true'),
-                                        help='Use Experimental setting extracted from original paper!')
-        self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, 
-                                        help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
-        self.general_group.add_argument('-dsp', dest='dataset_path', default=None, type=str, 
-                                        help='The path to custom dataset.')
-        self.general_group.add_argument('-ld', dest='load_from_data', default=False,
-                                        type=lambda x: (str(x).lower() == 'true'), help='load from tensroflow saved data!')
-        self.general_group.add_argument('-sv', dest='save_model', default=True,
-                                        type=lambda x: (str(x).lower() == 'true'), help='Save the model!')
-
-        ''' arguments regarding hyperparameters '''
-        self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
-        self.general_hyper_group.add_argument('-b', dest='batch_training', default=128, type=int,
-                                              help='training batch size')
-        self.general_hyper_group.add_argument('-bt', dest='batch_testing', default=16, type=int,
-                                              help='testing batch size')
-        self.general_hyper_group.add_argument('-mg', dest='margin', default=0.8, type=float, help='Margin to take')
-        self.general_hyper_group.add_argument('-opt', dest='optimizer', default='adam', type=str,
-                                              help='optimizer to be used in training.')
-        self.general_hyper_group.add_argument('-s', dest='sampling', default='uniform', type=str,
-                                              help='strategy to do negative sampling.')
-        self.general_hyper_group.add_argument('-ngr', dest='negrate', default=1, type=int,
-                                              help='The number of negative samples generated per positve one.')
-        self.general_hyper_group.add_argument('-l', dest='epochs', default=100, type=int,
-                                              help='The total number of Epochs')
-        self.general_hyper_group.add_argument('-tn', dest='test_num', default=1000, type=int,
-                                              help='The total number of test triples')
-        self.general_hyper_group.add_argument('-ts', dest='test_step', default=10, type=int, help='Test every _ epochs')
-        self.general_hyper_group.add_argument('-lr', dest='learning_rate', default=0.01, type=float,
-                                              help='learning rate')
-        self.general_hyper_group.add_argument('-k', dest='hidden_size', default=50, type=int,
-                                              help='Hidden embedding size.')
-        self.general_hyper_group.add_argument('-km', dest='ent_hidden_size', default=50, type=int,
-                                              help="Hidden embedding size for entities.")
-        self.general_hyper_group.add_argument('-kr', dest='rel_hidden_size', default=50, type=int,
-                                              help="Hidden embedding size for relations.")
-        self.general_hyper_group.add_argument('-l1', dest='l1_flag', default=True,
-                                              type=lambda x: (str(x).lower() == 'true'),
-                                              help='The flag of using L1 or L2 norm.')
-        self.general_hyper_group.add_argument('-c', dest='C', default=0.0125, type=float,
-                                              help='The parameter C used in transH.')
-
         ''' arguments regarding SME and KG2E '''
         self.SME_group = self.parser.add_argument_group('SME KG2E function selection')
-        self.SME_group.add_argument('-func', dest='function', default='bilinear', type=str,
-                                    help="The name of function used in SME model.")
-        self.SME_group.add_argument('-cmax', dest='cmax', default=0.05, type=float,
-                                    help="The parameter for clipping values for KG2E.")
-        self.SME_group.add_argument('-cmin', dest='cmin', default=5.00, type=float,
-                                    help="The parameter for clipping values for KG2E.")
+        self.SME_group.add_argument('-func', dest='function', default='bilinear', type=str, help="The name of function used in SME model.")
+        self.SME_group.add_argument('-cmax', dest='cmax', default=0.05, type=float, help="The parameter for clipping values for KG2E.")
+        self.SME_group.add_argument('-cmin', dest='cmin', default=5.00, type=float, help="The parameter for clipping values for KG2E.")
 
         ''' arguments regarding TransG '''
         self.TransG_group = self.parser.add_argument_group('TransG function selection')
-        self.TransG_group.add_argument('-th', dest='training_threshold', default=3.5, type=float,
-                                    help="Training Threshold for updateing the clusters.")
-        self.TransG_group.add_argument('-nc', dest='ncluster', default=4, type=int,
-                                       help="Number of clusters")
-        self.TransG_group.add_argument('-crp', dest='crp_factor', default=0.01, type=float,
-                                       help="Chinese Restaurant Process Factor.")
-        self.TransG_group.add_argument('-stb', dest='step_before', default=10, type=int,
-                                       help="Steps before")
-        self.TransG_group.add_argument('-wn', dest='weight_norm', default=False,
-                                              type=lambda x: (str(x).lower() == 'true'),
-                                       help="normalize the weights!")
+        self.TransG_group.add_argument('-th', dest='training_threshold', default=3.5, type=float, help="Training Threshold for updateing the clusters.")
+        self.TransG_group.add_argument('-nc', dest='ncluster', default=4, type=int, help="Number of clusters")
+        self.TransG_group.add_argument('-crp', dest='crp_factor', default=0.01, type=float, help="Chinese Restaurant Process Factor.")
+        self.TransG_group.add_argument('-stb', dest='step_before', default=10, type=int, help="Steps before")
+        self.TransG_group.add_argument('-wn', dest='weight_norm', default=False, type=lambda x: (str(x).lower() == 'true'), help="normalize the weights!")
 
         ''' for conve '''
         self.conv_group = self.parser.add_argument_group('ConvE specific Hyperparameters')
         self.conv_group.add_argument('-lmda', dest='lmbda', default=0.1, type=float, help='The lmbda used in ConvE.')
-        self.conv_group.add_argument('-fmd', dest='feature_map_dropout', default=0.2, type=float,
-                                     help="feature map dropout value used in ConvE.")
-        self.conv_group.add_argument('-idt', dest="input_dropout", default=0.3, type=float,
-                                     help="input dropout value used in ConvE.")
-        self.conv_group.add_argument('-hdt', dest="hidden_dropout", default=0.3, type=float,
-                                     help="hidden dropout value used in ConvE.")
-        self.conv_group.add_argument('-hdt2', dest="hidden_dropout2", default=0.3, type=float,
-                                     help="hidden dropout value used in ConvE.")
-        self.conv_group.add_argument('-ubs', dest='use_bias', default=True, type=lambda x: (str(x).lower() == 'true'),
-                                     help='The boolean indicating whether use biases or not in ConvE.')
-        self.conv_group.add_argument('-lbs', dest='label_smoothing', default=0.1, type=float,
-                                     help="The parameter used in label smoothing.")
-        self.conv_group.add_argument('-lrd', dest='lr_decay', default=0.995, type=float,
-                                     help="The parameter for learning_rate decay used in ConvE.")
+        self.conv_group.add_argument('-fmd', dest='feature_map_dropout', default=0.2, type=float, help="feature map dropout value used in ConvE.")
+        self.conv_group.add_argument('-idt', dest="input_dropout", default=0.3, type=float, help="input dropout value used in ConvE.")
+        self.conv_group.add_argument('-hdt', dest="hidden_dropout", default=0.3, type=float, help="hidden dropout value used in ConvE.")
+        self.conv_group.add_argument('-hdt2', dest="hidden_dropout2", default=0.3, type=float, help="hidden dropout value used in ConvE.")
+        self.conv_group.add_argument('-ubs', dest='use_bias', default=True, type=lambda x: (str(x).lower() == 'true'), help='The boolean indicating whether use biases or not in ConvE.')
+        self.conv_group.add_argument('-lbs', dest='label_smoothing', default=0.1, type=float, help="The parameter used in label smoothing.")
+        self.conv_group.add_argument('-lrd', dest='lr_decay', default=0.995, type=float, help="The parameter for learning_rate decay used in ConvE.")
 
         '''for convKB'''
         self.convkb_group = self.parser.add_argument_group('ConvKB specific Hyperparameters')
@@ -228,22 +163,45 @@ class KGEArgParser:
         self.convkb_group.add_argument('-cnum', dest='num_classes', default=2, type=int, help='Number of classes for triples')
         self.convkb_group.add_argument('-snum', dest='sequence_length', default=3, type=int, help='Sequence length or height of the convolution kernel')
         self.convkb_group.add_argument('-istrain', dest='is_trainable', default=True, type=lambda x: (str(x).lower() == 'true'), help='Make parameters trainable')
-        self.convkb_group.add_argument('-cinit', dest='useConstantInit', default=False, type=lambda x: (str(x).lower() == 'true'), help='Use constant initialization')
+        self.convkb_group.add_argument('-cinit', dest='useConstantInit', default=False, type=lambda x: (str(x).lower() == 'true'), help='Use constant initialization')     
 
+        ''' arguments regarding hyperparameters '''
+        self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
+        self.general_hyper_group.add_argument('-b',   dest='batch_training', default=128, type=int, help='training batch size')
+        self.general_hyper_group.add_argument('-bt',  dest='batch_testing', default=16, type=int, help='testing batch size')
+        self.general_hyper_group.add_argument('-mg',  dest='margin', default=0.8, type=float, help='Margin to take')
+        self.general_hyper_group.add_argument('-opt', dest='optimizer', default='adam', type=str, help='optimizer to be used in training.')
+        self.general_hyper_group.add_argument('-s',   dest='sampling', default='uniform', type=str, help='strategy to do negative sampling.')
+        self.general_hyper_group.add_argument('-ngr', dest='negrate', default=1, type=int, help='The number of negative samples generated per positve one.')
+        self.general_hyper_group.add_argument('-l',   dest='epochs', default=100, type=int, help='The total number of Epochs')
+        self.general_hyper_group.add_argument('-lr',  dest='learning_rate', default=0.01, type=float,help='learning rate')
+        self.general_hyper_group.add_argument('-k',   dest='hidden_size', default=50, type=int,help='Hidden embedding size.')
+        self.general_hyper_group.add_argument('-km',  dest='ent_hidden_size', default=50, type=int, help="Hidden embedding size for entities.")
+        self.general_hyper_group.add_argument('-kr',  dest='rel_hidden_size', default=50, type=int, help="Hidden embedding size for relations.")
+        self.general_hyper_group.add_argument('-l1', dest='l1_flag', default=True, type=lambda x: (str(x).lower() == 'true'),help='The flag of using L1 or L2 norm.')
+        self.general_hyper_group.add_argument('-c', dest='C', default=0.0125, type=float, help='The parameter C used in transH.')
 
-        ''' others '''
-        self.misc_group = self.parser.add_argument_group('MISC')
-        self.misc_group.add_argument('-t', dest='tmp', default='../intermediate', type=str,
-                                     help='The folder name to store trained parameters.')
-        self.misc_group.add_argument('-r', dest='result', default='../results', type=str,
-                                     help="The folder name to save the results.")
-        self.misc_group.add_argument('-fig', dest='figures', default='../figures', type=str,
-                                     help="The folder name to save the figures.")
-        self.misc_group.add_argument('-plote', dest='plot_embedding', default=False,
-                                     type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
-        self.misc_group.add_argument('-plot', dest='plot_entity_only', default=False,
-                                     type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
-        self.misc_group.add_argument('-gp', dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
+        ''' working environments '''
+        self.environment_group = self.parser.add_argument_group('Working Environments')
+        self.environment_group.add_argument('-gp', dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
+        self.environment_group.add_argument('-gnp', dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
+
+        ''' basic configs '''
+        self.general_group = self.parser.add_argument_group('Generic')
+        self.general_group.add_argument('-mn',    dest='model_name', default='TransE', type=str, help='Name of model')
+        self.general_group.add_argument('-db',    dest='debug',      default=False, type=lambda x: (str(x).lower() == 'true'), help='To use debug mode or not.')
+        self.general_group.add_argument('-exp',   dest='exp', default=False, type=lambda x: (str(x).lower() == 'true'), help='Use Experimental setting extracted from original paper. (use with -ds or FB15k in default)')
+        self.general_group.add_argument('-ds',    dest='dataset_name', default='Freebase15k', type=str, help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
+        self.general_group.add_argument('-dsp',   dest='dataset_path', default=None, type=str, help='The path to custom dataset.')
+        self.general_group.add_argument('-ld',    dest='load_from_data', default=False, type=lambda x: (str(x).lower() == 'true'), help='load from tensroflow saved data!')
+        self.general_group.add_argument('-sv',    dest='save_model', default=True, type=lambda x: (str(x).lower() == 'true'), help='Save the model!')
+        self.general_group.add_argument('-tn',    dest='test_num', default=1000, type=int, help='The total number of test triples')
+        self.general_group.add_argument('-ts',    dest='test_step', default=10, type=int, help='Test every _ epochs')
+        self.general_group.add_argument('-t',     dest='tmp', default='../intermediate', type=str,help='The folder name to store trained parameters.')
+        self.general_group.add_argument('-r',     dest='result', default='../results', type=str,help="The folder name to save the results.")
+        self.general_group.add_argument('-fig',   dest='figures', default='../figures', type=str,help="The folder name to save the figures.")
+        self.general_group.add_argument('-plote', dest='plot_embedding', default=False,type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
+        self.general_group.add_argument('-plot',  dest='plot_entity_only', default=False,type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
 
     def get_args(self, args):
       """This function parses the necessary arguments.
@@ -310,7 +268,7 @@ class BasicConfig:
             self.plot_entity_only = False
             self.full_test_flag = False
             self.batch_size_testing = 16
-
+            self.num_process_gen = 2
         else:
             self.tmp = Path(args.tmp)
             self.result = Path(args.result)
@@ -333,6 +291,7 @@ class BasicConfig:
             self.plot_testing_result = True
 
             self.batch_size_testing = args.batch_testing
+            self.num_process_gen = args.num_process_gen
 
         self.hits = [1,3,5,10]
         self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)

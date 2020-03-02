@@ -108,7 +108,7 @@ class BaysOptimizer(object):
 
         model_name = args.model.lower()
         self.args = args
-        self.knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling, custom_dataset_path=args.dataset_path)
+        self.knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
         hyper_params = None
         try:
             self.model_obj = getattr(importlib.import_module(model_path + ".%s" % modelMap[model_name]),
