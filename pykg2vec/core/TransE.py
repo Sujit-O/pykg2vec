@@ -102,7 +102,7 @@ class TransE(ModelMeta, InferenceMeta):
         if used in def_loss,
             h, r, t shape [b, k], return shape will be [b]
         if used in test_batch, 
-            h, r, t shape [tot_ent, k] or [b, 1, k], return shape will be [b, tot_ent]
+            h, r, t shape [1, tot_ent, k] or [b, 1, k], return shape will be [b, tot_ent]
 
         Args:
             h (Tensor): shape [b, k] Head entities in a batch. 
@@ -113,9 +113,9 @@ class TransE(ModelMeta, InferenceMeta):
         Returns:
             Tensor: shape [b] the aggregated distance measure.
         """
-        norm_h = tf.nn.l2_normalize(h, axis=-1)
-        norm_r = tf.nn.l2_normalize(r, axis=-1)
-        norm_t = tf.nn.l2_normalize(t, axis=-1)
+        norm_h = tf.nn.l2_normalize(h, axis=axis)
+        norm_r = tf.nn.l2_normalize(r, axis=axis)
+        norm_t = tf.nn.l2_normalize(t, axis=axis)
         
         dissimilarity = norm_h + norm_r - norm_t 
 
@@ -144,12 +144,13 @@ class TransE(ModelMeta, InferenceMeta):
         """
         h_e, r_e, t_e = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        score_head = self.dissimilarity(tf.expand_dims(self.ent_embeddings, axis=0),
+        expanded_ent_embeddings = tf.expand_dims(self.ent_embeddings, axis=0)
+        score_head = self.dissimilarity(expanded_ent_embeddings,
                                         tf.expand_dims(r_e, axis=1),
                                         tf.expand_dims(t_e, axis=1))
         score_tail = self.dissimilarity(tf.expand_dims(h_e, axis=1),
                                         tf.expand_dims(r_e, axis=1),
-                                        tf.expand_dims(self.ent_embeddings, axis=0))
+                                        expanded_ent_embeddings)
 
         _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
         _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)

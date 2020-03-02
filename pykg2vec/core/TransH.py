@@ -128,46 +128,61 @@ class TransH(ModelMeta, InferenceMeta):
          Returns:
              Tensors: Returns ranks of head and tail.
         """
-        num_entity = self.config.kg_meta.tot_entity
-
         h_e, r_e, t_e = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
-        pos_norm = tf.nn.l2_normalize(tf.nn.embedding_lookup(self.w, self.test_r_batch), axis=-1)
-
-        norm_ent_embedding = tf.nn.l2_normalize(self.ent_embeddings, 1)
-        project_ent_embedding = self.projection(norm_ent_embedding, tf.expand_dims(pos_norm, axis=1))
         
-        score_head = self.dissimilarity(tf.expand_dims(project_ent_embedding, axis=0),
+        pos_norm = tf.nn.embedding_lookup(self.w, self.test_r_batch)
+        
+        projected_ent_embedding = self.projection(tf.expand_dims(self.ent_embeddings, axis=0),  # [1, tot_ent, k]
+                                                  tf.expand_dims(pos_norm, axis=1)) # [b, 1, k]
+        
+        score_head = self.dissimilarity(projected_ent_embedding,
                                         tf.expand_dims(r_e, axis=1),
                                         tf.expand_dims(t_e, axis=1))
         score_tail = self.dissimilarity(tf.expand_dims(h_e, axis=1),
                                         tf.expand_dims(r_e, axis=1),
-                                        tf.expand_dims(project_ent_embedding, axis=0))
+                                        projected_ent_embedding)
 
-        _, head_rank = tf.nn.top_k(score_head, k=num_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=num_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
 
         return head_rank, tail_rank
 
     def dissimilarity(self, h, r, t, axis=-1):
         """Function to calculate distance measure in embedding space.
+        
+        if used in def_loss,
+            h, r, t shape [b, k], return shape will be [b]
+        if used in test_batch, 
+            h, r, t shape [1, tot_ent, k] or [b, 1, k], return shape will be [b, tot_ent]
 
         Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
+            h (Tensor): shape [b, k] Head entities in a batch. 
+            r (Tensor): shape [b, k] Relation entities in a batch.
+            t (Tensor): shape [b, k] Tail entities in a batch.
             axis (int): Determines the axis for reduction
 
         Returns:
-            Tensors: Returns the distance measure.
+            Tensor: shape [b] the aggregated distance measure.
         """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
+        norm_h = tf.nn.l2_normalize(h, axis=axis)
+        norm_r = tf.nn.l2_normalize(r, axis=axis)
+        norm_t = tf.nn.l2_normalize(t, axis=axis)
+        
+        dissimilarity = norm_h + norm_r - norm_t 
 
-    def projection(self, entity, wr):
+        if self.config.L1_flag:
+            dissimilarity = tf.math.abs(dissimilarity) # L1 norm 
+        else:
+            dissimilarity = tf.math.square(dissimilarity) # L2 norm
+        
+        return tf.reduce_sum(dissimilarity, axis=axis)
+
+    def projection(self, emb_e, proj_vec):
         """Calculates the projection of entities"""
-        return entity - tf.reduce_sum(entity * wr, -1, keepdims=True) * wr
+        proj_vec = tf.nn.l2_normalize(proj_vec, axis=-1)
+
+        # [b, k], [b, k]
+        return emb_e - tf.reduce_sum(emb_e * proj_vec, -1, keepdims=True) * proj_vec
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -185,12 +200,7 @@ class TransH(ModelMeta, InferenceMeta):
         emb_t =    tf.nn.embedding_lookup(self.ent_embeddings, t)
         proj_vec = tf.nn.embedding_lookup(self.w, r)
 
-        emb_h = tf.nn.l2_normalize(emb_h, axis=-1)
-        emb_r = tf.nn.l2_normalize(emb_r, axis=-1)
-        emb_t = tf.nn.l2_normalize(emb_t, axis=-1)
-        norm_proj_vec= tf.nn.l2_normalize(proj_vec, axis=-1)
-
-        return self.projection(emb_h, norm_proj_vec), emb_r, self.projection(emb_t, norm_proj_vec)
+        return self.projection(emb_h, proj_vec), emb_r, self.projection(emb_t, proj_vec)
 
     def get_embed(self, h, r, t, sess):
         """Function to get the embedding value in numpy.
