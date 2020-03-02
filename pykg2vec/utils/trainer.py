@@ -3,11 +3,9 @@
 """
 This module is for training process.
 """
-import tensorflow as tf
 import timeit
-
-import numpy as np
-import os 
+import tensorflow as tf
+import pandas as pd
 
 from pykg2vec.core.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluation import Evaluation
@@ -17,8 +15,6 @@ from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
 
 
-import pandas as pd
-
 class Trainer(TrainerMeta):
     """Class for handling the training of the algorithms.
 
@@ -26,6 +22,8 @@ class Trainer(TrainerMeta):
             model (object): Model object
             debug (bool): Flag to check if its debugging
             tuning (bool): Flag to denoting tuning if True
+            patience (int): Number of epochs to wait before early stopping the training on no improvement.
+            No early stopping if it is a negative number (default: {-1}).
 
         Examples:
             >>> from pykg2vec.utils.trainer import Trainer
@@ -35,7 +33,7 @@ class Trainer(TrainerMeta):
             >>> trainer.train_model()
     """
 
-    def __init__(self, model, trainon='train',teston='test',debug=False, tuning=False):
+    def __init__(self, model, trainon='train', teston='valid', debug=False, tuning=False, patience=-1):
         self.debug = debug
         self.model = model
         self.config = self.model.config
@@ -44,6 +42,7 @@ class Trainer(TrainerMeta):
         self.tuning=tuning
         self.trainon = trainon
         self.teston = teston
+        self.patience = patience
 
         self.evaluator = None
         self.gen_train = None
@@ -93,7 +92,8 @@ class Trainer(TrainerMeta):
 
     def train_model(self):
         """Function to train the model."""
-        loss = 0
+        loss = previous_loss = float("inf")
+        patience_left = self.patience
 
         if self.config.loadFromData:
             self.load_model()
@@ -107,6 +107,15 @@ class Trainer(TrainerMeta):
                 loss = self.train_model_epoch(n_iter)
                 if not self.tuning:
                     self.test(n_iter)
+                if self.patience >= 0:
+                    if patience_left > 0 and previous_loss <= loss:
+                        patience_left -= 1
+                    elif patience_left == 0 and previous_loss <= loss:
+                        self.evaluator.result_queue.put(Evaluation.TEST_BATCH_EARLY_STOP)
+                        break
+                    else:
+                        patience_left = self.patience
+                previous_loss = loss
 
             self.gen_train.stop()
 
