@@ -69,27 +69,6 @@ class TransD(ModelMeta, InferenceMeta):
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
-    def distance(self, h, r, t, axis=-1):
-        """Function to calculate distance measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensors: Returns the distance measure.
-        """
-        h = tf.nn.l2_normalize(h, axis=axis)
-        r = tf.nn.l2_normalize(r, axis=axis)
-        t = tf.nn.l2_normalize(t, axis=axis)
-
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=axis)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=axis)  # L2 norm
-
     def def_parameters(self):
         """Defines the model parameters.
 
@@ -126,24 +105,45 @@ class TransD(ModelMeta, InferenceMeta):
 
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.ent_mappings, self.rel_mappings]
 
+    def dissimilarity(self, h, r, t, axis=-1):
+        """Function to calculate distance measure in embedding space.
+        
+        if used in def_loss,
+            h, r, t shape [b, k], return shape will be [b]
+        if used in test_batch, 
+            h, r, t shape [1, tot_ent, k] or [b, 1, k], return shape will be [b, tot_ent]
+
+        Args:
+            h (Tensor): shape [b, k] Head entities in a batch. 
+            r (Tensor): shape [b, k] Relation entities in a batch.
+            t (Tensor): shape [b, k] Tail entities in a batch.
+            axis (int): Determines the axis for reduction
+
+        Returns:
+            Tensor: shape [b] the aggregated distance measure.
+        """
+        norm_h = tf.nn.l2_normalize(h, axis=axis)
+        norm_r = tf.nn.l2_normalize(r, axis=axis)
+        norm_t = tf.nn.l2_normalize(t, axis=axis)
+        
+        dissimilarity = norm_h + norm_r - norm_t 
+
+        if self.config.L1_flag:
+            dissimilarity = tf.math.abs(dissimilarity) # L1 norm 
+        else:
+            dissimilarity = tf.math.square(dissimilarity) # L2 norm
+        
+        return tf.reduce_sum(dissimilarity, axis=axis)
+
     def def_loss(self):
         """Defines the loss function for the algorithm."""
         pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
+        pos_score = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
+
         neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
+        neg_score = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
 
-        pos_h_m, pos_r_m, pos_t_m = self.get_mapping(self.pos_h, self.pos_r, self.pos_t)
-        neg_h_m, neg_r_m, neg_t_m = self.get_mapping(self.neg_h, self.neg_r, self.neg_t)
-
-        pos_h_e = pos_h_e + tf.reduce_sum(pos_h_e * pos_h_m, -1, keepdims=True) * pos_r_m
-        pos_t_e = pos_t_e + tf.reduce_sum(pos_t_e * pos_t_m, -1, keepdims=True) * pos_r_m
-
-        neg_h_e = neg_h_e + tf.reduce_sum(neg_h_e * neg_h_m, -1, keepdims=True) * neg_r_m
-        neg_t_e = neg_t_e + tf.reduce_sum(neg_t_e * neg_t_m, -1, keepdims=True) * neg_r_m
-
-        score_pos = self.distance(pos_h_e, pos_r_e, pos_t_e)
-        score_neg = self.distance(neg_h_e, neg_r_e, neg_t_e)
-
-        self.loss = tf.reduce_sum(tf.maximum(score_pos - score_neg + self.config.margin, 0))
+        self.loss = self.pairwise_margin_loss(pos_score, neg_score)
 
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
@@ -151,47 +151,28 @@ class TransD(ModelMeta, InferenceMeta):
            Returns:
                Tensors: Returns ranks of head and tail.
         """
-        num_total_ent = self.data_stats.tot_entity
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
-        h_m, r_m, t_m = self.get_mapping(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+        
+        ent_embeddings_ex = tf.expand_dims(self.ent_embeddings, axis=0)
+        ent_mappings_ex = tf.expand_dims(self.ent_mappings, axis=0)
+        r_m_ex = tf.expand_dims(tf.nn.embedding_lookup(self.rel_mappings, self.test_r_batch), axis=1)
+        project_ent_embedding = self.projection(ent_embeddings_ex, ent_mappings_ex, r_m_ex)
 
-        head_vec = head_vec + tf.reduce_sum(head_vec * h_m, -1, keepdims=True) * r_m
-        tail_vec = tail_vec + tf.reduce_sum(tail_vec * t_m, -1, keepdims=True) * r_m
+        score_head = self.dissimilarity(project_ent_embedding,
+                                        tf.expand_dims(rel_vec, axis=1),
+                                        tf.expand_dims(tail_vec, axis=1))
+        score_tail = self.dissimilarity(tf.expand_dims(head_vec, axis=1),
+                                        tf.expand_dims(rel_vec, axis=1),
+                                        project_ent_embedding)
 
-        project_ent_embedding = self.ent_embeddings + tf.reduce_sum(self.ent_embeddings * self.ent_mappings, -1, keepdims=True) * tf.expand_dims(r_m, axis=1)
-
-        score_head = self.distance(project_ent_embedding,
-                                   tf.expand_dims(rel_vec, axis=1),
-                                   tf.expand_dims(tail_vec, axis=1))
-        score_tail = self.distance(tf.expand_dims(head_vec, axis=1),
-                                   tf.expand_dims(rel_vec, axis=1),
-                                   project_ent_embedding)
-
-        _, head_rank = tf.nn.top_k(score_head, k=num_total_ent)
-        _, tail_rank = tf.nn.top_k(score_tail, k=num_total_ent)
+        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
 
         return head_rank, tail_rank
 
-    # Override
-    def dissimilarity(self, h, r, t):
-        return self.distance(h, r, t)
-
-    def get_mapping(self, h, r, t):
-        """Function to get the mapping for head, relation and tails.
-
-          Args:
-              h (Tensor): Head entities ids.
-              r (Tensor): Relation ids of the triple.
-              t (Tensor): Tail entity ids of the triple.
-
-           Returns:
-               Tensors: Returns the mapped values for head, relation and tail
-        """
-        h_m = tf.nn.embedding_lookup(self.ent_mappings, h)
-        r_m = tf.nn.embedding_lookup(self.rel_mappings, r)
-        t_m = tf.nn.embedding_lookup(self.ent_mappings, t)
-
-        return h_m, r_m, t_m
+    def projection(self, emb_e, emb_m, proj_vec):
+        # [b, k] + sigma ([b, k] * [b, k]) * [b, k]
+        return emb_e + tf.reduce_sum(emb_e * emb_m, axis=-1, keepdims=True) * proj_vec
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -204,11 +185,18 @@ class TransD(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        h_e = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        r_e = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        t_e = tf.nn.embedding_lookup(self.ent_embeddings, t)
+        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
 
-        return h_e, r_e, t_e
+        h_m = tf.nn.embedding_lookup(self.ent_mappings, h)
+        r_m = tf.nn.embedding_lookup(self.rel_mappings, r)
+        t_m = tf.nn.embedding_lookup(self.ent_mappings, t)
+
+        emb_h = self.projection(emb_h, h_m, r_m)
+        emb_t = self.projection(emb_t, t_m, r_m)
+
+        return emb_h, emb_r, emb_t
 
     def get_embed(self, h, r, t, sess):
         """Function to get the embedding value in numpy.

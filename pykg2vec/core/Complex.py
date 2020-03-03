@@ -108,9 +108,8 @@ class Complex(ModelMeta, InferenceMeta):
 
         regul_term = tf.reduce_sum(pos_h_e_real**2 + pos_h_e_img**2) + tf.reduce_sum(pos_r_e_real**2 + pos_r_e_img**2) + tf.reduce_sum(pos_t_e_real**2 + pos_t_e_img**2) + \
                      tf.reduce_sum(neg_h_e_real**2 + neg_h_e_img**2) + tf.reduce_sum(neg_r_e_real**2 + neg_r_e_img**2) + tf.reduce_sum(neg_t_e_real**2 + neg_t_e_img**2) 
-        loss_term  = tf.reduce_sum(tf.concat([tf.nn.softplus(-1*score_pos), tf.nn.softplus(score_neg)], axis=0))        
-        
-        self.loss = loss_term + self.config.lmbda*regul_term
+                
+        self.loss = self.pointwise_logistic_loss(score_pos, score_neg) + self.config.lmbda*regul_term
 
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
