@@ -85,17 +85,17 @@ class TransR(ModelMeta, InferenceMeta):
         """
         num_total_ent = self.data_stats.tot_entity
         num_total_rel = self.data_stats.tot_relation
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
+        k = self.config.ent_hidden_size
+        d = self.config.rel_hidden_size
 
         self.ent_embeddings = tf.get_variable(name="ent_embedding",
-                                              shape=[num_total_ent, d],
+                                              shape=[num_total_ent, k],
                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         self.rel_embeddings = tf.get_variable(name="rel_embedding",
-                                              shape=[num_total_rel, k],
+                                              shape=[num_total_rel, d],
                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         self.rel_matrix     = tf.get_variable(name="rel_matrix",
-                                              shape=[num_total_rel, d, k],
+                                              shape=[num_total_rel, k, d],
                                               initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
@@ -148,26 +148,25 @@ class TransR(ModelMeta, InferenceMeta):
         """
         head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
 
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
+        k = self.config.ent_hidden_size
+        d = self.config.rel_hidden_size
         b = self.config.batch_size_testing
 
         pos_matrix = tf.nn.embedding_lookup(self.rel_matrix, self.test_r_batch)
-        # [b, d, k]
-        pos_matrix = tf.transpose(pos_matrix, perm=[0, 2, 1])
         # [b, k, d]
-        pos_matrix = tf.reshape(pos_matrix, [-1, d])
-        # [b*k, d]
+        pos_matrix = tf.transpose(pos_matrix, perm=[0, 2, 1])
+        # [b, d, k]
+        pos_matrix = tf.reshape(pos_matrix, [-1, k])
+        # [b*d, k]
 
-        # [14951, d], [d, b*k] = [14951, b*k]
-        project_ent_embedding = tf.matmul(self.ent_embeddings, tf.transpose(pos_matrix))
-        # [14951, b*k]
+        project_ent_embedding = tf.matmul(tf.nn.l2_normalize(self.ent_embeddings, axis=-1), pos_matrix, transpose_b=True)
+        # [14951, b*d] = [14951, k], [k, b*d]
 
-        project_ent_embedding = tf.reshape(project_ent_embedding,[-1, b, k])
-        # [14951, b, k]
+        project_ent_embedding = tf.reshape(project_ent_embedding,[-1, b, d])
+        # [14951, b, d]
 
         project_ent_embedding = tf.transpose(project_ent_embedding, perm=[1, 0, 2])
-        # [b, 14951, k]
+        # [b, 14951, d]
 
         score_head = self.dissimilarity(project_ent_embedding,
                                         tf.expand_dims(rel_vec, axis=1),
@@ -192,21 +191,28 @@ class TransR(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
-
-        h_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings, h), [-1, d, 1])
+        h_e = tf.nn.embedding_lookup(self.ent_embeddings, h)
         r_e = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        t_e = tf.reshape(tf.nn.embedding_lookup(self.ent_embeddings, t), [-1, d, 1])
+        t_e = tf.nn.embedding_lookup(self.ent_embeddings, t)
         
+        h_e = tf.nn.l2_normalize(h_e, axis=-1)
+        r_e = tf.nn.l2_normalize(r_e, axis=-1)
+        t_e = tf.nn.l2_normalize(t_e, axis=-1)
+
+        h_e = tf.expand_dims(h_e, axis=1)
+        t_e = tf.expand_dims(t_e, axis=1)
+        # [b, 1, k]
+
         matrix = tf.nn.embedding_lookup(self.rel_matrix, r)
+        # [b, k, d]
 
-        transform_h_e = tf.matmul(matrix, h_e, transpose_a=True)
-        transform_t_e = tf.matmul(matrix, t_e, transpose_a=True)
-        # [b, k, 1]
-        h_e = tf.reshape(transform_h_e, [-1, k])
-        t_e = tf.reshape(transform_t_e, [-1, k])
+        transform_h_e = tf.matmul(h_e, matrix)
+        transform_t_e = tf.matmul(t_e, matrix)
+        # [b, d, 1] = [b, d, k] * [b, k, 1]
 
+        h_e = tf.squeeze(transform_h_e, axis=1)
+        t_e = tf.squeeze(transform_t_e, axis=1)
+        # [b, d]
         return h_e, r_e, t_e
 
     def get_embed(self, h, r, t, sess):
