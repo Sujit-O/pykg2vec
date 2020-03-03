@@ -61,10 +61,26 @@ class ModelMeta:
                 => [b], where [b] is the number of batch.
         '''
 
-
         loss = tf.maximum(score_positive + self.config.margin - score_negative, 0)
 
         return tf.reduce_sum(loss)
+
+    def pointwise_logistic_loss(self, score_positve, score_negative):
+        ''' pointwise logistic loss function 
+            pointwise logistic loss is defined as follows, 
+
+            for all samples:
+                if positive sample: loss -= f(positive samples) 
+                if negative sample: loss += f(negative samples)                  
+            
+            In this method, the dimensions of score_negative should a multiple of score_positive. 
+                => [b] or k*[b], where [b] is the number of batch.
+        '''
+        loss = tf.concat([-1*score_positve, score_negative], axis=0)
+        loss = tf.nn.softplus(loss)
+
+        return tf.reduce_sum(loss)
+
 
 class TrainerMeta:
     """ Meta Class for Trainer Module"""
