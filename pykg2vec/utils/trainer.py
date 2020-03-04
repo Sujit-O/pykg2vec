@@ -94,36 +94,32 @@ class Trainer(TrainerMeta):
         loss = previous_loss = float("inf")
         patience_left = self.patience
 
+        self.generator = Generator(config=self.generator_config, model_config=self.model.config)
+        self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
+
         if self.config.loadFromData:
             self.load_model()
-        else:
-            self.generator = Generator(config=self.generator_config, model_config=self.model.config)
+        
+        for n_iter in range(self.config.epochs):
+            loss = self.train_model_epoch(n_iter)
+            self.test(n_iter)
+            
+            if self.patience >= 0:
+                if patience_left > 0 and previous_loss <= loss:
+                    patience_left -= 1
+                elif patience_left == 0 and previous_loss <= loss:
+                    self.evaluator.result_queue.put(Evaluation.TEST_BATCH_EARLY_STOP)
+                    break
+                else:
+                    patience_left = self.patience
+            previous_loss = loss
 
-            if not self.tuning:
-                self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
+        self.generator.stop()
+        self.evaluator.save_training_result(self.training_results)
+        self.evaluator.stop()
 
-            for n_iter in range(self.config.epochs):
-                loss = self.train_model_epoch(n_iter)
-                if not self.tuning:
-                    self.test(n_iter)
-                if self.patience >= 0:
-                    if patience_left > 0 and previous_loss <= loss:
-                        patience_left -= 1
-                    elif patience_left == 0 and previous_loss <= loss:
-                        self.evaluator.result_queue.put(Evaluation.TEST_BATCH_EARLY_STOP)
-                        break
-                    else:
-                        patience_left = self.patience
-                previous_loss = loss
-
-            self.generator.stop()
-
-            if not self.tuning:
-                self.evaluator.save_training_result(self.training_results)
-                self.evaluator.stop()
-
-            if self.config.save_model:
-                self.save_model()
+        if self.config.save_model:
+            self.save_model()
 
         if self.config.disp_result:
             self.display()
