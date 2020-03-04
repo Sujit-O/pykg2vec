@@ -12,7 +12,7 @@ from pykg2vec.utils.evaluation import Evaluation
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator
 from pykg2vec.config.global_config import GeneratorConfig
-from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
+from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 
 class Trainer(TrainerMeta):
@@ -42,6 +42,12 @@ class Trainer(TrainerMeta):
 
         self.evaluator = None
         self.generator = None
+
+        if model.model_name.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
+            self.training_strategy = "projection_based"
+        else:
+            self.training_strategy = "pairwise_based"
+
 
     def build_model(self):
         """function to build the model"""
@@ -78,7 +84,7 @@ class Trainer(TrainerMeta):
         self.config.summary()
         self.config.summary_hyperparameter(self.model.model_name)
 
-        self.generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
+        self.generator_config = GeneratorConfig(data=self.trainon, training_strategy=self.training_strategy,
                                                 batch_size=self.model.config.batch_size,
                                                 process_num=self.model.config.num_process_gen,
                                                 neg_rate=self.config.neg_rate)
@@ -151,7 +157,6 @@ class Trainer(TrainerMeta):
         patience_left = self.config.patience
         ### Early Stop Mechanism
 
-
         self.generator = Generator(config=self.generator_config, model_config=self.model.config)
         self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
        
@@ -194,12 +199,9 @@ class Trainer(TrainerMeta):
 
         for batch_idx in range(num_batch):
             data = list(next(self.generator))
-            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
-                h = data[0]
-                r = data[1]
-                t = data[2]
-                hr_t = data[3]
-                rt_h = data[4]
+            
+            if self.training_strategy == "projection_based":
+                h, r, t, hr_t, rt_h = data[0], data[1], data[2], data[3], data[4]
 
                 feed_dict = {
                     self.model.h: h,
@@ -208,13 +210,9 @@ class Trainer(TrainerMeta):
                     self.model.hr_t: hr_t,
                     self.model.rt_h: rt_h
                 }
-            else:
-                ph = data[0]
-                pr = data[1]
-                pt = data[2]
-                nh = data[3]
-                nr = data[4]
-                nt = data[5]
+            
+            elif self.training_strategy == "pairwise_based":
+                ph, pr, pt, nh, nr, nt = data[0], data[1], data[2], data[3], data[4], data[5]
 
                 feed_dict = {
                     self.model.pos_h: ph,
@@ -224,6 +222,7 @@ class Trainer(TrainerMeta):
                     self.model.neg_t: nt,
                     self.model.neg_r: nr
                 }
+
             _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
 
             acc_loss += loss

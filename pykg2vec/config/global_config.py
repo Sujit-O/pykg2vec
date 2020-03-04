@@ -38,14 +38,14 @@ class GeneratorConfig(object):
                  processed_queue_size=50,
                  process_num=2,
                  data='train',
-                 algo='ConvE',
+                 training_strategy='projection_based',
                  neg_rate=1
                  ):
         self.neg_rate = neg_rate
         self.process_num = process_num
         self.raw_queue_size = raw_queue_size
         self.processed_queue_size = processed_queue_size
-        self.algo = algo
+        self.training_strategy = training_strategy
         self.data = data
         self.queue_size = queue_size
         self.sampling = sampling

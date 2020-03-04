@@ -190,6 +190,8 @@ class Generator:
         self.raw_queue = Queue(config.raw_queue_size)
         self.processed_queue = Queue(config.processed_queue_size)
 
+        self.training_strategy = config.training_strategy
+
         data = None 
         if  config.data == 'train':
             data = model_config.knowledge_graph.read_cache_data('triplets_train')
@@ -215,9 +217,9 @@ class Generator:
         if config.data == 'test' or config.data == 'valid':
             self.create_test_processer_process(config.process_num)
         else:
-            if config.algo.lower() in ["tucker","tucker_v2","conve", "proje_pointwise", "convkb"]:
+            if self.training_strategy == "projection_based": 
                 self.create_train_processor_process(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, config.neg_rate)
-            else:
+            elif self.training_strategy == "pairwise_based":
                 self.create_train_processor_process_trans(config.process_num, model_config.kg_meta.tot_entity, config.batch_size, observed_triples, config.neg_rate, config.sampling, relation_property)
 
         del model_config, relation_property
