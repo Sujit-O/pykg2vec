@@ -37,14 +37,13 @@ class Trainer(TrainerMeta):
         self.model = model
         self.config = self.model.config
         self.training_results = []
-        self.gen_train = None
         self.tuning=tuning
         self.trainon = trainon
         self.teston = teston
         self.patience = patience
 
         self.evaluator = None
-        self.gen_train = None
+        self.generator = None
 
     def build_model(self):
         """function to build the model"""
@@ -98,7 +97,7 @@ class Trainer(TrainerMeta):
         if self.config.loadFromData:
             self.load_model()
         else:
-            self.gen_train = Generator(config=self.generator_config, model_config=self.model.config)
+            self.generator = Generator(config=self.generator_config, model_config=self.model.config)
 
             if not self.tuning:
                 self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
@@ -117,7 +116,7 @@ class Trainer(TrainerMeta):
                         patience_left = self.patience
                 previous_loss = loss
 
-            self.gen_train.stop()
+            self.generator.stop()
 
             if not self.tuning:
                 self.evaluator.save_training_result(self.training_results)
@@ -144,14 +143,14 @@ class Trainer(TrainerMeta):
         """Function to tune the model."""
         acc = 0
 
-        self.gen_train = Generator(config=self.generator_config, model_config=self.model.config)
+        self.generator = Generator(config=self.generator_config, model_config=self.model.config)
 
         self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
        
         for n_iter in range( self.config.epochs):
             self.train_model_epoch(n_iter)
 
-        self.gen_train.stop()
+        self.generator.stop()
         self.evaluator.test_batch(n_iter)
         acc = self.evaluator.output_queue.get()
         self.evaluator.stop()
@@ -169,7 +168,7 @@ class Trainer(TrainerMeta):
         start_time = timeit.default_timer()
 
         for batch_idx in range(num_batch):
-            data = list(next(self.gen_train))
+            data = list(next(self.generator))
             if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
                 h = data[0]
                 r = data[1]
