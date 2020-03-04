@@ -202,6 +202,7 @@ class KGEArgParser:
         self.general_group.add_argument('-fig',   dest='figures', default='../figures', type=str,help="The folder name to save the figures.")
         self.general_group.add_argument('-plote', dest='plot_embedding', default=False,type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.general_group.add_argument('-plot',  dest='plot_entity_only', default=False,type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
+        self.general_group.add_argument('-els',   dest='early_stop_epoch', default=50, type=int, help='Interval of performing early stop check. ')
 
     def get_args(self, args):
       """This function parses the necessary arguments.
@@ -256,6 +257,9 @@ class BasicConfig:
         self.save_model = args.save_model
         self.disp_summary = True
         self.disp_result = False
+        
+        self.early_stop_epoch = args.early_stop_epoch # the interval of early stop checking. 
+        self.patience = 3 # should make this configurable as well.
         
         # Visualization related, 
         # p.s. the visualizer is disable for most of the KGE methods for now. 
