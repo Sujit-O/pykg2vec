@@ -154,7 +154,7 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
 
         regularizer_loss = tf.reduce_sum(tf.abs(self.De1) + tf.abs(self.Dr1)) + tf.reduce_sum(tf.abs(self.De2) + tf.abs(self.Dr2)) \
                             + tf.reduce_sum(tf.abs(self.ent_embeddings)) + tf.reduce_sum(tf.abs(self.rel_embeddings))
-        self.loss = hrt_loss + trh_loss + regularizer_loss*1e-5
+        self.loss = hrt_loss + trh_loss + regularizer_loss*self.config.lmbda
 
     def f1(self, h, r):
         """Defines froward layer for head.
