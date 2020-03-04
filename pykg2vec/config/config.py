@@ -168,7 +168,7 @@ class KGEArgParser:
         ''' arguments regarding hyperparameters '''
         self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
         self.general_hyper_group.add_argument('-b',   dest='batch_training', default=128, type=int, help='training batch size')
-        self.general_hyper_group.add_argument('-bt',  dest='batch_testing', default=16, type=int, help='testing batch size')
+        self.general_hyper_group.add_argument('-bt',  dest='batch_testing', default=16, type=int, help='testing batch size, ex: 1, 2, 4, 8.')
         self.general_hyper_group.add_argument('-mg',  dest='margin', default=0.8, type=float, help='Margin to take')
         self.general_hyper_group.add_argument('-opt', dest='optimizer', default='adam', type=str, help='optimizer to be used in training.')
         self.general_hyper_group.add_argument('-s',   dest='sampling', default='uniform', type=str, help='strategy to do negative sampling.')
@@ -178,13 +178,14 @@ class KGEArgParser:
         self.general_hyper_group.add_argument('-k',   dest='hidden_size', default=50, type=int,help='Hidden embedding size.')
         self.general_hyper_group.add_argument('-km',  dest='ent_hidden_size', default=50, type=int, help="Hidden embedding size for entities.")
         self.general_hyper_group.add_argument('-kr',  dest='rel_hidden_size', default=50, type=int, help="Hidden embedding size for relations.")
-        self.general_hyper_group.add_argument('-l1', dest='l1_flag', default=True, type=lambda x: (str(x).lower() == 'true'),help='The flag of using L1 or L2 norm.')
-        self.general_hyper_group.add_argument('-c', dest='C', default=0.0125, type=float, help='The parameter C used in transH.')
+        self.general_hyper_group.add_argument('-l1',  dest='l1_flag', default=True, type=lambda x: (str(x).lower() == 'true'),help='The flag of using L1 or L2 norm.')
+        self.general_hyper_group.add_argument('-c',   dest='C', default=0.0125, type=float, help='The parameter C used in transH.')
 
         ''' working environments '''
         self.environment_group = self.parser.add_argument_group('Working Environments')
-        self.environment_group.add_argument('-gp', dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
-        self.environment_group.add_argument('-gnp', dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
+        self.environment_group.add_argument('-gp',  dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
+        self.environment_group.add_argument('-npg', dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
+        self.environment_group.add_argument('-npe', dest='num_process_evl', default=1, type=int, help='number of processes used in the Evaluator.')
 
         ''' basic configs '''
         self.general_group = self.parser.add_argument_group('Generic')
@@ -245,62 +246,50 @@ class BasicConfig:
       kg_meta (object): Stores the statistics metadata of the knowledge graph.
     
     """
-    def __init__(self, args=None):
-
-        if args is None:
-            self.test_step = 100
-            self.test_num = 600
-            self.disp_triple_num = 20
-            self.custom_dataset_path = None
-            self.gpu_fraction = 0.8
-            self.gpu_allow_growth = True
-            self.loadFromData = False
-            self.save_model = False
-            self.disp_summary = True
-            self.disp_result = False
-            self.plot_embedding = False
-            self.log_device_placement = False
-            self.plot_training_result = False
-            self.plot_testing_result = False
-            self.plot_entity_only = False
-            self.full_test_flag = False
-            self.batch_size_testing = 16
-            self.num_process_gen = 2
-        else:
-            self.custom_dataset_path = args.dataset_path
-            self.full_test_flag = (args.test_step == 0)
-            self.plot_entity_only = args.plot_entity_only
-            self.test_step = args.test_step
-            self.test_num = args.test_num
-            self.disp_triple_num = 20
-            self.log_device_placement = False
-            self.gpu_fraction = args.gpu_frac
-            self.gpu_allow_growth = True
-            self.loadFromData = args.load_from_data
-            self.save_model = args.save_model
-            self.disp_summary = True
-            self.disp_result = False
-            self.plot_embedding = args.plot_embedding
-            self.plot_training_result = True
-            self.plot_testing_result = True
-            self.batch_size_testing = args.batch_testing
-            self.num_process_gen = args.num_process_gen
-
+    def __init__(self, args):
+        # Training and evaluating related variables
+        self.test_step = args.test_step
+        self.full_test_flag = (self.test_step == 0)
+        self.test_num = args.test_num
         self.hits = [1, 3, 5, 10]
+        self.batch_size_testing = args.batch_testing
+        self.loadFromData = args.load_from_data
+        self.save_model = args.save_model
+        self.disp_summary = True
+        self.disp_result = False
+        
+        # Visualization related, 
+        # p.s. the visualizer is disable for most of the KGE methods for now. 
+        self.disp_triple_num = 20
+        self.plot_embedding = args.plot_embedding
+        self.plot_training_result = True
+        self.plot_testing_result = True
+        self.plot_entity_only = args.plot_entity_only
+        
+        # Working environment variables.
+        self.num_process_gen = args.num_process_gen
+        self.num_process_evl = args.num_process_evl
+        self.log_device_placement = False
+        self.gpu_fraction = args.gpu_frac
+        self.gpu_allow_growth = True
         self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
         self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
+
+        # Knowledge Graph Information
+        self.custom_dataset_path = args.dataset_path
         self.knowledge_graph = KnowledgeGraph(dataset=self.data, negative_sample=self.sampling, custom_dataset_path=self.custom_dataset_path)
         self.kg_meta = self.knowledge_graph.kg_meta
         
+        # The results of training will be stored in the following folders 
+        # which are relative to the parent folder (the path of the dataset).
         self.path_tmp = self.knowledge_graph.dataset.dataset_path  / 'intermediate'
-        self.path_result = self.knowledge_graph.dataset.dataset_path  / 'results'
-        self.path_figures = self.knowledge_graph.dataset.dataset_path  / 'figures'
-        self.path_embeddings = self.knowledge_graph.dataset.dataset_path  / 'embeddings'
-
         self.path_tmp.mkdir(parents=True, exist_ok=True)
+        self.path_result = self.knowledge_graph.dataset.dataset_path  / 'results'
         self.path_result.mkdir(parents=True, exist_ok=True)
+        self.path_figures = self.knowledge_graph.dataset.dataset_path  / 'figures'
         self.path_figures.mkdir(parents=True, exist_ok=True)
+        self.path_embeddings = self.knowledge_graph.dataset.dataset_path  / 'embeddings'
         self.path_embeddings.mkdir(parents=True, exist_ok=True)
 
 
