@@ -35,7 +35,7 @@ class Trainer(TrainerMeta):
             >>> trainer.train_model()
     """
 
-    def __init__(self, model, trainon='train',teston='test',debug=False, tuning=False):
+    def __init__(self, model, trainon='train',teston='test', debug=False, tuning=False):
         self.debug = debug
         self.model = model
         self.config = self.model.config
@@ -79,6 +79,7 @@ class Trainer(TrainerMeta):
         self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
         self.sess.run(tf.global_variables_initializer())
         self.saver =  tf.train.Saver()
+        
         if not self.tuning:
             self.summary()
             self.summary_hyperparameter()

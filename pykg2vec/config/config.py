@@ -251,9 +251,6 @@ class BasicConfig:
             self.test_step = 100
             self.test_num = 600
             self.disp_triple_num = 20
-            self.tmp = Path('..') / 'intermediate'
-            self.result = Path('..') / 'results'
-            self.figures = Path('..') / 'figures'
             self.custom_dataset_path = None
             self.gpu_fraction = 0.8
             self.gpu_allow_growth = True
@@ -270,9 +267,6 @@ class BasicConfig:
             self.batch_size_testing = 16
             self.num_process_gen = 2
         else:
-            self.tmp = Path(args.tmp)
-            self.result = Path(args.result)
-            self.figures = Path(args.figures)
             self.custom_dataset_path = args.dataset_path
             self.full_test_flag = (args.test_step == 0)
             self.plot_entity_only = args.plot_entity_only
@@ -289,11 +283,10 @@ class BasicConfig:
             self.plot_embedding = args.plot_embedding
             self.plot_training_result = True
             self.plot_testing_result = True
-
             self.batch_size_testing = args.batch_testing
             self.num_process_gen = args.num_process_gen
 
-        self.hits = [1,3,5,10]
+        self.hits = [1, 3, 5, 10]
         self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
         self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
         self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
@@ -304,6 +297,7 @@ class BasicConfig:
         self.path_result = self.knowledge_graph.dataset.dataset_path  / 'results'
         self.path_figures = self.knowledge_graph.dataset.dataset_path  / 'figures'
         self.path_embeddings = self.knowledge_graph.dataset.dataset_path  / 'embeddings'
+
         self.path_tmp.mkdir(parents=True, exist_ok=True)
         self.path_result.mkdir(parents=True, exist_ok=True)
         self.path_figures.mkdir(parents=True, exist_ok=True)
