@@ -9,7 +9,6 @@ across all the algorithms, and local parameters which are specific to the algori
 """
 
 import tensorflow as tf
-from pathlib import Path
 from argparse import ArgumentParser
 import importlib
 
@@ -101,7 +100,7 @@ class Importer:
       model_obj = None
       try:
           config_obj = getattr(importlib.import_module(self.config_path), self.configMap[name])
-          model_obj = getattr(importlib.import_module(self.model_path + ".%s" % self.modelMap[name]),
+          model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % self.modelMap[name]),
                               self.modelMap[name])
       except ModuleNotFoundError:
           print("%s model  has not been implemented. please select from: %s" % (
