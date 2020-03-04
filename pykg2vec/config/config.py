@@ -283,13 +283,14 @@ class BasicConfig:
         
         # The results of training will be stored in the following folders 
         # which are relative to the parent folder (the path of the dataset).
-        self.path_tmp = self.knowledge_graph.dataset.dataset_path  / 'intermediate'
+        dataset_path = self.knowledge_graph.dataset.dataset_path
+        self.path_tmp =  dataset_path / 'intermediate'
         self.path_tmp.mkdir(parents=True, exist_ok=True)
-        self.path_result = self.knowledge_graph.dataset.dataset_path  / 'results'
+        self.path_result = dataset_path / 'results'
         self.path_result.mkdir(parents=True, exist_ok=True)
-        self.path_figures = self.knowledge_graph.dataset.dataset_path  / 'figures'
+        self.path_figures = dataset_path / 'figures'
         self.path_figures.mkdir(parents=True, exist_ok=True)
-        self.path_embeddings = self.knowledge_graph.dataset.dataset_path  / 'embeddings'
+        self.path_embeddings = dataset_path / 'embeddings'
         self.path_embeddings.mkdir(parents=True, exist_ok=True)
 
 
