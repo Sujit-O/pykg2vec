@@ -237,10 +237,10 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
     while True:
         result = result_queue.get()
         
-        if result == 'Start!': 
+        if result == Evaluation.TEST_BATCH_START:
             calculator.reset()
             
-        elif result == 'Stop!':
+        elif result == Evaluation.TEST_BATCH_STOP:
             calculator.settle()
             calculator.display_summary()
 
@@ -252,6 +252,8 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
                     output_queue.put(score)
 
                 break
+        elif result == Evaluation.TEST_BATCH_EARLY_STOP:
+            break
         else:
             calculator.append_result(result)
 
@@ -271,6 +273,10 @@ class Evaluation(EvaluationMeta):
             >>> acc = evaluator.output_queue.get()
             >>> evaluator.stop()
     """
+    TEST_BATCH_START = "Start!"
+    TEST_BATCH_STOP = "Stop!"
+    TEST_BATCH_EARLY_STOP = "EarlyStop!"
+
     def __init__(self, model=None, debug=False, data_type='valid', tuning=False, session=None):
         
         self.session = session 
@@ -338,7 +344,7 @@ class Evaluation(EvaluationMeta):
         widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), " Done:",
                    progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
 
-        self.result_queue.put("Start!")
+        self.result_queue.put(self.TEST_BATCH_START)
         with progressbar.ProgressBar(max_value=self.loop_len, widgets=widgets) as bar:
             for i in range(self.loop_len):
                 data = np.asarray([[self.eval_data[x].h, self.eval_data[x].r, self.eval_data[x].t]
@@ -359,7 +365,7 @@ class Evaluation(EvaluationMeta):
 
                 bar.update(i)
 
-        self.result_queue.put("Stop!")
+        self.result_queue.put(self.TEST_BATCH_STOP)
 
     def save_training_result(self, losses):
         """Function that saves training result"""
