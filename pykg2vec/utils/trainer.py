@@ -8,7 +8,7 @@ import tensorflow as tf
 import pandas as pd
 
 from pykg2vec.core.KGMeta import TrainerMeta
-from pykg2vec.utils.evaluation import Evaluation
+from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator
 from pykg2vec.config.global_config import GeneratorConfig
@@ -100,7 +100,7 @@ class Trainer(TrainerMeta):
         ### Early Stop Mechanism
 
         self.generator = Generator(config=self.generator_config, model_config=self.model.config)
-        self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
+        self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
 
         if self.config.loadFromData:
             self.load_model()
@@ -120,7 +120,7 @@ class Trainer(TrainerMeta):
                         (patience_left, previous_loss, loss))
 
                 elif patience_left == 0 and previous_loss <= loss:
-                    self.evaluator.result_queue.put(Evaluation.TEST_BATCH_EARLY_STOP)
+                    self.evaluator.result_queue.put(Evaluator.TEST_BATCH_EARLY_STOP)
                     break
                 else:
                     patience_left = self.config.patience
@@ -158,7 +158,7 @@ class Trainer(TrainerMeta):
         ### Early Stop Mechanism
 
         self.generator = Generator(config=self.generator_config, model_config=self.model.config)
-        self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
+        self.evaluator = Evaluator(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
        
         for cur_epoch_idx in range( self.config.epochs):
             loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
@@ -173,7 +173,7 @@ class Trainer(TrainerMeta):
                         (patience_left, previous_loss, loss))
 
                 elif patience_left == 0 and previous_loss <= loss:
-                    self.evaluator.result_queue.put(Evaluation.TEST_BATCH_EARLY_STOP)
+                    self.evaluator.result_queue.put(Evaluator.TEST_BATCH_EARLY_STOP)
                     break
                 else:
                     patience_left = self.config.patience
@@ -247,7 +247,7 @@ class Trainer(TrainerMeta):
                 curr_epoch (int): The current epoch number.
         """
         if not self.evaluator: 
-            self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
+            self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
 
         if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
                                                curr_epoch == 0 or

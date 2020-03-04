@@ -237,10 +237,10 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
     while True:
         result = result_queue.get()
         
-        if result == Evaluation.TEST_BATCH_START:
+        if result == Evaluator.TEST_BATCH_START:
             calculator.reset()
             
-        elif result == Evaluation.TEST_BATCH_STOP:
+        elif result == Evaluator.TEST_BATCH_STOP:
             calculator.settle()
             calculator.display_summary()
 
@@ -252,12 +252,12 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
                     output_queue.put(score)
 
                 break
-        elif result == Evaluation.TEST_BATCH_EARLY_STOP:
+        elif result == Evaluator.TEST_BATCH_EARLY_STOP:
             break
         else:
             calculator.append_result(result)
 
-class Evaluation(EvaluationMeta):
+class Evaluator(EvaluationMeta):
     """Class to perform evaluation of the model.
 
         Args:
@@ -267,8 +267,8 @@ class Evaluation(EvaluationMeta):
             tuning (bool): Flag to denoting tuning if True
 
         Examples:
-            >>> from pykg2vec.utils.evaluation import Evaluation
-            >>> evaluator = Evaluation(model=model, debug=False, tuning=True)
+            >>> from pykg2vec.utils.evaluator import Evaluator
+            >>> evaluator = Evaluator(model=model, debug=False, tuning=True)
             >>> evaluator.test_batch(Session(), 0)
             >>> acc = evaluator.output_queue.get()
             >>> evaluator.stop()
