@@ -29,7 +29,8 @@ def get_model(result_path_dir, configured_epochs):
     config.disp_result = False
     config.save_model = False
     config.path_result = result_path_dir
-
+    config.patience = 5
+    
     return model_def(config)
 
 def test_full_epochs(tmpdir):
@@ -53,7 +54,7 @@ def test_early_stopping(tmpdir):
     configured_epochs = 5
     model = get_model(result_path_dir, configured_epochs)
 
-    trainer = Trainer(model=model, debug=True, patience=0)
+    trainer = Trainer(model=model, debug=True)
     trainer.build_model()
     trainer.train_model()
 
