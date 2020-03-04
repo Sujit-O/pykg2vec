@@ -149,7 +149,7 @@ class BaysOptimizer(object):
             row.append(trial['result']['loss'])
             results.loc[idx] = row
 
-        path = self.trainer.config.result / self.trainer.model.model_name 
+        path = self.trainer.config.path_result / self.trainer.model.model_name 
         path.mkdir(parents=True, exist_ok=True)
         results.to_csv(str(path / "trials.csv"), index=False)
         
