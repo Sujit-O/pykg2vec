@@ -125,7 +125,7 @@ class BaysOptimizer(object):
         kge_args.dataset_name = args.dataset_name
         config = self.config_obj(kge_args)
 
-        self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug, tuning=True)
+        self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug)
         
         self.search_space = hyper_params.search_space
         self.max_evals = self.args.max_number_trials if not self.args.debug else 1

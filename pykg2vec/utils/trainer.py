@@ -32,15 +32,13 @@ class Trainer(TrainerMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
     """
-    def __init__(self, model, trainon='train', teston='valid', debug=False, tuning=False, patience=-1):
+    def __init__(self, model, trainon='train', teston='valid', debug=False):
         self.debug = debug
         self.model = model
         self.config = self.model.config
         self.training_results = []
-        self.tuning=tuning
         self.trainon = trainon
         self.teston = teston
-        self.patience = patience
 
         self.evaluator = None
         self.generator = None
@@ -77,9 +75,8 @@ class Trainer(TrainerMeta):
         self.sess.run(tf.global_variables_initializer())
         self.saver =  tf.train.Saver()
         
-        if not self.tuning:
-            self.summary()
-            self.summary_hyperparameter()
+        self.summary()
+        self.summary_hyperparameter()
 
         self.generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
                                                 batch_size=self.model.config.batch_size,
@@ -155,7 +152,7 @@ class Trainer(TrainerMeta):
         self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
        
         for n_iter in range( self.config.epochs):
-            self.train_model_epoch(n_iter)
+            self.train_model_epoch(n_iter, tuning=True)
 
         self.generator.stop()
         self.evaluator.test_batch(n_iter)
@@ -166,7 +163,7 @@ class Trainer(TrainerMeta):
 
         return acc
 
-    def train_model_epoch(self, epoch_idx):
+    def train_model_epoch(self, epoch_idx, tuning=False):
         """Function to train the model for one epoch."""
         acc_loss = 0
 
@@ -210,10 +207,10 @@ class Trainer(TrainerMeta):
 
             acc_loss += loss
 
-            if not self.tuning:
+            if not tuning:
                 print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
                                                             batch_idx, num_batch, loss), end='\r')
-        if not self.tuning:
+        if not tuning:
             print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
                 epoch_idx, acc_loss, timeit.default_timer() - start_time))
 
