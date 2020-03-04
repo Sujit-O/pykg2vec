@@ -181,8 +181,6 @@ class BaysOptimizer(object):
         
         # start the trial.
         self.trainer.build_model()
-        self.trainer.summary_hyperparameter()
-    
         loss = self.trainer.tune_model()
 
         return {'loss': loss, 'status': STATUS_OK}

@@ -12,7 +12,7 @@ import tensorflow as tf
 from argparse import ArgumentParser
 import importlib
 
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pykg2vec.utils.kgcontroller import KnowledgeGraph, KGMetaData
 from pykg2vec.config.hyperparams import HyperparamterLoader
 
 class Importer:
@@ -295,6 +295,35 @@ class BasicConfig:
         self.path_figures.mkdir(parents=True, exist_ok=True)
         self.path_embeddings = dataset_path / 'embeddings'
         self.path_embeddings.mkdir(parents=True, exist_ok=True)
+
+    def summary(self):
+        """Function to print the summary."""
+        print("\n------------------Global Setting--------------------")
+        # Acquire the max length and add four more spaces
+        maxspace = len(max([k for k in self.__dict__.keys()])) +20
+        for key, val in self.__dict__.items():
+            if key in self.__dict__['hyperparameters']:
+                continue
+
+            if isinstance(val, (KGMetaData, KnowledgeGraph)) or key.startswith('gpu') or key.startswith('hyperparameters'):
+                continue
+
+            if len(key) < maxspace:
+                for i in range(maxspace - len(key)):
+                    key = ' ' + key
+            print("%s : %s"%(key, val))
+        print("---------------------------------------------------")
+
+    def summary_hyperparameter(self, model_name):
+        """Function to print the hyperparameter summary."""
+        print("\n-----------%s Hyperparameter Setting-------------"%(model_name))
+        maxspace = len(max([k for k in self.hyperparameters.keys()])) + 15
+        for key,val in self.hyperparameters.items():
+            if len(key) < maxspace:
+                for i in range(maxspace - len(key)):
+                    key = ' ' + key
+            print("%s : %s" % (key, val))
+        print("---------------------------------------------------")
 
 
 class TransEConfig(BasicConfig):

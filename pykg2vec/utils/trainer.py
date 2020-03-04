@@ -75,8 +75,8 @@ class Trainer(TrainerMeta):
         self.sess.run(tf.global_variables_initializer())
         self.saver =  tf.train.Saver()
         
-        self.summary()
-        self.summary_hyperparameter()
+        self.config.summary()
+        self.config.summary_hyperparameter(self.model.model_name)
 
         self.generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
                                                 batch_size=self.model.config.batch_size,
@@ -133,8 +133,8 @@ class Trainer(TrainerMeta):
             self.display()
 
         if self.config.disp_summary:
-            self.summary()
-            self.summary_hyperparameter()
+            self.config.summary()
+            self.config.summary_hyperparameter(self.model.model_name)
 
         self.export_embeddings()
 
@@ -148,7 +148,6 @@ class Trainer(TrainerMeta):
         acc = 0
 
         self.generator = Generator(config=self.generator_config, model_config=self.model.config)
-
         self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
        
         for n_iter in range( self.config.epochs):
@@ -386,33 +385,3 @@ class Trainer(TrainerMeta):
 
                 df = pd.DataFrame(all_embs)
                 df.to_pickle(save_path / ("%s.pickle" % stored_name))
-
-                    
-    def summary(self):
-        """Function to print the summary."""
-        print("\n------------------Global Setting--------------------")
-        # Acquire the max length and add four more spaces
-        maxspace = len(max([k for k in self.config.__dict__.keys()])) +20
-        for key, val in self.config.__dict__.items():
-            if key in self.config.__dict__['hyperparameters']:
-                continue
-
-            if isinstance(val, (KGMetaData, KnowledgeGraph)) or key.startswith('gpu') or key.startswith('hyperparameters'):
-                continue
-
-            if len(key) < maxspace:
-                for i in range(maxspace - len(key)):
-                    key = ' ' + key
-            print("%s : %s"%(key, val))
-        print("---------------------------------------------------")
-
-    def summary_hyperparameter(self):
-        """Function to print the hyperparameter summary."""
-        print("\n-----------%s Hyperparameter Setting-------------"%(self.model.model_name))
-        maxspace = len(max([k for k in self.config.hyperparameters.keys()])) + 15
-        for key,val in self.config.hyperparameters.items():
-            if len(key) < maxspace:
-                for i in range(maxspace - len(key)):
-                    key = ' ' + key
-            print("%s : %s" % (key, val))
-        print("---------------------------------------------------")
