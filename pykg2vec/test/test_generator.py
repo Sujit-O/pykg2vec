@@ -21,7 +21,7 @@ def test_generator_proje():
 
     config = ProjE_pointwiseConfig(args=args)
 
-    gen = iter(Generator(config=GeneratorConfig(data='train', algo='ProjE'), model_config=config))
+    gen = iter(Generator(config=GeneratorConfig(data='train', training_strategy='projection_based'), model_config=config))
     
     for i in range(1000):
         data = list(next(gen))
@@ -49,7 +49,7 @@ def test_generator_trane():
     
     config = TransEConfig(args)
 
-    gen = Generator(config=GeneratorConfig(data='train', algo='transe'), model_config=config)
+    gen = Generator(config=GeneratorConfig(data='train', training_strategy='pairwise_based'), model_config=config)
 
     print("----init time:", timeit.default_timer() - start_time)
     
