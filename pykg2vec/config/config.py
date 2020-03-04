@@ -296,6 +296,9 @@ class BasicConfig:
         self.path_embeddings = dataset_path / 'embeddings'
         self.path_embeddings.mkdir(parents=True, exist_ok=True)
 
+        # debugging information 
+        self.debug = args.debug
+
     def summary(self):
         """Function to print the summary."""
         print("\n------------------Global Setting--------------------")
