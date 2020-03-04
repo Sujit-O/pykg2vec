@@ -146,15 +146,37 @@ class Trainer(TrainerMeta):
     def tune_model(self):
         """Function to tune the model."""
         acc = 0
+        ### Early Stop Mechanism
+        loss = previous_loss = float("inf")
+        patience_left = self.config.patience
+        ### Early Stop Mechanism
+
 
         self.generator = Generator(config=self.generator_config, model_config=self.model.config)
         self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
        
-        for n_iter in range( self.config.epochs):
-            self.train_model_epoch(n_iter, tuning=True)
+        for cur_epoch_idx in range( self.config.epochs):
+            loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
+            ### Early Stop Mechanism
+            ### start to check if the loss is still decreasing after an interval. 
+            ### Example, if early_stop_epoch == 50, the trainer will check loss every 50 epoche.
+            ### TODO: change to support different metrics.
+            if ((cur_epoch_idx + 1) % self.config.early_stop_epoch) == 0: 
+                if patience_left > 0 and previous_loss <= loss:
+                    patience_left -= 1
+                    print('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
+                        (patience_left, previous_loss, loss))
+
+                elif patience_left == 0 and previous_loss <= loss:
+                    self.evaluator.result_queue.put(Evaluation.TEST_BATCH_EARLY_STOP)
+                    break
+                else:
+                    patience_left = self.config.patience
+
+            previous_loss = loss
 
         self.generator.stop()
-        self.evaluator.test_batch(n_iter)
+        self.evaluator.test_batch(cur_epoch_idx)
         acc = self.evaluator.output_queue.get()
         self.evaluator.stop()
         self.sess.close()
