@@ -12,7 +12,7 @@ from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 @pytest.mark.skip(reason="This is a functional method.")
-def get_model(result_path_dir, configured_epochs):
+def get_model(result_path_dir, configured_epochs, early_stop_epoch):
     tf.reset_default_graph()
 
     args = KGEArgParser().get_args([])
@@ -30,14 +30,14 @@ def get_model(result_path_dir, configured_epochs):
     config.save_model = False
     config.path_result = result_path_dir
     config.patience = 1
-    config.early_stop_epoch = 1
+    config.early_stop_epoch = early_stop_epoch
     
     return model_def(config)
 
 def test_full_epochs(tmpdir):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 5
-    model = get_model(result_path_dir, configured_epochs)
+    model = get_model(result_path_dir, configured_epochs, 5)
 
     trainer = Trainer(model=model, debug=True)
     trainer.build_model()
@@ -53,7 +53,7 @@ def test_full_epochs(tmpdir):
 def test_early_stopping(tmpdir):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 5
-    model = get_model(result_path_dir, configured_epochs)
+    model = get_model(result_path_dir, configured_epochs, 1)
 
     trainer = Trainer(model=model, debug=True)
     trainer.build_model()
