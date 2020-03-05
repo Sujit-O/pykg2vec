@@ -397,22 +397,27 @@ class Evaluator(EvaluationMeta):
 
         self.result_queue.put(self.TEST_BATCH_START)
         with progressbar.ProgressBar(max_value=self.n_test, widgets=widgets) as bar:
+            entity_array = np.arange(self.model.config.kg_meta.tot_entity)
+            
             for i in range(self.n_test):
                 h, r, t = self.eval_data[i].h, self.eval_data[i].r, self.eval_data[i].t
                 
                 # generate head batch and predict heads. Tensorflow handles broadcasting.
-                entity_array = np.arange(self.model.config.kg_meta.tot_entity)
+                
+                h_batch = np.tile([h], self.model.config.kg_meta.tot_entity)
+                r_batch = np.tile([r], self.model.config.kg_meta.tot_entity)
+                t_batch = np.tile([t], self.model.config.kg_meta.tot_entity)
 
                 feed_dict = {
                     self.model.test_h_batch: entity_array,
-                    self.model.test_r_batch: [r],
-                    self.model.test_t_batch: [t]}
+                    self.model.test_r_batch: r_batch,
+                    self.model.test_t_batch: t_batch}
 
                 head_tmp = np.squeeze(self.session.run([rank], feed_dict))
                 
                 feed_dict = {
-                    self.model.test_h_batch: [h],
-                    self.model.test_r_batch: [r],
+                    self.model.test_h_batch: h_batch,
+                    self.model.test_r_batch: r_batch,
                     self.model.test_t_batch: entity_array}
                 
                 tail_tmp = np.squeeze(self.session.run([rank], feed_dict))
