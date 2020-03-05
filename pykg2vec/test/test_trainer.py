@@ -29,7 +29,7 @@ def get_model(result_path_dir, configured_epochs):
     config.disp_result = False
     config.save_model = False
     config.path_result = result_path_dir
-    config.patience = 2
+    config.patience = 1
     config.early_stop_epoch = 1
     
     return model_def(config)
