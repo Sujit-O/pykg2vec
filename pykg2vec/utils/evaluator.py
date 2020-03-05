@@ -65,6 +65,22 @@ class MetricCalculator:
             self.f_rank_head.append(f_h_rank)
             self.f_rank_tail.append(f_t_rank)
 
+    def append_result_new(self, result):
+        predict_tail = result[0]
+        predict_head = result[1]
+
+        h,r,t = result[2], result[3], result[4]
+
+        self.epoch = result[5]
+
+        t_rank, f_t_rank = self.get_tail_rank(predict_tail, h, r, t)
+        h_rank, f_h_rank = self.get_head_rank(predict_head, h, r, t)
+
+        self.rank_head.append(h_rank)
+        self.rank_tail.append(t_rank)
+        self.f_rank_head.append(f_h_rank)
+        self.f_rank_tail.append(f_t_rank)
+
     def get_tail_rank(self, tail_candidate, h, r, t):
         """Function to evaluate the tail rank.
            
@@ -255,7 +271,10 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
         elif result == Evaluator.TEST_BATCH_EARLY_STOP:
             break
         else:
-            calculator.append_result(result)
+            if config.batch_size_testing == 1:
+                calculator.append_result_new(result)
+            else:
+                calculator.append_result(result)
 
 class Evaluator(EvaluationMeta):
     """Class to perform evaluation of the model.
@@ -361,6 +380,45 @@ class Evaluator(EvaluationMeta):
                 head_tmp, tail_tmp = np.squeeze(self.session.run([head_rank, tail_rank], feed_dict))
                 
                 result_data = [tail_tmp, head_tmp, h, r, t, epoch]
+                self.result_queue.put(result_data)
+
+                bar.update(i)
+
+        self.result_queue.put(self.TEST_BATCH_STOP)
+
+    def test_per_sample(self, epoch=None):
+
+        print("New Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
+
+        rank = self.model.def_predict()
+
+        widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), " Done:",
+                   progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
+
+        self.result_queue.put(self.TEST_BATCH_START)
+        with progressbar.ProgressBar(max_value=self.n_test, widgets=widgets) as bar:
+            for i in range(self.n_test):
+                h, r, t = self.eval_data[i].h, self.eval_data[i].r, self.eval_data[i].t
+                
+                # generate head batch and predict heads. Tensorflow handles broadcasting.
+                entity_array = np.arange(self.model.config.kg_meta.tot_entity)
+
+                feed_dict = {
+                    self.model.test_h_batch: entity_array,
+                    self.model.test_r_batch: [r],
+                    self.model.test_t_batch: [t]}
+
+                head_tmp = np.squeeze(self.session.run([rank], feed_dict))
+                
+                feed_dict = {
+                    self.model.test_h_batch: [h],
+                    self.model.test_r_batch: [r],
+                    self.model.test_t_batch: entity_array}
+                
+                tail_tmp = np.squeeze(self.session.run([rank], feed_dict))
+
+                result_data = [tail_tmp, head_tmp, h, r, t, epoch]
+
                 self.result_queue.put(result_data)
 
                 bar.update(i)

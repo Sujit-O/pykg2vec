@@ -136,6 +136,22 @@ class TransE(ModelMeta, InferenceMeta):
 
         self.loss = self.pairwise_margin_loss(pos_score, neg_score)
 
+    def def_predict(self):
+        """Function that performs prediction for TransE. 
+           shape of h can be either [num_tot_entity] or [1]. 
+           shape of t can be either [num_tot_entity] or [1].
+
+          Returns:
+              Tensors: Returns ranks of head and tail.
+        """
+        h_e, r_e, t_e = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+
+        score_head = self.dissimilarity(h_e, r_e, t_e)
+        
+        _, rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
+
+        return rank
+    
     def test_batch(self):
         """Function that performs batch testing for the algorithm.
 

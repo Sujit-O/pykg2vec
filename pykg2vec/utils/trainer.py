@@ -252,10 +252,17 @@ class Trainer(TrainerMeta):
         if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
                                                curr_epoch == 0 or
                                                curr_epoch == self.config.epochs - 1):
-            self.evaluator.test_batch(curr_epoch)
+            if self.model.config.batch_size_testing == 1:
+                self.evaluator.test_per_sample(curr_epoch)
+            else:
+                self.evaluator.test_batch(curr_epoch)
         else:
             if curr_epoch == self.config.epochs - 1:
-                self.evaluator.test_batch(curr_epoch)
+                if self.model.config.batch_size_testing == 1:
+                    self.evaluator.test_per_sample(curr_epoch)
+                else:
+                    self.evaluator.test_batch(curr_epoch)
+
 
     ''' Interactive Inference related '''
    
