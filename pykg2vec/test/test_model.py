@@ -33,6 +33,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False):
     config.test_num   = 10
     config.disp_result= display
     config.save_model = False
+    config.debug      = True
 
     model = model_def(config)
 
