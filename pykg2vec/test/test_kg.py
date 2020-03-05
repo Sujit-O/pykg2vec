@@ -1,4 +1,4 @@
-import os
+import os, pytest
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 @pytest.mark.parametrize("dataset_name", ["freebase15k", "deeplearning50a", "wordnet18", "wordnet18_rr", "yago3_10"])
