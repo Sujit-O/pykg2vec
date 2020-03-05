@@ -1,7 +1,7 @@
 import os, pytest
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
-@pytest.mark.parametrize("dataset_name", ["freebase15k", "deeplearning50a", "wordnet18", "wordnet18_rr", "yago3_10"])
+@pytest.mark.parametrize("dataset_name", ["freebase15k", "wordnet18", "wordnet18_rr", "yago3_10"])
 @pytest.mark.parametrize("sampling", ["uniform", "bern"])
 def test_benchmarks(dataset_name, sampling):
     """Function to test the the knowledge graph parse for Freebase."""
