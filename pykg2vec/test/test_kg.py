@@ -5,6 +5,7 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
 @pytest.mark.parametrize("sampling", ["uniform", "bern"])
 def test_benchmarks(dataset_name, sampling):
     """Function to test the the knowledge graph parse for Freebase."""
+    print("testing downloading from online sources of benchmarks and KG controller's handling.")
     knowledge_graph = KnowledgeGraph(dataset=dataset_name, negative_sample=sampling)
     knowledge_graph.force_prepare_data()
     knowledge_graph.dump()
