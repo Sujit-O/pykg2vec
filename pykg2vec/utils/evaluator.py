@@ -13,7 +13,7 @@ import pandas as pd
 import timeit
 from multiprocessing import Process, Queue
 import progressbar
-
+import tensorflow as tf
 from pykg2vec.core.KGMeta import EvaluationMeta
 
 
@@ -390,8 +390,6 @@ class Evaluator(EvaluationMeta):
 
         print("New Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
 
-        rank = self.model.def_predict()
-
         widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), " Done:",
                    progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
 
@@ -403,32 +401,34 @@ class Evaluator(EvaluationMeta):
                 h, r, t = self.eval_data[i].h, self.eval_data[i].r, self.eval_data[i].t
                 
                 # generate head batch and predict heads. Tensorflow handles broadcasting.
-                
-                h_batch = np.tile([h], self.model.config.kg_meta.tot_entity)
-                r_batch = np.tile([r], self.model.config.kg_meta.tot_entity)
-                t_batch = np.tile([t], self.model.config.kg_meta.tot_entity)
+                h_tensor = tf.convert_to_tensor(h, dtype=tf.int32)
+                r_tensor = tf.convert_to_tensor(r, dtype=tf.int32)
+                t_tensor = tf.convert_to_tensor(t, dtype=tf.int32)
 
-                feed_dict = {
-                    self.model.test_h_batch: entity_array,
-                    self.model.test_r_batch: r_batch,
-                    self.model.test_t_batch: t_batch}
-
-                head_tmp = np.squeeze(self.session.run([rank], feed_dict))
-                
-                feed_dict = {
-                    self.model.test_h_batch: h_batch,
-                    self.model.test_r_batch: r_batch,
-                    self.model.test_t_batch: entity_array}
-                
-                tail_tmp = np.squeeze(self.session.run([rank], feed_dict))
-
-                result_data = [tail_tmp, head_tmp, h, r, t, epoch]
+                hrank, trank = self.test_step(h_tensor, r_tensor, t_tensor)
+                # import pdb; pdb.set_trace()
+                result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
 
                 self.result_queue.put(result_data)
 
                 bar.update(i)
 
         self.result_queue.put(self.TEST_BATCH_STOP)
+    
+    @tf.function
+    def test_step(self, h, r, t):
+        tot_ent = self.model.config.kg_meta.tot_entity
+
+        entity_array = tf.range(tot_ent)
+
+        h_batch = tf.tile([h], [tot_ent])
+        r_batch = tf.tile([r], [tot_ent])
+        t_batch = tf.tile([t], [tot_ent])
+
+        hrank = self.model.predict(entity_array, r_batch, t_batch)
+        trank = self.model.predict(h_batch, r_batch, entity_array)
+
+        return hrank, trank
 
     def save_training_result(self, losses):
         """Function that saves training result"""

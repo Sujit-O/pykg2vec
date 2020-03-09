@@ -72,6 +72,8 @@ class TransE(ModelMeta, InferenceMeta):
         self.test_t_batch = tf.placeholder(tf.int32, [None])
         self.test_r_batch = tf.placeholder(tf.int32, [None])
 
+        ## unused.
+
     def def_parameters(self):
         """Defines the model parameters.
 
@@ -86,15 +88,12 @@ class TransE(ModelMeta, InferenceMeta):
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
+        
+        emb_initializer = tf.initializers.glorot_normal()
 
-        with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
+        self.ent_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embedding")
+        self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
 
     def dissimilarity(self, h, r, t, axis=-1):
         """Function to calculate distance measure in embedding space.
@@ -126,17 +125,19 @@ class TransE(ModelMeta, InferenceMeta):
         
         return tf.reduce_sum(dissimilarity, axis=axis)
 
-    def def_loss(self):
+    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
         """Defines the loss function for the algorithm."""
-        pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
+        pos_h_e, pos_r_e, pos_t_e = self.embed(pos_h, pos_r, pos_t)
         pos_score = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
 
-        neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)      
+        neg_h_e, neg_r_e, neg_t_e = self.embed(neg_h, neg_r, neg_t)      
         neg_score = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
 
-        self.loss = self.pairwise_margin_loss(pos_score, neg_score)
+        loss = self.pairwise_margin_loss(pos_score, neg_score)
 
-    def def_predict(self):
+        return loss
+
+    def predict(self, h, r, t):
         """Function that performs prediction for TransE. 
            shape of h can be either [num_tot_entity] or [1]. 
            shape of t can be either [num_tot_entity] or [1].
@@ -144,7 +145,7 @@ class TransE(ModelMeta, InferenceMeta):
           Returns:
               Tensors: Returns ranks of head and tail.
         """
-        h_e, r_e, t_e = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+        h_e, r_e, t_e = self.embed(h, r, t)
 
         score_head = self.dissimilarity(h_e, r_e, t_e)
         

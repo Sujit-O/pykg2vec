@@ -51,35 +51,35 @@ class Trainer(TrainerMeta):
 
     def build_model(self):
         """function to build the model"""
-        self.model.def_inputs()
+        # self.model.def_inputs()
         self.model.def_parameters()
         if getattr(self.model, "def_layer", None):
             self.model.def_layer()
-        self.model.def_loss()
+        # self.model.def_loss()
 
-        if not self.debug:
-            self.sess = tf.Session(config=self.config.gpu_config)
-        else:
-            self.sess = tf.InteractiveSession()
+        # if not self.debug:
+        #     self.sess = tf.Session(config=self.config.gpu_config)
+        # else:
+        #     self.sess = tf.InteractiveSession()
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
 
         if self.config.optimizer == 'sgd':
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.keras.optimizers.SGD(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'rms':
-            optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.keras.optimizers.RMSProp(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adam':
-            optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adagrad':
-            optimizer = tf.train.AdagradOptimizer(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.keras.optimizers.Adagrad(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adadelta':
-            optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.keras.optimizers.Adadelta(learning_rate=self.config.learning_rate)
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
 
-        grads = optimizer.compute_gradients(self.model.loss)
-        self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
-        self.sess.run(tf.global_variables_initializer())
-        self.saver =  tf.train.Saver()
+        # grads = self.optimizer.compute_gradients(self.model.loss)
+        # self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
+        # self.sess.run(tf.global_variables_initializer())
+        # self.saver =  tf.train.Saver()
         
         self.config.summary()
         self.config.summary_hyperparameter(self.model.model_name)
@@ -91,6 +91,15 @@ class Trainer(TrainerMeta):
 
 
     ''' Training related functions:'''
+    @tf.function
+    def train_step(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
+        with tf.GradientTape() as tape:
+            loss = self.model.get_loss(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
+
+        gradients = tape.gradient(loss, self.model.parameter_list)
+        self.optimizer.apply_gradients(zip(gradients, self.model.parameter_list))
+
+        return loss
 
     def train_model(self):
         """Function to train the model."""
@@ -100,7 +109,8 @@ class Trainer(TrainerMeta):
         ### Early Stop Mechanism
 
         self.generator = Generator(config=self.generator_config, model_config=self.model.config)
-        self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
+        # self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
+        self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug)
 
         if self.config.loadFromData:
             self.load_model()
@@ -210,20 +220,18 @@ class Trainer(TrainerMeta):
                     self.model.hr_t: hr_t,
                     self.model.rt_h: rt_h
                 }
-            
-            elif self.training_strategy == "pairwise_based":
-                ph, pr, pt, nh, nr, nt = data[0], data[1], data[2], data[3], data[4], data[5]
+                
+                _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
 
-                feed_dict = {
-                    self.model.pos_h: ph,
-                    self.model.pos_t: pt,
-                    self.model.pos_r: pr,
-                    self.model.neg_h: nh,
-                    self.model.neg_t: nt,
-                    self.model.neg_r: nr
-                }
+            else:
+                ph = tf.convert_to_tensor(data[0], dtype=tf.int32)
+                pr = tf.convert_to_tensor(data[1], dtype=tf.int32)
+                pt = tf.convert_to_tensor(data[2], dtype=tf.int32)
+                nh = tf.convert_to_tensor(data[3], dtype=tf.int32)
+                nr = tf.convert_to_tensor(data[4], dtype=tf.int32)
+                nt = tf.convert_to_tensor(data[5], dtype=tf.int32)
 
-            _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
+                loss = self.train_step(ph, pr, pt, nh, nr, nt)
 
             acc_loss += loss
 
