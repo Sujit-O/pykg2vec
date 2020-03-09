@@ -139,7 +139,9 @@ class TransH(ModelMeta):
         neg_h_e, neg_r_e, neg_t_e = self.embed(neg_h, neg_r, neg_t)
         neg_score = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
 
-        self.loss = self.pairwise_margin_loss(pos_score, neg_score) + self.get_reg()
+        loss = self.pairwise_margin_loss(pos_score, neg_score) + self.get_reg()
+
+        return loss
       
     def get_reg(self):
         """Performs regularization."""
@@ -148,7 +150,7 @@ class TransH(ModelMeta):
         norm_w = tf.nn.l2_normalize(self.w, axis=-1)
 
         term1 = tf.reduce_sum(tf.maximum(tf.reduce_sum(norm_ent_embedding ** 2, -1) - 1, 0))
-        term2 = tf.reduce_sum(tf.maximum(tf.div(tf.reduce_sum(norm_rel_embedding * norm_w, -1) ** 2,
+        term2 = tf.reduce_sum(tf.maximum(tf.divide(tf.reduce_sum(norm_rel_embedding * norm_w, -1) ** 2,
                                                 tf.reduce_sum(norm_rel_embedding ** 2, -1)) - 1e-07, 0))
 
         return self.config.C * (term1 + term2)
