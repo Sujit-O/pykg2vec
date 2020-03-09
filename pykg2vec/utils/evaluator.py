@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 import timeit
 from multiprocessing import Process, Queue
-import progressbar
 import tensorflow as tf
 from pykg2vec.core.KGMeta import EvaluationMeta
 
@@ -276,6 +275,7 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
             else:
                 calculator.append_result(result)
 
+
 class Evaluator(EvaluationMeta):
     """Class to perform evaluation of the model.
 
@@ -388,42 +388,37 @@ class Evaluator(EvaluationMeta):
 
     def test_batch(self, epoch=None):
         """Function that performs the batch testing"""
-        
         print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
 
         size_per_batch = self.model.config.batch_size_testing
 
-        widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), " Done:",
-                   progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
+        progress_bar = tf.keras.utils.Progbar(self.loop_len)
 
         self.result_queue.put(self.TEST_BATCH_START)
-        with progressbar.ProgressBar(max_value=self.loop_len, widgets=widgets) as bar:
-            for i in range(self.loop_len):
-                data = np.asarray([[self.eval_data[x].h, self.eval_data[x].r, self.eval_data[x].t]
-                                   for x in range(size_per_batch * i, size_per_batch * (i + 1))])
-                
-                h = tf.convert_to_tensor(data[:, 0], dtype=tf.int32)
-                r = tf.convert_to_tensor(data[:, 1], dtype=tf.int32)
-                t = tf.convert_to_tensor(data[:, 2], dtype=tf.int32)
+        for i in range(self.loop_len):
+            data = np.asarray([[self.eval_data[x].h, self.eval_data[x].r, self.eval_data[x].t]
+                               for x in range(size_per_batch * i, size_per_batch * (i + 1))])
+            
+            h = tf.convert_to_tensor(data[:, 0], dtype=tf.int32)
+            r = tf.convert_to_tensor(data[:, 1], dtype=tf.int32)
+            t = tf.convert_to_tensor(data[:, 2], dtype=tf.int32)
 
-                hrank, trank = self.test_step_batch(h, r, t)
-                
-                result_data = [trank.numpy(), hrank.numpy(), h.numpy(), r.numpy(), t.numpy(), epoch]
+            hrank, trank = self.test_step_batch(h, r, t)
+            
+            result_data = [trank.numpy(), hrank.numpy(), h.numpy(), r.numpy(), t.numpy(), epoch]
 
-                self.result_queue.put(result_data)
+            self.result_queue.put(result_data)
 
-                bar.update(i)
+            progress_bar.add(1)
 
         self.result_queue.put(self.TEST_BATCH_STOP)
-    
-    
 
     def test_per_sample(self, epoch=None):
+        print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
 
-        print("New Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
+        progress_bar = tf.keras.utils.Progbar(self.n_test)
 
         self.result_queue.put(self.TEST_BATCH_START)
-                
         for i in range(self.n_test):
             h, r, t = self.eval_data[i].h, self.eval_data[i].r, self.eval_data[i].t
             
@@ -438,6 +433,8 @@ class Evaluator(EvaluationMeta):
             result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
 
             self.result_queue.put(result_data)
+
+            progress_bar.add(1)
 
         self.result_queue.put(self.TEST_BATCH_STOP) 
 
