@@ -191,8 +191,9 @@ class Trainer(TrainerMeta):
         acc_loss = 0
 
         num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 10
-
-        start_time = timeit.default_timer()
+       
+        metrics_names = ['acc_loss', 'loss'] 
+        progress_bar = tf.keras.utils.Progbar(num_batch, stateful_metrics=metrics_names)
 
         for batch_idx in range(num_batch):
             data = list(next(self.generator))
@@ -216,11 +217,7 @@ class Trainer(TrainerMeta):
             acc_loss += loss
 
             if not tuning:
-                print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                                                            batch_idx, num_batch, loss), end='\r')
-        if not tuning:
-            print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
-                epoch_idx, acc_loss, timeit.default_timer() - start_time))
+                progress_bar.add(1, values=[('acc_loss', acc_loss), ('loss', loss)])
 
         self.training_results.append([epoch_idx, acc_loss])
 
