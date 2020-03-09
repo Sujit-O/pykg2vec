@@ -66,7 +66,7 @@ class Trainer(TrainerMeta):
         if self.config.optimizer == 'sgd':
             self.optimizer = tf.keras.optimizers.SGD(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'rms':
-            self.optimizer = tf.keras.optimizers.RMSProp(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adam':
             self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adagrad':
