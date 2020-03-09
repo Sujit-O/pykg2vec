@@ -273,6 +273,7 @@ class Trainer(TrainerMeta):
         self.build_model()
         self.load_model()
 
+        self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug)
         print("The training/loading of the model has finished!\nNow enter interactive mode :)")
         print("-----")
         print("Example 1: trainer.infer_tails(1,10,topk=5)")
@@ -290,7 +291,7 @@ class Trainer(TrainerMeta):
         print("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self,h,r,topk=5):
-        tails = self.model.infer_tails(h,r,topk)
+        tails = self.model.evaluator.test_tail_rank(h,r,topk)
         print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
@@ -303,7 +304,7 @@ class Trainer(TrainerMeta):
         return {tail: idx2ent[tail] for tail in tails}
 
     def infer_heads(self,r,t,topk=5):
-        heads = self.model.infer_heads(r,t,topk)
+        heads = self.model.evaluator.test_head_rank(r,t,topk)
         print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
@@ -316,7 +317,7 @@ class Trainer(TrainerMeta):
         return {head: idx2ent[head] for head in heads}
 
     def infer_rels(self, h, t, topk=5):
-        rels = self.model.infer_rels(h, t, topk)
+        rels = self.model.evaluator.test_rel_rank(h,t,topk)
         print("\n(head,tail)->({},{}) :: Inferred rels->({})\n".format(h, t, ",".join([str(i) for i in rels])))
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
