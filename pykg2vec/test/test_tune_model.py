@@ -15,9 +15,6 @@ from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 @pytest.mark.skip(reason="This is a functional method.")
 def tunning_function(name):
     """Function to test the tuning of the models."""
-
-    tf.reset_default_graph()
-    
     knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
     knowledge_graph.prepare_data()
 

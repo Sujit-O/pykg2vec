@@ -13,8 +13,6 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 @pytest.mark.skip(reason="This is a functional method.")
 def get_model(result_path_dir, configured_epochs, early_stop_epoch):
-    tf.reset_default_graph()
-
     args = KGEArgParser().get_args([])
 
     knowledge_graph = KnowledgeGraph(dataset="Freebase15k")

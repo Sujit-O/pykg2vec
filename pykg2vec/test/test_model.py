@@ -15,8 +15,6 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
 @pytest.mark.skip(reason="This is a functional method.")
 def testing_function(name, distance_measure=None, bilinear=None, display=False):
     """Function to test the models with arguments."""
-    tf.reset_default_graph()
-    
     # getting the customized configurations from the command-line arguments.
     args = KGEArgParser().get_args([])
     
