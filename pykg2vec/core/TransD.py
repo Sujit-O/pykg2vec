@@ -154,17 +154,17 @@ class TransD(ModelMeta, InferenceMeta):
 
         return rank
 
-    def test_batch(self):
+    def test_batch(self, h_batch, r_batch, t_batch):
         """Function that performs batch testing for the algorithm.
 
            Returns:
                Tensors: Returns ranks of head and tail.
         """
-        head_vec, rel_vec, tail_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+        head_vec, rel_vec, tail_vec = self.embed(h_batch, r_batch, t_batch)
         
         ent_embeddings_ex = tf.expand_dims(self.ent_embeddings, axis=0)
         ent_mappings_ex = tf.expand_dims(self.ent_mappings, axis=0)
-        r_m_ex = tf.expand_dims(tf.nn.embedding_lookup(self.rel_mappings, self.test_r_batch), axis=1)
+        r_m_ex = tf.expand_dims(tf.nn.embedding_lookup(self.rel_mappings, r_batch), axis=1)
         project_ent_embedding = self.projection(ent_embeddings_ex, ent_mappings_ex, r_m_ex)
 
         score_head = self.dissimilarity(project_ent_embedding,
