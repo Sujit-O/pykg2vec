@@ -41,33 +41,9 @@ class TransD(ModelMeta, InferenceMeta):
     """
 
     def __init__(self, config):
+        super(TransD, self).__init__()
         self.config = config
-        self.data_stats = self.config.kg_meta
         self.model_name = 'TransD'
-
-    def def_inputs(self):
-        """Defines the inputs to the model.
-
-           Attributes:
-              pos_h (Tensor): Positive Head entities ids.
-              pos_r (Tensor): Positive Relation ids of the triple.
-              pos_t (Tensor): Positive Tail entity ids of the triple.
-              neg_h (Tensor): Negative Head entities ids.
-              neg_r (Tensor): Negative Relation ids of the triple.
-              neg_t (Tensor): Negative Tail entity ids of the triple.
-              test_h_batch (Tensor): Batch of head ids for testing.
-              test_r_batch (Tensor): Batch of relation ids for testing
-              test_t_batch (Tensor): Batch of tail ids for testing.
-        """
-        self.pos_h = tf.placeholder(tf.int32, [None])
-        self.pos_t = tf.placeholder(tf.int32, [None])
-        self.pos_r = tf.placeholder(tf.int32, [None])
-        self.neg_h = tf.placeholder(tf.int32, [None])
-        self.neg_t = tf.placeholder(tf.int32, [None])
-        self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h_batch = tf.placeholder(tf.int32, [None])
-        self.test_t_batch = tf.placeholder(tf.int32, [None])
-        self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -84,24 +60,17 @@ class TransD(ModelMeta, InferenceMeta):
                rel_mappings   (Tensor Variable): Lookup variable containing   mapping for relations.
                parameter_list  (list): List of Tensor parameters.
         """
-        num_total_ent = self.data_stats.tot_entity
-        num_total_rel = self.data_stats.tot_relation
+        num_total_ent = self.config.kg_meta.tot_entity
+        num_total_rel = self.config.kg_meta.tot_relation
         d = self.config.ent_hidden_size
         k = self.config.rel_hidden_size
 
-        with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="ent_embedding",
-                                                  shape=[num_total_ent, d],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings = tf.get_variable(name="rel_embedding",
-                                                  shape=[num_total_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.ent_mappings   = tf.get_variable(name="ent_mappings",
-                                                  shape=[num_total_ent, d],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_mappings   = tf.get_variable(name="rel_mappings",
-                                                  shape=[num_total_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        emb_initializer = tf.initializers.glorot_normal()
+
+        self.ent_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, d)), name="ent_embedding")
+        self.rel_embeddings = tf.Varialbe(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
+        self.ent_mappings   = tf.Variable(emb_initializer(shape=(num_total_ent, d)), name="ent_mappings")
+        self.rel_mappings   = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_mappings")
 
             self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.ent_mappings, self.rel_mappings]
 
@@ -165,8 +134,8 @@ class TransD(ModelMeta, InferenceMeta):
                                         tf.expand_dims(rel_vec, axis=1),
                                         project_ent_embedding)
 
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
+        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
+        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
 
         return head_rank, tail_rank
 
