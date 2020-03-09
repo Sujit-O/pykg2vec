@@ -270,7 +270,7 @@ class Trainer(TrainerMeta):
         print("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self,h,r,topk=5):
-        tails = self.evaluator.test_tail_rank(h,r,topk)
+        tails = self.evaluator.test_tail_rank(h,r,topk).numpy()
         print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
@@ -283,7 +283,7 @@ class Trainer(TrainerMeta):
         return {tail: idx2ent[tail] for tail in tails}
 
     def infer_heads(self,r,t,topk=5):
-        heads = self.evaluator.test_head_rank(r,t,topk)
+        heads = self.evaluator.test_head_rank(r,t,topk).numpy()
         print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
@@ -296,7 +296,7 @@ class Trainer(TrainerMeta):
         return {head: idx2ent[head] for head in heads}
 
     def infer_rels(self, h, t, topk=5):
-        rels = self.evaluator.test_rel_rank(h,t,topk)
+        rels = self.evaluator.test_rel_rank(h,t,topk).numpy()
         print("\n(head,tail)->({},{}) :: Inferred rels->({})\n".format(h, t, ",".join([str(i) for i in rels])))
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
