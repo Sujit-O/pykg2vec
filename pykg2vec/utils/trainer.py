@@ -236,9 +236,6 @@ class Trainer(TrainerMeta):
            Args:
                 curr_epoch (int): The current epoch number.
         """
-        if not self.evaluator: 
-            self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug)
-
         if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
                                                curr_epoch == 0 or
                                                curr_epoch == self.config.epochs - 1):
@@ -315,6 +312,7 @@ class Trainer(TrainerMeta):
             print("%dth predicted rel: %s" % (idx, idx2rel[rel]))
 
         return {rel: idx2rel[rel] for rel in rels}
+    
     ''' Procedural functions:'''
 
     def save_model(self):
