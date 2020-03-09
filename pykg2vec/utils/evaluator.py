@@ -364,7 +364,7 @@ class Evaluator(EvaluationMeta):
         r_batch = tf.tile([r], [tot_ent])
         entity_array = tf.range(tot_ent)
 
-        return self.model.predict(h_batch, r_batch, entity_array)
+        return self.model.predict(h_batch, r_batch, entity_array, topk=tot_ent)
 
     @tf.function
     def test_head_rank(self, h, r, t):
@@ -374,7 +374,17 @@ class Evaluator(EvaluationMeta):
         r_batch = tf.tile([r], [tot_ent])
         t_batch = tf.tile([t], [tot_ent])
     
-        return self.model.predict(entity_array, r_batch, t_batch)
+        return self.model.predict(entity_array, r_batch, t_batch, topk=tot_ent)
+
+    @tf.function
+    def test_rel_rank(self, h, r, t):
+        tot_rel = self.model.config.kg_meta.tot_relation
+    
+        h_batch = tf.tile([h], [tot_rel])
+        rel_array = tf.range(tot_rel)
+        t_batch = tf.tile([t], [tot_rel])
+    
+        return self.model.predict(h_batch, rel_array, t_batch, topk=tot_rel)
 
     def test_batch(self, epoch=None):
         """Function that performs the batch testing"""

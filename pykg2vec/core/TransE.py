@@ -112,7 +112,7 @@ class TransE(ModelMeta):
 
         return loss
 
-    def predict(self, h, r, t):
+    def predict(self, h, r, t, topk):
         """Function that performs prediction for TransE. 
            shape of h can be either [num_tot_entity] or [1]. 
            shape of t can be either [num_tot_entity] or [1].
@@ -124,7 +124,7 @@ class TransE(ModelMeta):
 
         score_head = self.dissimilarity(h_e, r_e, t_e)
         
-        _, rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
+        _, rank = tf.nn.top_k(score_head, k=topk)
 
         return rank
     
