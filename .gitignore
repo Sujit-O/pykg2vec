@@ -24,4 +24,4 @@ pykg2vec/test/.coverage*
 dataset/*
 /docs/build/*
 /docs/source/auto_examples/*
-.egg/*
+.eggs/*
