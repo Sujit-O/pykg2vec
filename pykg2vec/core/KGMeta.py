@@ -10,14 +10,14 @@ from abc import ABCMeta, abstractmethod
 import tensorflow as tf
 
 
-class ModelMeta:
+class ModelMeta(tf.keras.Model):
     """ Meta Class for knowledge graph embedding algorithms"""
 
     __metaclass__ = ABCMeta
 
     def __init__(self):
         """Initialize and create the model to be trained and inferred"""
-        pass
+        super(ModelMeta, self).__init__()
 
     @abstractmethod
     def def_inputs(self):

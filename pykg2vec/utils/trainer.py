@@ -154,9 +154,6 @@ class Trainer(TrainerMeta):
 
         self.export_embeddings()
 
-        self.sess.close()
-        tf.reset_default_graph() # clean the tensorflow for the next training task.
-
         return loss
 
     def tune_model(self):
@@ -168,7 +165,7 @@ class Trainer(TrainerMeta):
         ### Early Stop Mechanism
 
         self.generator = Generator(config=self.generator_config, model_config=self.model.config)
-        self.evaluator = Evaluator(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
+        self.evaluator = Evaluator(model=self.model,data_type=self.teston, debug=self.debug, tuning=True)
        
         for cur_epoch_idx in range( self.config.epochs):
             loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
@@ -194,8 +191,6 @@ class Trainer(TrainerMeta):
         self.evaluator.test_batch(cur_epoch_idx)
         acc = self.evaluator.output_queue.get()
         self.evaluator.stop()
-        self.sess.close()
-        tf.reset_default_graph() # clean the tensorflow for the next training task.
 
         return acc
 
@@ -221,7 +216,7 @@ class Trainer(TrainerMeta):
                     self.model.rt_h: rt_h
                 }
                 
-                _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
+                # _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
 
             else:
                 ph = tf.convert_to_tensor(data[0], dtype=tf.int32)
@@ -255,7 +250,7 @@ class Trainer(TrainerMeta):
                 curr_epoch (int): The current epoch number.
         """
         if not self.evaluator: 
-            self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
+            self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug)
 
         if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
                                                curr_epoch == 0 or
@@ -292,14 +287,10 @@ class Trainer(TrainerMeta):
         self.infer_rels(1,20,topk=5)
 
     def exit_interactive_mode(self):
-        self.sess.close()
-        tf.reset_default_graph() # clean the tensorflow for the next training task.
-
         print("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self,h,r,topk=5):
-        tails_op = self.model.infer_tails(h,r,topk)
-        tails = self.sess.run(tails_op)
+        tails = self.model.infer_tails(h,r,topk)
         print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
@@ -312,9 +303,7 @@ class Trainer(TrainerMeta):
         return {tail: idx2ent[tail] for tail in tails}
 
     def infer_heads(self,r,t,topk=5):
-        heads_op = self.model.infer_heads(r,t,topk)
-        heads = self.sess.run(heads_op)
-        
+        heads = self.model.infer_heads(r,t,topk)
         print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
@@ -327,9 +316,7 @@ class Trainer(TrainerMeta):
         return {head: idx2ent[head] for head in heads}
 
     def infer_rels(self, h, t, topk=5):
-        rels_op = self.model.infer_rels(h, t, topk)
-        rels = self.sess.run(rels_op)
-
+        rels = self.model.infer_rels(h, t, topk)
         print("\n(head,tail)->({},{}) :: Inferred rels->({})\n".format(h, t, ",".join([str(i) for i in rels])))
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
@@ -346,16 +333,13 @@ class Trainer(TrainerMeta):
         """Function to save the model."""
         saved_path = self.config.path_tmp / self.model.model_name
         saved_path.mkdir(parents=True, exist_ok=True)
-
-        saver = tf.train.Saver(self.model.parameter_list)
-        saver.save(self.sess, str(saved_path / 'model.vec'))
+        self.model.save_weights(str(saved_path / 'model.vec'))
 
     def load_model(self):
         """Function to load the model."""
         saved_path = self.config.path_tmp / self.model.model_name
         if saved_path.exists():
-            saver = tf.train.Saver(self.model.parameter_list)
-            saver.restore(self.sess, str(saved_path / 'model.vec'))
+            self.model.load_weights(str(saved_path / 'model.vec'))
 
     def display(self):
         """Function to display embedding."""
@@ -413,8 +397,7 @@ class Trainer(TrainerMeta):
             # import pdb; pdb.set_trace()
 
             if len(parameter.shape) == 2:
-                op_get_all_embs = tf.nn.embedding_lookup(parameter, all_ids)
-                all_embs = self.sess.run(op_get_all_embs)
+                all_embs = parameter.numpy()
                 with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
                     for idx in all_ids:
                         v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
