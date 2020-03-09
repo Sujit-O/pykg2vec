@@ -85,6 +85,8 @@ class KGPipeline:
             config.__dict__[k]=v
         model = model_def(config)
 
+        if self.debug:
+            config.epochs = 1
         # Create, Compile and Train the model. While training, several evaluation will be performed.
         trainer = Trainer(model=model, trainon='train_and_valid', teston='test',debug=self.debug)
         trainer.build_model()
