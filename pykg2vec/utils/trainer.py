@@ -89,6 +89,11 @@ class Trainer(TrainerMeta):
 
         return loss
 
+    @tf.function
+    def train_step_projection(self, h, r, t, hr_t, rt_h):
+        pass
+
+
     def train_model(self):
         """Function to train the model."""
         ### Early Stop Mechanism
@@ -193,18 +198,12 @@ class Trainer(TrainerMeta):
             data = list(next(self.generator))
             
             if self.training_strategy == "projection_based":
-                h, r, t, hr_t, rt_h = data[0], data[1], data[2], data[3], data[4]
-
-                feed_dict = {
-                    self.model.h: h,
-                    self.model.r: r,
-                    self.model.t: t,
-                    self.model.hr_t: hr_t,
-                    self.model.rt_h: rt_h
-                }
-                
-                # _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
-
+                h = tf.convert_to_tensor(data[0], dtype=tf.int32)
+                r = tf.convert_to_tensor(data[1], dtype=tf.int32)
+                t = tf.convert_to_tensor(data[2], dtype=tf.int32)
+                hr_t = tf.convert_to_tensor(data[3], dtype=tf.int32)
+                rt_h = tf.convert_to_tensor(data[4], dtype=tf.int32)
+                loss = self.train_step_projection(h, r, t, hr_t, rt_h)
             else:
                 ph = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 pr = tf.convert_to_tensor(data[1], dtype=tf.int32)
@@ -212,7 +211,6 @@ class Trainer(TrainerMeta):
                 nh = tf.convert_to_tensor(data[3], dtype=tf.int32)
                 nr = tf.convert_to_tensor(data[4], dtype=tf.int32)
                 nt = tf.convert_to_tensor(data[5], dtype=tf.int32)
-
                 loss = self.train_step(ph, pr, pt, nh, nr, nt)
 
             acc_loss += loss
