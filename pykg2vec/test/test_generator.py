@@ -3,8 +3,6 @@
 """
 This module is for testing unit functions of generator
 """
-import timeit
-
 from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.generator import Generator
 from pykg2vec.config.config import TransEConfig
@@ -17,53 +15,42 @@ def test_generator_proje():
     knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
     knowledge_graph.force_prepare_data()
 
-    args = KGEArgParser().get_args([])
-
-    config = ProjE_pointwiseConfig(args=args)
-
-    gen = iter(Generator(config=GeneratorConfig(data='train', training_strategy='projection_based'), model_config=config))
+    dummy_config = ProjE_pointwiseConfig(KGEArgParser().get_args([]))
+    generator_config = GeneratorConfig(data='train', training_strategy='projection_based')
+    generator = Generator(config=generator_config, model_config=dummy_config)
     
-    for i in range(1000):
-        data = list(next(gen))
-        print("----batch:", i)
-        
+    for i in range(10):
+        data = list(next(generator))
+        # print("----batch:", i)
         hr_hr = data[0]
         hr_t = data[1]
         tr_tr = data[2]
         tr_h = data[3]
+        # print("hr_hr:", hr_hr)
+        # print("hr_t:", hr_t)
+        # print("tr_tr:", tr_tr)
+        # print("tr_h:", tr_h)
+    generator.stop()
 
-        print("hr_hr:", hr_hr)
-        print("hr_t:", hr_t)
-        print("tr_tr:", tr_tr)
-        print("tr_h:", tr_h)
-    gen.stop()
+    ## pass if no exception raised amid the process.
 
 def test_generator_trane():
     """Function to test the generator for Translation distance based algorithm."""
     knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
     knowledge_graph.force_prepare_data()
     
-    args = KGEArgParser().get_args([])
-    
-    start_time = timeit.default_timer()
-    
-    config = TransEConfig(args)
-
-    gen = Generator(config=GeneratorConfig(data='train', training_strategy='pairwise_based'), model_config=config)
-
-    print("----init time:", timeit.default_timer() - start_time)
+    dummy_config = TransEConfig(KGEArgParser().get_args([]))
+    generator_config = GeneratorConfig(data='train', training_strategy='pairwise_based')
+    generator = Generator(config=generator_config, model_config=dummy_config)
     
     for i in range(10):
-        start_time_batch = timeit.default_timer()
-        data = list(next(gen))
+        data = list(next(generator))
         h = data[0]
         r = data[1]
         t = data[2]
         # hr_t = data[3]
-        # tr_h = data[4]
-        print("----batch:", i, "----time:",timeit.default_timer() - start_time_batch)
-        print(h,r,t)
-
-    print("total time:", timeit.default_timer() - start_time)
+        # tr_h = data[4]  
     
-    gen.stop()
+    generator.stop()
+
+    ## pass if no exception raised amid the process.

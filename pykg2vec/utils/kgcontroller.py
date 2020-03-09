@@ -600,7 +600,7 @@ class KnowledgeGraph(object):
             self.prepare_data()
 
     def force_prepare_data(self):
-        shutil.rmtree(str(self.dataset.root_path))
+        shutil.rmtree(str(self.dataset.root_path), ignore_errors=True)
 
         time.sleep(1)
 
