@@ -296,9 +296,8 @@ class Evaluator(EvaluationMeta):
     TEST_BATCH_STOP = "Stop!"
     TEST_BATCH_EARLY_STOP = "EarlyStop!"
 
-    def __init__(self, model=None, debug=False, data_type='valid', tuning=False, session=None):
+    def __init__(self, model=None, debug=False, data_type='valid', tuning=False):
         
-        self.session = session 
         self.model = model
         self.debug = debug
         self.tuning = tuning
@@ -352,6 +351,31 @@ class Evaluator(EvaluationMeta):
         self.rank_calculator.join()
         self.rank_calculator.terminate()
 
+    @tf.function
+    def test_step_batch(self, h_batch, r_batch, t_batch):
+        hrank, trank = self.model.test_batch(h_batch, r_batch, t_batch)
+        return hrank, trank
+
+    @tf.function
+    def test_tail_rank(self, h, r, t):
+        tot_ent = self.model.config.kg_meta.tot_entity
+        
+        h_batch = tf.tile([h], [tot_ent])
+        r_batch = tf.tile([r], [tot_ent])
+        entity_array = tf.range(tot_ent)
+
+        return self.model.predict(h_batch, r_batch, entity_array)
+
+    @tf.function
+    def test_head_rank(self, h, r, t):
+        tot_ent = self.model.config.kg_meta.tot_entity
+        
+        entity_array = tf.range(tot_ent)
+        r_batch = tf.tile([r], [tot_ent])
+        t_batch = tf.tile([t], [tot_ent])
+    
+        return self.model.predict(entity_array, r_batch, t_batch)
+
     def test_batch(self, epoch=None):
         """Function that performs the batch testing"""
         
@@ -382,25 +406,7 @@ class Evaluator(EvaluationMeta):
 
         self.result_queue.put(self.TEST_BATCH_STOP)
     
-    @tf.function
-    def test_step_batch(self, h_batch, r_batch, t_batch):
-        hrank, trank = self.model.test_batch(h_batch, r_batch, t_batch)
-        return hrank, trank
-
-    @tf.function
-    def test_step(self, h, r, t):
-        tot_ent = self.model.config.kg_meta.tot_entity
-
-        entity_array = tf.range(tot_ent)
-
-        h_batch = tf.tile([h], [tot_ent])
-        r_batch = tf.tile([r], [tot_ent])
-        t_batch = tf.tile([t], [tot_ent])
-
-        hrank = self.model.predict(entity_array, r_batch, t_batch)
-        trank = self.model.predict(h_batch, r_batch, entity_array)
-
-        return hrank, trank
+    
 
     def test_per_sample(self, epoch=None):
 
@@ -418,7 +424,8 @@ class Evaluator(EvaluationMeta):
             r_tensor = tf.convert_to_tensor(r, dtype=tf.int32)
             t_tensor = tf.convert_to_tensor(t, dtype=tf.int32)
 
-            hrank, trank = self.test_step(h_tensor, r_tensor, t_tensor)
+            hrank = self.test_head_rank(h_tensor, r_tensor, t_tensor)
+            trank = self.test_tail_rank(h_tensor, r_tensor, t_tensor)
             
             result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
 
