@@ -63,19 +63,19 @@ class Trainer(TrainerMeta):
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
 
         if self.config.optimizer == 'sgd':
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'rms':
-            optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adam':
-            optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adagrad':
-            optimizer = tf.train.AdagradOptimizer(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.train.AdagradOptimizer(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adadelta':
-            optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config.learning_rate)
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
 
-        grads = optimizer.compute_gradients(self.model.loss)
+        grads = self.optimizer.compute_gradients(self.model.loss)
         self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
         self.sess.run(tf.global_variables_initializer())
         self.saver =  tf.train.Saver()
