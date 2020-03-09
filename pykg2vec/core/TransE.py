@@ -70,6 +70,23 @@ class TransE(ModelMeta):
         self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
 
+    def embed(self, h, r, t):
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
+        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
+
+        return emb_h, emb_r, emb_t
+
     def dissimilarity(self, h, r, t, axis=-1):
         """Function to calculate distance measure in embedding space.
         
@@ -121,10 +138,8 @@ class TransE(ModelMeta):
               Tensors: Returns ranks of head and tail.
         """
         h_e, r_e, t_e = self.embed(h, r, t)
-
-        score_head = self.dissimilarity(h_e, r_e, t_e)
-        
-        _, rank = tf.nn.top_k(score_head, k=topk)
+        score = self.dissimilarity(h_e, r_e, t_e)
+        _, rank = tf.nn.top_k(score, k=topk)
 
         return rank
     
@@ -148,50 +163,3 @@ class TransE(ModelMeta):
         _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
 
         return head_rank, tail_rank
-
-    def embed(self, h, r, t):
-        """Function to get the embedding value.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
-
-        return emb_h, emb_r, emb_t
-
-    def get_embed(self, h, r, t, sess):
-        """Function to get the embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        emb_h, emb_r, emb_t = self.embed(h, r, t)
-        h, r, t = sess.run([emb_h, emb_r, emb_t])
-        return h, r, t
-
-    def get_proj_embed(self, h, r, t, sess=None):
-        """"Function to get the projected embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-         """
-        return self.get_embed(h, r, t, sess)
