@@ -275,9 +275,9 @@ class BasicConfig:
         self.log_device_placement = False
         self.gpu_fraction = args.gpu_frac
         self.gpu_allow_growth = True
-        self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
-        self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
-        self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
+        # self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
+        # self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
+        # self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
 
         # Knowledge Graph Information
         self.custom_dataset_path = args.dataset_path
