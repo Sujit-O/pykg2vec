@@ -358,7 +358,6 @@ class Evaluator(EvaluationMeta):
         print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
 
         size_per_batch = self.model.config.batch_size_testing
-        head_rank, tail_rank = self.model.test_batch()
 
         widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), " Done:",
                    progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
@@ -368,46 +367,14 @@ class Evaluator(EvaluationMeta):
             for i in range(self.loop_len):
                 data = np.asarray([[self.eval_data[x].h, self.eval_data[x].r, self.eval_data[x].t]
                                    for x in range(size_per_batch * i, size_per_batch * (i + 1))])
-                h = data[:, 0]
-                r = data[:, 1]
-                t = data[:, 2]
-
-                feed_dict = {
-                    self.model.test_h_batch: h,
-                    self.model.test_r_batch: r,
-                    self.model.test_t_batch: t}
-
-                head_tmp, tail_tmp = np.squeeze(self.session.run([head_rank, tail_rank], feed_dict))
                 
-                result_data = [tail_tmp, head_tmp, h, r, t, epoch]
-                self.result_queue.put(result_data)
+                h = tf.convert_to_tensor(data[:, 0], dtype=tf.int32)
+                r = tf.convert_to_tensor(data[:, 1], dtype=tf.int32)
+                t = tf.convert_to_tensor(data[:, 2], dtype=tf.int32)
 
-                bar.update(i)
-
-        self.result_queue.put(self.TEST_BATCH_STOP)
-
-    def test_per_sample(self, epoch=None):
-
-        print("New Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
-
-        widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), " Done:",
-                   progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
-
-        self.result_queue.put(self.TEST_BATCH_START)
-        with progressbar.ProgressBar(max_value=self.n_test, widgets=widgets) as bar:
-            entity_array = np.arange(self.model.config.kg_meta.tot_entity)
-            
-            for i in range(self.n_test):
-                h, r, t = self.eval_data[i].h, self.eval_data[i].r, self.eval_data[i].t
+                hrank, trank = self.test_step_batch(h, r, t)
                 
-                # generate head batch and predict heads. Tensorflow handles broadcasting.
-                h_tensor = tf.convert_to_tensor(h, dtype=tf.int32)
-                r_tensor = tf.convert_to_tensor(r, dtype=tf.int32)
-                t_tensor = tf.convert_to_tensor(t, dtype=tf.int32)
-
-                hrank, trank = self.test_step(h_tensor, r_tensor, t_tensor)
-                # import pdb; pdb.set_trace()
-                result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
+                result_data = [trank.numpy(), hrank.numpy(), h.numpy(), r.numpy(), t.numpy(), epoch]
 
                 self.result_queue.put(result_data)
 
@@ -415,6 +382,11 @@ class Evaluator(EvaluationMeta):
 
         self.result_queue.put(self.TEST_BATCH_STOP)
     
+    @tf.function
+    def test_step_batch(self, h_batch, r_batch, t_batch):
+        hrank, trank = self.model.test_batch(h_batch, r_batch, t_batch)
+        return hrank, trank
+
     @tf.function
     def test_step(self, h, r, t):
         tot_ent = self.model.config.kg_meta.tot_entity
@@ -429,6 +401,30 @@ class Evaluator(EvaluationMeta):
         trank = self.model.predict(h_batch, r_batch, entity_array)
 
         return hrank, trank
+
+    def test_per_sample(self, epoch=None):
+
+        print("New Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
+
+        self.result_queue.put(self.TEST_BATCH_START)
+        
+        entity_array = np.arange(self.model.config.kg_meta.tot_entity)
+        
+        for i in range(self.n_test):
+            h, r, t = self.eval_data[i].h, self.eval_data[i].r, self.eval_data[i].t
+            
+            # generate head batch and predict heads. Tensorflow handles broadcasting.
+            h_tensor = tf.convert_to_tensor(h, dtype=tf.int32)
+            r_tensor = tf.convert_to_tensor(r, dtype=tf.int32)
+            t_tensor = tf.convert_to_tensor(t, dtype=tf.int32)
+
+            hrank, trank = self.test_step(h_tensor, r_tensor, t_tensor)
+            
+            result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
+
+            self.result_queue.put(result_data)
+
+        self.result_queue.put(self.TEST_BATCH_STOP) 
 
     def save_training_result(self, losses):
         """Function that saves training result"""

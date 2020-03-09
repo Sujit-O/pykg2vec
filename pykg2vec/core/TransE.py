@@ -48,32 +48,6 @@ class TransE(ModelMeta, InferenceMeta):
         self.config = config
         self.model_name = 'TransE'
 
-    def def_inputs(self):
-        """Defines the inputs to the model.
-
-           Attributes:
-              pos_h (Tensor): Positive Head entities ids.
-              pos_r (Tensor): Positive Relation ids of the triple.
-              pos_t (Tensor): Positive Tail entity ids of the triple.
-              neg_h (Tensor): Negative Head entities ids.
-              neg_r (Tensor): Negative Relation ids of the triple.
-              neg_t (Tensor): Negative Tail entity ids of the triple.
-              test_h_batch (Tensor): Batch of head ids for testing.
-              test_r_batch (Tensor): Batch of relation ids for testing
-              test_t_batch (Tensor): Batch of tail ids for testing.
-        """
-        self.pos_h = tf.placeholder(tf.int32, [None])
-        self.pos_t = tf.placeholder(tf.int32, [None])
-        self.pos_r = tf.placeholder(tf.int32, [None])
-        self.neg_h = tf.placeholder(tf.int32, [None])
-        self.neg_t = tf.placeholder(tf.int32, [None])
-        self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h_batch = tf.placeholder(tf.int32, [None])
-        self.test_t_batch = tf.placeholder(tf.int32, [None])
-        self.test_r_batch = tf.placeholder(tf.int32, [None])
-
-        ## unused.
-
     def def_parameters(self):
         """Defines the model parameters.
 
@@ -153,13 +127,13 @@ class TransE(ModelMeta, InferenceMeta):
 
         return rank
     
-    def test_batch(self):
+    def test_batch(self, h_batch, r_batch, t_batch):
         """Function that performs batch testing for the algorithm.
 
           Returns:
               Tensors: Returns ranks of head and tail.
         """
-        h_e, r_e, t_e = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+        h_e, r_e, t_e = self.embed(h_batch, r_batch, t_batch)
 
         expanded_ent_embeddings = tf.expand_dims(self.ent_embeddings, axis=0)
         score_head = self.dissimilarity(expanded_ent_embeddings,
