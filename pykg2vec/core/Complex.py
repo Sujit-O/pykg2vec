@@ -114,7 +114,7 @@ class Complex(ModelMeta):
         """
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
         score = self.dissimilarity(h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img)
-        _, rank = tf.nn.top_k(score, k=topk)
+        _, rank = tf.nn.top_k(-score, k=topk)
 
         return rank
 
@@ -137,5 +137,3 @@ class Complex(ModelMeta):
         _, tail_rank = tf.nn.top_k(-score_tail, k=self.config.kg_meta.tot_entity)
 
         return head_rank, tail_rank
-
-    
