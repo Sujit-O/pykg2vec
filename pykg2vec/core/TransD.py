@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
+from pykg2vec.core.KGMeta import ModelMeta
 
 
-class TransD(ModelMeta, InferenceMeta):
+class TransD(ModelMeta):
     """ `Knowledge Graph Embedding via Dynamic Mapping Matrix`_
 
         TransD constructs a dynamic mapping matrix for each entity-relation pair by considering the diversity of entities and relations simultaneously.
