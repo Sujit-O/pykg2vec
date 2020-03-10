@@ -114,6 +114,7 @@ class Trainer(TrainerMeta):
             self.load_model()
         
         for cur_epoch_idx in range(self.config.epochs):
+            print("Epoch[%d/%d]"%(cur_epoch_idx,self.config.epochs))
             loss = self.train_model_epoch(cur_epoch_idx)
             self.test(cur_epoch_idx)
 
@@ -165,7 +166,7 @@ class Trainer(TrainerMeta):
         self.generator = Generator(config=self.generator_config, model_config=self.model.config)
         self.evaluator = Evaluator(model=self.model,data_type=self.teston, debug=self.debug, tuning=True)
        
-        for cur_epoch_idx in range( self.config.epochs):
+        for cur_epoch_idx in range(self.config.epochs):
             loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
             ### Early Stop Mechanism
             ### start to check if the loss is still decreasing after an interval. 
