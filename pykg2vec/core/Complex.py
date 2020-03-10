@@ -22,8 +22,6 @@ class Complex(ModelMeta):
     Attributes:
         config (object): Model configuration.
         data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
-        tot_ent (int): Total unique entites in the knowledge graph.
-        tot_rel (int): Total unique relation in the knowledge graph.
         model (str): Name of the model.
     
     Examples:
@@ -41,8 +39,6 @@ class Complex(ModelMeta):
     def __init__(self, config=None):
         super(Complex, self).__init__()
         self.config = config
-        self.tot_ent = self.config.kg_meta.tot_entity
-        self.tot_rel = self.config.kg_meta.tot_relation
         self.model_name = 'Complex'
 
     def def_parameters(self):
@@ -67,8 +63,7 @@ class Complex(ModelMeta):
         self.rel_embeddings_real = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="emb_rel_real")
         self.rel_embeddings_img  = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="emb_rel_img")
 
-        self.parameter_list = [self.ent_embeddings_real, self.ent_embeddings_img, 
-                               self.rel_embeddings_real, self.rel_embeddings_img]
+        self.parameter_list = [self.ent_embeddings_real, self.ent_embeddings_img, self.rel_embeddings_real, self.rel_embeddings_img]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -93,23 +88,21 @@ class Complex(ModelMeta):
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
     def dissimilarity(self, h_real, h_img, r_real, r_img, t_real, t_img):
-        return tf.reduce_sum(h_real * t_real * r_real + h_img * t_img * r_real + h_real * t_img * r_img - h_img * t_real * r_img, axis=-1, keep_dims = False)
+        return tf.reduce_sum(h_real * t_real * r_real + h_img * t_img * r_real + h_real * t_img * r_img - h_img * t_real * r_img, axis=-1, keepdims = False)
 
     def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
         """Defines the loss function for the algorithm."""
-        pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img = \
-            self.embed(pos_h, pos_r, pos_t)
-
-        neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img = \
-            self.embed(neg_h, neg_r, neg_t)
+        pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img = self.embed(pos_h, pos_r, pos_t)
+        neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img = self.embed(neg_h, neg_r, neg_t)
 
         score_pos = self.dissimilarity(pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img)
         score_neg = self.dissimilarity(neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img)
 
-        regul_term = tf.reduce_sum(pos_h_e_real**2 + pos_h_e_img**2) + tf.reduce_sum(pos_r_e_real**2 + pos_r_e_img**2) + tf.reduce_sum(pos_t_e_real**2 + pos_t_e_img**2) + \
-                     tf.reduce_sum(neg_h_e_real**2 + neg_h_e_img**2) + tf.reduce_sum(neg_r_e_real**2 + neg_r_e_img**2) + tf.reduce_sum(neg_t_e_real**2 + neg_t_e_img**2) 
+        regul_term = tf.reduce_sum(pos_h_e_real**2 + pos_h_e_img**2) + tf.reduce_sum(pos_r_e_real**2 + pos_r_e_img**2) + tf.reduce_sum(pos_t_e_real**2 + pos_t_e_img**2) + tf.reduce_sum(neg_h_e_real**2 + neg_h_e_img**2) + tf.reduce_sum(neg_r_e_real**2 + neg_r_e_img**2) + tf.reduce_sum(neg_t_e_real**2 + neg_t_e_img**2) 
                 
-        self.loss = self.pointwise_logistic_loss(score_pos, score_neg) + self.config.lmbda*regul_term
+        loss = self.pointwise_logistic_loss(score_pos, score_neg) + self.config.lmbda*regul_term
+
+        return loss
 
     def predict(self, h, r, t, topk=-1):
         """Function that performs prediction for TransE. 
@@ -125,21 +118,20 @@ class Complex(ModelMeta):
 
         return rank
 
-    def test_batch(self):
+    def test_batch(self, h_batch, r_batch, t_batch):
         """Function that performs batch testing for the algorithm.
 
             Returns:
                 Tensors: Returns ranks of head and tail.
         """
-        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = \
-            self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
+        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(h_batch, r_batch, t_batch)
 
-        score_head = self.distance(self.ent_embeddings_real, self.ent_embeddings_img, 
-                                   tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
-                                   tf.expand_dims(t_emb_real, axis=1), tf.expand_dims(t_emb_img, axis=1))
-        score_tail = self.distance(tf.expand_dims(h_emb_real, axis=1), tf.expand_dims(h_emb_img, axis=1),
-                                   tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
-                                   self.ent_embeddings_real, self.ent_embeddings_img)
+        score_head = self.dissimilarity(self.ent_embeddings_real, self.ent_embeddings_img, 
+                                        tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
+                                        tf.expand_dims(t_emb_real, axis=1), tf.expand_dims(t_emb_img, axis=1))
+        score_tail = self.dissimilarity(tf.expand_dims(h_emb_real, axis=1), tf.expand_dims(h_emb_img, axis=1),
+                                        tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
+                                        self.ent_embeddings_real, self.ent_embeddings_img)
 
         _, head_rank = tf.nn.top_k(-score_head, k=self.config.kg_meta.tot_entity)
         _, tail_rank = tf.nn.top_k(-score_tail, k=self.config.kg_meta.tot_entity)
