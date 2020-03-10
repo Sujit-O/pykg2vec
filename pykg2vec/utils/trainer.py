@@ -14,7 +14,7 @@ from pykg2vec.utils.generator import Generator
 from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
-
+tf.config.set_soft_device_placement(True)
 class Trainer(TrainerMeta):
     """Class for handling the training of the algorithms.
 
