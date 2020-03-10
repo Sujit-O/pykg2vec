@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
+from pykg2vec.core.KGMeta import ModelMeta
 
 
-class TransR(ModelMeta, InferenceMeta):
+class TransR(ModelMeta):
     """ `Learning Entity and Relation Embeddings for Knowledge Graph Completion`_
 
         TranR is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
