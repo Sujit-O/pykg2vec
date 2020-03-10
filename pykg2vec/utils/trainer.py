@@ -51,7 +51,7 @@ class Trainer(TrainerMeta):
 
     def build_model(self):
         """function to build the model"""
-        self.model.def_parameters()
+        
         if getattr(self.model, "def_layer", None):
             self.model.def_layer()
 
@@ -69,7 +69,13 @@ class Trainer(TrainerMeta):
             self.optimizer = tf.keras.optimizers.Adadelta(learning_rate=self.config.learning_rate)
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
-      
+        
+        if self.config.optimizer in ['rms', 'adagrad', 'adadelta']:
+            with tf.device('cpu:0'):
+                self.model.def_parameters()
+        else:
+            self.model.def_parameters()
+
         self.config.summary()
         self.config.summary_hyperparameter(self.model.model_name)
 
