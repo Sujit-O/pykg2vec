@@ -167,7 +167,7 @@ class KGEArgParser:
         ''' arguments regarding hyperparameters '''
         self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
         self.general_hyper_group.add_argument('-b',   dest='batch_training', default=128, type=int, help='training batch size')
-        self.general_hyper_group.add_argument('-bt',  dest='batch_testing', default=16, type=int, help='testing batch size, ex: 1, 2, 4, 8.')
+        self.general_hyper_group.add_argument('-bt',  dest='batch_testing', default=1, type=int, help='testing batch size, ex: 1, 2, 4, 8.')
         self.general_hyper_group.add_argument('-mg',  dest='margin', default=0.8, type=float, help='Margin to take')
         self.general_hyper_group.add_argument('-opt', dest='optimizer', default='adam', type=str, help='optimizer to be used in training.')
         self.general_hyper_group.add_argument('-s',   dest='sampling', default='uniform', type=str, help='strategy to do negative sampling.')
