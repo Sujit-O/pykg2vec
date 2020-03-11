@@ -43,7 +43,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False):
 @pytest.mark.parametrize("model_name", ['complex', 'conve', 'convkb', 'distmult', 
                                         'ntn', 'proje_pointwise', 'rescal', 'rotate', 'slm',
                                         'transe', 'transh', 'transr', 'transd', 'transm', 'hole',
-                                        'tucker', 'transg'])
+                                        'tucker'])
 def test_KGE_methods(model_name):
     """Function to test Complex Algorithm with arguments."""
     testing_function(model_name)
