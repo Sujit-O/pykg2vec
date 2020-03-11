@@ -97,11 +97,6 @@ class TransM(ModelMeta):
 
     def dissimilarity(self, h, r, t, axis=-1):
         """Function to calculate distance measure in embedding space.
-        
-        if used in def_loss,
-            h, r, t shape [b, k], return shape will be [b]
-        if used in test_batch, 
-            h, r, t shape [1, tot_ent, k] or [b, 1, k], return shape will be [b, tot_ent]
 
         Args:
             h (Tensor): shape [b, k] Head entities in a batch. 
@@ -153,20 +148,3 @@ class TransM(ModelMeta):
         _, rank = tf.nn.top_k(score, k=topk)
 
         return rank
-
-    def test_batch(self, h_batch, r_batch, t_batch):
-        """Function that performs batch testing for the algorithm.
-
-           Returns:
-               Tensors: Returns ranks of head and tail.
-        """
-        head_vec, rel_vec, tail_vec = self.embed(h_batch, r_batch, t_batch)
-
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        score_head = self.dissimilarity(norm_ent_embeddings, tf.expand_dims(rel_vec, 1), tf.expand_dims(tail_vec, 1))
-        score_tail = self.dissimilarity(tf.expand_dims(head_vec, 1), tf.expand_dims(rel_vec, 1), norm_ent_embeddings)
-
-        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
-
-        return head_rank, tail_rank

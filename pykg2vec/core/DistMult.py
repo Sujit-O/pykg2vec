@@ -126,25 +126,3 @@ class DistMult(ModelMeta):
         _, rank = tf.nn.top_k(-score, k=topk)
 
         return rank
-
-    def test_batch(self, h_batch, r_batch, t_batch):
-        """Function that performs batch testing for the algorithm.
-
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        h_emb, r_emb, t_emb = self.embed(h_batch, r_batch, t_batch)
-
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-
-        score_head = self.dissimilarity(norm_ent_embeddings, 
-                                        tf.expand_dims(r_emb, axis=1), 
-                                        tf.expand_dims(t_emb, axis=1))
-        score_tail = self.dissimilarity(tf.expand_dims(h_emb, axis=1), 
-                                        tf.expand_dims(r_emb, axis=1), 
-                                        norm_ent_embeddings)
-
-        _, head_rank = tf.nn.top_k(tf.negative(score_head), k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(tf.negative(score_tail), k=self.config.kg_meta.tot_entity)
-
-        return head_rank, tail_rank

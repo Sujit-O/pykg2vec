@@ -110,11 +110,6 @@ class TransR(ModelMeta):
     def dissimilarity(self, h, r, t, axis=-1):
         """Function to calculate distance measure in embedding space.
         
-        if used in def_loss,
-            h, r, t shape [b, k], return shape will be [b]
-        if used in test_batch, 
-            h, r, t shape [1, tot_ent, k] or [b, 1, k], return shape will be [b, tot_ent]
-
         Args:
             h (Tensor): shape [b, k] Head entities in a batch. 
             r (Tensor): shape [b, k] Relation entities in a batch.
@@ -163,43 +158,3 @@ class TransR(ModelMeta):
         _, rank = tf.nn.top_k(score, k=topk)
 
         return rank
-
-    def test_batch(self, h_batch, r_batch, t_batch):
-        """Function that performs batch testing for the algorithm.
-
-             Returns:
-                 Tensors: Returns ranks of head and tail.
-        """
-        head_vec, rel_vec, tail_vec = self.embed(h_batch, r_batch, t_batch)
-
-        k = self.config.ent_hidden_size
-        d = self.config.rel_hidden_size
-        b = self.config.batch_size_testing
-
-        pos_matrix = tf.nn.embedding_lookup(self.rel_matrix, r_batch)
-        # [b, k, d]
-        pos_matrix = tf.transpose(pos_matrix, perm=[0, 2, 1])
-        # [b, d, k]
-        pos_matrix = tf.reshape(pos_matrix, [-1, k])
-        # [b*d, k]
-
-        project_ent_embedding = tf.matmul(tf.nn.l2_normalize(self.ent_embeddings, axis=-1), pos_matrix, transpose_b=True)
-        # [14951, b*d] = [14951, k], [k, b*d]
-
-        project_ent_embedding = tf.reshape(project_ent_embedding,[-1, b, d])
-        # [14951, b, d]
-
-        project_ent_embedding = tf.transpose(project_ent_embedding, perm=[1, 0, 2])
-        # [b, 14951, d]
-
-        score_head = self.dissimilarity(project_ent_embedding,
-                                        tf.expand_dims(rel_vec, axis=1),
-                                        tf.expand_dims(tail_vec, axis=1))
-        score_tail = self.dissimilarity(tf.expand_dims(head_vec, axis=1),
-                                        tf.expand_dims(rel_vec, axis=1),
-                                        project_ent_embedding)
-
-        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
-
-        return head_rank, tail_rank

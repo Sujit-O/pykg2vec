@@ -187,7 +187,7 @@ class Trainer(TrainerMeta):
             previous_loss = loss
 
         self.generator.stop()
-        self.evaluator.test_batch(cur_epoch_idx)
+        self.evaluator.test(cur_epoch_idx)
         acc = self.evaluator.output_queue.get()
         self.evaluator.stop()
 
@@ -241,16 +241,10 @@ class Trainer(TrainerMeta):
         if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
                                                curr_epoch == 0 or
                                                curr_epoch == self.config.epochs - 1):
-            if self.model.config.batch_size_testing == 1:
-                self.evaluator.test_per_sample(curr_epoch)
-            else:
-                self.evaluator.test_batch(curr_epoch)
+            self.evaluator.test(curr_epoch)
         else:
             if curr_epoch == self.config.epochs - 1:
-                if self.model.config.batch_size_testing == 1:
-                    self.evaluator.test_per_sample(curr_epoch)
-                else:
-                    self.evaluator.test_batch(curr_epoch)
+                self.evaluator.test(curr_epoch)
 
 
     ''' Interactive Inference related '''

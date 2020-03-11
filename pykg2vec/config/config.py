@@ -167,7 +167,6 @@ class KGEArgParser:
         ''' arguments regarding hyperparameters '''
         self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
         self.general_hyper_group.add_argument('-b',   dest='batch_training', default=128, type=int, help='training batch size')
-        self.general_hyper_group.add_argument('-bt',  dest='batch_testing', default=1, type=int, help='testing batch size, ex: 1, 2, 4, 8.')
         self.general_hyper_group.add_argument('-mg',  dest='margin', default=0.8, type=float, help='Margin to take')
         self.general_hyper_group.add_argument('-opt', dest='optimizer', default='adam', type=str, help='optimizer to be used in training.')
         self.general_hyper_group.add_argument('-s',   dest='sampling', default='uniform', type=str, help='strategy to do negative sampling.')
@@ -240,7 +239,6 @@ class BasicConfig:
       plot_testing_result (bool): If True, it will plot all the testing result such as mean rank, hit ratio, etc.
       plot_entity_only (bool): If True, plots the t-SNE reduced embdding of the entities in a figure.
       full_test_flag (bool): It True, performs a full test after completing the training for full epochs.
-      batch_size_testing (int): Determines the size of batch used while testing.
       hits (List): Gives the list of integer for calculating hits.
       knowledge_graph (Object): It prepares and holds the instance of the knowledge graph dataset.
       kg_meta (object): Stores the statistics metadata of the knowledge graph.
@@ -252,7 +250,6 @@ class BasicConfig:
         self.full_test_flag = (self.test_step == 0)
         self.test_num = args.test_num
         self.hits = [1, 3, 5, 10]
-        self.batch_size_testing = args.batch_testing
         self.loadFromData = args.load_from_data
         self.save_model = args.save_model
         self.disp_summary = True

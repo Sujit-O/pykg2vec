@@ -130,22 +130,3 @@ class Rescal(ModelMeta):
         _, rank = tf.nn.top_k(score, k=topk)
 
         return rank
-
-    def test_batch(self, h_batch, r_batch, t_batch):
-        """Function that performs batch testing for the algorithm.
-
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        k = self.config.hidden_size
-
-        h_vec, r_vec, t_vec = self.embed(h_batch, r_batch, t_batch)
-
-        h_sim = tf.tensordot(tf.squeeze(tf.matmul(r_vec, t_vec), axis=-1), self.ent_embeddings, axes=((-1), (-1)))
-        t_sim = tf.squeeze(tf.tensordot(tf.matmul(tf.reshape(h_vec, [-1, 1, k]), r_vec),
-                                        self.ent_embeddings, axes=((-1), (-1))), axis=1)
-
-        _, head_rank = tf.nn.top_k(tf.negative(h_sim), k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(tf.negative(t_sim), k=self.config.kg_meta.tot_entity)
-
-        return head_rank, tail_rank

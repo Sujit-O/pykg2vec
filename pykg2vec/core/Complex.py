@@ -117,23 +117,3 @@ class Complex(ModelMeta):
         _, rank = tf.nn.top_k(-score, k=topk)
 
         return rank
-
-    def test_batch(self, h_batch, r_batch, t_batch):
-        """Function that performs batch testing for the algorithm.
-
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(h_batch, r_batch, t_batch)
-
-        score_head = self.dissimilarity(self.ent_embeddings_real, self.ent_embeddings_img, 
-                                        tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
-                                        tf.expand_dims(t_emb_real, axis=1), tf.expand_dims(t_emb_img, axis=1))
-        score_tail = self.dissimilarity(tf.expand_dims(h_emb_real, axis=1), tf.expand_dims(h_emb_img, axis=1),
-                                        tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
-                                        self.ent_embeddings_real, self.ent_embeddings_img)
-
-        _, head_rank = tf.nn.top_k(-score_head, k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(-score_tail, k=self.config.kg_meta.tot_entity)
-
-        return head_rank, tail_rank

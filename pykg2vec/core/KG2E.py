@@ -171,35 +171,6 @@ class KG2E(ModelMeta):
 
         return mul_fac + det_fac - self.config.hidden_size
 
-    def test_batch(self, h_batch, r_batch, t_batch):
-        """Function that performs batch testing for the algorithm.
-
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        test_h_mu, test_h_sigma, test_r_mu, test_r_sigma, test_t_mu, test_t_sigma = self.embed(h_batch, r_batch, t_batch)
-        test_h_mu = tf.expand_dims(test_h_mu, axis=1)
-        test_h_sigma = tf.expand_dims(test_h_sigma, axis=1)
-        test_r_mu = tf.expand_dims(test_r_mu, axis=1)
-        test_r_sigma = tf.expand_dims(test_r_sigma, axis=1)
-        test_t_mu = tf.expand_dims(test_t_mu, axis=1)
-        test_t_sigma = tf.expand_dims(test_t_sigma, axis=1)
-
-        norm_ent_embeddings_mu = tf.nn.l2_normalize(self.ent_embeddings_mu, axis=1)
-        norm_ent_embeddings_sigma = tf.nn.l2_normalize(self.ent_embeddings_sigma, axis=1)
-
-        if self.config.distance_measure == "expected_likelihood":
-            score_head = self.cal_score_expected_likelihood(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, test_r_mu, test_r_sigma, test_t_mu, test_t_sigma)
-            score_tail = self.cal_score_expected_likelihood(test_h_mu, test_h_sigma, test_r_mu, test_r_sigma, norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
-        else:
-            score_head = self.cal_score_kl_divergence(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, test_r_mu, test_r_sigma, test_t_mu, test_t_sigma)
-            score_tail = self.cal_score_kl_divergence(test_h_mu, test_h_sigma, test_r_mu, test_r_sigma, norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
-
-        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
-
-        return head_rank, tail_rank
-
     def embed(self, h, r, t):
         """Function to get the embedding.
 

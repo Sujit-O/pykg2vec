@@ -103,11 +103,6 @@ class TransH(ModelMeta):
 
     def dissimilarity(self, h, r, t, axis=-1):
         """Function to calculate distance measure in embedding space.
-        
-        if used in def_loss,
-            h, r, t shape [b, k], return shape will be [b]
-        if used in test_batch, 
-            h, r, t shape [1, tot_ent, k] or [b, 1, k], return shape will be [b, tot_ent]
 
         Args:
             h (Tensor): shape [b, k] Head entities in a batch. 
@@ -168,28 +163,3 @@ class TransH(ModelMeta):
         _, rank = tf.nn.top_k(score, k=topk)
 
         return rank
-
-    def test_batch(self, h_batch, r_batch, t_batch):
-        """Function that performs batch testing for the algorithm.
-
-         Returns:
-             Tensors: Returns ranks of head and tail.
-        """
-        h_e, r_e, t_e = self.embed(h_batch, r_batch, t_batch)
-        
-        pos_norm = tf.nn.embedding_lookup(self.w, r_batch)
-        
-        projected_ent_embedding = self.projection(tf.expand_dims(self.ent_embeddings, axis=0),  # [1, tot_ent, k]
-                                                  tf.expand_dims(pos_norm, axis=1)) # [b, 1, k]
-        
-        score_head = self.dissimilarity(projected_ent_embedding,
-                                        tf.expand_dims(r_e, axis=1),
-                                        tf.expand_dims(t_e, axis=1))
-        score_tail = self.dissimilarity(tf.expand_dims(h_e, axis=1),
-                                        tf.expand_dims(r_e, axis=1),
-                                        projected_ent_embedding)
-
-        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
-
-        return head_rank, tail_rank

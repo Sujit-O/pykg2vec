@@ -43,28 +43,6 @@ class MetricCalculator:
         self.reset()
 
     def append_result(self, result):
-        
-        id_replace_tail = result[0]
-        id_replace_head = result[1]
-        h_list = result[2]
-        r_list = result[3]
-        t_list = result[4]
-        self.epoch = result[5]
-        
-        total_test = len(h_list)
-        
-        for triple_id in range(total_test):
-            h, r, t = h_list[triple_id], r_list[triple_id], t_list[triple_id]
-
-            t_rank, f_t_rank = self.get_tail_rank(id_replace_tail[triple_id], h, r, t)
-            h_rank, f_h_rank = self.get_head_rank(id_replace_head[triple_id], h, r, t)
-
-            self.rank_head.append(h_rank)
-            self.rank_tail.append(t_rank)
-            self.f_rank_head.append(f_h_rank)
-            self.f_rank_tail.append(f_t_rank)
-
-    def append_result_new(self, result):
         predict_tail = result[0]
         predict_head = result[1]
 
@@ -270,10 +248,7 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
         elif result == Evaluator.TEST_BATCH_EARLY_STOP:
             break
         else:
-            if config.batch_size_testing == 1:
-                calculator.append_result_new(result)
-            else:
-                calculator.append_result(result)
+            calculator.append_result(result)
 
 
 class Evaluator(EvaluationMeta):
@@ -386,34 +361,7 @@ class Evaluator(EvaluationMeta):
     
         return self.model.predict(h_batch, rel_array, t_batch, topk=topk)
 
-    def test_batch(self, epoch=None):
-        """Function that performs the batch testing"""
-        print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
-
-        size_per_batch = self.model.config.batch_size_testing
-
-        progress_bar = tf.keras.utils.Progbar(self.loop_len)
-
-        self.result_queue.put(self.TEST_BATCH_START)
-        for i in range(self.loop_len):
-            data = np.asarray([[self.eval_data[x].h, self.eval_data[x].r, self.eval_data[x].t]
-                               for x in range(size_per_batch * i, size_per_batch * (i + 1))])
-            
-            h = tf.convert_to_tensor(data[:, 0], dtype=tf.int32)
-            r = tf.convert_to_tensor(data[:, 1], dtype=tf.int32)
-            t = tf.convert_to_tensor(data[:, 2], dtype=tf.int32)
-
-            hrank, trank = self.test_step_batch(h, r, t)
-            
-            result_data = [trank.numpy(), hrank.numpy(), h.numpy(), r.numpy(), t.numpy(), epoch]
-
-            self.result_queue.put(result_data)
-
-            progress_bar.add(1)
-
-        self.result_queue.put(self.TEST_BATCH_STOP)
-
-    def test_per_sample(self, epoch=None):
+    def test(self, epoch=None):
         print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
 
         progress_bar = tf.keras.utils.Progbar(self.n_test)
