@@ -73,7 +73,7 @@ class KGPipeline:
         args.dataset_name = self.dataset
         args.debug = self.debug
         # Preparing data and cache the data for later usage
-        knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling)
+        knowledge_graph = KnowledgeGraph(dataset=args.dataset_name)
         knowledge_graph.prepare_data()
 
         # Extracting the corresponding model config and definition from Importer().
