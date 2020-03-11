@@ -2,17 +2,16 @@ import os, pytest
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 @pytest.mark.parametrize("dataset_name", ["freebase15k", "wordnet18", "wordnet18_rr", "yago3_10"])
-@pytest.mark.parametrize("sampling", ["uniform", "bern"])
 def test_benchmarks(dataset_name, sampling):
     """Function to test the the knowledge graph parse for Freebase."""
     print("testing downloading from online sources of benchmarks and KG controller's handling.")
-    knowledge_graph = KnowledgeGraph(dataset=dataset_name, negative_sample=sampling)
+    knowledge_graph = KnowledgeGraph(dataset=dataset_name)
     knowledge_graph.force_prepare_data()
     knowledge_graph.dump()
 
 def test_fb15k_manipulate():
     """Function to test the the knowledge graph parse for Freebase and basic operations."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="bern")
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
     knowledge_graph.dump()
 
@@ -28,7 +27,7 @@ def test_fb15k_manipulate():
 
 def test_fb15k_meta():
     """Function to test the the knowledge graph parse for Freebase and basic operations."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="bern")
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
     knowledge_graph.dump()
 
@@ -41,7 +40,7 @@ def test_fb15k_meta():
 
 def test_userdefined_dataset():
     custom_dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resource/custom_dataset")
-    knowledge_graph = KnowledgeGraph(dataset="userdefineddataset", negative_sample="uniform", custom_dataset_path=custom_dataset_path)
+    knowledge_graph = KnowledgeGraph(dataset="userdefineddataset", custom_dataset_path=custom_dataset_path)
     knowledge_graph.prepare_data()
     knowledge_graph.dump()
 
