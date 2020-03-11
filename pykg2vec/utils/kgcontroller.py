@@ -39,11 +39,9 @@ class Triple(object):
            >>> trip2 = Triple('Tokyo','isCapitalof','Japan')
     """
     def __init__(self, h, r, t):
-        self.h = None
-        self.r = None
-        self.t = None
-        self.hr_t = None
-        self.tr_h = None
+        self.h = h
+        self.r = r
+        self.t = t
 
     def set_ids(self, h, r, t):
         """This function assigns the head, relation and tail.
@@ -56,22 +54,6 @@ class Triple(object):
         self.h = h
         self.r = r
         self.t = t
-
-    def set_hr_t(self, hr_t):
-        """This function assigns the tails list for the given h,r pair.
-
-            Args:
-                hr_t (list): list of integer id of tails for given head, relation pair.
-        """
-        self.hr_t = hr_t
-
-    def set_tr_h(self, tr_h):
-        """This function assigns the head list for the given t,r pair.
-
-            Args:
-                tr_h (list): list of integer id of head for given tail, relation pair.
-        """
-        self.tr_h = tr_h
 
 
 class KGMetaData(object):
@@ -601,10 +583,8 @@ class KnowledgeGraph(object):
         self.read_tr_h()
         self.read_hr_t_train()
         self.read_tr_h_train()
-        self.read_hr_tr_train()
         self.read_hr_t_valid()
         self.read_tr_h_valid()
-        self.read_hr_tr_valid()
 
         if self.negative_sample == 'bern':
             self.read_relation_property()
@@ -813,15 +793,6 @@ class KnowledgeGraph(object):
 
         return self.tr_h_train
 
-    def read_hr_tr_train(self):
-        """ Function to read the list of heads for the given tail and relation pair
-        and list of heads for the given tail and relation pair for the training set. """
-        for t in self.triplets['train']:
-            t.set_hr_t(list(self.hr_t_train[(t.h, t.r)]))
-            t.set_tr_h(list(self.tr_h_train[(t.t, t.r)]))
-
-        return self.triplets['train']
-
     def read_hr_t_valid(self):
         """ Function to read the list of tails for the given head and relation pair for the valid set. """
         triplets = self.triplets['valid']
@@ -839,15 +810,6 @@ class KnowledgeGraph(object):
             self.tr_h_valid[(t.t, t.r)].add(t.h)
 
         return self.tr_h_valid
-
-    def read_hr_tr_valid(self):
-        """ Function to read the list of heads for the given tail and relation pair
-        and list of heads for the given tail and relation pair for the valid set. """
-        for t in self.triplets['valid']:
-            t.set_hr_t(list(self.hr_t_valid[(t.h, t.r)]))
-            t.set_tr_h(list(self.tr_h_valid[(t.t, t.r)]))
-
-        return self.triplets['valid']    
     
     def read_relation_property(self):
         """ Function to read the relation property.
