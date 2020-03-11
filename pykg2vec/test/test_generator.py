@@ -12,7 +12,7 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 def test_generator_proje():
     """Function to test the generator for ProjE algorithm."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
 
     dummy_config = ProjE_pointwiseConfig(KGEArgParser().get_args([]))
@@ -36,7 +36,7 @@ def test_generator_proje():
 
 def test_generator_trane():
     """Function to test the generator for Translation distance based algorithm."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
     
     dummy_config = TransEConfig(KGEArgParser().get_args([]))
