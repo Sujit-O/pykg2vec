@@ -15,6 +15,13 @@ from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 tf.config.set_soft_device_placement(True)
+physical_devices = tf.config.list_physical_devices('GPU') 
+try: 
+  tf.config.experimental.set_memory_growth(physical_devices[0], True) 
+except: 
+  # Invalid device or cannot modify virtual devices once initialized. 
+  pass 
+  
 class Trainer(TrainerMeta):
     """Class for handling the training of the algorithms.
 
@@ -215,8 +222,8 @@ class Trainer(TrainerMeta):
                 h = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 r = tf.convert_to_tensor(data[1], dtype=tf.int32)
                 t = tf.convert_to_tensor(data[2], dtype=tf.int32)
-                hr_t = tf.convert_to_tensor(data[3], dtype=tf.float32)
-                rt_h = tf.convert_to_tensor(data[4], dtype=tf.float32)
+                hr_t = data[3] # tf.convert_to_tensor(data[3], dtype=tf.float32)
+                rt_h = data[4] # tf.convert_to_tensor(data[4], dtype=tf.float32)
                 loss = self.train_step_projection(h, r, t, hr_t, rt_h)
             else:
                 ph = tf.convert_to_tensor(data[0], dtype=tf.int32)
