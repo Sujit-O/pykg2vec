@@ -42,13 +42,6 @@ class Triple(object):
         self.h = None
         self.r = None
         self.t = None
-
-        assert type(h) is str and type(r) is str and type(t) is str, "h, r, t should be strings."
-
-        self.h_string = h
-        self.r_string = r
-        self.t_string = t
-
         self.hr_t = None
         self.tr_h = None
 
@@ -63,19 +56,6 @@ class Triple(object):
         self.h = h
         self.r = r
         self.t = t
-
-    # def set_strings(self, h, r, t):
-    #     """This function assigns the head, relation and tail in string format.
-
-    #         Args:
-    #             h (str): String  head entity.
-    #             r (str): String  relation entity.
-    #             t (str): String  tail entity.
-
-    #         Todo:
-    #             * Assing the strings.
-    #     """
-    #     pass
 
     def set_hr_t(self, hr_t):
         """This function assigns the tails list for the given h,r pair.
@@ -746,8 +726,8 @@ class KnowledgeGraph(object):
                            self.read_triplets('test')
 
             for triplet in all_triplets:
-                entities.add(triplet.h_string)
-                entities.add(triplet.t_string)
+                entities.add(triplet.h)
+                entities.add(triplet.t)
 
             self.entities = np.sort(list(entities))
 
@@ -763,7 +743,7 @@ class KnowledgeGraph(object):
                            self.read_triplets('test')
 
             for triplet in all_triplets:
-                relations.add(triplet.r_string)
+                relations.add(triplet.r)
 
             self.relations = np.sort(list(relations))
 
@@ -791,7 +771,7 @@ class KnowledgeGraph(object):
 
         if len(triplets) != 0:
             for t in triplets:
-                t.set_ids(entity2idx[t.h_string], relation2idx[t.r_string], entity2idx[t.t_string])
+                t.set_ids(entity2idx[t.h], relation2idx[t.r], entity2idx[t.t])
 
         return triplets
 
