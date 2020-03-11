@@ -298,17 +298,6 @@ class Evaluator(EvaluationMeta):
         else:
             self.n_test = min(self.n_test, tot_rows_data)
 
-        ''' 
-            loop_len: the # of loops to perform batch evaluation. 
-            if debug mode is turned on, then set to only 2. 
-        ''' 
-        if self.n_test < self.model.config.batch_size_testing:
-            self.loop_len = 1
-        else:
-            self.loop_len = (self.n_test // self.model.config.batch_size_testing) if not self.debug else 2
-        
-        self.n_test = self.model.config.batch_size_testing * self.loop_len
-
         '''
             create the process that manages the batched evaluating results.
             result_queue: stores the results for each batch. 
