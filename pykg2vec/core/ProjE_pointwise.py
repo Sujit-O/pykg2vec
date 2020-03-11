@@ -97,16 +97,14 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
         regularizer_loss = tf.reduce_sum(tf.abs(self.De1) + tf.abs(self.Dr1)) + tf.reduce_sum(tf.abs(self.De2) + tf.abs(self.Dr2)) + tf.reduce_sum(tf.abs(self.ent_embeddings)) + tf.reduce_sum(tf.abs(self.rel_embeddings))
         
         loss = hrt_loss + trh_loss + regularizer_loss*self.config.lmbda
+        
         return loss
 
     def forward(self, h, r, hr_t):
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
-
-        emb_hr_h = tf.nn.embedding_lookup(norm_ent_embeddings, h)  # [m, k]
-        emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, r)  # [m, k]
+        emb_hr_h = tf.nn.embedding_lookup(self.ent_embeddings, h)  # [m, k]
+        emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
         
-        hrt_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_h, emb_hr_r), 0.5), norm_ent_embeddings)
+        hrt_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_h, emb_hr_r), 0.5), self.ent_embeddings)
         
         hrt_loss_left = - tf.reduce_sum((tf.math.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., hr_t)))
         hrt_loss_right = - tf.reduce_sum((tf.math.log(tf.clip_by_value(1 - hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(hr_t))))
@@ -116,13 +114,10 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
         return hrt_loss
 
     def backward(self, h, r, hr_t):
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
-
-        emb_hr_h = tf.nn.embedding_lookup(norm_ent_embeddings, h)  # [m, k]
-        emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, r)  # [m, k]
+        emb_hr_h = tf.nn.embedding_lookup(self.ent_embeddings, h)  # [m, k]
+        emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
         
-        hrt_sigmoid = self.g(tf.nn.dropout(self.f2(emb_hr_h, emb_hr_r), 0.5), norm_ent_embeddings)
+        hrt_sigmoid = self.g(tf.nn.dropout(self.f2(emb_hr_h, emb_hr_r), 0.5), self.ent_embeddings)
         
         hrt_loss_left = - tf.reduce_sum((tf.math.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., hr_t)))
         hrt_loss_right = - tf.reduce_sum((tf.math.log(tf.clip_by_value(1 - hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(hr_t))))
@@ -138,7 +133,9 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
                    h (Tensor): Head entities ids.
                    r (Tensor): Relation ids of the triple.
         """
-        return tf.tanh(h * self.De1 + r * self.Dr1 + self.bc1)
+        norm_h = tf.nn.l2_normalize(h, axis=-1)
+        norm_r = tf.nn.l2_normalize(r, axis=-1)
+        return tf.tanh(norm_h * self.De1 + norm_r * self.Dr1 + self.bc1)
 
     def f2(self, t, r):
         """Defines forward layer for tail.
@@ -147,7 +144,9 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
                t (Tensor): Tail entities ids.
                r (Tensor): Relation ids of the triple.
         """
-        return tf.tanh(t * self.De2 + r * self.Dr2 + self.bc2)
+        norm_t = tf.nn.l2_normalize(t, axis=-1)
+        norm_r = tf.nn.l2_normalize(r, axis=-1)
+        return tf.tanh(norm_t * self.De2 + norm_r * self.Dr2 + self.bc2)
 
     def g(self, f, W):
         """Defines activation layer.
@@ -157,28 +156,23 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
                W (Tensor): Matrix for multiplication.
         """
         # [b, k] [k, tot_ent]
-        return tf.sigmoid(tf.matmul(f, W, transpose_b=True))
+        norm_W = tf.nn.l2_normalize(W)
+        return tf.sigmoid(tf.matmul(f, norm_W, transpose_b=True))
 
     def predict_tail(self, e, r, topk=-1):
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
-
-        emb_hr_e = tf.nn.embedding_lookup(norm_ent_embeddings, e)  # [m, k]
-        emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, r)  # [m, k]
+        emb_hr_e = tf.nn.embedding_lookup(self.ent_embeddings, e)  # [m, k]
+        emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
         
-        hrt_sigmoid = -self.g(self.f1(emb_hr_e, emb_hr_r), norm_ent_embeddings)
+        hrt_sigmoid = -self.g(self.f1(emb_hr_e, emb_hr_r), self.ent_embeddings)
         _, rank = tf.nn.top_k(hrt_sigmoid, k=topk)
 
         return rank
 
     def predict_head(self, e, r, topk=-1):
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
-
-        emb_hr_e = tf.nn.embedding_lookup(norm_ent_embeddings, e)  # [m, k]
-        emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, r)  # [m, k]
+        emb_hr_e = tf.nn.embedding_lookup(self.ent_embeddings, e)  # [m, k]
+        emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
         
-        hrt_sigmoid = -self.g(self.f2(emb_hr_e, emb_hr_r), norm_ent_embeddings)
+        hrt_sigmoid = -self.g(self.f2(emb_hr_e, emb_hr_r), self.ent_embeddings)
         _, rank = tf.nn.top_k(hrt_sigmoid, k=topk)
 
         return rank
