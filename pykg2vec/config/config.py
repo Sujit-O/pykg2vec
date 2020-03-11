@@ -278,7 +278,7 @@ class BasicConfig:
 
         # Knowledge Graph Information
         self.custom_dataset_path = args.dataset_path
-        self.knowledge_graph = KnowledgeGraph(dataset=self.data, negative_sample=self.sampling, custom_dataset_path=self.custom_dataset_path)
+        self.knowledge_graph = KnowledgeGraph(dataset=self.data, custom_dataset_path=self.custom_dataset_path)
         self.kg_meta = self.knowledge_graph.kg_meta
         
         # The results of training will be stored in the following folders 

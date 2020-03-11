@@ -178,11 +178,13 @@ class KnownDataset:
         self.cache_metadata_path = self.dataset_path / 'metadata.pkl'
         self.cache_hr_t_path = self.dataset_path / 'hr_t.pkl'
         self.cache_tr_h_path = self.dataset_path / 'tr_h.pkl'
+        self.cache_hr_t_train_path = self.dataset_path / 'hr_t_train.pkl'
+        self.cache_tr_h_train_path = self.dataset_path / 'tr_h_train.pkl'
         self.cache_idx2entity_path = self.dataset_path / 'idx2entity.pkl'
         self.cache_idx2relation_path = self.dataset_path / 'idx2relation.pkl'
         self.cache_entity2idx_path = self.dataset_path / 'entity2idx.pkl'
         self.cache_relation2idx_path = self.dataset_path / 'relation2idx.pkl'
-
+        self.cache_relationproperty_path = self.dataset_path / 'relationproperty.pkl'
 
     def download(self):
         ''' Downloads the given dataset from url'''
@@ -447,10 +449,13 @@ class UserDefinedDataset(object):
         self.cache_metadata_path = self.root_path / 'metadata.pkl'
         self.cache_hr_t_path = self.root_path / 'hr_t.pkl'
         self.cache_tr_h_path = self.root_path / 'tr_h.pkl'
+        self.cache_hr_t_train_path = self.root_path / 'hr_t_train.pkl'
+        self.cache_tr_h_train_path = self.root_path / 'tr_h_train.pkl'
         self.cache_idx2entity_path = self.root_path / 'idx2entity.pkl'
         self.cache_idx2relation_path = self.root_path / 'idx2relation.pkl'
         self.cache_entity2idx_path = self.root_path / 'entity2idx.pkl'
         self.cache_relation2idx_path = self.root_path / 'relation2idx.pkl'
+        self.cache_relationproperty_path = self.root_path / 'relationproperty.pkl'
 
     def is_meta_cache_exists(self):
         """ Checks if the metadata has been cached"""
@@ -476,12 +481,10 @@ class KnowledgeGraph(object):
 
       Args:
          dataset_name (str): Name of the datasets
-         negative_sample (str): Sampling technique to be used for generating negative triples (bern or uniform).
 
       Attributes:
         dataset_name (str): The name of the dataset.
         dataset (object): The dataset object isntance.
-        negative_sample (str): negative_sample
         triplets (dict): dictionary with three list of training, testing and validation triples.
         relations (list):list of all the relations.
         entities (list): List of all the entities.
@@ -498,10 +501,10 @@ class KnowledgeGraph(object):
 
       Examples:
           >>> from pykg2vec.config.global_config import KnowledgeGraph
-          >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k', negative_sample='uniform')
+          >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k')
           >>> knowledge_graph.prepare_data()
    """
-    def __init__(self, dataset='Freebase15k', negative_sample='uniform', custom_dataset_path=None):
+    def __init__(self, dataset='Freebase15k', custom_dataset_path=None):
 
         self.dataset_name = dataset
 
@@ -528,8 +531,6 @@ class KnowledgeGraph(object):
             # if it still can't find corresponding folder, raise exception in UserDefinedDataset.__init__()
 
             self.dataset = UserDefinedDataset(dataset, custom_dataset_path)
-
-        self.negative_sample = negative_sample
 
         # KG data structure stored in triplet format
         self.triplets = {'train': [], 'test': [], 'valid': []}
@@ -566,7 +567,7 @@ class KnowledgeGraph(object):
 
         time.sleep(1)
 
-        self.__init__(dataset=self.dataset_name, negative_sample=self.negative_sample)
+        self.__init__(dataset=self.dataset_name)
 
     def prepare_data(self):
         """Function to prepare the dataset"""
@@ -585,9 +586,7 @@ class KnowledgeGraph(object):
         self.read_tr_h_train()
         self.read_hr_t_valid()
         self.read_tr_h_valid()
-
-        if self.negative_sample == 'bern':
-            self.read_relation_property()
+        self.read_relation_property()
 
         self.kg_meta.tot_relation = len(self.relations)
         self.kg_meta.tot_entity = len(self.entities)
@@ -614,6 +613,10 @@ class KnowledgeGraph(object):
             pickle.dump(self.hr_t, f)
         with open(str(self.dataset.cache_tr_h_path), 'wb') as f:
             pickle.dump(self.tr_h, f)
+        with open(str(self.dataset.cache_hr_t_train_path), 'wb') as f:
+            pickle.dump(self.hr_t_train, f)
+        with open(str(self.dataset.cache_tr_h_train_path), 'wb') as f:
+            pickle.dump(self.tr_h_train, f)
         with open(str(self.dataset.cache_idx2entity_path), 'wb') as f:
             pickle.dump(self.idx2entity, f)
         with open(str(self.dataset.cache_idx2relation_path), 'wb') as f:
@@ -622,6 +625,8 @@ class KnowledgeGraph(object):
             pickle.dump(self.relation2idx, f)
         with open(str(self.dataset.cache_entity2idx_path), 'wb') as f:
             pickle.dump(self.entity2idx, f)
+        with open(str(self.dataset.cache_relationproperty_path), 'wb') as f:
+            pickle.dump(self.relation_property, f)
 
     def read_cache_data(self, key):
         """Function to read the cached dataset from the memory"""
@@ -653,6 +658,18 @@ class KnowledgeGraph(object):
 
                 return tr_h
 
+        elif key == 'hr_t_train':
+            with open(str(self.dataset.cache_hr_t_train_path), 'rb') as f:
+                hr_t_train = pickle.load(f)
+
+                return hr_t_train
+
+        elif key == 'tr_h_train':
+            with open(str(self.dataset.cache_tr_h_train_path), 'rb') as f:
+                tr_h_train = pickle.load(f)
+
+                return tr_h_train
+
         elif key == 'idx2entity':
             with open(str(self.dataset.cache_idx2entity_path), 'rb') as f:
                 idx2entity = pickle.load(f)
@@ -676,6 +693,12 @@ class KnowledgeGraph(object):
                 relation2idx = pickle.load(f)
 
                 return relation2idx
+
+        elif key == 'relationproperty':
+            with open(str(self.dataset.cache_relationproperty_path), 'rb') as f:
+                relation_property = pickle.load(f)
+
+                return relation_property
 
     def is_cache_exists(self):
         """Function to check if the dataset is cached in the memory"""
