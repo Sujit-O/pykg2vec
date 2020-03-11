@@ -4,7 +4,6 @@
 This module is for testing unit functions of model
 """
 import pytest
-import tensorflow as tf
 
 
 from pykg2vec.config.config import *
@@ -19,7 +18,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False):
     args = KGEArgParser().get_args([])
     
     # Preparing data and cache the data for later usage
-    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling)
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name)
     knowledge_graph.prepare_data()
 
     # Extracting the corresponding model config and definition from Importer().
