@@ -156,6 +156,7 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
                f (Tensor): output of the forward layers.
                W (Tensor): Matrix for multiplication.
         """
+        # [b, k] [k, tot_ent]
         return tf.sigmoid(tf.matmul(f, W, transpose_b=True))
 
     def predict_tail(self, e, r, topk=-1):
@@ -165,7 +166,7 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
         emb_hr_e = tf.nn.embedding_lookup(norm_ent_embeddings, e)  # [m, k]
         emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, r)  # [m, k]
         
-        hrt_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_e, emb_hr_r), 0.5), norm_ent_embeddings)
+        hrt_sigmoid = -self.g(self.f1(emb_hr_e, emb_hr_r), norm_ent_embeddings)
         _, rank = tf.nn.top_k(hrt_sigmoid, k=topk)
 
         return rank
@@ -177,32 +178,7 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
         emb_hr_e = tf.nn.embedding_lookup(norm_ent_embeddings, e)  # [m, k]
         emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, r)  # [m, k]
         
-        hrt_sigmoid = self.g(tf.nn.dropout(self.f2(emb_hr_e, emb_hr_r), 0.5), norm_ent_embeddings)
+        hrt_sigmoid = -self.g(self.f2(emb_hr_e, emb_hr_r), norm_ent_embeddings)
         _, rank = tf.nn.top_k(hrt_sigmoid, k=topk)
 
         return rank
-
-    def test_batch(self):
-        """Function that performs batch testing for the algorithm.
-
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        num_entity = self.config.kg_meta.tot_entity
-
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
-
-        h_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_h_batch)  # [1, k]
-        r_vec = tf.nn.embedding_lookup(norm_rel_embeddings, self.test_r_batch)  # [1, k]
-        t_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_t_batch)  # [1, k]
-
-        hrt_sigmoid = - self.g(self.f1(h_vec, r_vec), norm_ent_embeddings)
-        trh_sigmoid = - self.g(self.f2(t_vec, r_vec), norm_ent_embeddings)
-
-        _, head_rank = tf.nn.top_k(trh_sigmoid, k=num_entity)
-        _, tail_rank = tf.nn.top_k(hrt_sigmoid, k=num_entity)
-
-        return head_rank, tail_rank
-
-    
