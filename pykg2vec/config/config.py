@@ -800,13 +800,13 @@ class NTNConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
+        self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.ent_hidden_size = args.ent_hidden_size
         self.rel_hidden_size = args.rel_hidden_size
         self.batch_size = args.batch_training
         self.epochs = args.epochs
-        self.margin = args.margin
         self.data = args.dataset_name
         self.optimizer = args.optimizer
         self.sampling = args.sampling
@@ -818,13 +818,13 @@ class NTNConfig(BasicConfig):
                 self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
+            'lmbda': self.lmbda,
             'learning_rate': self.learning_rate,
             'L1_flag': self.L1_flag,
             'ent_hidden_size': self.ent_hidden_size,
             'rel_hidden_size': self.rel_hidden_size,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
-            'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
