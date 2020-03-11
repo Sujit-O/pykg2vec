@@ -98,7 +98,7 @@ class Trainer(TrainerMeta):
             loss = self.model.get_loss(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.model.parameter_list))
+        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
 
         return loss
 
@@ -108,7 +108,7 @@ class Trainer(TrainerMeta):
             loss = self.model.get_loss(h, r, t, hr_t, rt_h)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.model.parameter_list))
+        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
 
         return loss
 
