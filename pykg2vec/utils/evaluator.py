@@ -322,11 +322,13 @@ class Evaluator(EvaluationMeta):
 
     @tf.function
     def test_tail_rank2(self, h, r, topk=-1):
-        return self.model.predict_tail(h, r, topk=topk)
+        rank = self.model.predict_tail(h, r, topk=topk)
+        return tf.squeeze(rank, 0)
 
     @tf.function
     def test_head_rank2(self, r, t, topk=-1):
-        return self.model.predict_head(t, r, topk=topk)
+        rank = self.model.predict_head(t, r, topk=topk)
+        return tf.squeeze(rank, 0)
 
     @tf.function
     def test_tail_rank(self, h, r, topk=-1):
@@ -379,6 +381,7 @@ class Evaluator(EvaluationMeta):
                 hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
                 trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
             
+            # import pdb; pdb.set_trace()
             result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
 
             self.result_queue.put(result_data)

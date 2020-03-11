@@ -45,24 +45,6 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
         self.config = config
         self.model_name = 'ProjE_pointwise'
 
-    # Override
-    def dissimilarity(self, h, r, t):
-        """Function to calculate dissimilarity measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensors: Returns the dissimilarity measure.
-        """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
-
     def def_parameters(self):
         """Defines the model parameters.
 
@@ -133,9 +115,7 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
                    h (Tensor): Head entities ids.
                    r (Tensor): Relation ids of the triple.
         """
-        norm_h = tf.nn.l2_normalize(h, axis=-1)
-        norm_r = tf.nn.l2_normalize(r, axis=-1)
-        return tf.tanh(norm_h * self.De1 + norm_r * self.Dr1 + self.bc1)
+        return tf.tanh(h * self.De1 + r * self.Dr1 + self.bc1)
 
     def f2(self, t, r):
         """Defines forward layer for tail.
@@ -144,11 +124,9 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
                t (Tensor): Tail entities ids.
                r (Tensor): Relation ids of the triple.
         """
-        norm_t = tf.nn.l2_normalize(t, axis=-1)
-        norm_r = tf.nn.l2_normalize(r, axis=-1)
-        return tf.tanh(norm_t * self.De2 + norm_r * self.Dr2 + self.bc2)
+        return tf.tanh(t * self.De2 + r * self.Dr2 + self.bc2)
 
-    def g(self, f, W):
+    def g(self, f, w):
         """Defines activation layer.
 
             Args:
@@ -156,12 +134,11 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
                W (Tensor): Matrix for multiplication.
         """
         # [b, k] [k, tot_ent]
-        norm_W = tf.nn.l2_normalize(W)
-        return tf.sigmoid(tf.matmul(f, norm_W, transpose_b=True))
+        return tf.sigmoid(tf.matmul(f, w, transpose_b=True))
 
     def predict_tail(self, e, r, topk=-1):
-        emb_hr_e = tf.nn.embedding_lookup(self.ent_embeddings, e)  # [m, k]
-        emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
+        emb_hr_e = tf.nn.embedding_lookup(self.ent_embeddings, e)  # [1, k]
+        emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [1, k]
         
         hrt_sigmoid = -self.g(self.f1(emb_hr_e, emb_hr_r), self.ent_embeddings)
         _, rank = tf.nn.top_k(hrt_sigmoid, k=topk)
