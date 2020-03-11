@@ -321,6 +321,14 @@ class Evaluator(EvaluationMeta):
         return hrank, trank
 
     @tf.function
+    def test_tail_rank2(self, h, r, topk=-1):
+        return self.model.predict_tail(h, r, topk=topk)
+
+    @tf.function
+    def test_head_rank2(self, r, t, topk=-1):
+        return self.model.predict_head(t, r, topk=topk)
+
+    @tf.function
     def test_tail_rank(self, h, r, topk=-1):
         tot_ent = self.model.config.kg_meta.tot_entity
         
@@ -364,8 +372,12 @@ class Evaluator(EvaluationMeta):
             r_tensor = tf.convert_to_tensor(r, dtype=tf.int32)
             t_tensor = tf.convert_to_tensor(t, dtype=tf.int32)
 
-            hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
-            trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
+            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
+                hrank = self.test_head_rank2(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
+                trank = self.test_tail_rank2(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
+            else:
+                hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
+                trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
             
             result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
 

@@ -97,7 +97,13 @@ class Trainer(TrainerMeta):
 
     @tf.function
     def train_step_projection(self, h, r, t, hr_t, rt_h):
-        pass
+        with tf.GradientTape() as tape:
+            loss = self.model.get_loss(h, r, t, hr_t, rt_h)
+
+        gradients = tape.gradient(loss, self.model.parameter_list)
+        self.optimizer.apply_gradients(zip(gradients, self.model.parameter_list))
+
+        return loss
 
 
     def train_model(self):
@@ -209,8 +215,8 @@ class Trainer(TrainerMeta):
                 h = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 r = tf.convert_to_tensor(data[1], dtype=tf.int32)
                 t = tf.convert_to_tensor(data[2], dtype=tf.int32)
-                hr_t = tf.convert_to_tensor(data[3], dtype=tf.int32)
-                rt_h = tf.convert_to_tensor(data[4], dtype=tf.int32)
+                hr_t = tf.convert_to_tensor(data[3], dtype=tf.float32)
+                rt_h = tf.convert_to_tensor(data[4], dtype=tf.float32)
                 loss = self.train_step_projection(h, r, t, hr_t, rt_h)
             else:
                 ph = tf.convert_to_tensor(data[0], dtype=tf.int32)
