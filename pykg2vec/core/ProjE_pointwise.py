@@ -9,7 +9,7 @@ import tensorflow as tf
 from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
 
-class ProjE_pointwise(ModelMeta, InferenceMeta):
+class ProjE_pointwise(ModelMeta):
     """`ProjE-Embedding Projection for Knowledge Graph Completion`_.
 
         Instead of measuring the distance or matching scores between the pair of the
@@ -42,6 +42,7 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
     """
 
     def __init__(self, config):
+        super(ProjE_pointwise, self).__init__()
         self.config = config
         self.model_name = 'ProjE_pointwise'
 

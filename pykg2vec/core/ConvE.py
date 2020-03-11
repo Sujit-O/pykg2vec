@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
+from pykg2vec.core.KGMeta import ModelMeta
 
 
-class ConvE(ModelMeta, InferenceMeta):
+class ConvE(ModelMeta):
     """`Convolutional 2D Knowledge Graph Embeddings`_
 
     ConvE is a multi-layer convolutional network model for link prediction,
@@ -38,36 +38,13 @@ class ConvE(ModelMeta, InferenceMeta):
     """
 
     def __init__(self, config=None):
+        super(ConvE, self).__init__()
         self.config = config
-        self.data_stats = self.config.kg_meta
         self.model_name = 'ConvE'
         self.dense_last_dim = {50: 2592, 100: 5184, 200: 10368}
         if self.config.hidden_size not in self.dense_last_dim:
             raise NotImplementedError("The hidden dimension is not supported!")
         self.last_dim = self.dense_last_dim[self.config.hidden_size]
-
-    def def_inputs(self):
-        """Defines the inputs to the model.
-           
-           Attributes:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               hr_t (Tensor): Tail tensor list for (h,r) pair.
-               rt_h (Tensor): Head tensor list for (r,t) pair.
-               test_h_batch (Tensor): Batch of head ids for testing.
-               test_r_batch (Tensor): Batch of relation ids for testing
-               test_t_batch (Tensor): Batch of tail ids for testing.
-        """
-        self.h = tf.placeholder(tf.int32, [None])
-        self.r = tf.placeholder(tf.int32, [None])
-        self.t = tf.placeholder(tf.int32, [None])
-        self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-        self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-
-        self.test_h_batch = tf.placeholder(tf.int32, [None])
-        self.test_r_batch = tf.placeholder(tf.int32, [None])
-        self.test_t_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -81,19 +58,38 @@ class ConvE(ModelMeta, InferenceMeta):
                b  (Tensor Variable): Variable storing the bias values.
                parameter_list  (list): List of Tensor parameters.
         """        
-        num_total_ent = self.data_stats.tot_entity
-        num_total_rel = self.data_stats.tot_relation
+        num_total_ent = self.config.kg_meta.tot_entity
+        num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
 
-        with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        with tf.name_scope("activation_bias"):
-            self.b = tf.get_variable(name="bias", shape=[1, num_total_ent],
-                                     initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        emb_initializer = tf.initializers.glorot_normal()
+
+        self.ent_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embedding")
+        self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
+        self.b = tf.Variable(emb_initializer(shape=(1, num_total_ent)), name="bias")
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
+
+        self.def_layer()
+
+    def embed(self, h, r, t):
+        """Function to get the embedding value.
+           
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
+        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=-1)
+        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=-1)
+
+        emb_h = tf.nn.embedding_lookup(ent_emb_norm, h)
+        emb_r = tf.nn.embedding_lookup(rel_emb_norm, r)
+        emb_t = tf.nn.embedding_lookup(ent_emb_norm, t)
+
+        return emb_h, emb_r, emb_t
 
     def def_layer(self):
         """Defines the layers of the algorithm."""
@@ -139,18 +135,15 @@ class ConvE(ModelMeta, InferenceMeta):
         # sigmoid activation
         return tf.nn.sigmoid(x)
 
-    def def_loss(self):
+    def get_loss(self,  h, r, t, hr_t, tr_h):
         """Defines the loss function for the algorithm."""
-        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+        h_emb, r_emb, t_emb = self.embed(h, r, t)
 
-        h_emb = tf.nn.embedding_lookup(ent_emb_norm, self.h)
-        r_emb = tf.nn.embedding_lookup(rel_emb_norm, self.r)
-        t_emb = tf.nn.embedding_lookup(ent_emb_norm, self.t)
+        hr_t = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(hr_t)), dtype=tf.float32)
+        tr_h = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(tr_h)), dtype=tf.float32)
 
-        hr_t = self.hr_t #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        rt_h = self.rt_h #* (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-
+        # hr_t = self.hr_t #* (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+        # tr_h = self.tr_h #* (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
 
         stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
         stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
@@ -164,102 +157,44 @@ class ConvE(ModelMeta, InferenceMeta):
         pred_heads = self.forward(stacked_tr)
 
         loss_tail_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
-        loss_head_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
+        loss_head_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(tr_h, pred_heads))
 
-        # reg_losses = tf.nn.l2_loss(h_emb) + tf.nn.l2_loss(r_emb) + tf.nn.l2_loss(t_emb)
+        reg_losses = tf.nn.l2_loss(h_emb) + tf.nn.l2_loss(r_emb) + tf.nn.l2_loss(t_emb)
 
-        self.loss = loss_tail_pred + loss_head_pred#+ self.config.lmbda * reg_losses
+        loss = loss_tail_pred + loss_head_pred + self.config.lmbda * reg_losses
 
-    def test_batch(self):
-        """Function that performs batch testing for the algorithm.
+        return loss
 
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
+    def predict_tail(self, e, r, topk=-1):
         ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
         rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
 
-        h_emb = tf.nn.embedding_lookup(ent_emb_norm, self.test_h_batch)
-        r_emb = tf.nn.embedding_lookup(rel_emb_norm, self.test_r_batch)
-        t_emb = tf.nn.embedding_lookup(ent_emb_norm, self.test_t_batch)
+        h_emb = tf.nn.embedding_lookup(ent_emb_norm, e)
+        r_emb = tf.nn.embedding_lookup(rel_emb_norm, r)
 
         stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
         stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
-        stacked_t = tf.reshape(t_emb, [-1, 10, 20, 1])
-
+        
         stacked_hr = tf.concat([stacked_h, stacked_r], 1)
+        pred_tails = -self.forward(stacked_hr)
+
+        _, rank = tf.nn.top_k(pred_tails, k=topk)
+
+        return rank
+
+    def predict_head(self, e, r, topk=-1):
+        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
+        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
+
+        t_emb = tf.nn.embedding_lookup(ent_emb_norm, e)
+        r_emb = tf.nn.embedding_lookup(rel_emb_norm, r)
+
+        stacked_t = tf.reshape(t_emb, [-1, 10, 20, 1])
+        stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
+        
         stacked_tr = tf.concat([stacked_t, stacked_r], 1)
+        pred_heads = -self.forward(stacked_tr)
 
-        # TODO make two different forward layers for head and tail
-        pred_tails = self.forward(stacked_hr)
-        pred_heads = self.forward(stacked_tr)
+        _, rank = tf.nn.top_k(pred_heads, k=topk)
 
-        _, head_rank = tf.nn.top_k(-pred_heads, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(-pred_tails, k=self.data_stats.tot_entity)
-
-        return head_rank, tail_rank
-
-    # Override
-    def dissimilarity(self, h, r, t):
-        """Function to calculate dissimilarity measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensors: Returns the dissimilarity measure.
-        """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
-
-    def embed(self, h, r, t):
-        """Function to get the embedding value.
-           
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
-        return emb_h, emb_r, emb_t
-
-    def get_embed(self, h, r, t, sess=None):
-        """Function to get the embedding value in numpy.
-           
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        emb_h, emb_r, emb_t = self.embed(h, r, t)
-        h, r, t = sess.run([emb_h, emb_r, emb_t])
-        return h, r, t
-
-    def get_proj_embed(self, h, r, t, sess):
-        """Function to get the projected embedding value in numpy.
-           
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        return self.get_embed(h, r, t, sess)
-
+        return rank
