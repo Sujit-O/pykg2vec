@@ -86,7 +86,7 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
         emb_hr_h = tf.nn.embedding_lookup(self.ent_embeddings, h)  # [m, k]
         emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
         
-        hrt_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_h, emb_hr_r), 0.5), self.ent_embeddings)
+        hrt_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_h, emb_hr_r), self.config.hidden_dropout), self.ent_embeddings)
         
         hrt_loss_left = - tf.reduce_sum((tf.math.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., hr_t)))
         hrt_loss_right = - tf.reduce_sum((tf.math.log(tf.clip_by_value(1 - hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(hr_t))))
@@ -99,7 +99,7 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
         emb_hr_h = tf.nn.embedding_lookup(self.ent_embeddings, h)  # [m, k]
         emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
         
-        hrt_sigmoid = self.g(tf.nn.dropout(self.f2(emb_hr_h, emb_hr_r), 0.5), self.ent_embeddings)
+        hrt_sigmoid = self.g(tf.nn.dropout(self.f2(emb_hr_h, emb_hr_r), self.config.hidden_dropout), self.ent_embeddings)
         
         hrt_loss_left = - tf.reduce_sum((tf.math.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., hr_t)))
         hrt_loss_right = - tf.reduce_sum((tf.math.log(tf.clip_by_value(1 - hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(hr_t))))
