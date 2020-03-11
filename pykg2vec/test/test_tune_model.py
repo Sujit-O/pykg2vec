@@ -4,7 +4,6 @@
 This module is for testing unit functions of tuning model
 """
 import pytest
-import tensorflow as tf
 
 
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
@@ -15,7 +14,7 @@ from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 @pytest.mark.skip(reason="This is a functional method.")
 def tunning_function(name):
     """Function to test the tuning of the models."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.prepare_data()
 
     # getting the customized configurations from the command-line arguments.
