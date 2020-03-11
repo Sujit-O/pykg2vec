@@ -1492,46 +1492,30 @@ class ConvEConfig(BasicConfig):
     """
     def __init__(self, args=None):
 
-        if args is None or args.exp is True:
-            self.lmbda = 0.1
-            self.feature_map_dropout = 0.2
-            self.input_dropout = 0.2
-            self.hidden_dropout = 0.3
-            self.use_bias = True
-            self.label_smoothing = 0.1
-            self.lr_decay = 0.995
+        self.lmbda = args.lmbda
+        self.feature_map_dropout = args.feature_map_dropout
+        self.input_dropout = args.input_dropout
+        self.hidden_dropout = args.hidden_dropout
+        self.use_bias = args.use_bias
+        self.label_smoothing = args.label_smoothing
+        self.lr_decay = args.lr_decay
 
-            self.learning_rate = 0.003
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        # TODO: Currently conve can only have k=50, 100, or 200
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
-        else:
-            self.lmbda = args.lmbda
-            self.feature_map_dropout = args.feature_map_dropout
-            self.input_dropout = args.input_dropout
-            self.hidden_dropout = args.hidden_dropout
-            self.use_bias = args.use_bias
-            self.label_smoothing = args.label_smoothing
-            self.lr_decay = args.lr_decay
-
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            # TODO: Currently conve can only have k=50, 100, or 200
-            self.hidden_size = 50  # args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        if args.exp is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'proje_po')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
