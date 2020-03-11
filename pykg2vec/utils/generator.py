@@ -10,7 +10,6 @@ from __future__ import print_function
 import numpy as np
 from multiprocessing import Process, Queue, Value
 
-
 def get_label_mat(data, bs, te, neg_rate=1):
     """Function to label the matrix.
            
@@ -26,12 +25,12 @@ def get_label_mat(data, bs, te, neg_rate=1):
     mat = np.full((bs, te), 0.0)
     for i in range(bs):
         pos_samples = len(data[i])
-        distribution_data = list(data[i])
+        distribution_data = data[i]
         for j in range(pos_samples):
             mat[i][distribution_data[j]] = 1.0
         neg_samples = neg_rate * pos_samples
         idx = list(range(te))
-        arr = list(data[i])
+        arr = data[i]
         arr.sort(reverse=True)
         for k in arr:
             del idx[k]

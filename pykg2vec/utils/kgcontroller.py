@@ -837,8 +837,8 @@ class KnowledgeGraph(object):
         """ Function to read the list of heads for the given tail and relation pair
         and list of heads for the given tail and relation pair for the training set. """
         for t in self.triplets['train']:
-            t.set_hr_t(self.hr_t_train[(t.h, t.r)])
-            t.set_tr_h(self.tr_h_train[(t.t, t.r)])
+            t.set_hr_t(list(self.hr_t_train[(t.h, t.r)]))
+            t.set_tr_h(list(self.tr_h_train[(t.t, t.r)]))
 
         return self.triplets['train']
 
@@ -864,8 +864,8 @@ class KnowledgeGraph(object):
         """ Function to read the list of heads for the given tail and relation pair
         and list of heads for the given tail and relation pair for the valid set. """
         for t in self.triplets['valid']:
-            t.set_hr_t(self.hr_t_valid[(t.h, t.r)])
-            t.set_tr_h(self.tr_h_valid[(t.t, t.r)])
+            t.set_hr_t(list(self.hr_t_valid[(t.h, t.r)]))
+            t.set_tr_h(list(self.tr_h_valid[(t.t, t.r)]))
 
         return self.triplets['valid']    
     
