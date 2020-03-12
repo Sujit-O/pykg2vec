@@ -146,14 +146,10 @@ class KGEArgParser:
 
         ''' for conve '''
         self.conv_group = self.parser.add_argument_group('ConvE specific Hyperparameters')
-        self.conv_group.add_argument('-lmda', dest='lmbda', default=0.1, type=float, help='The lmbda used in ConvE.')
         self.conv_group.add_argument('-fmd', dest='feature_map_dropout', default=0.2, type=float, help="feature map dropout value used in ConvE.")
         self.conv_group.add_argument('-idt', dest="input_dropout", default=0.3, type=float, help="input dropout value used in ConvE.")
         self.conv_group.add_argument('-hdt', dest="hidden_dropout", default=0.3, type=float, help="hidden dropout value used in ConvE.")
-        self.conv_group.add_argument('-hdt2', dest="hidden_dropout2", default=0.3, type=float, help="hidden dropout value used in ConvE.")
-        self.conv_group.add_argument('-ubs', dest='use_bias', default=True, type=lambda x: (str(x).lower() == 'true'), help='The boolean indicating whether use biases or not in ConvE.')
         self.conv_group.add_argument('-lbs', dest='label_smoothing', default=0.1, type=float, help="The parameter used in label smoothing.")
-        self.conv_group.add_argument('-lrd', dest='lr_decay', default=0.995, type=float, help="The parameter for learning_rate decay used in ConvE.")
 
         '''for convKB'''
         self.convkb_group = self.parser.add_argument_group('ConvKB specific Hyperparameters')
@@ -166,6 +162,7 @@ class KGEArgParser:
 
         ''' arguments regarding hyperparameters '''
         self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
+        self.general_hyper_group.add_argument('-lmda', dest='lmbda', default=0.1, type=float, help='The lmbda for regularization.')
         self.general_hyper_group.add_argument('-b',   dest='batch_training', default=128, type=int, help='training batch size')
         self.general_hyper_group.add_argument('-mg',  dest='margin', default=0.8, type=float, help='Margin to take')
         self.general_hyper_group.add_argument('-opt', dest='optimizer', default='adam', type=str, help='optimizer to be used in training.')
@@ -1492,46 +1489,34 @@ class ConvEConfig(BasicConfig):
     """
     def __init__(self, args=None):
 
-        self.lmbda = args.lmbda
         self.feature_map_dropout = args.feature_map_dropout
         self.input_dropout = args.input_dropout
         self.hidden_dropout = args.hidden_dropout
-        self.use_bias = args.use_bias
         self.label_smoothing = args.label_smoothing
-        self.lr_decay = args.lr_decay
-
         self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
         # TODO: Currently conve can only have k=50, 100, or 200
         self.hidden_size = args.hidden_size
         self.batch_size = args.batch_training
         self.epochs = args.epochs
-        self.margin = args.margin
         self.data = args.dataset_name
         self.optimizer = args.optimizer
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
         if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'proje_po')
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'conve')
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
-            'lmbda': self.lmbda,
             'feature_map_dropout': self.feature_map_dropout,
             'input_dropout': self.input_dropout,
             'hidden_dropout': self.hidden_dropout,
-            'use_bias': self.use_bias,
             'label_smoothing': self.label_smoothing,
-            'lr_decay': self.lr_decay,
-
             'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
             'hidden_size': self.hidden_size,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
-            'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,

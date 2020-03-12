@@ -58,10 +58,6 @@ class Trainer(TrainerMeta):
 
     def build_model(self):
         """function to build the model"""
-        
-        if getattr(self.model, "def_layer", None):
-            self.model.def_layer()
-
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
 
         if self.config.optimizer == 'sgd':

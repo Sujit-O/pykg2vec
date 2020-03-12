@@ -31,6 +31,7 @@ class HyperparamterLoader:
           'complex' : {'learning_rate':   0.5,'hidden_size':100,'batch_size':5000,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':10,'lmbda':0.0001},
           'distmult': {'learning_rate':   0.1,'hidden_size':100,'batch_size':50000,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':1,'lmbda':0.0001},
           'proje_po': {'learning_rate':  0.01,'hidden_dropout': 0.5, 'hidden_size':200,'batch_size':200,' epochs':100, 'optimizer':'adam','lmbda':0.00001},
+          'conve'   : {'learning_rate': 0.001,'optimizer':'adam', 'label_smoothing':0.1, 'batch_size':128, 'hidden_size':200, 'input_dropout':0.2, 'feature_map_dropout':0.2, 'hidden_dropout':0.3,'neg_rate':0, 'epochs':100}
         }
       }
 
