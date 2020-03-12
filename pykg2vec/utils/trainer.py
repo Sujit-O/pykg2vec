@@ -289,6 +289,7 @@ class Trainer(TrainerMeta):
         self.infer_rels(1,20,topk=5)
 
     def exit_interactive_mode(self):
+        self.evaluator.stop()
         print("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self,h,r,topk=5):
