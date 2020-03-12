@@ -208,9 +208,7 @@ class Visualization(object):
             >>> viz = Visualization(model=model)
             >>> viz.plot_train_result()
     """
-    def __init__(self, model=None, vis_opts=None, sess=None):
-
-        self.sess = sess
+    def __init__(self, model=None, vis_opts=None):
 
         if vis_opts:
             self.ent_only_plot = vis_opts["ent_only_plot"]
@@ -260,7 +258,7 @@ class Visualization(object):
             self.r_name.append(self.idx2relation[t.r])
             self.t_name.append(self.idx2entity[t.t])
 
-            emb_h, emb_r, emb_t = self.model.get_embed(t.h, t.r, t.t, self.sess)
+            emb_h, emb_r, emb_t = self.model.embed(t.h, t.r, t.t)
 
             self.h_emb.append(emb_h)
             self.r_emb.append(emb_r)
@@ -268,7 +266,7 @@ class Visualization(object):
 
             if self.ent_and_rel_plot:
                 try:
-                    emb_h, emb_r, emb_t = self.model.get_proj_embed(t.h, t.r, t.t, self.sess)
+                    emb_h, emb_r, emb_t = self.model.embed(t.h, t.r, t.t)
                     self.h_proj_emb.append(emb_h)
                     self.r_proj_emb.append(emb_r)
                     self.t_proj_emb.append(emb_t)
@@ -355,8 +353,7 @@ class Visualization(object):
                     frames = [df, df_3]
                     df = pd.concat(frames)
             plt.figure()
-            ax = seaborn.lineplot(x="Epochs", y="Loss", hue="Algorithm",
-                                  markers=True, dashes=False, data=df)
+            ax = seaborn.lineplot(x="Epochs", y="Loss", hue="Algorithm", markers=True, dashes=False, data=df)
             files = os.listdir(str(result))
             files_lwcase = [f.lower() for f in files]
             file_no = len([c for c in files_lwcase if d.lower() in c if 'training' in c])

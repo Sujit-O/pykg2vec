@@ -253,7 +253,7 @@ class Trainer(TrainerMeta):
             if not tuning:
                 progress_bar.add(1, values=[('acc_loss', acc_loss), ('loss', loss)])
 
-        self.training_results.append([epoch_idx, acc_loss])
+        self.training_results.append([epoch_idx, acc_loss.numpy()])
 
         return acc_loss
 
@@ -357,18 +357,16 @@ class Trainer(TrainerMeta):
                     "ent_and_rel_plot": not self.config.plot_entity_only}
 
         if self.config.plot_embedding:
-            viz = Visualization(model=self.model, vis_opts = options, sess=self.sess)
+            viz = Visualization(model=self.model, vis_opts = options)
 
-            viz.plot_embedding(resultpath=self.config.figures,
-                               algos=self.model.model_name,
-                               show_label=False)
+            viz.plot_embedding(resultpath=self.config.figures, algos=self.model.model_name, show_label=False)
 
         if self.config.plot_training_result:
-            viz = Visualization(model=self.model, sess=self.sess)
+            viz = Visualization(model=self.model)
             viz.plot_train_result()
 
         if self.config.plot_testing_result:
-            viz = Visualization(model=self.model, sess=self.sess)
+            viz = Visualization(model=self.model)
             viz.plot_test_result()
     
     def export_embeddings(self):
