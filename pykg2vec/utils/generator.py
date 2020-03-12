@@ -132,8 +132,6 @@ def process_function(raw_queue, processed_queue, gen_config, model_config):
     shape = [model_config.batch_size, model_config.kg_meta.tot_entity] 
     shape = tf.convert_to_tensor(shape, dtype=tf.int64)
 
-    
-
     while True:
         idx, raw_data = raw_queue.get()
         
@@ -157,26 +155,31 @@ def process_function(raw_queue, processed_queue, gen_config, model_config):
             for idx in tr_h:
                 indices_tr_h.append([i, idx])
 
-            for idx in random_ids[0:100]:
-                if idx not in hr_t:
-                    neg_indices_hr_t.append([i, idx])
-            for idx in random_ids[0:100]:
-                if idx not in tr_h:
-                    neg_indices_tr_h.append([i, idx])
+            if neg_rate > 0:
+                for idx in random_ids[0:100]:
+                    if idx not in hr_t:
+                        neg_indices_hr_t.append([i, idx])
+                for idx in random_ids[0:100]:
+                    if idx not in tr_h:
+                        neg_indices_tr_h.append([i, idx])
 
 
         values_hr_t = tf.tile([1], [len(indices_hr_t)])
         values_tr_h = tf.tile([1], [len(indices_tr_h)])
-        neg_values_hr_t = tf.tile([-1], [len(neg_indices_hr_t)])
-        neg_values_tr_h = tf.tile([-1], [len(neg_indices_tr_h)])
+        
+        if neg_rate > 0:
+            neg_values_hr_t = tf.tile([-1], [len(neg_indices_hr_t)])
+            neg_values_tr_h = tf.tile([-1], [len(neg_indices_tr_h)])
 
         hr_t = tf.SparseTensor(indices=indices_hr_t, values=values_hr_t, dense_shape=shape)
         tr_h = tf.SparseTensor(indices=indices_tr_h, values=values_tr_h, dense_shape=shape)
-        neg_hr_t = tf.SparseTensor(indices=neg_indices_hr_t, values=neg_values_hr_t, dense_shape=shape)
-        neg_tr_h = tf.SparseTensor(indices=neg_indices_tr_h, values=neg_values_tr_h, dense_shape=shape)
+
+        if neg_rate > 0:
+            neg_hr_t = tf.SparseTensor(indices=neg_indices_hr_t, values=neg_values_hr_t, dense_shape=shape)
+            neg_tr_h = tf.SparseTensor(indices=neg_indices_tr_h, values=neg_values_tr_h, dense_shape=shape)
         
-        hr_t = tf.sparse.add(hr_t, neg_hr_t)
-        tr_h = tf.sparse.add(tr_h, neg_tr_h)
+            hr_t = tf.sparse.add(hr_t, neg_hr_t)
+            tr_h = tf.sparse.add(tr_h, neg_tr_h)
 
         processed_queue.put([h, r, t, hr_t, tr_h])
 
