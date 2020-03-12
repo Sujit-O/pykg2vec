@@ -42,14 +42,10 @@ def tunning_function(name):
     'slm',
     'hole',
     'rotate',
-    # 'conve',
-    # 'projE_pointwise',
     'kg2e',
     'complex',
-    'distmult',
-    # 'tucker',
-    # 'transg',
+    'distmult'
 ])
-def test_tuning_transe(model):
+def test_tuning(model_name):
     """Function to test the tuning function."""
-    tunning_function(model)
+    tunning_function(model_name)
