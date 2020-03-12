@@ -26,8 +26,7 @@ def test_generator_proje():
     knowledge_graph.force_prepare_data()
 
     dummy_config = ProjE_pointwiseConfig(KGEArgParser().get_args([]))
-    generator_config = GeneratorConfig(data='train', training_strategy='projection_based')
-    generator = Generator(config=generator_config, model_config=dummy_config)
+    generator = Generator(dummy_config, training_strategy='projection_based')
 
     for i in range(10):
         data = list(next(generator))
@@ -61,8 +60,7 @@ def test_generator_trans(Config):
     knowledge_graph.force_prepare_data()
 
     dummy_config = Config(KGEArgParser().get_args([]))
-    generator_config = GeneratorConfig(data='train', training_strategy='pairwise_based')
-    generator = Generator(config=generator_config, model_config=dummy_config)
+    generator = Generator(dummy_config, training_strategy='pairwise_based')
 
     for i in range(10):
         data = list(next(generator))

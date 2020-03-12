@@ -11,7 +11,7 @@ import numpy as np
 from multiprocessing import Process, Queue
 import tensorflow as tf
 
-def raw_data_generator(raw_queue, processed_queue, gen_config, model_config):
+def raw_data_generator(raw_queue, processed_queue, config):
     """Function to feed  triples to raw queue for multiprocessing.
            
         Args:
@@ -22,27 +22,16 @@ def raw_data_generator(raw_queue, processed_queue, gen_config, model_config):
             number_of_batch (int) : Total number of batch.
 
     """
-    data = None 
-    if  gen_config.data == 'train':
-        data = model_config.knowledge_graph.read_cache_data('triplets_train')
-    elif gen_config.data == 'test':
-        data = model_config.knowledge_graph.read_cache_data('triplets_test')
-    elif gen_config.data == 'valid':
-        data = model_config.knowledge_graph.read_cache_data('triplets_valid')
-    elif gen_config.data == 'train_and_valid':
-        data = model_config.knowledge_graph.read_cache_data('triplets_train')
-        data += model_config.knowledge_graph.read_cache_data('triplets_valid')
-    else:
-        raise NotImplementedError("The data type passed is wrong!")
+    data = config.knowledge_graph.read_cache_data('triplets_train')
 
-    number_of_batch = len(data) // model_config.batch_size
+    number_of_batch = len(data) // config.batch_size
     batch_idx = 0
 
     random_ids = np.random.permutation(len(data))
     
     while True:
-        pos_start = model_config.batch_size * batch_idx
-        pos_end   = model_config.batch_size * (batch_idx+1)
+        pos_start = config.batch_size * batch_idx
+        pos_end   = config.batch_size * (batch_idx+1)
         
         raw_data = np.asarray([[data[x].h, data[x].r, data[x].t] for x in random_ids[pos_start:pos_end]])
         
@@ -53,7 +42,7 @@ def raw_data_generator(raw_queue, processed_queue, gen_config, model_config):
             batch_idx = 0
 
 
-def process_function_pairwise(raw_queue, processed_queue, gen_config, model_config):
+def process_function_pairwise(raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -66,10 +55,10 @@ def process_function_pairwise(raw_queue, processed_queue, gen_config, model_conf
             lr (int): Id of the last processed relation.
             lt (int): Id of the last processed tail.
     """ 
-    data = model_config.knowledge_graph.read_cache_data('triplets_train')
-    relation_property = model_config.knowledge_graph.read_cache_data('relationproperty')
+    data = config.knowledge_graph.read_cache_data('triplets_train')
+    relation_property = config.knowledge_graph.read_cache_data('relationproperty')
     positive_triplets = {(t.h, t.r, t.t): 1 for t in data}
-    neg_rate = model_config.neg_rate
+    neg_rate = config.neg_rate
     
     del data # save memory space
     
@@ -87,25 +76,25 @@ def process_function_pairwise(raw_queue, processed_queue, gen_config, model_conf
 
         for t in pos_triples:
             
-            prob = relation_property[t[1]] if model_config.sampling == "bern" else 0.5
+            prob = relation_property[t[1]] if config.sampling == "bern" else 0.5
             
             for i in range(neg_rate):
                 
                 if np.random.random() > prob:
-                    idx_replace_tail = np.random.randint(model_config.kg_meta.tot_entity)
+                    idx_replace_tail = np.random.randint(config.kg_meta.tot_entity)
 
                     while (t[0], t[1], idx_replace_tail) in positive_triplets:
-                        idx_replace_tail = np.random.randint(model_config.kg_meta.tot_entity)
+                        idx_replace_tail = np.random.randint(config.kg_meta.tot_entity)
 
                     nh.append(t[0])
                     nr.append(t[1])
                     nt.append(idx_replace_tail)
 
                 else:
-                    idx_replace_head = np.random.randint(model_config.kg_meta.tot_entity)
+                    idx_replace_head = np.random.randint(config.kg_meta.tot_entity)
                     
                     while ((idx_replace_head, t[1], t[2]) in positive_triplets):
-                        idx_replace_head = np.random.randint(model_config.kg_meta.tot_entity)
+                        idx_replace_head = np.random.randint(config.kg_meta.tot_entity)
                     
                     nh.append(idx_replace_head)
                     nr.append(t[1])
@@ -113,7 +102,7 @@ def process_function_pairwise(raw_queue, processed_queue, gen_config, model_conf
 
         processed_queue.put([ph, pr, pt, nh, nr, nt])
 
-def process_function_pointwise(raw_queue, processed_queue, gen_config, model_config):
+def process_function_pointwise(raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -126,10 +115,10 @@ def process_function_pointwise(raw_queue, processed_queue, gen_config, model_con
             lr (int): Id of the last processed relation.
             lt (int): Id of the last processed tail.
     """ 
-    data = model_config.knowledge_graph.read_cache_data('triplets_train')
-    relation_property = model_config.knowledge_graph.read_cache_data('relationproperty')
+    data = config.knowledge_graph.read_cache_data('triplets_train')
+    relation_property = config.knowledge_graph.read_cache_data('relationproperty')
     positive_triplets = {(t.h, t.r, t.t): 1 for t in data}
-    neg_rate = model_config.neg_rate
+    neg_rate = config.neg_rate
     
     del data # save memory space
     
@@ -149,15 +138,15 @@ def process_function_pointwise(raw_queue, processed_queue, gen_config, model_con
             point_t.append(t[2])
             point_y.append(1)
 
-            prob = relation_property[t[1]] if model_config.sampling == "bern" else 0.5
+            prob = relation_property[t[1]] if config.sampling == "bern" else 0.5
             
             for i in range(neg_rate):
                 
                 if np.random.random() > prob:
-                    idx_replace_tail = np.random.randint(model_config.kg_meta.tot_entity)
+                    idx_replace_tail = np.random.randint(config.kg_meta.tot_entity)
 
                     while (t[0], t[1], idx_replace_tail) in positive_triplets:
-                        idx_replace_tail = np.random.randint(model_config.kg_meta.tot_entity)
+                        idx_replace_tail = np.random.randint(config.kg_meta.tot_entity)
 
                     point_h.append(t[0])
                     point_r.append(t[1])
@@ -165,10 +154,10 @@ def process_function_pointwise(raw_queue, processed_queue, gen_config, model_con
                     point_y.append(-1)
 
                 else:
-                    idx_replace_head = np.random.randint(model_config.kg_meta.tot_entity)
+                    idx_replace_head = np.random.randint(config.kg_meta.tot_entity)
                     
                     while ((idx_replace_head, t[1], t[2]) in positive_triplets):
-                        idx_replace_head = np.random.randint(model_config.kg_meta.tot_entity)
+                        idx_replace_head = np.random.randint(config.kg_meta.tot_entity)
                     
                     point_h.append(idx_replace_head)
                     point_r.append(t[1])
@@ -178,7 +167,7 @@ def process_function_pointwise(raw_queue, processed_queue, gen_config, model_con
         processed_queue.put([point_h, point_r, point_t, point_y])
 
 
-def process_function_multiclass(raw_queue, processed_queue, gen_config, model_config):
+def process_function_multiclass(raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -188,12 +177,12 @@ def process_function_multiclass(raw_queue, processed_queue, gen_config, model_co
             bs (int): Total size of each batch.
             neg_rate (int): Ratio of negative to positive samples.
     """
-    hr_t_train = model_config.knowledge_graph.read_cache_data('hr_t_train')
-    tr_h_train = model_config.knowledge_graph.read_cache_data('tr_h_train')
+    hr_t_train = config.knowledge_graph.read_cache_data('hr_t_train')
+    tr_h_train = config.knowledge_graph.read_cache_data('tr_h_train')
     
-    neg_rate = model_config.neg_rate
+    neg_rate = config.neg_rate
     
-    shape = [model_config.batch_size, model_config.kg_meta.tot_entity] 
+    shape = [config.batch_size, config.kg_meta.tot_entity] 
     shape = tf.convert_to_tensor(shape, dtype=tf.int64)
 
     while True:
@@ -208,9 +197,9 @@ def process_function_multiclass(raw_queue, processed_queue, gen_config, model_co
         neg_indices_hr_t = []
         neg_indices_tr_h = []
 
-        random_ids = np.random.permutation(model_config.kg_meta.tot_entity)
+        random_ids = np.random.permutation(config.kg_meta.tot_entity)
 
-        for i in range(model_config.batch_size):
+        for i in range(config.batch_size):
             hr_t = hr_t_train[(h[i], r[i])]
             tr_h = tr_h_train[(t[i], r[i])]
 
@@ -276,23 +265,6 @@ def process_function_multiclass(raw_queue, processed_queue, gen_config, model_co
 #             mat[i][idx[j]] = 0.0
 #     return mat
 
-def worker_process_raw_data_testing(raw_queue, processed_queue):
-    '''worker process that gets data from raw queue then processes and saves to processed queue.
-        especially for testing data.
-
-        Args:
-            raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
-            processed_queue (Queue) : Multiprocessing Queue to put the processed data.
-    ''' 
-    while True:
-        pos_triples = raw_queue.get()
-
-        ph = pos_triples[:, 0]
-        pr = pos_triples[:, 1]
-        pt = pos_triples[:, 2]
-        
-        processed_queue.put([ph, pr, pt])
-
 
 class Generator:
     """Generator class for the embedding algorithms
@@ -308,25 +280,23 @@ class Generator:
             >>> from pykg2vec.utils.generator import Generator
             >>> from pykg2vec.core.TransE impor TransE
             >>> model = TransE()
-            >>> from pykg2vec.config.global_config import GeneratorConfig
-            >>> generator_config = GeneratorConfig(data='train', algo='transe', batch_size=64)
-            >>> gen_train = Generator(config=generator_config, model_config=model.config)
+            >>> gen_train = Generator(model.config, training_strategy="pairwise_based")
     """
 
-    def __init__(self, config, model_config):
-        self.gen_config = config
-        self.model_config = model_config
+    def __init__(self, config, training_strategy=None):
+        self.config = config
         self.process_list = []
-        self.raw_queue = Queue(self.gen_config.raw_queue_size)
-        self.processed_queue = Queue(self.gen_config.processed_queue_size)
-         
-        self.create_feeder_process()
-        if self.gen_config.data == 'test' or self.gen_config.data == 'valid':
-            self.create_test_processer_process()
-        else:
-            self.create_train_processor_process()
+        
+        self.raw_queue_size = 50
+        self.processed_queue_size = 50
+        self.raw_queue = Queue(self.raw_queue_size)
+        self.processed_queue = Queue(self.processed_queue_size)
+        
+        self.training_strategy = training_strategy
 
-    
+        self.create_feeder_process()
+        self.create_train_processor_process()
+
     def __iter__(self):
         return self
 
@@ -340,28 +310,20 @@ class Generator:
 
     def create_feeder_process(self):
         """Function create the feeder process."""
-        feeder_worker = Process(target=raw_data_generator, args=(self.raw_queue, self.processed_queue, self.gen_config, self.model_config))
+        feeder_worker = Process(target=raw_data_generator, args=(self.raw_queue, self.processed_queue, self.config))
         feeder_worker.daemon = True
         self.process_list.append(feeder_worker)
         feeder_worker.start()
-    
-    def create_test_processer_process(self):
-        """Function create test feeder process."""
-        for i in range(self.gen_config.process_num):
-            process_worker = Process(target=worker_process_raw_data_testing, args=(self.raw_queue, self.processed_queue))
-            self.process_list.append(process_worker)
-            process_worker.daemon = True
-            process_worker.start()
 
     def create_train_processor_process(self):
         """Function ro create the process for generating training samples."""
-        for i in range(self.gen_config.process_num):
-            if self.gen_config.training_strategy == "projection_based":
-                process_worker = Process(target=process_function_multiclass, args=(self.raw_queue, self.processed_queue, self.gen_config, self.model_config))
-            elif self.gen_config.training_strategy == "pairwise_based":
-                process_worker = Process(target=process_function_pairwise, args=(self.raw_queue, self.processed_queue, self.gen_config, self.model_config))
-            elif self.gen_config.training_strategy == "pointwise_based":
-                process_worker = Process(target=process_function_pointwise, args=(self.raw_queue, self.processed_queue, self.gen_config, self.model_config))
+        for i in range(self.config.num_process_gen):
+            if self.training_strategy == "projection_based":
+                process_worker = Process(target=process_function_multiclass, args=(self.raw_queue, self.processed_queue, self.config))
+            elif self.training_strategy == "pairwise_based":
+                process_worker = Process(target=process_function_pairwise, args=(self.raw_queue, self.processed_queue, self.config))
+            elif self.training_strategy == "pointwise_based":
+                process_worker = Process(target=process_function_pointwise, args=(self.raw_queue, self.processed_queue, self.config))
             else:
                 raise NotImplementedError("This strategy is not supported.")
             self.process_list.append(process_worker)

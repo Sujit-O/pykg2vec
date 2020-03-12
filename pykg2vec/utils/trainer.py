@@ -11,7 +11,6 @@ from pykg2vec.core.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator
-from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 tf.config.set_soft_device_placement(True)
@@ -84,11 +83,6 @@ class Trainer(TrainerMeta):
         self.config.summary()
         self.config.summary_hyperparameter(self.model.model_name)
 
-        self.generator_config = GeneratorConfig(data=self.trainon, training_strategy=self.training_strategy,
-                                                batch_size=self.model.config.batch_size,
-                                                process_num=self.model.config.num_process_gen,
-                                                neg_rate=self.config.neg_rate)
-
     ''' Training related functions:'''
     @tf.function
     def train_step(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
@@ -128,7 +122,7 @@ class Trainer(TrainerMeta):
         patience_left = self.config.patience
         ### Early Stop Mechanism
 
-        self.generator = Generator(config=self.generator_config, model_config=self.model.config)
+        self.generator = Generator(self.model.config, training_strategy=self.training_strategy)
         self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug)
 
         if self.config.loadFromData:
@@ -184,7 +178,7 @@ class Trainer(TrainerMeta):
         patience_left = self.config.patience
         ### Early Stop Mechanism
 
-        self.generator = Generator(config=self.generator_config, model_config=self.model.config)
+        self.generator = Generator(self.model.config, training_strategy=self.training_strategy)
         self.evaluator = Evaluator(model=self.model,data_type=self.teston, debug=self.debug, tuning=True)
        
         for cur_epoch_idx in range(self.config.epochs):

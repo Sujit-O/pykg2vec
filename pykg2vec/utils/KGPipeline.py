@@ -13,12 +13,10 @@ from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator
 from pykg2vec.config.config import Importer, KGEArgParser
-from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
 from pykg2vec.config.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 from pykg2vec.utils.trainer import Trainer
-
 
 
 class KGPipeline:
