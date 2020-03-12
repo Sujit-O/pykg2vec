@@ -1277,7 +1277,8 @@ class ConvEConfig(BasicConfig):
         self.label_smoothing = args.label_smoothing
         self.learning_rate = args.learning_rate
         # TODO: Currently conve can only have k=50, 100, or 200
-        self.hidden_size = args.hidden_size
+        # self.hidden_size = args.hidden_size
+        self.hidden_size = 200
         self.batch_size = args.batch_training
         self.epochs = args.epochs
         self.data = args.dataset_name
