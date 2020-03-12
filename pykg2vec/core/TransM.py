@@ -37,7 +37,7 @@ class TransM(ModelMeta):
             https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(TransM, self).__init__()
         self.config = config
         self.model_name = 'TransM'

@@ -43,7 +43,7 @@ class SME(ModelMeta):
     
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(SME, self).__init__()
         self.config = config
         if self.config.bilinear:

@@ -36,7 +36,7 @@ class Complex(ModelMeta):
         http://proceedings.mlr.press/v48/trouillon16.pdf
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(Complex, self).__init__()
         self.config = config
         self.model_name = 'Complex'

@@ -42,7 +42,7 @@ class ConvKB(ModelMeta):
 
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(ConvKB, self).__init__()
         self.config = config
         self.model_name = 'ConvKB'

@@ -37,7 +37,7 @@ class ConvE(ModelMeta):
         https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/download/17366/15884
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(ConvE, self).__init__()
         self.config = config
         self.model_name = 'ConvE'

@@ -44,7 +44,7 @@ class TransE(ModelMeta):
             http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-rela
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(TransE, self).__init__()
         self.config = config
         self.model_name = 'TransE'

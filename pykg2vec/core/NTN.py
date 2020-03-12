@@ -42,7 +42,7 @@ class NTN(ModelMeta):
          https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(NTN, self).__init__()
         self.config = config
         self.model_name = 'NTN'

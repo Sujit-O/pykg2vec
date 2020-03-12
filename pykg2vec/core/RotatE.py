@@ -37,7 +37,7 @@ class RotatE(ModelMeta):
             https://openreview.net/pdf?id=HkgEQnRqYQ
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(RotatE, self).__init__()
         self.config = config
         self.model_name = 'RotatE'

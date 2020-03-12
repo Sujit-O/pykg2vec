@@ -35,7 +35,7 @@ class SLM(ModelMeta):
             https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(SLM, self).__init__()
         self.config = config
         self.model_name = 'SLM'
