@@ -274,7 +274,7 @@ class Trainer(TrainerMeta):
         self.build_model()
         self.load_model()
 
-        self.evaluator = Evaluator(model=self.model)
+        self.evaluator = Evaluator(model=self.model, multiprocess=False)
         print("The training/loading of the model has finished!\nNow enter interactive mode :)")
         print("-----")
         print("Example 1: trainer.infer_tails(1,10,topk=5)")

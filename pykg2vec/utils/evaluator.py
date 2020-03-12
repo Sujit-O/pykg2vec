@@ -271,7 +271,7 @@ class Evaluator(EvaluationMeta):
     TEST_BATCH_STOP = "Stop!"
     TEST_BATCH_EARLY_STOP = "EarlyStop!"
 
-    def __init__(self, model=None, debug=False, data_type='valid', tuning=False):
+    def __init__(self, model=None, debug=False, data_type='valid', tuning=False, multiprocess=True):
         
         self.model = model
         self.debug = debug
@@ -303,17 +303,20 @@ class Evaluator(EvaluationMeta):
             result_queue: stores the results for each batch. 
             output_queue: stores the result for a trial, used by bayesian_optimizer.
         '''
-        self.result_queue = Queue()
-        self.output_queue = Queue()
-        self.rank_calculator = Process(target=evaluation_process,
-                                       args=(self.result_queue, self.output_queue, 
-                                             self.model.config, self.model.model_name, self.tuning))
-        self.rank_calculator.start()
+        self.multiprocess = multiprocess
+        if self.multiprocess:
+            self.result_queue = Queue()
+            self.output_queue = Queue()
+            self.rank_calculator = Process(target=evaluation_process,
+                                           args=(self.result_queue, self.output_queue, 
+                                                 self.model.config, self.model.model_name, self.tuning))
+            self.rank_calculator.start()
 
     def stop(self):
         """Function that stops the evaluation process"""
-        self.rank_calculator.join()
-        self.rank_calculator.terminate()
+        if self.multiprocess:
+            self.rank_calculator.join()
+            self.rank_calculator.terminate()
 
     @tf.function
     def test_step_batch(self, h_batch, r_batch, t_batch):
