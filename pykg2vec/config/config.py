@@ -130,12 +130,7 @@ class KGEArgParser:
     def __init__(self):
         self.parser = ArgumentParser(description='Knowledge Graph Embedding tunable configs.')
 
-        ''' arguments regarding SME and KG2E '''
-        self.SME_group = self.parser.add_argument_group('SME KG2E function selection')
-        self.SME_group.add_argument('-func', dest='function', default='bilinear', type=str, help="The name of function used in SME model.")
-        self.SME_group.add_argument('-cmax', dest='cmax', default=0.05, type=float, help="The parameter for clipping values for KG2E.")
-        self.SME_group.add_argument('-cmin', dest='cmin', default=5.00, type=float, help="The parameter for clipping values for KG2E.")
-
+        
         ''' arguments regarding TransG '''
         self.TransG_group = self.parser.add_argument_group('TransG function selection')
         self.TransG_group.add_argument('-th', dest='training_threshold', default=3.5, type=float, help="Training Threshold for updateing the clusters.")
@@ -143,6 +138,12 @@ class KGEArgParser:
         self.TransG_group.add_argument('-crp', dest='crp_factor', default=0.01, type=float, help="Chinese Restaurant Process Factor.")
         self.TransG_group.add_argument('-stb', dest='step_before', default=10, type=int, help="Steps before")
         self.TransG_group.add_argument('-wn', dest='weight_norm', default=False, type=lambda x: (str(x).lower() == 'true'), help="normalize the weights!")
+
+        ''' arguments regarding SME and KG2E '''
+        self.SME_group = self.parser.add_argument_group('SME KG2E function selection')
+        self.SME_group.add_argument('-func', dest='function', default='bilinear', type=str, help="The name of function used in SME model.")
+        self.SME_group.add_argument('-cmax', dest='cmax', default=0.05, type=float, help="The parameter for clipping values for KG2E.")
+        self.SME_group.add_argument('-cmin', dest='cmin', default=5.00, type=float, help="The parameter for clipping values for KG2E.")
 
         ''' for conve '''
         self.conv_group = self.parser.add_argument_group('ConvE specific Hyperparameters')
@@ -155,10 +156,6 @@ class KGEArgParser:
         self.convkb_group = self.parser.add_argument_group('ConvKB specific Hyperparameters')
         self.convkb_group.add_argument('-fsize', dest='filter_sizes', default=[1,2,3],nargs='+', type=int, help='Filter sizes to be used in convKB which acts as the widths of the kernals')
         self.convkb_group.add_argument('-fnum', dest='num_filters', default=50, type=int, help='Filter numbers to be used in convKB')
-        self.convkb_group.add_argument('-cnum', dest='num_classes', default=2, type=int, help='Number of classes for triples')
-        self.convkb_group.add_argument('-snum', dest='sequence_length', default=3, type=int, help='Sequence length or height of the convolution kernel')
-        self.convkb_group.add_argument('-istrain', dest='is_trainable', default=True, type=lambda x: (str(x).lower() == 'true'), help='Make parameters trainable')
-        self.convkb_group.add_argument('-cinit', dest='useConstantInit', default=False, type=lambda x: (str(x).lower() == 'true'), help='Use constant initialization')     
 
         ''' arguments regarding hyperparameters '''
         self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
@@ -1312,35 +1309,30 @@ class ConvKBConfig(BasicConfig):
     """
     def __init__(self, args=None):
         self.lmbda = args.lmbda
-        self.hidden_dropout = args.hidden_dropout
-        self.num_classes = args.num_classes
-        self.label_smoothing = args.label_smoothing
         self.filter_sizes =args.filter_sizes
-        self.sequence_length = args.sequence_length
         self.num_filters = args.num_filters
-        self.is_trainable=args.is_trainable
-        self.useConstantInit=args.useConstantInit
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
         self.batch_size = args.batch_training
         self.epochs = args.epochs
-        self.margin = args.margin
         self.data = args.dataset_name
         self.optimizer = args.optimizer
         self.sampling = args.sampling
         self.neg_rate = args.negrate
 
+        if args.exp is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'convkb')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
+
         self.hyperparameters = {
             'lmbda': self.lmbda,
-            'hidden_dropout':self.hidden_dropout,
             'filter_sizes' : self.filter_sizes,
             'num_filters' :self.num_filters,
-            'label_smoothing': self.label_smoothing,
             'learning_rate': self.learning_rate,
             'hidden_size': self.hidden_size,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
-            'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,

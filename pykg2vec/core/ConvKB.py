@@ -73,13 +73,12 @@ class ConvKB(ModelMeta):
     def def_layer(self):
         """Defines the layers of the algorithm."""
         self.conv_list = [tf.keras.layers.Conv2D(self.config.num_filters, 
-            (self.config.sequence_length, filter_size), 
+            (3, filter_size), 
             padding = 'valid', 
             use_bias= True, 
             data_format="channels_first",
             strides = (1,1),
             activation = tf.keras.layers.ReLU()) for filter_size in self.config.filter_sizes]
-        self.drop = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
         self.fc1 = tf.keras.layers.Dense(1,
             use_bias=True,
             kernel_regularizer = tf.keras.regularizers.l2(l=self.config.lmbda),
@@ -98,8 +97,6 @@ class ConvKB(ModelMeta):
         #reshape the result
         #TODO: fixe the final dimension calculation equation
         x = tf.reshape(x, [batch, -1])
-        #perform the dropout
-        # x = self.drop(x)
         #pass it through the fully connected layer
         x= self.fc1(x)
         # import pdb; pdb.set_trace()
