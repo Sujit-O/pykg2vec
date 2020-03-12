@@ -50,8 +50,10 @@ class Trainer(TrainerMeta):
         self.evaluator = None
         self.generator = None
 
-        if model.model_name.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
+        if model.model_name.lower() in ["tucker", "tucker_v2", "conve", "proje_pointwise"]:
             self.training_strategy = "projection_based"
+        elif model.model_name.lower() in ["convkb"]:
+            self.training_strategy = "pointwise_based"
         else:
             self.training_strategy = "pairwise_based"
 
@@ -102,6 +104,16 @@ class Trainer(TrainerMeta):
     def train_step_projection(self, h, r, t, hr_t, rt_h):
         with tf.GradientTape() as tape:
             loss = self.model.get_loss(h, r, t, hr_t, rt_h)
+
+        gradients = tape.gradient(loss, self.model.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
+
+        return loss
+
+    @tf.function
+    def train_step_pointwise(self, h, r, t, y):
+        with tf.GradientTape() as tape:
+            loss = self.model.get_loss(h, r, t, y)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
@@ -221,6 +233,12 @@ class Trainer(TrainerMeta):
                 hr_t = data[3] # tf.convert_to_tensor(data[3], dtype=tf.float32)
                 rt_h = data[4] # tf.convert_to_tensor(data[4], dtype=tf.float32)
                 loss = self.train_step_projection(h, r, t, hr_t, rt_h)
+            elif self.training_strategy == "pointwise_based":
+                h = tf.convert_to_tensor(data[0], dtype=tf.int32)
+                r = tf.convert_to_tensor(data[1], dtype=tf.int32)
+                t = tf.convert_to_tensor(data[2], dtype=tf.int32)
+                y = tf.convert_to_tensor(data[3], dtype=tf.float32)
+                loss = self.train_step_pointwise(h, r, t, y)
             else:
                 ph = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 pr = tf.convert_to_tensor(data[1], dtype=tf.int32)

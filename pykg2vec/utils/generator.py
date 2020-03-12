@@ -53,7 +53,7 @@ def raw_data_generator(raw_queue, processed_queue, gen_config, model_config):
             batch_idx = 0
 
 
-def process_function_trans(raw_queue, processed_queue, gen_config, model_config):
+def process_function_pairwise(raw_queue, processed_queue, gen_config, model_config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -113,8 +113,72 @@ def process_function_trans(raw_queue, processed_queue, gen_config, model_config)
 
         processed_queue.put([ph, pr, pt, nh, nr, nt])
 
+def process_function_pointwise(raw_queue, processed_queue, gen_config, model_config):
+    """Function that puts the processed data in the queue.
+           
+        Args:
+            raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
+            processed_queue (Queue) : Multiprocessing Queue to put the processed data.
+            te (int): Total number of entities
+            bs (int): Total size of each batch.
+            positive_triplets (list) : List of positive triples.
+            lh (int): Id of the last processed head.
+            lr (int): Id of the last processed relation.
+            lt (int): Id of the last processed tail.
+    """ 
+    data = model_config.knowledge_graph.read_cache_data('triplets_train')
+    relation_property = model_config.knowledge_graph.read_cache_data('relationproperty')
+    positive_triplets = {(t.h, t.r, t.t): 1 for t in data}
+    neg_rate = model_config.neg_rate
+    
+    del data # save memory space
+    
+    while True:
 
-def process_function(raw_queue, processed_queue, gen_config, model_config):
+        idx, pos_triples = raw_queue.get()
+
+        point_h = []
+        point_r = []
+        point_t = []
+        point_y = []
+
+        for t in pos_triples:
+            # postive sample
+            point_h.append(t[0])
+            point_r.append(t[1])
+            point_t.append(t[2])
+            point_y.append(1)
+
+            prob = relation_property[t[1]] if model_config.sampling == "bern" else 0.5
+            
+            for i in range(neg_rate):
+                
+                if np.random.random() > prob:
+                    idx_replace_tail = np.random.randint(model_config.kg_meta.tot_entity)
+
+                    while (t[0], t[1], idx_replace_tail) in positive_triplets:
+                        idx_replace_tail = np.random.randint(model_config.kg_meta.tot_entity)
+
+                    point_h.append(t[0])
+                    point_r.append(t[1])
+                    point_t.append(idx_replace_tail)
+                    point_y.append(-1)
+
+                else:
+                    idx_replace_head = np.random.randint(model_config.kg_meta.tot_entity)
+                    
+                    while ((idx_replace_head, t[1], t[2]) in positive_triplets):
+                        idx_replace_head = np.random.randint(model_config.kg_meta.tot_entity)
+                    
+                    point_h.append(idx_replace_head)
+                    point_r.append(t[1])
+                    point_t.append(t[2])
+                    point_y.append(-1)
+
+        processed_queue.put([point_h, point_r, point_t, point_y])
+
+
+def process_function_multiclass(raw_queue, processed_queue, gen_config, model_config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -183,34 +247,34 @@ def process_function(raw_queue, processed_queue, gen_config, model_config):
 
         processed_queue.put([h, r, t, hr_t, tr_h])
 
-def get_label_mat(data, bs, te, neg_rate=1):
-    """Function to label the matrix.
+# def get_label_mat(data, bs, te, neg_rate=1):
+#     """Function to label the matrix.
            
-        Args:
-            data (list): List of integer id denoting positive data.
-            bs (int): Batch size of the samples.
-            te (int): Total number of entity.
-            neg_rate (int): Ratio of negative to positive samples.
+#         Args:
+#             data (list): List of integer id denoting positive data.
+#             bs (int): Batch size of the samples.
+#             te (int): Total number of entity.
+#             neg_rate (int): Ratio of negative to positive samples.
 
-        Returns:
-            Matrix: Returns numpy matrix with labels
-    """
-    mat = np.full((bs, te), 0.0)
-    for i in range(bs):
-        pos_samples = len(data[i])
-        distribution_data = data[i]
-        for j in range(pos_samples):
-            mat[i][distribution_data[j]] = 1.0
-        neg_samples = neg_rate * pos_samples
-        idx = list(range(te))
-        arr = data[i]
-        arr.sort(reverse=True)
-        for k in arr:
-            del idx[k]
-        np.random.shuffle(idx)
-        for j in range(neg_samples):
-            mat[i][idx[j]] = 0.0
-    return mat
+#         Returns:
+#             Matrix: Returns numpy matrix with labels
+#     """
+#     mat = np.full((bs, te), 0.0)
+#     for i in range(bs):
+#         pos_samples = len(data[i])
+#         distribution_data = data[i]
+#         for j in range(pos_samples):
+#             mat[i][distribution_data[j]] = 1.0
+#         neg_samples = neg_rate * pos_samples
+#         idx = list(range(te))
+#         arr = data[i]
+#         arr.sort(reverse=True)
+#         for k in arr:
+#             del idx[k]
+#         np.random.shuffle(idx)
+#         for j in range(neg_samples):
+#             mat[i][idx[j]] = 0.0
+#     return mat
 
 def worker_process_raw_data_testing(raw_queue, processed_queue):
     '''worker process that gets data from raw queue then processes and saves to processed queue.
@@ -293,9 +357,13 @@ class Generator:
         """Function ro create the process for generating training samples."""
         for i in range(self.gen_config.process_num):
             if self.gen_config.training_strategy == "projection_based":
-                process_worker = Process(target=process_function, args=(self.raw_queue, self.processed_queue, self.gen_config, self.model_config))
+                process_worker = Process(target=process_function_multiclass, args=(self.raw_queue, self.processed_queue, self.gen_config, self.model_config))
+            elif self.gen_config.training_strategy == "pairwise_based":
+                process_worker = Process(target=process_function_pairwise, args=(self.raw_queue, self.processed_queue, self.gen_config, self.model_config))
+            elif self.gen_config.training_strategy == "pointwise_based":
+                process_worker = Process(target=process_function_pointwise, args=(self.raw_queue, self.processed_queue, self.gen_config, self.model_config))
             else:
-                process_worker = Process(target=process_function_trans, args=(self.raw_queue, self.processed_queue, self.gen_config, self.model_config))
+                raise NotImplementedError("This strategy is not supported.")
             self.process_list.append(process_worker)
             process_worker.daemon = True
             process_worker.start()

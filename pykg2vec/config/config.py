@@ -154,7 +154,7 @@ class KGEArgParser:
         '''for convKB'''
         self.convkb_group = self.parser.add_argument_group('ConvKB specific Hyperparameters')
         self.convkb_group.add_argument('-fsize', dest='filter_sizes', default=[1,2,3],nargs='+', type=int, help='Filter sizes to be used in convKB which acts as the widths of the kernals')
-        self.convkb_group.add_argument('-fnum', dest='num_filters', default=500, type=int, help='Filter numbers to be used in convKB')
+        self.convkb_group.add_argument('-fnum', dest='num_filters', default=50, type=int, help='Filter numbers to be used in convKB')
         self.convkb_group.add_argument('-cnum', dest='num_classes', default=2, type=int, help='Number of classes for triples')
         self.convkb_group.add_argument('-snum', dest='sequence_length', default=3, type=int, help='Sequence length or height of the convolution kernel')
         self.convkb_group.add_argument('-istrain', dest='is_trainable', default=True, type=lambda x: (str(x).lower() == 'true'), help='Make parameters trainable')
@@ -1311,60 +1311,32 @@ class ConvKBConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
-
-        if args is None or args.exp is True:
-            self.lmbda = 0.1
-            self.use_bias = True
-            self.label_smoothing = 0.1
-            self.filter_sizes = [1,2,3]
-            self.num_filters = 500
-            self.hidden_dropout = 0.3
-            self.is_trainable=True
-            self.useConstantInit=False
-            self.learning_rate = 0.003
-            self.L1_flag = True
-            self.num_classes =2,
-            self.sequence_length =3,
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.lmbda = args.lmbda
-            self.use_bias = args.use_bias
-            self.hidden_dropout = args.hidden_dropout
-            self.num_classes = args.num_classes
-            self.label_smoothing = args.label_smoothing
-            self.filter_sizes =args.filter_sizes
-            self.sequence_length = args.sequence_length
-            self.num_filters = args.num_filters
-            self.is_trainable=args.is_trainable
-            self.useConstantInit=args.useConstantInit
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        self.lmbda = args.lmbda
+        self.hidden_dropout = args.hidden_dropout
+        self.num_classes = args.num_classes
+        self.label_smoothing = args.label_smoothing
+        self.filter_sizes =args.filter_sizes
+        self.sequence_length = args.sequence_length
+        self.num_filters = args.num_filters
+        self.is_trainable=args.is_trainable
+        self.useConstantInit=args.useConstantInit
+        self.learning_rate = args.learning_rate
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
-            'use_bias': self.use_bias,
             'hidden_dropout':self.hidden_dropout,
             'filter_sizes' : self.filter_sizes,
             'num_filters' :self.num_filters,
             'label_smoothing': self.label_smoothing,
             'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
             'hidden_size': self.hidden_size,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
