@@ -52,7 +52,7 @@ class Trainer(TrainerMeta):
 
         if model.model_name.lower() in ["tucker", "tucker_v2", "conve", "proje_pointwise"]:
             self.training_strategy = "projection_based"
-        elif model.model_name.lower() in ["convkb"]:
+        elif model.model_name.lower() in ["convkb", "complex"]:
             self.training_strategy = "pointwise_based"
         else:
             self.training_strategy = "pairwise_based"
