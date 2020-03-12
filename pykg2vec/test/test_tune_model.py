@@ -30,7 +30,7 @@ def tunning_function(name):
     bays_opt.optimize()
 
 
-@pytest.mark.parametrize('model', [
+@pytest.mark.parametrize('model_name', [
     'transe',
     'transh',
     'transm',
