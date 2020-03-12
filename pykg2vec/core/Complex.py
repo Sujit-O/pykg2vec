@@ -101,21 +101,6 @@ class Complex(ModelMeta):
 
         return loss
 
-    # pair-wise implemenatation.
-    # def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-    #     """Defines the loss function for the algorithm."""
-    #     pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img = self.embed(pos_h, pos_r, pos_t)
-    #     neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img = self.embed(neg_h, neg_r, neg_t)
-
-    #     score_pos = self.dissimilarity(pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img)
-    #     score_neg = self.dissimilarity(neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img)
-
-    #     regul_term = tf.reduce_sum(pos_h_e_real**2 + pos_h_e_img**2) + tf.reduce_sum(pos_r_e_real**2 + pos_r_e_img**2) + tf.reduce_sum(pos_t_e_real**2 + pos_t_e_img**2) + tf.reduce_sum(neg_h_e_real**2 + neg_h_e_img**2) + tf.reduce_sum(neg_r_e_real**2 + neg_r_e_img**2) + tf.reduce_sum(neg_t_e_real**2 + neg_t_e_img**2) 
-                
-    #     loss = self.pointwise_logistic_loss(score_pos, score_neg) + self.config.lmbda*regul_term
-
-    #     return loss
-
     def predict(self, h, r, t, topk=-1):
         """Function that performs prediction for TransE. 
            shape of h can be either [num_tot_entity] or [1]. 
