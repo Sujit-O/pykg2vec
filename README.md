@@ -84,8 +84,8 @@ $ python train.py -h
 $ python train.py -mn TransE
 
 # Train using different KGE methods.
-$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
-                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE]
+$ python train.py -mn [TransE|TransD|TransH|TransM|TransR|Complex|TransM
+                       DistMult|KG2E|NTN|Rescal|SLM|SME|HoLE|ConvE|ProjE_pointwise]
 
 # Train TransE model using different benchmark datasets.
 $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
