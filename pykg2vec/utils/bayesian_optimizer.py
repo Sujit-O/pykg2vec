@@ -173,7 +173,10 @@ class BaysOptimizer(object):
         self.trainer.config.disp_result = False
         self.trainer.config.disp_summary = False
         self.trainer.config.save_model = False
-        self.trainer.config.test_num = 1000
+
+        # do not overwrite test numbers if set
+        if self.trainer.config.test_num is None:
+            self.trainer.config.test_num = 1000
 
         if self.args.debug:
           self.trainer.config.epochs = 1
