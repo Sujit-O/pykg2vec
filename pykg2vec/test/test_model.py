@@ -12,7 +12,7 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
   
 
 @pytest.mark.skip(reason="This is a functional method.")
-def testing_function(name, distance_measure=None, bilinear=None, display=False, ent_hidden_size=None, rel_hidden_size=None):
+def testing_function(name, distance_measure=None, bilinear=None, display=False, ent_hidden_size=None, rel_hidden_size=None, channels=None):
     """Function to test the models with arguments."""
     # getting the customized configurations from the command-line arguments.
     args = KGEArgParser().get_args(['-exp', 'True'])
@@ -37,6 +37,9 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     if rel_hidden_size:
         config.rel_hidden_size = rel_hidden_size
 
+    if channels:
+        config.channels = channels
+
     model = model_def(config)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
@@ -44,13 +47,16 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     trainer.build_model()
     trainer.train_model()
 
-@pytest.mark.parametrize("model_name", ['complex', 'conve', 'distmult', 'proje_pointwise', 'rescal', 'rotate', 'slm', 'transe', 'transh', 'transr', 'transd', 'transm', 'hole'])
+@pytest.mark.parametrize("model_name", ['complex', 'distmult', 'proje_pointwise', 'rescal', 'rotate', 'slm', 'transe', 'transh', 'transr', 'transd', 'transm', 'hole'])
 def test_KGE_methods(model_name):
     """Function to test a set of KGE algorithsm."""
     testing_function(model_name)
 
 def test_NTN():
     testing_function('ntn', ent_hidden_size=10, rel_hidden_size=10) # for avoiding OOM.
+
+def test_ConvE():
+    testing_function('conve', channels=2) # for avoiding OOM.
 
 def test_KG2E_EL_args():
     """Function to test KG2E Algorithm with arguments."""

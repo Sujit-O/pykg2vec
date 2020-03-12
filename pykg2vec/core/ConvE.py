@@ -69,7 +69,7 @@ class ConvE(ModelMeta):
         self.b = tf.Variable(emb_initializer(shape=(1, num_total_ent)), name="bias")
         self.bn0 = tf.keras.layers.BatchNormalization(axis=1)
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
-        self.conv2d_1 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', use_bias=True, data_format="channels_first")
+        self.conv2d_1 = tf.keras.layers.Conv2D(self.config.channels, [3, 3], strides=(1, 1), padding='valid', use_bias=True, data_format="channels_first")
         self.bn1 = tf.keras.layers.BatchNormalization(axis=1)
         self.feat_drop = tf.keras.layers.SpatialDropout2D(self.config.feature_map_dropout, data_format='channels_first')
         self.fc1 = tf.keras.layers.Dense(units=self.config.hidden_size)
