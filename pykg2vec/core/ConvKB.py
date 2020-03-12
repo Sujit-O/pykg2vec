@@ -47,8 +47,6 @@ class ConvKB(ModelMeta):
         self.config = config
         self.model_name = 'ConvKB'
 
-        # raise NotImplementedError("TransG is yet finished in pykg2vec.")
-        self.def_layer()
     def def_parameters(self):
         """Defines the model parameters.
            
@@ -70,8 +68,6 @@ class ConvKB(ModelMeta):
         self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
 
-    def def_layer(self):
-        """Defines the layers of the algorithm."""
         self.conv_list = [tf.keras.layers.Conv2D(self.config.num_filters, 
             (3, filter_size), 
             padding = 'valid', 
@@ -79,29 +75,18 @@ class ConvKB(ModelMeta):
             data_format="channels_first",
             strides = (1,1),
             activation = tf.keras.layers.ReLU()) for filter_size in self.config.filter_sizes]
+        
         self.fc1 = tf.keras.layers.Dense(1,
             use_bias=True,
             kernel_regularizer = tf.keras.regularizers.l2(l=self.config.lmbda),
             bias_regularizer = tf.keras.regularizers.l2(l=self.config.lmbda))
 
-
     def forward(self, x, batch):
-        k = self.config.hidden_size
-        #pass the data from all the convolution layers
         x = [self.conv_list[i](x) for i in range(len(self.config.filter_sizes))]
-        #concatenate the result from all the layers
-        # [b, 1, 3, k]
         x = tf.keras.layers.concatenate(x,axis=-1)
-        #get the total dimension
-        total_dims = (k*len(self.config.filter_sizes)-sum(self.config.filter_sizes)+len(self.config.filter_sizes)) * self.config.num_filters
-        #reshape the result
-        #TODO: fixe the final dimension calculation equation
         x = tf.reshape(x, [batch, -1])
-        #pass it through the fully connected layer
-        x= self.fc1(x)
-        # import pdb; pdb.set_trace()
+        x = self.fc1(x)
         return x
-        
 
     def get_loss(self, h, r, t, y):
         """Defines the loss function for the algorithm."""
