@@ -144,12 +144,6 @@ class TransHParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
 
 
 class TransMParams:
@@ -180,14 +174,6 @@ class TransMParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
 
 
 class RescalParams:
@@ -218,14 +204,6 @@ class RescalParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
 
 
 class SMEParams:
@@ -258,16 +236,6 @@ class SMEParams:
           'bilinear': hp.choice('bilinear', [True, False]),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
-        # self.bilinear = [True, False]
-
 
 class TransDParams:
     """This class defines the hyperameters and its ranges for tuning TranD algorithm.
@@ -297,15 +265,6 @@ class TransDParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
-
 
 
 class TransRParams:
@@ -338,15 +297,6 @@ class TransRParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.ent_hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.rel_hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
 
 
 class NTNParams:
@@ -379,15 +329,6 @@ class NTNParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.ent_hidden_size = [8, 16, 32]
-        # self.rel_hidden_size = [8, 16, 32]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
 
 
 class SLMParams:
@@ -420,15 +361,6 @@ class SLMParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.ent_hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.rel_hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
 
 
 class HoLEParams:
@@ -459,14 +391,6 @@ class HoLEParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
 
 
 class RotatEParams:
@@ -497,14 +421,6 @@ class RotatEParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
 
 
 class ConvEParams:
@@ -617,16 +533,6 @@ class KG2EParams:
     """
 
     def __init__(self):
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.L1_flag = [True, False]
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.margin = [0.4, 1.0, 2.0]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.distance_measure = ["kl_divergence", "expected_likelihood"]
-        # self.cmax = [0.05, 0.1, 0.2]
-        # self.cmin = [5.00, 3.00, 2.00, 1.00]
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
@@ -677,13 +583,6 @@ class ComplexParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.lmbda = [0.1, 0.2]
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
 
 
 class DistMultParams:
@@ -720,13 +619,6 @@ class DistMultParams:
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
           'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
         }
-        # self.lmbda = [0.1, 0.2]
-        # self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-        # self.hidden_size = [8, 16, 32, 64, 128, 256]
-        # self.batch_size = [128, 256, 512]
-        # self.epochs = [2, 5, 10]
-        # self.optimizer = ["adam", "sgd", 'rms']
-        # self.sampling = ["uniform", "bern"]
 
 
 class TuckERParams:
