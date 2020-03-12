@@ -847,9 +847,18 @@ class KnowledgeGraph(object):
             relation_property_head[t.r].append(t.h)
             relation_property_tail[t.r].append(t.t)
 
-        self.relation_property = {x: (len(set(relation_property_tail[x]))) / ( \
-                    len(set(relation_property_head[x])) + len(set(relation_property_tail[x]))) \
-                                  for x in relation_property_head.keys()}
+        self.relation_property = {}
+        for x in relation_property_head.keys():
+            value_up = len(set(relation_property_tail[x]))
+
+            value_bot= len(set(relation_property_head[x])) + len(set(relation_property_tail[x]))
+
+            if value_bot == 0:
+                value = 0
+            else: 
+                value = value_up / value_bot
+
+            self.relation_property[x] = value
 
         return self.relation_property
 
