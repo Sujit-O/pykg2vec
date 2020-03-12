@@ -108,7 +108,7 @@ class TransEParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 10.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -138,7 +138,7 @@ class TransHParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -168,7 +168,7 @@ class TransMParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -198,7 +198,7 @@ class RescalParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -229,7 +229,7 @@ class SMEParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -259,7 +259,7 @@ class TransDParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -290,8 +290,8 @@ class TransRParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'ent_hidden_size': scope.int(hp.qloguniform('ent_hidden_size', np.log(8), np.log(512),1)),
-          'rel_hidden_size': scope.int(hp.qloguniform('rel_hidden_size', np.log(8), np.log(512),1)),
+          'ent_hidden_size': scope.int(hp.qloguniform('ent_hidden_size', np.log(8), np.log(256),1)),
+          'rel_hidden_size': scope.int(hp.qloguniform('rel_hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -354,8 +354,8 @@ class SLMParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'ent_hidden_size': scope.int(hp.qloguniform('ent_hidden_size', np.log(8), np.log(512),1)),
-          'rel_hidden_size': scope.int(hp.qloguniform('rel_hidden_size', np.log(8), np.log(512),1)),
+          'ent_hidden_size': scope.int(hp.qloguniform('ent_hidden_size', np.log(8), np.log(256),1)),
+          'rel_hidden_size': scope.int(hp.qloguniform('rel_hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -385,7 +385,7 @@ class HoLEParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -415,7 +415,7 @@ class RotatEParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -536,7 +536,7 @@ class KG2EParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'lmbda': hp.loguniform('lmbda', np.log(0.00001), np.log(0.001)),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -577,7 +577,7 @@ class ComplexParams:
     def __init__(self):
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'lmbda': hp.loguniform('lmbda', np.log(0.00001), np.log(0.001)),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
@@ -613,7 +613,7 @@ class DistMultParams:
     def __init__(self):
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(512),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'lmbda': hp.loguniform('lmbda', np.log(0.00001), np.log(0.001)),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
