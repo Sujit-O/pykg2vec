@@ -82,12 +82,9 @@ class ConvE(ModelMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=-1)
-        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=-1)
-
-        emb_h = tf.nn.embedding_lookup(ent_emb_norm, h)
-        emb_r = tf.nn.embedding_lookup(rel_emb_norm, r)
-        emb_t = tf.nn.embedding_lookup(ent_emb_norm, t)
+        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
 
         return emb_h, emb_r, emb_t
 
@@ -95,8 +92,7 @@ class ConvE(ModelMeta):
         """Defines the layers of the algorithm."""
         self.bn0 = tf.keras.layers.BatchNormalization(axis= -1, trainable=True)
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
-        self.conv2d_1 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', activation=None,
-                                               use_bias=True)
+        self.conv2d_1 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', use_bias=True)
         self.bn1 = tf.keras.layers.BatchNormalization(axis =-1,trainable=True)
         self.feat_drop = tf.keras.layers.Dropout(rate=self.config.feature_map_dropout)
         self.fc1 = tf.keras.layers.Dense(units=self.config.hidden_size)
@@ -166,11 +162,8 @@ class ConvE(ModelMeta):
         return loss
 
     def predict_tail(self, e, r, topk=-1):
-        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        h_emb = tf.nn.embedding_lookup(ent_emb_norm, e)
-        r_emb = tf.nn.embedding_lookup(rel_emb_norm, r)
+        h_emb = tf.nn.embedding_lookup(self.ent_embeddings, e)
+        r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
 
         stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
         stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
@@ -183,11 +176,8 @@ class ConvE(ModelMeta):
         return rank
 
     def predict_head(self, e, r, topk=-1):
-        ent_emb_norm = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        rel_emb_norm = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        t_emb = tf.nn.embedding_lookup(ent_emb_norm, e)
-        r_emb = tf.nn.embedding_lookup(rel_emb_norm, r)
+        t_emb = tf.nn.embedding_lookup(self.ent_embeddings, e)
+        r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
 
         stacked_t = tf.reshape(t_emb, [-1, 10, 20, 1])
         stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
