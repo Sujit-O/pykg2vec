@@ -46,6 +46,8 @@ class TuckER(ModelMeta, InferenceMeta):
         
         self.def_layer()
 
+        raise NotImplementedError("TransG is yet finished in pykg2vec.")
+
     def def_inputs(self):
         """Defines the inputs to the model.
 

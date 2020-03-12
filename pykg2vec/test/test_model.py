@@ -39,12 +39,9 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False):
     trainer.build_model()
     trainer.train_model()
 
-@pytest.mark.parametrize("model_name", ['complex', 'conve', 'convkb', 'distmult', 
-                                        'ntn', 'proje_pointwise', 'rescal', 'rotate', 'slm',
-                                        'transe', 'transh', 'transr', 'transd', 'transm', 'hole',
-                                        'tucker'])
+@pytest.mark.parametrize("model_name", ['complex', 'conve', 'distmult', 'ntn', 'proje_pointwise', 'rescal', 'rotate', 'slm', 'transe', 'transh', 'transr', 'transd', 'transm', 'hole'])
 def test_KGE_methods(model_name):
-    """Function to test Complex Algorithm with arguments."""
+    """Function to test a set of KGE algorithsm."""
     testing_function(model_name)
 
 def test_KG2E_EL_args():

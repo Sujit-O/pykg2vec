@@ -47,6 +47,8 @@ class ConvKB(ModelMeta, InferenceMeta):
         self.data_stats = self.config.kg_meta
         self.model_name = 'ConvKB'
 
+        raise NotImplementedError("TransG is yet finished in pykg2vec.")
+
     def def_inputs(self):
         """Defines the inputs to the model.
            
