@@ -287,8 +287,8 @@ class Generator:
         self.config = config
         self.process_list = []
         
-        self.raw_queue_size = 50
-        self.processed_queue_size = 50
+        self.raw_queue_size = 10
+        self.processed_queue_size = 10
         self.raw_queue = Queue(self.raw_queue_size)
         self.processed_queue = Queue(self.processed_queue_size)
         

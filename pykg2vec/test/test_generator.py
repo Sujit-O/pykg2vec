@@ -6,7 +6,6 @@ This module is for testing unit functions of generator
 import pytest
 import tensorflow as tf
 
-from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.config.config import (
     TransDConfig,
     TransEConfig,
