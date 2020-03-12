@@ -107,7 +107,7 @@ class DistMult(ModelMeta):
         score_pos = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
         score_neg = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
 
-        regul_term = tf.reduce_mean(pos_r_e**2) + tf.reduce_mean(neg_r_e**2)
+        regul_term = tf.nn.l2_loss(self.rel_embeddings)
 
         loss = tf.reduce_sum(tf.maximum(score_neg - score_pos + 1, 0)) + self.config.lmbda*regul_term
 
