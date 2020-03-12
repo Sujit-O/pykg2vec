@@ -1178,6 +1178,135 @@ class ProjE_pointwiseConfig(BasicConfig):
         BasicConfig.__init__(self, args)
 
 
+class ConvKBConfig(BasicConfig):
+    """This class defines the configuration for the ConvKB Algorithm.
+
+    ConvKBConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
+    def __init__(self, args=None):
+        self.lmbda = args.lmbda
+        self.filter_sizes =args.filter_sizes
+        self.num_filters = args.num_filters
+        self.learning_rate = args.learning_rate
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
+
+        if args.exp is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'convkb')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
+
+        self.hyperparameters = {
+            'lmbda': self.lmbda,
+            'filter_sizes' : self.filter_sizes,
+            'num_filters' :self.num_filters,
+            'learning_rate': self.learning_rate,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
+        }
+
+        BasicConfig.__init__(self, args)
+
+
+class ConvEConfig(BasicConfig):
+    """This class defines the configuration for the ConvE Algorithm.
+
+    ConvEConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
+    def __init__(self, args=None):
+
+        self.feature_map_dropout = args.feature_map_dropout
+        self.input_dropout = args.input_dropout
+        self.hidden_dropout = args.hidden_dropout
+        self.label_smoothing = args.label_smoothing
+        self.learning_rate = args.learning_rate
+        # TODO: Currently conve can only have k=50, 100, or 200
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
+
+        if args.exp is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'conve')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
+
+        self.hyperparameters = {
+            'feature_map_dropout': self.feature_map_dropout,
+            'input_dropout': self.input_dropout,
+            'hidden_dropout': self.hidden_dropout,
+            'label_smoothing': self.label_smoothing,
+            'learning_rate': self.learning_rate,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
+        }
+
+        BasicConfig.__init__(self, args)
+
 class TuckERConfig(BasicConfig):
     """This class defines the configuration for the TuckER Algorithm.
 
@@ -1278,69 +1407,6 @@ class TuckERConfig(BasicConfig):
 
         BasicConfig.__init__(self, args)
 
-
-class ConvKBConfig(BasicConfig):
-    """This class defines the configuration for the ConvKB Algorithm.
-
-    ConvKBConfig inherits the BasicConfig and defines the local arguements used in the
-    algorithm.
-
-    Attributes:
-      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-    Args:
-      lambda (float) : Weigth applied to the regularization in the loss function.
-      feature_map_dropout (float) : Sets the dropout for the feature layer.
-      input_dropout (float) : Sets the dropout rate for the input layer.
-      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
-      use_bias (bool) : If true, adds bias in the end before the activation.
-      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
-      lr_decay (float) : Sets the learning decay rate for optimization.
-      learning_rate (float): Defines the learning rate for the optimization.
-      L1_flag (bool): If True, perform L1 regularization on the model parameters.
-      hidden_size (int): Defines the size of the latent dimension for entities and relations.
-      batch_size (int): Defines the batch size for training the algorithm.
-      epochs (int): Defines the total number of epochs for training the algorithm.
-      margin (float): Defines the margin used between the positive and negative triple loss.
-      data (str): Defines the knowledge base dataset to be used for training the algorithm.
-      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-    def __init__(self, args=None):
-        self.lmbda = args.lmbda
-        self.filter_sizes =args.filter_sizes
-        self.num_filters = args.num_filters
-        self.learning_rate = args.learning_rate
-        self.hidden_size = args.hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'convkb')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'lmbda': self.lmbda,
-            'filter_sizes' : self.filter_sizes,
-            'num_filters' :self.num_filters,
-            'learning_rate': self.learning_rate,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
 class TransGConfig(BasicConfig):
     """This class defines the configuration for the TransG Algorithm.
 
@@ -1420,71 +1486,4 @@ class TransGConfig(BasicConfig):
             'neg_rate': self.neg_rate,
 
         }
-        BasicConfig.__init__(self, args)
-
-
-class ConvEConfig(BasicConfig):
-    """This class defines the configuration for the ConvE Algorithm.
-
-    ConvEConfig inherits the BasicConfig and defines the local arguements used in the
-    algorithm.
-
-    Attributes:
-      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-    Args:
-      lambda (float) : Weigth applied to the regularization in the loss function.
-      feature_map_dropout (float) : Sets the dropout for the feature layer.
-      input_dropout (float) : Sets the dropout rate for the input layer.
-      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
-      use_bias (bool) : If true, adds bias in the end before the activation.
-      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
-      lr_decay (float) : Sets the learning decay rate for optimization.
-      learning_rate (float): Defines the learning rate for the optimization.
-      L1_flag (bool): If True, perform L1 regularization on the model parameters.
-      hidden_size (int): Defines the size of the latent dimension for entities and relations.
-      batch_size (int): Defines the batch size for training the algorithm.
-      epochs (int): Defines the total number of epochs for training the algorithm.
-      margin (float): Defines the margin used between the positive and negative triple loss.
-      data (str): Defines the knowledge base dataset to be used for training the algorithm.
-      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-    def __init__(self, args=None):
-
-        self.feature_map_dropout = args.feature_map_dropout
-        self.input_dropout = args.input_dropout
-        self.hidden_dropout = args.hidden_dropout
-        self.label_smoothing = args.label_smoothing
-        self.learning_rate = args.learning_rate
-        # TODO: Currently conve can only have k=50, 100, or 200
-        self.hidden_size = args.hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'conve')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'feature_map_dropout': self.feature_map_dropout,
-            'input_dropout': self.input_dropout,
-            'hidden_dropout': self.hidden_dropout,
-            'label_smoothing': self.label_smoothing,
-            'learning_rate': self.learning_rate,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
         BasicConfig.__init__(self, args)
