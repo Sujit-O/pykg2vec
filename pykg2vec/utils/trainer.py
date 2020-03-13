@@ -141,7 +141,7 @@ class Trainer(TrainerMeta):
                         (patience_left, previous_loss, loss))
 
                 elif patience_left == 0 and previous_loss <= loss:
-                    self.evaluator.result_queue.put(Evaluator.TEST_BATCH_EARLY_STOP)
+                    print('Stop the training.')
                     break
                 else:
                     patience_left = self.config.patience
@@ -150,8 +150,7 @@ class Trainer(TrainerMeta):
             ### Early Stop Mechanism
 
         self.generator.stop()
-        self.evaluator.save_training_result(self.training_results)
-        self.evaluator.stop()
+        self.save_training_result(self.training_results)
 
         if self.config.save_model:
             self.save_model()
@@ -176,7 +175,7 @@ class Trainer(TrainerMeta):
         ### Early Stop Mechanism
 
         self.generator = Generator(self.model.config, training_strategy=self.training_strategy)
-        self.evaluator = Evaluator(model=self.model,data_type=self.teston, debug=self.debug, tuning=True)
+        self.evaluator = Evaluator(model=self.model,data_type=self.teston, tuning=True)
        
         for cur_epoch_idx in range(self.config.epochs):
             loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
@@ -191,18 +190,17 @@ class Trainer(TrainerMeta):
                         (patience_left, previous_loss, loss))
 
                 elif patience_left == 0 and previous_loss <= loss:
-                    self.evaluator.result_queue.put(Evaluator.TEST_BATCH_EARLY_STOP)
+                    print('Stop the training.')
                     break
                 else:
                     patience_left = self.config.patience
 
             previous_loss = loss
 
-        self.generator.stop()
-        self.evaluator.test(cur_epoch_idx)
-        acc = self.evaluator.output_queue.get()
-        self.evaluator.stop()
+        acc = self.evaluator.test(cur_epoch_idx)
 
+        self.generator.stop()
+        
         return acc
 
     def train_model_epoch(self, epoch_idx, tuning=False):
@@ -271,7 +269,7 @@ class Trainer(TrainerMeta):
         self.build_model()
         self.load_model()
 
-        self.evaluator = Evaluator(model=self.model, multiprocess=False)
+        self.evaluator = Evaluator(model=self.model)
         print("The training/loading of the model has finished!\nNow enter interactive mode :)")
         print("-----")
         print("Example 1: trainer.infer_tails(1,10,topk=5)")
@@ -286,7 +284,6 @@ class Trainer(TrainerMeta):
         self.infer_rels(1,20,topk=5)
 
     def exit_interactive_mode(self):
-        self.evaluator.stop()
         print("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self,h,r,topk=5):
@@ -403,3 +400,12 @@ class Trainer(TrainerMeta):
 
                 df = pd.DataFrame(all_embs)
                 df.to_pickle(save_path / ("%s.pickle" % stored_name))
+
+    def save_training_result(self, losses):
+        """Function that saves training result"""
+        files = os.listdir(str(self.result_path))
+        l = len([f for f in files if self.model.model_name in f if 'Training' in f])
+        df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
+        with open(str(self.result_path / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
+                  'w') as fh:
+            df.to_csv(fh)

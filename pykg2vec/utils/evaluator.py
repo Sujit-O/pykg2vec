@@ -42,6 +42,15 @@ class MetricCalculator:
 
         self.reset()
 
+    def reset(self):
+        # temporarily used buffers and indexes.
+        self.rank_head = []
+        self.rank_tail = []
+        self.f_rank_head = []
+        self.f_rank_tail = []
+        self.epoch = None
+        self.start_time = timeit.default_timer()
+
     def append_result(self, result):
         predict_tail = result[0]
         predict_head = result[1]
@@ -134,14 +143,7 @@ class MetricCalculator:
     def get_curr_score(self):
         return self.mr[self.epoch]
 
-    def reset(self):
-        # temporarily used buffers and indexes.
-        self.rank_head = []
-        self.rank_tail = []
-        self.f_rank_head = []
-        self.f_rank_tail = []
-        self.epoch = None
-        self.start_time = timeit.default_timer()
+
 
     def save_test_summary(self, model_name):
         """Function to save the test of the summary.
@@ -213,43 +215,6 @@ class MetricCalculator:
             print('--filtered hits%d               : %.4f ' % (hit, (self.fhit[(self.epoch, hit)])))
         print("---------------------------------------------------------")
 
-def evaluation_process(result_queue, output_queue, config, model_name, tuning):
-    """ The process that coordinates the tasks of evaluation.
-           
-        Args:
-            result_queue (Queue): Multiprocessing queue to acquire inference result
-            output_queue (Queue): Multiprocessing queue to store the evaluation result
-            config (object):Model configuration object instance
-            model_name (str): Name of the model
-            tuning (bool): Check if tuning or performing full test.
-
-    """
-
-    calculator = MetricCalculator(config)
-
-    while True:
-        result = result_queue.get()
-        
-        if result == Evaluator.TEST_BATCH_START:
-            calculator.reset()
-            
-        elif result == Evaluator.TEST_BATCH_STOP:
-            calculator.settle()
-            calculator.display_summary()
-
-            if calculator.epoch >= config.epochs - 1:
-                calculator.save_test_summary(model_name)
-
-                if tuning:
-                    score = calculator.get_curr_score()
-                    output_queue.put(score)
-
-                break
-        elif result == Evaluator.TEST_BATCH_EARLY_STOP:
-            break
-        else:
-            calculator.append_result(result)
-
 
 class Evaluator(EvaluationMeta):
     """Class to perform evaluation of the model.
@@ -270,7 +235,7 @@ class Evaluator(EvaluationMeta):
     TEST_BATCH_STOP = "Stop!"
     TEST_BATCH_EARLY_STOP = "EarlyStop!"
 
-    def __init__(self, model=None, data_type='valid', tuning=False, multiprocess=True):
+    def __init__(self, model=None, data_type='valid', tuning=False):
         
         self.model = model
         self.tuning = tuning
@@ -296,25 +261,7 @@ class Evaluator(EvaluationMeta):
         else:
             self.n_test = min(self.n_test, tot_rows_data)
 
-        '''
-            create the process that manages the batched evaluating results.
-            result_queue: stores the results for each batch. 
-            output_queue: stores the result for a trial, used by bayesian_optimizer.
-        '''
-        self.multiprocess = multiprocess
-        if self.multiprocess:
-            self.result_queue = Queue()
-            self.output_queue = Queue()
-            self.rank_calculator = Process(target=evaluation_process,
-                                           args=(self.result_queue, self.output_queue, 
-                                                 self.model.config, self.model.model_name, self.tuning))
-            self.rank_calculator.start()
-
-    def stop(self):
-        """Function that stops the evaluation process"""
-        if self.multiprocess:
-            self.rank_calculator.join()
-            self.rank_calculator.terminate()
+        self.metric_calculator = MetricCalculator(self.model.config)
 
     @tf.function
     def test_tail_rank_multiclass(self, h, r, topk=-1):
@@ -361,7 +308,8 @@ class Evaluator(EvaluationMeta):
 
         progress_bar = tf.keras.utils.Progbar(self.n_test)
 
-        self.result_queue.put(self.TEST_BATCH_START)
+        self.metric_calculator.reset()
+
         for i in range(self.n_test):
             h, r, t = self.eval_data[i].h, self.eval_data[i].r, self.eval_data[i].t
             
@@ -379,17 +327,16 @@ class Evaluator(EvaluationMeta):
             
             result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
 
-            self.result_queue.put(result_data)
+            self.metric_calculator.append_result(result_data)
 
             progress_bar.add(1)
 
-        self.result_queue.put(self.TEST_BATCH_STOP) 
+        self.metric_calculator.settle()
+        self.metric_calculator.display_summary()
 
-    def save_training_result(self, losses):
-        """Function that saves training result"""
-        files = os.listdir(str(self.result_path))
-        l = len([f for f in files if self.model.model_name in f if 'Training' in f])
-        df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
-        with open(str(self.result_path / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
-                  'w') as fh:
-            df.to_csv(fh)
+        if self.metric_calculator.epoch >= self.model.config.epochs - 1:
+            self.metric_calculator.save_test_summary(self.model.model_name)
+
+        return self.metric_calculator.get_curr_score()
+
+
