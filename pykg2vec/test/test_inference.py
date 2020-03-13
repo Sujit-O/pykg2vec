@@ -30,11 +30,12 @@ def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=No
     config.disp_result= display
     config.save_model = True
     config.L1_flag = l1_flag
-
+    config.debug = True
+    
     model = model_def(config)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model, debug=True)
+    trainer = Trainer(model=model)
     trainer.build_model()
     trainer.train_model()
 

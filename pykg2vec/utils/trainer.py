@@ -38,10 +38,10 @@ class Trainer(TrainerMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
     """
-    def __init__(self, model, trainon='train', teston='valid', debug=False):
-        self.debug = debug
+    def __init__(self, model, trainon='train', teston='valid'):
         self.model = model
         self.config = self.model.config
+        self.debug = self.config.debug
         self.training_results = []
         self.trainon = trainon
         self.teston = teston
@@ -269,7 +269,7 @@ class Trainer(TrainerMeta):
         self.build_model()
         self.load_model()
 
-        self.evaluator = Evaluator(model=self.model)
+        self.evaluator = Evaluator(self.model)
         print("The training/loading of the model has finished!\nNow enter interactive mode :)")
         print("-----")
         print("Example 1: trainer.infer_tails(1,10,topk=5)")
