@@ -22,7 +22,7 @@ We welcome any form of contribution! Please check for more details [here](https:
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
 ## To Get Started 
-Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. In pykg2vec, we won't focus in run-time performance at this moment. **However, we do encourage users to install the tensorflow-gpu for speeding up the training! the guide to install Tensorflow through pip can be found [here](https://www.tensorflow.org/install/pip).** 
+Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. In pykg2vec, we won't focus in run-time performance at this moment. **However, Tensorflow 2 nativaly support utilizing the GPUs available in your device! Please find out more the guide [here](https://www.tensorflow.org/install/pip) to install Tensorflow through pip.** 
 In the future, may provide faster implementation of each of the algorithms. (C++ implementations to come!)
 
 Before using pykg2vec, we strongly recommend users to set up a virtual work environment (Venv or Anaconda) and to have the following packages installed:
