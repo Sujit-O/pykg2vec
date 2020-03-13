@@ -32,7 +32,7 @@ class ProjE_pointwise(ModelMeta):
             >>> from pykg2vec.core.ProjE_pointwise import ProjE_pointwise
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = ProjE_pointwise()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 

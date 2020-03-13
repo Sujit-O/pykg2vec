@@ -28,7 +28,7 @@ class Complex(ModelMeta):
         >>> from pykg2vec.core.Complex import Complex
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = Complex()
-        >>> trainer = Trainer(model=model, debug=False)
+        >>> trainer = Trainer(model=model)
         >>> trainer.build_model()
         >>> trainer.train_model()
 

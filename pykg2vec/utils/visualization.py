@@ -202,7 +202,7 @@ class Visualization(object):
             >>> from pykg2vec.utils.trainer import Trainer
             >>> from pykg2vec.core.TransE import TransE
             >>> model = TransE()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
             >>> viz = Visualization(model=model)

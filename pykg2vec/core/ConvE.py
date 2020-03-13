@@ -29,7 +29,7 @@ class ConvE(ModelMeta):
         >>> from pykg2vec.core.Complex import ConvE
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = ConvE()
-        >>> trainer = Trainer(model=model, debug=False)
+        >>> trainer = Trainer(model=model)
         >>> trainer.build_model()
         >>> trainer.train_model()
 

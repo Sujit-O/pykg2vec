@@ -31,7 +31,7 @@ class KG2E(ModelMeta):
         >>> from pykg2vec.core.KG2E import KG2E
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = KG2E()
-        >>> trainer = Trainer(model=model, debug=False)
+        >>> trainer = Trainer(model=model)
         >>> trainer.build_model()
         >>> trainer.train_model()
 

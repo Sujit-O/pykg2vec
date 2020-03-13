@@ -29,7 +29,7 @@ class ConvKB(ModelMeta):
         >>> from pykg2vec.core.ConvKB import ConvKB
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = ConvKB()
-        >>> trainer = Trainer(model=model, debug=False)
+        >>> trainer = Trainer(model=model)
         >>> trainer.build_model()
         >>> trainer.train_model()
     

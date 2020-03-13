@@ -34,7 +34,7 @@ class Trainer(TrainerMeta):
         Examples:
             >>> from pykg2vec.utils.trainer import Trainer
             >>> from pykg2vec.core.TransE import TransE
-            >>> trainer = Trainer(model=TransE(), debug=False)
+            >>> trainer = Trainer(TransE())
             >>> trainer.build_model()
             >>> trainer.train_model()
     """

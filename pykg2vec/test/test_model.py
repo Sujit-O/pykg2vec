@@ -43,7 +43,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     model = model_def(config)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model, debug=True)
+    trainer = Trainer(model=model)
     trainer.build_model()
     trainer.train_model()
 

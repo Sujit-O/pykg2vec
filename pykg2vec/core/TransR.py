@@ -29,7 +29,7 @@ class TransR(ModelMeta):
             >>> from pykg2vec.core.TransR import TransR
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransR()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 

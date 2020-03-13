@@ -27,7 +27,7 @@ class HoLE(ModelMeta):
         >>> from pykg2vec.core.HoLE import HoLE
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = HoLE()
-        >>> trainer = Trainer(model=model, debug=False)
+        >>> trainer = Trainer(model=model)
         >>> trainer.build_model()
         >>> trainer.train_model()
 

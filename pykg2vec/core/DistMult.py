@@ -31,7 +31,7 @@ class DistMult(ModelMeta):
             >>> from pykg2vec.core.Complex import DistMult
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = DistMult()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 

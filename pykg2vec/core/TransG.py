@@ -27,7 +27,7 @@ class TransG(ModelMeta):
             >>> from pykg2vec.core.TransG import TransG
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransG()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 

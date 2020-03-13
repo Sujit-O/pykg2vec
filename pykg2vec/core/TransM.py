@@ -29,7 +29,7 @@ class TransM(ModelMeta):
             >>> from pykg2vec.core.TransM import TransM
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransM()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 

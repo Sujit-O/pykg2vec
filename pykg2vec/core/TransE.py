@@ -30,7 +30,7 @@ class TransE(ModelMeta):
             >>> from pykg2vec.core.TransE import TransE
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransE()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 
