@@ -324,7 +324,7 @@ class Generator:
                 process_worker = Process(target=process_function_multiclass, args=(self.raw_queue, self.processed_queue, self.config))
             elif self.training_strategy == TrainingStrategy.PAIRWISE_BASED:
                 process_worker = Process(target=process_function_pairwise, args=(self.raw_queue, self.processed_queue, self.config))
-            elif self.training_strategy == TrainingStrategy.PAIRWISE_BASED:
+            elif self.training_strategy == TrainingStrategy.POINTWISE_BASED:
                 process_worker = Process(target=process_function_pointwise, args=(self.raw_queue, self.processed_queue, self.config))
             else:
                 raise NotImplementedError("This strategy is not supported.")
