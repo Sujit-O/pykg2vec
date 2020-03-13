@@ -249,7 +249,7 @@ class Trainer(TrainerMeta):
 
         self.training_results.append([epoch_idx, acc_loss.numpy()])
 
-        return acc_loss
+        return acc_loss.numpy()
 
     ''' Testing related functions:'''
 
