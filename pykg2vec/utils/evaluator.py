@@ -231,15 +231,11 @@ class Evaluator(EvaluationMeta):
             >>> acc = evaluator.output_queue.get()
             >>> evaluator.stop()
     """
-    TEST_BATCH_START = "Start!"
-    TEST_BATCH_STOP = "Stop!"
-    TEST_BATCH_EARLY_STOP = "EarlyStop!"
 
-    def __init__(self, model=None, data_type='valid', tuning=False):
+    def __init__(self, model, data_type='valid', tuning=False):
         
         self.model = model
         self.tuning = tuning
-        self.result_path = self.model.config.path_result
 
         if data_type == 'test':
             self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_test')
