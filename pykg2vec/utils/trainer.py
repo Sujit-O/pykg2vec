@@ -3,7 +3,7 @@
 """
 This module is for training process.
 """
-import timeit
+import timeit, os
 import tensorflow as tf
 import pandas as pd
 
