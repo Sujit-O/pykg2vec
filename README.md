@@ -85,11 +85,15 @@ $ python train.py -mn TransE
 
 # Train using different KGE methods.
 $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
-                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE]
+                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE|ConvE|ConvKB|Proje_pointwise]
+
+# For KGE using projection-based batch generation, use more processes to train 
+$ python train.py -mn [ConvE|ConvKB|Proje_pointwise] -npg [# of processes, 4 or 6]
 
 # Train TransE model using different benchmark datasets.
 $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
                                   ks|nations|umls|dl50a]
+                                
 ```
 Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. Some models are still under development [Conv2D|ConvKB|ProjE|RotatE|TuckER], however, they can be executed without exceptions. 
 
@@ -97,7 +101,7 @@ To ensure the correctness of included KGE methods we also use the hyperparameter
 ```bash
 # train KGE method with the hyperparameters used in original papers. (FB15k supported only)
 $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
-                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE] -exp true
+                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE|ConvE|ConvKB|Proje_pointwise] -exp true
 
 ```
 Some metrics running on benchmark dataset (FB15k) is shown below (all are filtered). We are still working on this table so it will be updated.
