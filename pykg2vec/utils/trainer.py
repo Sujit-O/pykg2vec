@@ -40,8 +40,8 @@ class Trainer(TrainerMeta):
     """
     def __init__(self, model):
         self.model = model
-        self.config = self.model.config
-        self.debug = self.config.debug
+        self.config = model.config
+
         self.training_results = []
 
         self.evaluator = None
@@ -153,7 +153,7 @@ class Trainer(TrainerMeta):
         self.evaluator.full_test(self.config.epochs)
 
         self.generator.stop()
-        self.save_training_result(self.training_results)
+        self.save_training_result()
 
         if self.config.save_model:
             self.save_model()
@@ -210,7 +210,7 @@ class Trainer(TrainerMeta):
         """Function to train the model for one epoch."""
         acc_loss = 0
 
-        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 10
+        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.config.debug else 10
        
         metrics_names = ['acc_loss', 'loss'] 
         progress_bar = tf.keras.utils.Progbar(num_batch, stateful_metrics=metrics_names)
@@ -385,11 +385,11 @@ class Trainer(TrainerMeta):
                 df = pd.DataFrame(all_embs)
                 df.to_pickle(save_path / ("%s.pickle" % stored_name))
 
-    def save_training_result(self, losses):
+    def save_training_result(self):
         """Function that saves training result"""
         files = os.listdir(str(self.model.config.path_result))
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
-        df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
+        df = pd.DataFrame(self.training_results, columns=['Epochs', 'Loss'])
         with open(str(self.model.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)
