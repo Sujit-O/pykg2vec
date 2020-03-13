@@ -10,7 +10,7 @@ import pandas as pd
 from pykg2vec.core.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
-from pykg2vec.utils.generator import Generator
+from pykg2vec.utils.generator import Generator, TrainingStrategy
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 tf.config.set_soft_device_placement(True)
@@ -50,11 +50,11 @@ class Trainer(TrainerMeta):
         self.generator = None
 
         if model.model_name.lower() in ["tucker", "tucker_v2", "conve", "proje_pointwise"]:
-            self.training_strategy = "projection_based"
+            self.training_strategy = TrainingStrategy.PROJECTION_BASED
         elif model.model_name.lower() in ["convkb", "complex"]:
-            self.training_strategy = "pointwise_based"
+            self.training_strategy = TrainingStrategy.POINTWISE_BASED
         else:
-            self.training_strategy = "pairwise_based"
+            self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
 
     def build_model(self):
@@ -215,14 +215,14 @@ class Trainer(TrainerMeta):
         for batch_idx in range(num_batch):
             data = list(next(self.generator))
             
-            if self.training_strategy == "projection_based":
+            if self.training_strategy == TrainingStrategy.PROJECTION_BASED:
                 h = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 r = tf.convert_to_tensor(data[1], dtype=tf.int32)
                 t = tf.convert_to_tensor(data[2], dtype=tf.int32)
                 hr_t = data[3] # tf.convert_to_tensor(data[3], dtype=tf.float32)
                 rt_h = data[4] # tf.convert_to_tensor(data[4], dtype=tf.float32)
                 loss = self.train_step_projection(h, r, t, hr_t, rt_h)
-            elif self.training_strategy == "pointwise_based":
+            elif self.training_strategy == TrainingStrategy.POINTWISE_BASED:
                 h = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 r = tf.convert_to_tensor(data[1], dtype=tf.int32)
                 t = tf.convert_to_tensor(data[2], dtype=tf.int32)
