@@ -59,8 +59,6 @@ class Trainer(TrainerMeta):
 
     def build_model(self):
         """function to build the model"""
-        self.global_step = tf.Variable(0, name="global_step", trainable=False)
-
         if self.config.optimizer == 'sgd':
             self.optimizer = tf.keras.optimizers.SGD(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'rms':

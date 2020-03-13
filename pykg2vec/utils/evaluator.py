@@ -319,11 +319,6 @@ class Evaluator(EvaluationMeta):
             self.rank_calculator.terminate()
 
     @tf.function
-    def test_step_batch(self, h_batch, r_batch, t_batch):
-        hrank, trank = self.model.test_batch(h_batch, r_batch, t_batch)
-        return hrank, trank
-
-    @tf.function
     def test_tail_rank_multiclass(self, h, r, topk=-1):
         rank = self.model.predict_tail(h, r, topk=topk)
         return tf.squeeze(rank, 0)

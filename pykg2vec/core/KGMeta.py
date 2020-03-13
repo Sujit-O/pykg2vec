@@ -20,33 +20,18 @@ class ModelMeta(tf.keras.Model):
         super(ModelMeta, self).__init__()
 
     @abstractmethod
-    def def_inputs(self):
-        """Function to define the inputs for the model"""
-        pass
-
-    @abstractmethod
     def def_parameters(self):
         """Function to define the parameters for the model"""
         pass
 
     @abstractmethod
-    def def_loss(self):
+    def get_loss(self):
         """Function to define how loss is calculated in the model"""
         pass
 
     @abstractmethod
     def embed(self,h, r, t):
         """Function to get the embedding value"""
-        pass
-
-    @abstractmethod
-    def get_embed(self,h, r, t):
-        """Function to get the embedding value in numpy"""
-        pass
-
-    @abstractmethod
-    def get_proj_embed(self,h, r, t):
-        """Function to get the projected embedding value"""
         pass
 
     def pairwise_margin_loss(self, score_positive, score_negative):
