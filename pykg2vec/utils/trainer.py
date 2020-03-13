@@ -167,8 +167,6 @@ class Trainer(TrainerMeta):
 
         self.export_embeddings()
 
-        return loss
-
     def tune_model(self):
         """Function to tune the model."""
         acc = 0
