@@ -123,9 +123,11 @@ class BaysOptimizer(object):
         from pykg2vec.config.config import KGEArgParser
         kge_args = KGEArgParser().get_args([])
         kge_args.dataset_name = args.dataset_name
+        kge_args.debug = self.args.debug
         config = self.config_obj(kge_args)
-
-        self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug)
+        model =  self.model_obj(config)
+        
+        self.trainer = Trainer(model)
         
         self.search_space = hyper_params.search_space
         self.max_evals = self.args.max_number_trials if not self.args.debug else 1
