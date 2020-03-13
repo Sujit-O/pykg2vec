@@ -14,7 +14,7 @@ from pykg2vec.config.config import (
     TransMConfig,
     TransRConfig,
 )
-from pykg2vec.utils.generator import Generator
+from pykg2vec.utils.generator import Generator, TrainingStrategy
 from pykg2vec.config.config import ProjE_pointwiseConfig, KGEArgParser
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
@@ -25,7 +25,7 @@ def test_generator_proje():
     knowledge_graph.force_prepare_data()
 
     dummy_config = ProjE_pointwiseConfig(KGEArgParser().get_args([]))
-    generator = Generator(dummy_config, training_strategy='projection_based')
+    generator = Generator(dummy_config, training_strategy=TrainingStrategy.PROJECTION_BASED)
 
     for i in range(10):
         data = list(next(generator))
@@ -59,7 +59,7 @@ def test_generator_trans(Config):
     knowledge_graph.force_prepare_data()
 
     dummy_config = Config(KGEArgParser().get_args([]))
-    generator = Generator(dummy_config, training_strategy='pairwise_based')
+    generator = Generator(dummy_config, training_strategy=TrainingStrategy.PAIRWISE_BASED)
 
     for i in range(10):
         data = list(next(generator))
