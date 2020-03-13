@@ -128,7 +128,7 @@ class ConvE(ModelMeta):
         # sigmoid activation
         return tf.nn.sigmoid(x)
 
-    def get_loss(self,  h, r, t, hr_t, tr_h):
+    def get_loss(self, h, r, t, hr_t, tr_h):
         """Defines the loss function for the algorithm."""
         h_emb, r_emb, t_emb = self.embed(h, r, t)
         

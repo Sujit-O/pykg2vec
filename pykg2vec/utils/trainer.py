@@ -159,7 +159,7 @@ class Trainer(TrainerMeta):
 
         self.export_embeddings()
 
-        return cur_epoch_idx
+        return cur_epoch_idx # the runned epoches.
 
     def tune_model(self):
         """Function to tune the model."""
