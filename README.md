@@ -1,7 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/pykg2vec/badge/?version=latest)](https://pykg2vec.readthedocs.io/en/latest/?badge=latest) [![CircleCI](https://circleci.com/gh/Sujit-O/pykg2vec.svg?style=svg)](https://circleci.com/gh/Sujit-O/pykg2vec) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/) [![Build Status](https://travis-ci.org/Sujit-O/pykg2vec.svg?branch=master)](https://travis-ci.org/Sujit-O/pykg2vec) [![PyPI version](https://badge.fury.io/py/pykg2vec.svg)](https://badge.fury.io/py/pykg2vec) [![GitHub license](https://img.shields.io/github/license/Sujit-O/pykg2vec.svg)](https://github.com/Sujit-O/pykg2vec/blob/master/LICENSE) [![Coverage Status](https://coveralls.io/repos/github/Sujit-O/pykg2vec/badge.svg?branch=master)](https://coveralls.io/github/Sujit-O/pykg2vec?branch=master) [![Twitter](https://img.shields.io/twitter/url/https/github.com/Sujit-O/pykg2vec.svg?style=social)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2FSujit-O%2Fpykg2vec) 
 
 # Pykg2vec: Python Library for KGE Methods 
-Pykg2vec is a library for learning the representation of entities and relations in Knowledge Graphs. We have attempted to bring state-of-the-art Knowledge Graph Embedding (KGE) algorithms and the necessary building blocks in the pipeline of knowledge graph embedding task into a single library. We hope Pykg2vec is both practical and educational for people who want to explore the related fields. For beginners, these papers, [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050), [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/document/8047276), and [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098) can be good starting points! 
+Pykg2vec is a library for learning the representation of entities and relations in Knowledge Graphs built on top of Tensorflow 2.1. We have attempted to bring state-of-the-art Knowledge Graph Embedding (KGE) algorithms and the necessary building blocks in the pipeline of knowledge graph embedding task into a single library. We hope Pykg2vec is both practical and educational for people who want to explore the related fields. For beginners, these papers, [A Review of Relational Machine Learning for Knowledge Graphs](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7358050), [Knowledge Graph Embedding: A Survey of Approaches and Applications](https://ieeexplore.ieee.org/document/8047276), and [An overview of embedding models of entities and relationships for knowledge base completion](https://arxiv.org/abs/1703.08098) can be good starting points! 
 Pykg2vec has following features:
 * Support state-of-the-art KGE model implementations and benchmark datasets. (also support custom datasets)
 * Support automatic discovery for hyperparameters.
@@ -22,12 +22,12 @@ We welcome any form of contribution! Please check for more details [here](https:
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
 ## To Get Started 
-Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. In pykg2vec, we won't focus in run-time performance at this moment. **However, we do encourage users to install the tensorflow-gpu for speeding up the training! the guide to install Tensorflow can be found [here](https://www.tensorflow.org/install).** 
+Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. In pykg2vec, we won't focus in run-time performance at this moment. **However, we do encourage users to install the tensorflow-gpu for speeding up the training! the guide to install Tensorflow through pip can be found [here](https://www.tensorflow.org/install/pip).** 
 In the future, may provide faster implementation of each of the algorithms. (C++ implementations to come!)
 
 Before using pykg2vec, we strongly recommend users to set up a virtual work environment (Venv or Anaconda) and to have the following packages installed:
 * Python >= 3.6
-* tensorflow==`<version suitable for your workspace>` or tensorflow-gpu=`<version suitable for your workspace>`
+* tensorflow==2.1.0
 
 Three ways to install pykg2vec are described as follows.
 ```bash
