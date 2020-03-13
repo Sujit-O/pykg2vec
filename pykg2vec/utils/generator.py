@@ -285,8 +285,11 @@ class Generator:
             >>> gen_train = Generator(model.config, training_strategy=TrainingStrategy.PAIRWISE_BASED)
     """
 
-    def __init__(self, config, training_strategy=None):
-        self.config = config
+    def __init__(self, model):
+        self.model = model
+        self.config = model.config
+        self.training_strategy = model.training_strategy
+
         self.process_list = []
         
         self.raw_queue_size = 10
@@ -294,8 +297,6 @@ class Generator:
         self.raw_queue = Queue(self.raw_queue_size)
         self.processed_queue = Queue(self.processed_queue_size)
         
-        self.training_strategy = training_strategy
-
         self.create_feeder_process()
         self.create_train_processor_process()
 

@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class NTN(ModelMeta):
     """ `Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
@@ -46,6 +46,7 @@ class NTN(ModelMeta):
         super(NTN, self).__init__()
         self.config = config
         self.model_name = 'NTN'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.

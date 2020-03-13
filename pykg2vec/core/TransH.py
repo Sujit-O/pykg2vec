@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class TransH(ModelMeta):
     """ `Knowledge Graph Embedding by Translating on Hyperplanes`_
@@ -47,6 +47,7 @@ class TransH(ModelMeta):
         super(TransH, self).__init__()
         self.config = config
         self.model_name = 'TransH'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.

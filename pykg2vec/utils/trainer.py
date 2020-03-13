@@ -47,14 +47,6 @@ class Trainer(TrainerMeta):
         self.evaluator = None
         self.generator = None
 
-        if model.model_name.lower() in ["tucker", "tucker_v2", "conve", "proje_pointwise"]:
-            self.training_strategy = TrainingStrategy.PROJECTION_BASED
-        elif model.model_name.lower() in ["convkb", "complex"]:
-            self.training_strategy = TrainingStrategy.POINTWISE_BASED
-        else:
-            self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
-
     def build_model(self):
         """function to build the model"""
         if self.config.optimizer == 'sgd':
@@ -118,8 +110,8 @@ class Trainer(TrainerMeta):
         patience_left = self.config.patience
         ### Early Stop Mechanism
 
-        self.generator = Generator(self.model.config, training_strategy=self.training_strategy)
-        self.evaluator = Evaluator(model=self.model)
+        self.generator = Generator(self.model)
+        self.evaluator = Evaluator(self.model)
 
         if self.config.loadFromData:
             self.load_model()
@@ -150,7 +142,7 @@ class Trainer(TrainerMeta):
             previous_loss = loss
             ### Early Stop Mechanism
 
-        self.evaluator.full_test(self.config.epochs)
+        self.evaluator.full_test(cur_epoch_idx)
 
         self.generator.stop()
         self.save_training_result()
@@ -167,6 +159,8 @@ class Trainer(TrainerMeta):
 
         self.export_embeddings()
 
+        return cur_epoch_idx
+
     def tune_model(self):
         """Function to tune the model."""
         acc = 0
@@ -175,8 +169,8 @@ class Trainer(TrainerMeta):
         patience_left = self.config.patience
         ### Early Stop Mechanism
 
-        self.generator = Generator(self.model.config, training_strategy=self.training_strategy)
-        self.evaluator = Evaluator(model=self.model, tuning=True)
+        self.generator = Generator(self.model)
+        self.evaluator = Evaluator(self.model, tuning=True)
        
         for cur_epoch_idx in range(self.config.epochs):
             loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
@@ -216,14 +210,14 @@ class Trainer(TrainerMeta):
         for batch_idx in range(num_batch):
             data = list(next(self.generator))
             
-            if self.training_strategy == TrainingStrategy.PROJECTION_BASED:
+            if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
                 h = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 r = tf.convert_to_tensor(data[1], dtype=tf.int32)
                 t = tf.convert_to_tensor(data[2], dtype=tf.int32)
                 hr_t = data[3] # tf.convert_to_tensor(data[3], dtype=tf.float32)
                 rt_h = data[4] # tf.convert_to_tensor(data[4], dtype=tf.float32)
                 loss = self.train_step_projection(h, r, t, hr_t, rt_h)
-            elif self.training_strategy == TrainingStrategy.POINTWISE_BASED:
+            elif self.model.training_strategy == TrainingStrategy.POINTWISE_BASED:
                 h = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 r = tf.convert_to_tensor(data[1], dtype=tf.int32)
                 t = tf.convert_to_tensor(data[2], dtype=tf.int32)

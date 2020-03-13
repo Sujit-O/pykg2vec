@@ -40,14 +40,9 @@ def test_full_epochs(tmpdir):
 
     trainer = Trainer(model=model)
     trainer.build_model()
-    trainer.train_model()
+    actual_epochs = trainer.train_model()
 
-    files = os.listdir(result_path_dir)
-    training_result = [f for f in files if f.endswith(".csv")][0]
-    with open(os.path.join(result_path_dir, training_result)) as file:
-        actual_epochs = len(file.readlines()) - 1
-
-    assert actual_epochs == configured_epochs
+    assert actual_epochs == configured_epochs - 1
 
 def test_early_stopping(tmpdir):
     result_path_dir = tmpdir.mkdir("result_path")
@@ -56,11 +51,6 @@ def test_early_stopping(tmpdir):
 
     trainer = Trainer(model=model)
     trainer.build_model()
-    trainer.train_model()
+    actual_epochs = trainer.train_model()
 
-    files = os.listdir(result_path_dir)
-    training_result = [f for f in files if f.endswith(".csv")][0]
-    with open(os.path.join(result_path_dir, training_result)) as file:
-        actual_epochs = len(file.readlines()) - 1
-
-    assert actual_epochs < configured_epochs
+    assert actual_epochs < configured_epochs - 1

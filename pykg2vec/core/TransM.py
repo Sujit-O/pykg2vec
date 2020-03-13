@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 import numpy as np
 
 
@@ -41,6 +41,7 @@ class TransM(ModelMeta):
         super(TransM, self).__init__()
         self.config = config
         self.model_name = 'TransM'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.

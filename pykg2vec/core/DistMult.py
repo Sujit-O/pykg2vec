@@ -6,7 +6,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class DistMult(ModelMeta):
     """`EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES`_
@@ -44,6 +44,7 @@ class DistMult(ModelMeta):
         super(DistMult, self).__init__()
         self.config = config
         self.model_name = 'DistMult'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.

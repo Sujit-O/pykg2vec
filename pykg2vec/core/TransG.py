@@ -8,7 +8,7 @@ import tensorflow as tf
 import numpy as np
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class TransG(ModelMeta):
     """ `TransG-A Generative Model for Knowledge Graph Embedding`_
@@ -47,6 +47,7 @@ class TransG(ModelMeta):
         super(TransG, self).__init__()
         self.config = config
         self.model_name = 'TransG'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
         raise NotImplementedError("TransG is yet finished in pykg2vec.")
 

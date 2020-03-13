@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class KG2E(ModelMeta):
     """`Learning to Represent Knowledge Graphs with Gaussian Embedding`_
@@ -52,6 +52,7 @@ class KG2E(ModelMeta):
             self.model_name = 'KG2E_EL'
         else:
             self.model_name = 'KG2E_KL'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.

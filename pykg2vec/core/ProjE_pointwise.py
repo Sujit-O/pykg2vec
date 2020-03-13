@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class ProjE_pointwise(ModelMeta):
     """`ProjE-Embedding Projection for Knowledge Graph Completion`_.
@@ -45,6 +45,7 @@ class ProjE_pointwise(ModelMeta):
         super(ProjE_pointwise, self).__init__()
         self.config = config
         self.model_name = 'ProjE_pointwise'
+        self.training_strategy = TrainingStrategy.PROJECTION_BASED
 
     def def_parameters(self):
         """Defines the model parameters.

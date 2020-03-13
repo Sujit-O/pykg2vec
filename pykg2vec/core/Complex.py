@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class Complex(ModelMeta):
     """`Complex Embeddings for Simple Link Prediction`_.
@@ -40,6 +40,7 @@ class Complex(ModelMeta):
         super(Complex, self).__init__()
         self.config = config
         self.model_name = 'Complex'
+        self.training_strategy = TrainingStrategy.POINTWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.

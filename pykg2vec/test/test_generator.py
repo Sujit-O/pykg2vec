@@ -6,17 +6,9 @@ This module is for testing unit functions of generator
 import pytest
 import tensorflow as tf
 
-from pykg2vec.config.config import (
-    TransDConfig,
-    TransEConfig,
-    TransGConfig,
-    TransHConfig,
-    TransMConfig,
-    TransRConfig,
-)
 from pykg2vec.utils.generator import Generator, TrainingStrategy
-from pykg2vec.config.config import ProjE_pointwiseConfig, KGEArgParser
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pykg2vec.config.config import *
 
 
 def test_generator_proje():
@@ -24,8 +16,8 @@ def test_generator_proje():
     knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
 
-    dummy_config = ProjE_pointwiseConfig(KGEArgParser().get_args([]))
-    generator = Generator(dummy_config, training_strategy=TrainingStrategy.PROJECTION_BASED)
+    config_def, model_def = Importer().import_model_config("proje_pointwise")
+    generator = Generator(model_def(config_def(KGEArgParser().get_args([]))))
 
     for i in range(10):
         data = list(next(generator))
@@ -58,8 +50,8 @@ def test_generator_trans(Config):
     knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
 
-    dummy_config = Config(KGEArgParser().get_args([]))
-    generator = Generator(dummy_config, training_strategy=TrainingStrategy.PAIRWISE_BASED)
+    config_def, model_def = Importer().import_model_config("transe")
+    generator = Generator(model_def(config_def(KGEArgParser().get_args([]))))
 
     for i in range(10):
         data = list(next(generator))

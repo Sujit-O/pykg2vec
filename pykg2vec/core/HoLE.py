@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class HoLE(ModelMeta):
     """`Holographic Embeddings of Knowledge Graphs`_.
@@ -40,7 +40,8 @@ class HoLE(ModelMeta):
         super(HoLE, self).__init__()
         self.config = config
         self.model_name = 'HoLE'
-
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
+        
     def cir_corre(self, a, b):
         """Function performs circular correlation.
 

@@ -8,7 +8,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class Rescal(ModelMeta):
     """`A Three-Way Model for Collective Learning on Multi-Relational Data`_
@@ -45,6 +45,7 @@ class Rescal(ModelMeta):
         super(Rescal, self).__init__()
         self.config = config
         self.model_name = 'Rescal'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.

@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class ConvE(ModelMeta):
     """`Convolutional 2D Knowledge Graph Embeddings`_
@@ -45,6 +45,7 @@ class ConvE(ModelMeta):
         if self.config.hidden_size not in self.dense_last_dim:
             raise NotImplementedError("The hidden dimension is not supported!")
         self.last_dim = self.dense_last_dim[self.config.hidden_size]
+        self.training_strategy = TrainingStrategy.PROJECTION_BASED
 
     def def_parameters(self):
         """Defines the model parameters.

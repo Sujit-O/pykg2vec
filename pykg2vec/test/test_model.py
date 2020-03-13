@@ -23,7 +23,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
 
     # Extracting the corresponding model config and definition from Importer().
     config_def, model_def = Importer().import_model_config(name)
-    config = config_def(args=args)
+    config = config_def(args)
     
     config.epochs     = 1
     config.test_step  = 1

@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class TuckER(ModelMeta, InferenceMeta):
     """ `TuckER-Tensor Factorization for Knowledge Graph Completion`_
@@ -46,6 +46,8 @@ class TuckER(ModelMeta, InferenceMeta):
         
         self.def_layer()
 
+        self.training_strategy = TrainingStrategy.PROJECTION_BASED
+        
         raise NotImplementedError("TransG is yet finished in pykg2vec.")
 
     def def_inputs(self):

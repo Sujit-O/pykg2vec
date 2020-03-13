@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class TransE(ModelMeta):
     """ `Translating Embeddings for Modeling Multi-relational Data`_
@@ -48,6 +48,7 @@ class TransE(ModelMeta):
         super(TransE, self).__init__()
         self.config = config
         self.model_name = 'TransE'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.
