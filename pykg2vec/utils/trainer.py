@@ -83,7 +83,7 @@ class Trainer(TrainerMeta):
 
     ''' Training related functions:'''
     @tf.function
-    def train_step(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
+    def train_step_pairwise(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
         with tf.GradientTape() as tape:
             loss = self.model.get_loss(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
 
@@ -112,7 +112,6 @@ class Trainer(TrainerMeta):
 
         return loss
 
-
     def train_model(self):
         """Function to train the model."""
         ### Early Stop Mechanism
@@ -121,7 +120,7 @@ class Trainer(TrainerMeta):
         ### Early Stop Mechanism
 
         self.generator = Generator(self.model.config, training_strategy=self.training_strategy)
-        self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug)
+        self.evaluator = Evaluator(model=self.model, data_type=self.teston)
 
         if self.config.loadFromData:
             self.load_model()
@@ -238,7 +237,7 @@ class Trainer(TrainerMeta):
                 nh = tf.convert_to_tensor(data[3], dtype=tf.int32)
                 nr = tf.convert_to_tensor(data[4], dtype=tf.int32)
                 nt = tf.convert_to_tensor(data[5], dtype=tf.int32)
-                loss = self.train_step(ph, pr, pt, nh, nr, nt)
+                loss = self.train_step_pairwise(ph, pr, pt, nh, nr, nt)
 
             acc_loss += loss
 

@@ -256,13 +256,12 @@ class Evaluator(EvaluationMeta):
 
         Args:
             model (object): Model object
-            debug (bool): Flag to check if its debugging
             data_type (str): evaluating 'test' or 'valid'
             tuning (bool): Flag to denoting tuning if True
 
         Examples:
             >>> from pykg2vec.utils.evaluator import Evaluator
-            >>> evaluator = Evaluator(model=model, debug=False, tuning=True)
+            >>> evaluator = Evaluator(model=model, tuning=True)
             >>> evaluator.test_batch(Session(), 0)
             >>> acc = evaluator.output_queue.get()
             >>> evaluator.stop()
@@ -271,10 +270,9 @@ class Evaluator(EvaluationMeta):
     TEST_BATCH_STOP = "Stop!"
     TEST_BATCH_EARLY_STOP = "EarlyStop!"
 
-    def __init__(self, model=None, debug=False, data_type='valid', tuning=False, multiprocess=True):
+    def __init__(self, model=None, data_type='valid', tuning=False, multiprocess=True):
         
         self.model = model
-        self.debug = debug
         self.tuning = tuning
         self.result_path = self.model.config.path_result
 
@@ -292,7 +290,7 @@ class Evaluator(EvaluationMeta):
             1) if n_test == 0, test all the triplets. 
             2) if n_test >= # of testable triplets, then set n_test to # of testable triplets
         '''
-        self.n_test = model.config.test_num
+        self.n_test = self.model.config.test_num
         if self.n_test == 0:
             self.n_test = tot_rows_data
         else:
