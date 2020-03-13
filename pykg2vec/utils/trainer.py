@@ -403,9 +403,9 @@ class Trainer(TrainerMeta):
 
     def save_training_result(self, losses):
         """Function that saves training result"""
-        files = os.listdir(str(self.result_path))
+        files = os.listdir(str(self.model.config.path_result))
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
         df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
-        with open(str(self.result_path / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
+        with open(str(self.model.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)
