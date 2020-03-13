@@ -25,11 +25,11 @@ def main():
 
     # Extracting the corresponding model config and definition from Importer().
     config_def, model_def = Importer().import_model_config(args.model_name.lower())
-    config = config_def(args=args)
+    config = config_def(args)
     model = model_def(config)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model, debug=args.debug)
+    trainer = Trainer(model=model)
     trainer.build_model()
     trainer.train_model()
 
