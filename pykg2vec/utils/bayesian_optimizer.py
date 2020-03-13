@@ -125,7 +125,7 @@ class BaysOptimizer(object):
         kge_args.dataset_name = args.dataset_name
         config = self.config_obj(kge_args)
 
-        self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug, tuning=True)
+        self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug)
         
         self.search_space = hyper_params.search_space
         self.max_evals = self.args.max_number_trials if not self.args.debug else 1
@@ -149,7 +149,7 @@ class BaysOptimizer(object):
             row.append(trial['result']['loss'])
             results.loc[idx] = row
 
-        path = self.trainer.config.result / self.trainer.model.model_name 
+        path = self.trainer.config.path_result / self.trainer.model.model_name 
         path.mkdir(parents=True, exist_ok=True)
         results.to_csv(str(path / "trials.csv"), index=False)
         
@@ -173,7 +173,10 @@ class BaysOptimizer(object):
         self.trainer.config.disp_result = False
         self.trainer.config.disp_summary = False
         self.trainer.config.save_model = False
-        self.trainer.config.test_num = 1000
+
+        # do not overwrite test numbers if set
+        if self.trainer.config.test_num is None:
+            self.trainer.config.test_num = 1000
 
         if self.args.debug:
           self.trainer.config.epochs = 1
@@ -181,8 +184,6 @@ class BaysOptimizer(object):
         
         # start the trial.
         self.trainer.build_model()
-        self.trainer.summary_hyperparameter()
-    
         loss = self.trainer.tune_model()
 
         return {'loss': loss, 'status': STATUS_OK}

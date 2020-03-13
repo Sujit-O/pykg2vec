@@ -46,37 +46,12 @@ class KG2E(ModelMeta):
     """
 
     def __init__(self, config=None):
+        super(KG2E, self).__init__()
         self.config = config
-        self.data_stats = self.config.kg_meta
-
         if self.config.distance_measure == "expected_likelihood":
             self.model_name = 'KG2E_EL'
         else:
             self.model_name = 'KG2E_KL'
-
-    def def_inputs(self):
-        """Defines the inputs to the model.
-
-           Attributes:
-              pos_h (Tensor): Positive Head entities ids.
-              pos_r (Tensor): Positive Relation ids of the triple.
-              pos_t (Tensor): Positive Tail entity ids of the triple.
-              neg_h (Tensor): Negative Head entities ids.
-              neg_r (Tensor): Negative Relation ids of the triple.
-              neg_t (Tensor): Negative Tail entity ids of the triple.
-              test_h_batch (Tensor): Batch of head ids for testing.
-              test_r_batch (Tensor): Batch of relation ids for testing
-              test_t_batch (Tensor): Batch of tail ids for testing.
-        """
-        self.pos_h = tf.placeholder(tf.int32, [None])
-        self.pos_t = tf.placeholder(tf.int32, [None])
-        self.pos_r = tf.placeholder(tf.int32, [None])
-        self.neg_h = tf.placeholder(tf.int32, [None])
-        self.neg_t = tf.placeholder(tf.int32, [None])
-        self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h_batch = tf.placeholder(tf.int32, [None])
-        self.test_t_batch = tf.placeholder(tf.int32, [None])
-        self.test_r_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -93,38 +68,29 @@ class KG2E(ModelMeta):
 
                parameter_list  (list): List of Tensor parameters.
         """
-        num_total_ent = self.data_stats.tot_entity
-        num_total_rel = self.data_stats.tot_relation
+        num_total_ent = self.config.kg_meta.tot_entity
+        num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
 
-        with tf.name_scope("embedding"):
-            # the mean for each element in the embedding space. 
-            self.ent_embeddings_mu = tf.get_variable(name="ent_embeddings_mu", shape=[num_total_ent, k],
-                                                     initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-            self.rel_embeddings_mu = tf.get_variable(name="rel_embeddings_mu", shape=[num_total_rel, k],
-                                                     initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+        emb_initializer = tf.initializers.glorot_normal()
 
-            # as the paper suggested, sigma is simplified to be the diagonal element in the covariance matrix. 
-            self.ent_embeddings_sigma = tf.get_variable(name="ent_embeddings_sigma", shape=[num_total_ent, k],
-                                                        initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-            self.rel_embeddings_sigma = tf.get_variable(name="rel_embeddings_sigma", shape=[num_total_rel, k],
-                                                        initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-            self.parameter_list = [self.ent_embeddings_mu, self.ent_embeddings_sigma,
-                                   self.rel_embeddings_mu, self.rel_embeddings_sigma]
+        # the mean for each element in the embedding space. 
+        self.ent_embeddings_mu = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embeddings_mu")
+        self.rel_embeddings_mu = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embeddings_mu")
 
-            self.ent_embeddings_sigma = tf.maximum(self.config.cmin,
-                                                   tf.minimum(self.config.cmax, (self.ent_embeddings_sigma + 1.0)))
-            self.rel_embeddings_sigma = tf.maximum(self.config.cmin,
-                                                   tf.minimum(self.config.cmax, (self.rel_embeddings_sigma + 1.0)))
+        # as the paper suggested, sigma is simplified to be the diagonal element in the covariance matrix. 
+        self.ent_embeddings_sigma = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embeddings_sigma")
+        self.rel_embeddings_sigma = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embeddings_sigma")
+        
+        self.parameter_list = [self.ent_embeddings_mu, self.ent_embeddings_sigma, self.rel_embeddings_mu, self.rel_embeddings_sigma]
 
-    def def_loss(self):
+        self.ent_embeddings_sigma = tf.maximum(self.config.cmin, tf.minimum(self.config.cmax, (self.ent_embeddings_sigma + 1.0)))
+        self.rel_embeddings_sigma = tf.maximum(self.config.cmin, tf.minimum(self.config.cmax, (self.rel_embeddings_sigma + 1.0)))
+
+    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
         """Defines the loss function for the algorithm."""
-        pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu, pos_t_sigma = self.get_embed_guassian(self.pos_h,
-                                                                                                      self.pos_r,
-                                                                                                      self.pos_t)
-        neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu, neg_t_sigma = self.get_embed_guassian(self.neg_h,
-                                                                                                      self.neg_r,
-                                                                                                      self.neg_t)
+        pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu, pos_t_sigma = self.embed(pos_h, pos_r, pos_t)
+        neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu, neg_t_sigma = self.embed(neg_h, neg_r, neg_t)
 
         if self.config.distance_measure == "expected_likelihood":
             score_pos = self.cal_score_expected_likelihood(pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu,
@@ -137,7 +103,26 @@ class KG2E(ModelMeta):
             score_neg = self.cal_score_kl_divergence(neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu,
                                                      neg_t_sigma)
 
-        self.loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
+        loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
+
+        return loss
+
+    def predict(self, h, r, t, topk=-1):
+        """Function that performs prediction for TransE. 
+           shape of h can be either [num_tot_entity] or [1]. 
+           shape of t can be either [num_tot_entity] or [1].
+
+          Returns:
+              Tensors: Returns ranks of head and tail.
+        """
+        h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
+        if self.config.distance_measure == "expected_likelihood":
+            score = self.cal_score_expected_likelihood(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
+        else: 
+            score = self.cal_score_kl_divergence(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
+        _, rank = tf.nn.top_k(score, k=topk)
+
+        return rank
 
     def cal_score_kl_divergence(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
         """ It calculates the kl_divergence as a score.
@@ -160,7 +145,7 @@ class KG2E(ModelMeta):
         """
         trace_fac = tf.reduce_sum((h_sigma + t_sigma) / r_sigma, -1)
         mul_fac = tf.reduce_sum((- h_mu + t_mu - r_mu) ** 2 / r_sigma, -1)
-        det_fac = tf.reduce_sum(tf.log(h_sigma + t_sigma) - tf.log(r_sigma), -1)
+        det_fac = tf.reduce_sum(tf.math.log(h_sigma + t_sigma) - tf.math.log(r_sigma), -1)
 
         return trace_fac + mul_fac - det_fac - self.config.hidden_size
 
@@ -182,72 +167,11 @@ class KG2E(ModelMeta):
                 Tensor: Score after calculating the expected likelihood.
         """
         mul_fac = tf.reduce_sum((h_mu + r_mu - t_mu) ** 2 / (h_sigma + r_sigma + t_sigma), -1)
-        det_fac = tf.reduce_sum(tf.log(h_sigma + r_sigma + t_sigma), -1)
+        det_fac = tf.reduce_sum(tf.math.log(h_sigma + r_sigma + t_sigma), -1)
 
         return mul_fac + det_fac - self.config.hidden_size
 
-    def test_batch(self):
-        """Function that performs batch testing for the algorithm.
-
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        test_h_mu, test_h_sigma, test_r_mu, test_r_sigma, test_t_mu, test_t_sigma = self.get_embed_guassian(
-            self.test_h_batch,
-            self.test_r_batch,
-            self.test_t_batch)
-        test_h_mu = tf.expand_dims(test_h_mu, axis=1)
-        test_h_sigma = tf.expand_dims(test_h_sigma, axis=1)
-        test_r_mu = tf.expand_dims(test_r_mu, axis=1)
-        test_r_sigma = tf.expand_dims(test_r_sigma, axis=1)
-        test_t_mu = tf.expand_dims(test_t_mu, axis=1)
-        test_t_sigma = tf.expand_dims(test_t_sigma, axis=1)
-
-        norm_ent_embeddings_mu = tf.nn.l2_normalize(self.ent_embeddings_mu, axis=1)
-        norm_ent_embeddings_sigma = tf.nn.l2_normalize(self.ent_embeddings_sigma, axis=1)
-
-        if self.config.distance_measure == "expected_likelihood":
-            score_head = self.cal_score_expected_likelihood(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, \
-                                                            test_r_mu, test_r_sigma, \
-                                                            test_t_mu, test_t_sigma)
-
-            score_tail = self.cal_score_expected_likelihood(test_h_mu, test_h_sigma, \
-                                                            test_r_mu, test_r_sigma, \
-                                                            norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
-        else:
-            score_head = self.cal_score_kl_divergence(norm_ent_embeddings_mu, norm_ent_embeddings_sigma, \
-                                                      test_r_mu, test_r_sigma, \
-                                                      test_t_mu, test_t_sigma)
-
-            score_tail = self.cal_score_kl_divergence(test_h_mu, test_h_sigma, \
-                                                      test_r_mu, test_r_sigma, \
-                                                      norm_ent_embeddings_mu, norm_ent_embeddings_sigma)
-
-        _, head_rank = tf.nn.top_k(score_head, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.data_stats.tot_entity)
-
-        return head_rank, tail_rank
-
     def embed(self, h, r, t):
-        """Function to get the embedding value.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        emb_h = tf.nn.embedding_lookup(norm_ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(norm_rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(norm_ent_embeddings, t)
-        return emb_h, emb_r, emb_t
-
-    def get_embed_guassian(self, h, r, t):
         """Function to get the embedding.
 
            Args:
@@ -273,33 +197,3 @@ class KG2E(ModelMeta):
         emb_t_sigma = tf.nn.embedding_lookup(norm_ent_embeddings_sigma, t)
 
         return emb_h_mu, emb_h_sigma, emb_r_mu, emb_r_sigma, emb_t_mu, emb_t_sigma
-
-    def get_embed(self, h, r, t, sess):
-        """Function to get the embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        emb_h, emb_r, emb_t = self.embed(h, r, t)
-        h, r, t = sess.run([emb_h, emb_r, emb_t])
-        return h, r, t
-
-    def get_proj_embed(self, h, r, t, sess=None):
-        """"Function to get the projected embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        return self.get_embed(h, r, t, sess)

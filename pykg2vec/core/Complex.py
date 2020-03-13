@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
+from pykg2vec.core.KGMeta import ModelMeta
 
 
-class Complex(ModelMeta, InferenceMeta):
+class Complex(ModelMeta):
     """`Complex Embeddings for Simple Link Prediction`_.
 
     ComplEx is an enhanced version of DistMult in that it uses complex-valued embeddings
@@ -22,8 +22,6 @@ class Complex(ModelMeta, InferenceMeta):
     Attributes:
         config (object): Model configuration.
         data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
-        tot_ent (int): Total unique entites in the knowledge graph.
-        tot_rel (int): Total unique relation in the knowledge graph.
         model (str): Name of the model.
     
     Examples:
@@ -38,36 +36,10 @@ class Complex(ModelMeta, InferenceMeta):
         http://proceedings.mlr.press/v48/trouillon16.pdf
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
+        super(Complex, self).__init__()
         self.config = config
-        self.data_stats = self.config.kg_meta
-        self.tot_ent = self.data_stats.tot_entity
-        self.tot_rel = self.data_stats.tot_relation
         self.model_name = 'Complex'
-
-    def def_inputs(self):
-        """Defines the inputs to the model.
-           
-           Attributes:
-              pos_h (Tensor): Positive Head entities ids.
-              pos_r (Tensor): Positive Relation ids of the triple.
-              pos_t (Tensor): Positive Tail entity ids of the triple.
-              neg_h (Tensor): Negative Head entities ids.
-              neg_r (Tensor): Negative Relation ids of the triple.
-              neg_t (Tensor): Negative Tail entity ids of the triple.
-              test_h_batch (Tensor): Batch of head ids for testing.
-              test_r_batch (Tensor): Batch of relation ids for testing
-              test_t_batch (Tensor): Batch of tail ids for testing.
-        """
-        self.pos_h = tf.placeholder(tf.int32, [None])
-        self.pos_r = tf.placeholder(tf.int32, [None])
-        self.pos_t = tf.placeholder(tf.int32, [None])
-        self.neg_h = tf.placeholder(tf.int32, [None])
-        self.neg_r = tf.placeholder(tf.int32, [None])
-        self.neg_t = tf.placeholder(tf.int32, [None])
-        self.test_h_batch = tf.placeholder(tf.int32, [None])
-        self.test_r_batch = tf.placeholder(tf.int32, [None])
-        self.test_t_batch = tf.placeholder(tf.int32, [None])
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -80,77 +52,18 @@ class Complex(ModelMeta, InferenceMeta):
                emb_rel_img (Tensor Variable): Lookup variable containing imaginary values of the relations.
                parameter_list  (list): List of Tensor parameters. 
         """
-
+        num_total_ent = self.config.kg_meta.tot_entity
+        num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
-        with tf.name_scope("embedding"):
-            self.ent_embeddings_real = tf.get_variable(name="emb_e_real", shape=[self.tot_ent, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.ent_embeddings_img  = tf.get_variable(name="emb_e_img", shape=[self.tot_ent, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings_real = tf.get_variable(name="emb_rel_real", shape=[self.tot_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings_img  = tf.get_variable(name="emb_rel_img", shape=[self.tot_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        
+        emb_initializer = tf.initializers.glorot_normal()
 
-            self.parameter_list = [self.ent_embeddings_real, self.ent_embeddings_img, 
-                                   self.rel_embeddings_real, self.rel_embeddings_img]
+        self.ent_embeddings_real = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="emb_e_real")
+        self.ent_embeddings_img  = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="emb_e_img") 
+        self.rel_embeddings_real = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="emb_rel_real")
+        self.rel_embeddings_img  = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="emb_rel_img")
 
-    def def_loss(self):
-        """Defines the loss function for the algorithm."""
-        pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img = \
-            self.embed(self.pos_h, self.pos_r, self.pos_t)
-
-        neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img = \
-            self.embed(self.neg_h, self.neg_r, self.neg_t)
-
-        score_pos = self.distance(pos_h_e_real, pos_h_e_img, pos_r_e_real, pos_r_e_img, pos_t_e_real, pos_t_e_img)
-        score_neg = self.distance(neg_h_e_real, neg_h_e_img, neg_r_e_real, neg_r_e_img, neg_t_e_real, neg_t_e_img)
-
-        regul_term = tf.reduce_sum(pos_h_e_real**2 + pos_h_e_img**2) + tf.reduce_sum(pos_r_e_real**2 + pos_r_e_img**2) + tf.reduce_sum(pos_t_e_real**2 + pos_t_e_img**2) + \
-                     tf.reduce_sum(neg_h_e_real**2 + neg_h_e_img**2) + tf.reduce_sum(neg_r_e_real**2 + neg_r_e_img**2) + tf.reduce_sum(neg_t_e_real**2 + neg_t_e_img**2) 
-                
-        self.loss = self.pointwise_logistic_loss(score_pos, score_neg) + self.config.lmbda*regul_term
-
-    def test_batch(self):
-        """Function that performs batch testing for the algorithm.
-
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = \
-            self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
-
-        score_head = self.distance(self.ent_embeddings_real, self.ent_embeddings_img, 
-                                   tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
-                                   tf.expand_dims(t_emb_real, axis=1), tf.expand_dims(t_emb_img, axis=1))
-        score_tail = self.distance(tf.expand_dims(h_emb_real, axis=1), tf.expand_dims(h_emb_img, axis=1),
-                                   tf.expand_dims(r_emb_real, axis=1), tf.expand_dims(r_emb_img, axis=1),
-                                   self.ent_embeddings_real, self.ent_embeddings_img)
-
-        _, head_rank = tf.nn.top_k(-score_head, k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(-score_tail, k=self.config.kg_meta.tot_entity)
-
-        return head_rank, tail_rank
-
-    def distance(self, h_real, h_img, r_real, r_img, t_real, t_img):
-        return tf.reduce_sum(h_real * t_real * r_real + h_img * t_img * r_real + h_real * t_img * r_img - h_img * t_real * r_img, axis=-1, keep_dims = False)
-
-    # Override
-    def dissimilarity(self, h, r, t):
-        """Function to calculate dissimilarity measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-
-        Returns:
-            Tensors: Returns the dissimilarity measure.
-        """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
+        self.parameter_list = [self.ent_embeddings_real, self.ent_embeddings_img, self.rel_embeddings_real, self.rel_embeddings_img]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -174,29 +87,30 @@ class Complex(ModelMeta, InferenceMeta):
 
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
-    def get_embed(self, h, r, t, sess=None):
-        """Function to get the embedding value in numpy.
-           
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
+    def dissimilarity(self, h_real, h_img, r_real, r_img, t_real, t_img):
+        return tf.reduce_sum(h_real * t_real * r_real + h_img * t_img * r_real + h_real * t_img * r_img - h_img * t_real * r_img, axis=-1, keepdims = False)
 
-            Returns:
-                Tensors: Returns real and imaginary values of head, relation and tail embedding.
+    def get_loss(self, h, r, t, y):
+        """Defines the loss function for the algorithm."""
+        h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
+
+        score = self.dissimilarity(h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img)
+
+        regul_term = tf.nn.l2_loss(h_e_real) + tf.nn.l2_loss(h_e_img) + tf.nn.l2_loss(r_e_real) + tf.nn.l2_loss(r_e_img) + tf.nn.l2_loss(t_e_real) + tf.nn.l2_loss(t_e_img)
+        loss = tf.reduce_sum(tf.nn.softplus(-score*y)) + self.config.lmbda*regul_term
+
+        return loss
+
+    def predict(self, h, r, t, topk=-1):
+        """Function that performs prediction for TransE. 
+           shape of h can be either [num_tot_entity] or [1]. 
+           shape of t can be either [num_tot_entity] or [1].
+
+          Returns:
+              Tensors: Returns ranks of head and tail.
         """
-        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = self.embed(h, r, t)
-        h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img = sess.run(
-            [h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img])
-        return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
+        h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
+        score = self.dissimilarity(h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img)
+        _, rank = tf.nn.top_k(-score, k=topk)
 
-    def get_proj_embed(self, h, r, t, sess):
-        """Function to get the projected embedding value in numpy.
-           
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-        """
-        return self.get_embed(h, r, t, sess)
+        return rank

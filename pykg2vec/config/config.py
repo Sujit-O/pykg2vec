@@ -9,11 +9,10 @@ across all the algorithms, and local parameters which are specific to the algori
 """
 
 import tensorflow as tf
-from pathlib import Path
 from argparse import ArgumentParser
 import importlib
 
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pykg2vec.utils.kgcontroller import KnowledgeGraph, KGMetaData
 from pykg2vec.config.hyperparams import HyperparamterLoader
 
 class Importer:
@@ -101,7 +100,7 @@ class Importer:
       model_obj = None
       try:
           config_obj = getattr(importlib.import_module(self.config_path), self.configMap[name])
-          model_obj = getattr(importlib.import_module(self.model_path + ".%s" % self.modelMap[name]),
+          model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % self.modelMap[name]),
                               self.modelMap[name])
       except ModuleNotFoundError:
           print("%s model  has not been implemented. please select from: %s" % (
@@ -131,12 +130,7 @@ class KGEArgParser:
     def __init__(self):
         self.parser = ArgumentParser(description='Knowledge Graph Embedding tunable configs.')
 
-        ''' arguments regarding SME and KG2E '''
-        self.SME_group = self.parser.add_argument_group('SME KG2E function selection')
-        self.SME_group.add_argument('-func', dest='function', default='bilinear', type=str, help="The name of function used in SME model.")
-        self.SME_group.add_argument('-cmax', dest='cmax', default=0.05, type=float, help="The parameter for clipping values for KG2E.")
-        self.SME_group.add_argument('-cmin', dest='cmin', default=5.00, type=float, help="The parameter for clipping values for KG2E.")
-
+        
         ''' arguments regarding TransG '''
         self.TransG_group = self.parser.add_argument_group('TransG function selection')
         self.TransG_group.add_argument('-th', dest='training_threshold', default=3.5, type=float, help="Training Threshold for updateing the clusters.")
@@ -145,30 +139,28 @@ class KGEArgParser:
         self.TransG_group.add_argument('-stb', dest='step_before', default=10, type=int, help="Steps before")
         self.TransG_group.add_argument('-wn', dest='weight_norm', default=False, type=lambda x: (str(x).lower() == 'true'), help="normalize the weights!")
 
+        ''' arguments regarding SME and KG2E '''
+        self.SME_group = self.parser.add_argument_group('SME KG2E function selection')
+        self.SME_group.add_argument('-func', dest='function', default='bilinear', type=str, help="The name of function used in SME model.")
+        self.SME_group.add_argument('-cmax', dest='cmax', default=0.05, type=float, help="The parameter for clipping values for KG2E.")
+        self.SME_group.add_argument('-cmin', dest='cmin', default=5.00, type=float, help="The parameter for clipping values for KG2E.")
+
         ''' for conve '''
         self.conv_group = self.parser.add_argument_group('ConvE specific Hyperparameters')
-        self.conv_group.add_argument('-lmda', dest='lmbda', default=0.1, type=float, help='The lmbda used in ConvE.')
         self.conv_group.add_argument('-fmd', dest='feature_map_dropout', default=0.2, type=float, help="feature map dropout value used in ConvE.")
         self.conv_group.add_argument('-idt', dest="input_dropout", default=0.3, type=float, help="input dropout value used in ConvE.")
         self.conv_group.add_argument('-hdt', dest="hidden_dropout", default=0.3, type=float, help="hidden dropout value used in ConvE.")
-        self.conv_group.add_argument('-hdt2', dest="hidden_dropout2", default=0.3, type=float, help="hidden dropout value used in ConvE.")
-        self.conv_group.add_argument('-ubs', dest='use_bias', default=True, type=lambda x: (str(x).lower() == 'true'), help='The boolean indicating whether use biases or not in ConvE.')
         self.conv_group.add_argument('-lbs', dest='label_smoothing', default=0.1, type=float, help="The parameter used in label smoothing.")
-        self.conv_group.add_argument('-lrd', dest='lr_decay', default=0.995, type=float, help="The parameter for learning_rate decay used in ConvE.")
 
         '''for convKB'''
         self.convkb_group = self.parser.add_argument_group('ConvKB specific Hyperparameters')
         self.convkb_group.add_argument('-fsize', dest='filter_sizes', default=[1,2,3],nargs='+', type=int, help='Filter sizes to be used in convKB which acts as the widths of the kernals')
-        self.convkb_group.add_argument('-fnum', dest='num_filters', default=500, type=int, help='Filter numbers to be used in convKB')
-        self.convkb_group.add_argument('-cnum', dest='num_classes', default=2, type=int, help='Number of classes for triples')
-        self.convkb_group.add_argument('-snum', dest='sequence_length', default=3, type=int, help='Sequence length or height of the convolution kernel')
-        self.convkb_group.add_argument('-istrain', dest='is_trainable', default=True, type=lambda x: (str(x).lower() == 'true'), help='Make parameters trainable')
-        self.convkb_group.add_argument('-cinit', dest='useConstantInit', default=False, type=lambda x: (str(x).lower() == 'true'), help='Use constant initialization')     
+        self.convkb_group.add_argument('-fnum', dest='num_filters', default=50, type=int, help='Filter numbers to be used in convKB')
 
         ''' arguments regarding hyperparameters '''
         self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
+        self.general_hyper_group.add_argument('-lmda', dest='lmbda', default=0.1, type=float, help='The lmbda for regularization.')
         self.general_hyper_group.add_argument('-b',   dest='batch_training', default=128, type=int, help='training batch size')
-        self.general_hyper_group.add_argument('-bt',  dest='batch_testing', default=16, type=int, help='testing batch size')
         self.general_hyper_group.add_argument('-mg',  dest='margin', default=0.8, type=float, help='Margin to take')
         self.general_hyper_group.add_argument('-opt', dest='optimizer', default='adam', type=str, help='optimizer to be used in training.')
         self.general_hyper_group.add_argument('-s',   dest='sampling', default='uniform', type=str, help='strategy to do negative sampling.')
@@ -178,13 +170,14 @@ class KGEArgParser:
         self.general_hyper_group.add_argument('-k',   dest='hidden_size', default=50, type=int,help='Hidden embedding size.')
         self.general_hyper_group.add_argument('-km',  dest='ent_hidden_size', default=50, type=int, help="Hidden embedding size for entities.")
         self.general_hyper_group.add_argument('-kr',  dest='rel_hidden_size', default=50, type=int, help="Hidden embedding size for relations.")
-        self.general_hyper_group.add_argument('-l1', dest='l1_flag', default=True, type=lambda x: (str(x).lower() == 'true'),help='The flag of using L1 or L2 norm.')
-        self.general_hyper_group.add_argument('-c', dest='C', default=0.0125, type=float, help='The parameter C used in transH.')
+        self.general_hyper_group.add_argument('-l1',  dest='l1_flag', default=True, type=lambda x: (str(x).lower() == 'true'),help='The flag of using L1 or L2 norm.')
+        self.general_hyper_group.add_argument('-c',   dest='C', default=0.0125, type=float, help='The parameter C used in transH.')
 
         ''' working environments '''
         self.environment_group = self.parser.add_argument_group('Working Environments')
-        self.environment_group.add_argument('-gp', dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
-        self.environment_group.add_argument('-gnp', dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
+        self.environment_group.add_argument('-gp',  dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
+        self.environment_group.add_argument('-npg', dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
+        self.environment_group.add_argument('-npe', dest='num_process_evl', default=1, type=int, help='number of processes used in the Evaluator.')
 
         ''' basic configs '''
         self.general_group = self.parser.add_argument_group('Generic')
@@ -202,6 +195,7 @@ class KGEArgParser:
         self.general_group.add_argument('-fig',   dest='figures', default='../figures', type=str,help="The folder name to save the figures.")
         self.general_group.add_argument('-plote', dest='plot_embedding', default=False,type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.general_group.add_argument('-plot',  dest='plot_entity_only', default=False,type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
+        self.general_group.add_argument('-els',   dest='early_stop_epoch', default=50, type=int, help='Interval of performing early stop check. ')
 
     def get_args(self, args):
       """This function parses the necessary arguments.
@@ -239,75 +233,91 @@ class BasicConfig:
       plot_testing_result (bool): If True, it will plot all the testing result such as mean rank, hit ratio, etc.
       plot_entity_only (bool): If True, plots the t-SNE reduced embdding of the entities in a figure.
       full_test_flag (bool): It True, performs a full test after completing the training for full epochs.
-      batch_size_testing (int): Determines the size of batch used while testing.
       hits (List): Gives the list of integer for calculating hits.
       knowledge_graph (Object): It prepares and holds the instance of the knowledge graph dataset.
       kg_meta (object): Stores the statistics metadata of the knowledge graph.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
+        # Training and evaluating related variables
+        self.test_step = args.test_step
+        self.full_test_flag = (self.test_step == 0)
+        self.test_num = args.test_num
+        self.hits = [1, 3, 5, 10]
+        self.loadFromData = args.load_from_data
+        self.save_model = args.save_model
+        self.disp_summary = True
+        self.disp_result = False
+        
+        self.early_stop_epoch = args.early_stop_epoch # the interval of early stop checking. 
+        self.patience = 3 # should make this configurable as well.
+        
+        # Visualization related, 
+        # p.s. the visualizer is disable for most of the KGE methods for now. 
+        self.disp_triple_num = 20
+        self.plot_embedding = args.plot_embedding
+        self.plot_training_result = True
+        self.plot_testing_result = True
+        self.plot_entity_only = args.plot_entity_only
+        
+        # Working environment variables.
+        self.num_process_gen = args.num_process_gen
+        self.num_process_evl = args.num_process_evl
+        self.log_device_placement = False
+        self.gpu_fraction = args.gpu_frac
+        self.gpu_allow_growth = True
+        # self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
+        # self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
+        # self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
 
-        if args is None:
-            self.test_step = 100
-            self.test_num = 600
-            self.disp_triple_num = 20
-            self.tmp = Path('..') / 'intermediate'
-            self.result = Path('..') / 'results'
-            self.figures = Path('..') / 'figures'
-            self.custom_dataset_path = None
-            self.gpu_fraction = 0.8
-            self.gpu_allow_growth = True
-            self.loadFromData = False
-            self.save_model = False
-            self.disp_summary = True
-            self.disp_result = False
-            self.plot_embedding = False
-            self.log_device_placement = False
-            self.plot_training_result = False
-            self.plot_testing_result = False
-            self.plot_entity_only = False
-            self.full_test_flag = False
-            self.batch_size_testing = 16
-            self.num_process_gen = 2
-        else:
-            self.tmp = Path(args.tmp)
-            self.result = Path(args.result)
-            self.figures = Path(args.figures)
-            self.custom_dataset_path = args.dataset_path
-            self.full_test_flag = (args.test_step == 0)
-            self.plot_entity_only = args.plot_entity_only
-            self.test_step = args.test_step
-            self.test_num = args.test_num
-            self.disp_triple_num = 20
-            self.log_device_placement = False
-            self.gpu_fraction = args.gpu_frac
-            self.gpu_allow_growth = True
-            self.loadFromData = args.load_from_data
-            self.save_model = args.save_model
-            self.disp_summary = True
-            self.disp_result = False
-            self.plot_embedding = args.plot_embedding
-            self.plot_training_result = True
-            self.plot_testing_result = True
-
-            self.batch_size_testing = args.batch_testing
-            self.num_process_gen = args.num_process_gen
-
-        self.hits = [1,3,5,10]
-        self.gpu_config = tf.ConfigProto(log_device_placement=self.log_device_placement)
-        self.gpu_config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
-        self.gpu_config.gpu_options.allow_growth = self.gpu_allow_growth
-        self.knowledge_graph = KnowledgeGraph(dataset=self.data, negative_sample=self.sampling, custom_dataset_path=self.custom_dataset_path)
+        # Knowledge Graph Information
+        self.custom_dataset_path = args.dataset_path
+        self.knowledge_graph = KnowledgeGraph(dataset=self.data, custom_dataset_path=self.custom_dataset_path)
         self.kg_meta = self.knowledge_graph.kg_meta
         
-        self.path_tmp = self.knowledge_graph.dataset.dataset_path  / 'intermediate'
-        self.path_result = self.knowledge_graph.dataset.dataset_path  / 'results'
-        self.path_figures = self.knowledge_graph.dataset.dataset_path  / 'figures'
-        self.path_embeddings = self.knowledge_graph.dataset.dataset_path  / 'embeddings'
+        # The results of training will be stored in the following folders 
+        # which are relative to the parent folder (the path of the dataset).
+        dataset_path = self.knowledge_graph.dataset.dataset_path
+        self.path_tmp =  dataset_path / 'intermediate'
         self.path_tmp.mkdir(parents=True, exist_ok=True)
+        self.path_result = dataset_path / 'results'
         self.path_result.mkdir(parents=True, exist_ok=True)
+        self.path_figures = dataset_path / 'figures'
         self.path_figures.mkdir(parents=True, exist_ok=True)
+        self.path_embeddings = dataset_path / 'embeddings'
         self.path_embeddings.mkdir(parents=True, exist_ok=True)
+
+        # debugging information 
+        self.debug = args.debug
+
+    def summary(self):
+        """Function to print the summary."""
+        print("\n------------------Global Setting--------------------")
+        # Acquire the max length and add four more spaces
+        maxspace = len(max([k for k in self.__dict__.keys()])) +20
+        for key, val in self.__dict__.items():
+            if key in self.__dict__['hyperparameters']:
+                continue
+
+            if isinstance(val, (KGMetaData, KnowledgeGraph)) or key.startswith('gpu') or key.startswith('hyperparameters'):
+                continue
+
+            if len(key) < maxspace:
+                for i in range(maxspace - len(key)):
+                    key = ' ' + key
+            print("%s : %s"%(key, val))
+        print("---------------------------------------------------")
+
+    def summary_hyperparameter(self, model_name):
+        """Function to print the hyperparameter summary."""
+        print("\n-----------%s Hyperparameter Setting-------------"%(model_name))
+        maxspace = len(max([k for k in self.hyperparameters.keys()])) + 15
+        for key,val in self.hyperparameters.items():
+            if len(key) < maxspace:
+                for i in range(maxspace - len(key)):
+                    key = ' ' + key
+            print("%s : %s" % (key, val))
+        print("---------------------------------------------------")
 
 
 class TransEConfig(BasicConfig):
@@ -781,13 +791,13 @@ class NTNConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
+        self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.ent_hidden_size = args.ent_hidden_size
         self.rel_hidden_size = args.rel_hidden_size
         self.batch_size = args.batch_training
         self.epochs = args.epochs
-        self.margin = args.margin
         self.data = args.dataset_name
         self.optimizer = args.optimizer
         self.sampling = args.sampling
@@ -799,13 +809,13 @@ class NTNConfig(BasicConfig):
                 self.__dict__[key] = value # copy all the setting from the paper.
 
         self.hyperparameters = {
+            'lmbda': self.lmbda,
             'learning_rate': self.learning_rate,
             'L1_flag': self.L1_flag,
             'ent_hidden_size': self.ent_hidden_size,
             'rel_hidden_size': self.rel_hidden_size,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
-            'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
@@ -1103,6 +1113,201 @@ class DistMultConfig(BasicConfig):
         BasicConfig.__init__(self, args)
 
 
+class ProjE_pointwiseConfig(BasicConfig):
+    """This class defines the configuration for the ProjE Algorithm.
+
+    ProjE_pointwiseConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
+
+    def __init__(self, args=None):
+        self.lmbda = args.lmbda
+        self.hidden_dropout = args.hidden_dropout
+        self.learning_rate = args.learning_rate
+        self.L1_flag = args.l1_flag
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.margin = args.margin
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
+
+        if args.exp is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'proje_po')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
+
+        self.hyperparameters = {
+            'lmbda': self.lmbda,
+            'hidden_dropout': self.hidden_dropout,
+            'learning_rate': self.learning_rate,
+            'L1_flag': self.L1_flag,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
+        }
+
+        BasicConfig.__init__(self, args)
+
+
+class ConvKBConfig(BasicConfig):
+    """This class defines the configuration for the ConvKB Algorithm.
+
+    ConvKBConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
+    def __init__(self, args=None):
+        self.lmbda = args.lmbda
+        self.filter_sizes =args.filter_sizes
+        self.num_filters = args.num_filters
+        self.learning_rate = args.learning_rate
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
+
+        if args.exp is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'convkb')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
+
+        self.hyperparameters = {
+            'lmbda': self.lmbda,
+            'filter_sizes' : self.filter_sizes,
+            'num_filters' :self.num_filters,
+            'learning_rate': self.learning_rate,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
+        }
+
+        BasicConfig.__init__(self, args)
+
+
+class ConvEConfig(BasicConfig):
+    """This class defines the configuration for the ConvE Algorithm.
+
+    ConvEConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      feature_map_dropout (float) : Sets the dropout for the feature layer.
+      input_dropout (float) : Sets the dropout rate for the input layer.
+      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
+      use_bias (bool) : If true, adds bias in the end before the activation.
+      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
+      lr_decay (float) : Sets the learning decay rate for optimization.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    
+    """
+    def __init__(self, args=None):
+
+        self.feature_map_dropout = args.feature_map_dropout
+        self.input_dropout = args.input_dropout
+        self.hidden_dropout = args.hidden_dropout
+        self.label_smoothing = args.label_smoothing
+        self.learning_rate = args.learning_rate
+        # TODO: Currently conve can only have k=50, 100, or 200
+        # self.hidden_size = args.hidden_size
+        self.hidden_size = 200
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = 0
+        self.channels = 32
+        if args.exp is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'conve')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
+
+        self.hyperparameters = {
+            'feature_map_dropout': self.feature_map_dropout,
+            'input_dropout': self.input_dropout,
+            'hidden_dropout': self.hidden_dropout,
+            'label_smoothing': self.label_smoothing,
+            'learning_rate': self.learning_rate,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
+        }
+
+        BasicConfig.__init__(self, args)
+
 class TuckERConfig(BasicConfig):
     """This class defines the configuration for the TuckER Algorithm.
 
@@ -1203,102 +1408,6 @@ class TuckERConfig(BasicConfig):
 
         BasicConfig.__init__(self, args)
 
-
-class ConvKBConfig(BasicConfig):
-    """This class defines the configuration for the ConvKB Algorithm.
-
-    ConvKBConfig inherits the BasicConfig and defines the local arguements used in the
-    algorithm.
-
-    Attributes:
-      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-    Args:
-      lambda (float) : Weigth applied to the regularization in the loss function.
-      feature_map_dropout (float) : Sets the dropout for the feature layer.
-      input_dropout (float) : Sets the dropout rate for the input layer.
-      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
-      use_bias (bool) : If true, adds bias in the end before the activation.
-      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
-      lr_decay (float) : Sets the learning decay rate for optimization.
-      learning_rate (float): Defines the learning rate for the optimization.
-      L1_flag (bool): If True, perform L1 regularization on the model parameters.
-      hidden_size (int): Defines the size of the latent dimension for entities and relations.
-      batch_size (int): Defines the batch size for training the algorithm.
-      epochs (int): Defines the total number of epochs for training the algorithm.
-      margin (float): Defines the margin used between the positive and negative triple loss.
-      data (str): Defines the knowledge base dataset to be used for training the algorithm.
-      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-    def __init__(self, args=None):
-
-        if args is None or args.exp is True:
-            self.lmbda = 0.1
-            self.use_bias = True
-            self.label_smoothing = 0.1
-            self.filter_sizes = [1,2,3]
-            self.num_filters = 500
-            self.hidden_dropout = 0.3
-            self.is_trainable=True
-            self.useConstantInit=False
-            self.learning_rate = 0.003
-            self.L1_flag = True
-            self.num_classes =2,
-            self.sequence_length =3,
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.lmbda = args.lmbda
-            self.use_bias = args.use_bias
-            self.hidden_dropout = args.hidden_dropout
-            self.num_classes = args.num_classes
-            self.label_smoothing = args.label_smoothing
-            self.filter_sizes =args.filter_sizes
-            self.sequence_length = args.sequence_length
-            self.num_filters = args.num_filters
-            self.is_trainable=args.is_trainable
-            self.useConstantInit=args.useConstantInit
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
-
-        self.hyperparameters = {
-            'lmbda': self.lmbda,
-            'use_bias': self.use_bias,
-            'hidden_dropout':self.hidden_dropout,
-            'filter_sizes' : self.filter_sizes,
-            'num_filters' :self.num_filters,
-            'label_smoothing': self.label_smoothing,
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
 class TransGConfig(BasicConfig):
     """This class defines the configuration for the TransG Algorithm.
 
@@ -1378,194 +1487,4 @@ class TransGConfig(BasicConfig):
             'neg_rate': self.neg_rate,
 
         }
-        BasicConfig.__init__(self, args)
-
-
-class ConvEConfig(BasicConfig):
-    """This class defines the configuration for the ConvE Algorithm.
-
-    ConvEConfig inherits the BasicConfig and defines the local arguements used in the
-    algorithm.
-
-    Attributes:
-      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-    Args:
-      lambda (float) : Weigth applied to the regularization in the loss function.
-      feature_map_dropout (float) : Sets the dropout for the feature layer.
-      input_dropout (float) : Sets the dropout rate for the input layer.
-      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
-      use_bias (bool) : If true, adds bias in the end before the activation.
-      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
-      lr_decay (float) : Sets the learning decay rate for optimization.
-      learning_rate (float): Defines the learning rate for the optimization.
-      L1_flag (bool): If True, perform L1 regularization on the model parameters.
-      hidden_size (int): Defines the size of the latent dimension for entities and relations.
-      batch_size (int): Defines the batch size for training the algorithm.
-      epochs (int): Defines the total number of epochs for training the algorithm.
-      margin (float): Defines the margin used between the positive and negative triple loss.
-      data (str): Defines the knowledge base dataset to be used for training the algorithm.
-      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-    def __init__(self, args=None):
-
-        if args is None or args.exp is True:
-            self.lmbda = 0.1
-            self.feature_map_dropout = 0.2
-            self.input_dropout = 0.2
-            self.hidden_dropout = 0.3
-            self.use_bias = True
-            self.label_smoothing = 0.1
-            self.lr_decay = 0.995
-
-            self.learning_rate = 0.003
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.lmbda = args.lmbda
-            self.feature_map_dropout = args.feature_map_dropout
-            self.input_dropout = args.input_dropout
-            self.hidden_dropout = args.hidden_dropout
-            self.use_bias = args.use_bias
-            self.label_smoothing = args.label_smoothing
-            self.lr_decay = args.lr_decay
-
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            # TODO: Currently conve can only have k=50, 100, or 200
-            self.hidden_size = 50  # args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
-
-        self.hyperparameters = {
-            'lmbda': self.lmbda,
-            'feature_map_dropout': self.feature_map_dropout,
-            'input_dropout': self.input_dropout,
-            'hidden_dropout': self.hidden_dropout,
-            'use_bias': self.use_bias,
-            'label_smoothing': self.label_smoothing,
-            'lr_decay': self.lr_decay,
-
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
-
-class ProjE_pointwiseConfig(BasicConfig):
-    """This class defines the configuration for the ProjE Algorithm.
-
-    ProjE_pointwiseConfig inherits the BasicConfig and defines the local arguements used in the
-    algorithm.
-
-    Attributes:
-      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-    Args:
-      lambda (float) : Weigth applied to the regularization in the loss function.
-      feature_map_dropout (float) : Sets the dropout for the feature layer.
-      input_dropout (float) : Sets the dropout rate for the input layer.
-      hidden_dropout (float) : Sets the dropout rate for the hidden layer.
-      use_bias (bool) : If true, adds bias in the end before the activation.
-      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
-      lr_decay (float) : Sets the learning decay rate for optimization.
-      learning_rate (float): Defines the learning rate for the optimization.
-      L1_flag (bool): If True, perform L1 regularization on the model parameters.
-      hidden_size (int): Defines the size of the latent dimension for entities and relations.
-      batch_size (int): Defines the batch size for training the algorithm.
-      epochs (int): Defines the total number of epochs for training the algorithm.
-      margin (float): Defines the margin used between the positive and negative triple loss.
-      data (str): Defines the knowledge base dataset to be used for training the algorithm.
-      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-
-    def __init__(self, args=None):
-
-        if args is None or args.exp is True:
-            self.lmbda = 0.1
-            self.feature_map_dropout = 0.2
-            self.input_dropout = 0.2
-            self.hidden_dropout = 0.3
-            self.use_bias = True
-            self.label_smoothing = 0.1
-            self.lr_decay = 0.995
-
-            self.learning_rate = 0.003
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
-
-        else:
-            self.lmbda = args.lmbda
-            self.feature_map_dropout = args.feature_map_dropout
-            self.input_dropout = args.input_dropout
-            self.hidden_dropout = args.hidden_dropout
-            self.use_bias = args.use_bias
-            self.label_smoothing = args.label_smoothing
-            self.lr_decay = args.lr_decay
-
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.hidden_size = args.hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
-
-        self.hyperparameters = {
-            'lmbda': self.lmbda,
-            'feature_map_dropout': self.feature_map_dropout,
-            'input_dropout': self.input_dropout,
-            'hidden_dropout': self.hidden_dropout,
-            'use_bias': self.use_bias,
-            'label_smoothing': self.label_smoothing,
-            'lr_decay': self.lr_decay,
-
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
         BasicConfig.__init__(self, args)

@@ -12,8 +12,7 @@ import numpy as np
 import pandas as pd
 import timeit
 from multiprocessing import Process, Queue
-import progressbar
-
+import tensorflow as tf
 from pykg2vec.core.KGMeta import EvaluationMeta
 
 
@@ -44,26 +43,20 @@ class MetricCalculator:
         self.reset()
 
     def append_result(self, result):
-        
-        id_replace_tail = result[0]
-        id_replace_head = result[1]
-        h_list = result[2]
-        r_list = result[3]
-        t_list = result[4]
+        predict_tail = result[0]
+        predict_head = result[1]
+
+        h,r,t = result[2], result[3], result[4]
+
         self.epoch = result[5]
-        
-        total_test = len(h_list)
-        
-        for triple_id in range(total_test):
-            h, r, t = h_list[triple_id], r_list[triple_id], t_list[triple_id]
 
-            t_rank, f_t_rank = self.get_tail_rank(id_replace_tail[triple_id], h, r, t)
-            h_rank, f_h_rank = self.get_head_rank(id_replace_head[triple_id], h, r, t)
+        t_rank, f_t_rank = self.get_tail_rank(predict_tail, h, r, t)
+        h_rank, f_h_rank = self.get_head_rank(predict_head, h, r, t)
 
-            self.rank_head.append(h_rank)
-            self.rank_tail.append(t_rank)
-            self.f_rank_head.append(f_h_rank)
-            self.f_rank_tail.append(f_t_rank)
+        self.rank_head.append(h_rank)
+        self.rank_tail.append(t_rank)
+        self.f_rank_head.append(f_h_rank)
+        self.f_rank_tail.append(f_t_rank)
 
     def get_tail_rank(self, tail_candidate, h, r, t):
         """Function to evaluate the tail rank.
@@ -237,10 +230,10 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
     while True:
         result = result_queue.get()
         
-        if result == 'Start!': 
+        if result == Evaluator.TEST_BATCH_START:
             calculator.reset()
             
-        elif result == 'Stop!':
+        elif result == Evaluator.TEST_BATCH_STOP:
             calculator.settle()
             calculator.display_summary()
 
@@ -252,10 +245,13 @@ def evaluation_process(result_queue, output_queue, config, model_name, tuning):
                     output_queue.put(score)
 
                 break
+        elif result == Evaluator.TEST_BATCH_EARLY_STOP:
+            break
         else:
             calculator.append_result(result)
 
-class Evaluation(EvaluationMeta):
+
+class Evaluator(EvaluationMeta):
     """Class to perform evaluation of the model.
 
         Args:
@@ -265,15 +261,18 @@ class Evaluation(EvaluationMeta):
             tuning (bool): Flag to denoting tuning if True
 
         Examples:
-            >>> from pykg2vec.utils.evaluation import Evaluation
-            >>> evaluator = Evaluation(model=model, debug=False, tuning=True)
+            >>> from pykg2vec.utils.evaluator import Evaluator
+            >>> evaluator = Evaluator(model=model, debug=False, tuning=True)
             >>> evaluator.test_batch(Session(), 0)
             >>> acc = evaluator.output_queue.get()
             >>> evaluator.stop()
     """
-    def __init__(self, model=None, debug=False, data_type='valid', tuning=False, session=None):
+    TEST_BATCH_START = "Start!"
+    TEST_BATCH_STOP = "Stop!"
+    TEST_BATCH_EARLY_STOP = "EarlyStop!"
+
+    def __init__(self, model=None, debug=False, data_type='valid', tuning=False, multiprocess=True):
         
-        self.session = session 
         self.model = model
         self.debug = debug
         self.tuning = tuning
@@ -299,67 +298,99 @@ class Evaluation(EvaluationMeta):
         else:
             self.n_test = min(self.n_test, tot_rows_data)
 
-        ''' 
-            loop_len: the # of loops to perform batch evaluation. 
-            if debug mode is turned on, then set to only 2. 
-        ''' 
-        if self.n_test < self.model.config.batch_size_testing:
-            self.loop_len = 1
-        else:
-            self.loop_len = (self.n_test // self.model.config.batch_size_testing) if not self.debug else 2
-        
-        self.n_test = self.model.config.batch_size_testing * self.loop_len
-
         '''
             create the process that manages the batched evaluating results.
             result_queue: stores the results for each batch. 
             output_queue: stores the result for a trial, used by bayesian_optimizer.
         '''
-        self.result_queue = Queue()
-        self.output_queue = Queue()
-        self.rank_calculator = Process(target=evaluation_process,
-                                       args=(self.result_queue, self.output_queue, 
-                                             self.model.config, self.model.model_name, self.tuning))
-        self.rank_calculator.start()
+        self.multiprocess = multiprocess
+        if self.multiprocess:
+            self.result_queue = Queue()
+            self.output_queue = Queue()
+            self.rank_calculator = Process(target=evaluation_process,
+                                           args=(self.result_queue, self.output_queue, 
+                                                 self.model.config, self.model.model_name, self.tuning))
+            self.rank_calculator.start()
 
     def stop(self):
         """Function that stops the evaluation process"""
-        self.rank_calculator.join()
-        self.rank_calculator.terminate()
+        if self.multiprocess:
+            self.rank_calculator.join()
+            self.rank_calculator.terminate()
 
-    def test_batch(self, epoch=None):
-        """Function that performs the batch testing"""
+    @tf.function
+    def test_step_batch(self, h_batch, r_batch, t_batch):
+        hrank, trank = self.model.test_batch(h_batch, r_batch, t_batch)
+        return hrank, trank
+
+    @tf.function
+    def test_tail_rank_multiclass(self, h, r, topk=-1):
+        rank = self.model.predict_tail(h, r, topk=topk)
+        return tf.squeeze(rank, 0)
+
+    @tf.function
+    def test_head_rank_multiclass(self, r, t, topk=-1):
+        rank = self.model.predict_head(t, r, topk=topk)
+        return tf.squeeze(rank, 0)
+
+    @tf.function
+    def test_tail_rank(self, h, r, topk=-1):
+        tot_ent = self.model.config.kg_meta.tot_entity
         
+        h_batch = tf.tile([h], [tot_ent])
+        r_batch = tf.tile([r], [tot_ent])
+        entity_array = tf.range(tot_ent)
+
+        return self.model.predict(h_batch, r_batch, entity_array, topk=topk)
+
+    @tf.function
+    def test_head_rank(self, r, t, topk=-1):
+        tot_ent = self.model.config.kg_meta.tot_entity
+        
+        entity_array = tf.range(tot_ent)
+        r_batch = tf.tile([r], [tot_ent])
+        t_batch = tf.tile([t], [tot_ent])
+    
+        return self.model.predict(entity_array, r_batch, t_batch, topk=topk)
+
+    @tf.function
+    def test_rel_rank(self, h, t, topk=-1):
+        tot_rel = self.model.config.kg_meta.tot_relation
+    
+        h_batch = tf.tile([h], [tot_rel])
+        rel_array = tf.range(tot_rel)
+        t_batch = tf.tile([t], [tot_rel])
+    
+        return self.model.predict(h_batch, rel_array, t_batch, topk=topk)
+
+    def test(self, epoch=None):
         print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
 
-        size_per_batch = self.model.config.batch_size_testing
-        head_rank, tail_rank = self.model.test_batch()
+        progress_bar = tf.keras.utils.Progbar(self.n_test)
 
-        widgets = ['Inferring for Evaluation: ', progressbar.AnimatedMarker(), " Done:",
-                   progressbar.Percentage(), " ", progressbar.AdaptiveETA()]
+        self.result_queue.put(self.TEST_BATCH_START)
+        for i in range(self.n_test):
+            h, r, t = self.eval_data[i].h, self.eval_data[i].r, self.eval_data[i].t
+            
+            # generate head batch and predict heads. Tensorflow handles broadcasting.
+            h_tensor = tf.convert_to_tensor(h, dtype=tf.int32)
+            r_tensor = tf.convert_to_tensor(r, dtype=tf.int32)
+            t_tensor = tf.convert_to_tensor(t, dtype=tf.int32)
 
-        self.result_queue.put("Start!")
-        with progressbar.ProgressBar(max_value=self.loop_len, widgets=widgets) as bar:
-            for i in range(self.loop_len):
-                data = np.asarray([[self.eval_data[x].h, self.eval_data[x].r, self.eval_data[x].t]
-                                   for x in range(size_per_batch * i, size_per_batch * (i + 1))])
-                h = data[:, 0]
-                r = data[:, 1]
-                t = data[:, 2]
+            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "proje_pointwise"]:
+                hrank = self.test_head_rank_multiclass(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
+                trank = self.test_tail_rank_multiclass(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
+            else:
+                hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
+                trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
+            
+            result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
 
-                feed_dict = {
-                    self.model.test_h_batch: h,
-                    self.model.test_r_batch: r,
-                    self.model.test_t_batch: t}
+            self.result_queue.put(result_data)
 
-                head_tmp, tail_tmp = np.squeeze(self.session.run([head_rank, tail_rank], feed_dict))
-                
-                result_data = [tail_tmp, head_tmp, h, r, t, epoch]
-                self.result_queue.put(result_data)
+            progress_bar.add(1)
 
-                bar.update(i)
-
-        self.result_queue.put("Stop!")
+        self.result_queue.put(self.TEST_BATCH_STOP) 
 
     def save_training_result(self, losses):
         """Function that saves training result"""

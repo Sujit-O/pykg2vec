@@ -9,16 +9,14 @@ import sys
 
 import numpy as np
 
-from pykg2vec.utils.evaluation import Evaluation
+from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator
 from pykg2vec.config.config import Importer, KGEArgParser
-from pykg2vec.config.global_config import GeneratorConfig
 from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
 from pykg2vec.config.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 from pykg2vec.utils.trainer import Trainer
-
 
 
 class KGPipeline:
@@ -73,7 +71,7 @@ class KGPipeline:
         args.dataset_name = self.dataset
         args.debug = self.debug
         # Preparing data and cache the data for later usage
-        knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling)
+        knowledge_graph = KnowledgeGraph(dataset=args.dataset_name)
         knowledge_graph.prepare_data()
 
         # Extracting the corresponding model config and definition from Importer().
@@ -85,8 +83,10 @@ class KGPipeline:
             config.__dict__[k]=v
         model = model_def(config)
 
+        if self.debug:
+            config.epochs = 1
         # Create, Compile and Train the model. While training, several evaluation will be performed.
-        trainer = Trainer(model=model, trainon='train_and_valid', teston='test',debug=args.debug)
+        trainer = Trainer(model=model, trainon='train_and_valid', teston='test',debug=self.debug)
         trainer.build_model()
         trainer.train_model()
 

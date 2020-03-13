@@ -4,8 +4,6 @@
 This module is for testing unit functions of model
 """
 import pytest
-import tensorflow as tf
-
 
 from pykg2vec.config.config import *
 from pykg2vec.utils.trainer import Trainer
@@ -15,13 +13,11 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
 @pytest.mark.skip(reason="This is a functional method.")
 def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=None, display=False):
     """Function to test the models with arguments."""
-    tf.reset_default_graph()
-    
     # getting the customized configurations from the command-line arguments.
     args = KGEArgParser().get_args([])
     
     # Preparing data and cache the data for later usage
-    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling)
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name)
     knowledge_graph.prepare_data()
     
     # Extracting the corresponding model config and definition from Importer().
@@ -59,22 +55,22 @@ def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=No
 
     trainer.exit_interactive_mode()
 
-@pytest.mark.parametrize("l1_flag", [True, False])
-def test_inference_transE_args(l1_flag):
+@pytest.mark.parametrize("model_name", ['transd', 'transe', 'transh', 'transm', 'transr', 'distmult', 'slm', 'sme'])
+def test_inference_transE_args(model_name):
     """Function to test Algorithms with arguments."""
-    testing_function_with_args('transd', l1_flag)
-    testing_function_with_args('transe', l1_flag)
-    testing_function_with_args('transh', l1_flag)
-    testing_function_with_args('transm', l1_flag)
-    testing_function_with_args('transr', l1_flag)
-    testing_function_with_args('conve', l1_flag)
-    testing_function_with_args('convkb', l1_flag)
-    testing_function_with_args('distmult', l1_flag)
-    testing_function_with_args('ntn', l1_flag)
-    testing_function_with_args('proje_pointwise', l1_flag)
-    testing_function_with_args('slm', l1_flag)
-    testing_function_with_args('sme', l1_flag)
-    testing_function_with_args('hole', l1_flag)
-    # testing_function_with_args('complex', l1_flag)
-    testing_function_with_args('rotate', l1_flag)
-    # testing_function_with_args('tucker', l1_flag)
+    testing_function_with_args(model_name, True)
+    # testing_function_with_args('transe', True)
+    # testing_function_with_args('transh', True)
+    # testing_function_with_args('transm', True)
+    # testing_function_with_args('transr', True)
+    # testing_function_with_args('conve', True)
+    # testing_function_with_args('convkb', True)
+    # testing_function_with_args('distmult', True)
+    # testing_function_with_args('ntn', True)
+    # testing_function_with_args('proje_pointwise', True)
+    # testing_function_with_args('slm', True)
+    # testing_function_with_args('sme', True)
+    # testing_function_with_args('hole', True)
+    # testing_function_with_args('complex', True)
+    # testing_function_with_args('rotate', True)
+    # testing_function_with_args('tucker', True)

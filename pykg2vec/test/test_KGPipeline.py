@@ -3,8 +3,6 @@
 """
 This module is for testing unit functions of KGPipeline
 """
-import pytest
-
 from pykg2vec.utils.KGPipeline import KGPipeline
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
@@ -17,4 +15,3 @@ def test_kgpipeline():
     kg_pipeline = KGPipeline(model="transe", dataset ="Freebase15k", debug=True)
     kg_pipeline.tune()
     kg_pipeline.test()
-

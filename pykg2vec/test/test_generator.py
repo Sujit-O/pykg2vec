@@ -3,67 +3,80 @@
 """
 This module is for testing unit functions of generator
 """
-import timeit
+import pytest
+import tensorflow as tf
 
-from pykg2vec.config.global_config import GeneratorConfig
+from pykg2vec.config.config import (
+    TransDConfig,
+    TransEConfig,
+    TransGConfig,
+    TransHConfig,
+    TransMConfig,
+    TransRConfig,
+)
 from pykg2vec.utils.generator import Generator
-from pykg2vec.config.config import TransEConfig
 from pykg2vec.config.config import ProjE_pointwiseConfig, KGEArgParser
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 
 def test_generator_proje():
     """Function to test the generator for ProjE algorithm."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
 
-    args = KGEArgParser().get_args([])
+    dummy_config = ProjE_pointwiseConfig(KGEArgParser().get_args([]))
+    generator = Generator(dummy_config, training_strategy='projection_based')
 
-    config = ProjE_pointwiseConfig(args=args)
-
-    gen = iter(Generator(config=GeneratorConfig(data='train', algo='ProjE'), model_config=config))
-    
-    for i in range(1000):
-        data = list(next(gen))
-        print("----batch:", i)
-        
-        hr_hr = data[0]
-        hr_t = data[1]
-        tr_tr = data[2]
-        tr_h = data[3]
-
-        print("hr_hr:", hr_hr)
-        print("hr_t:", hr_t)
-        print("tr_tr:", tr_tr)
-        print("tr_h:", tr_h)
-    gen.stop()
-
-def test_generator_trane():
-    """Function to test the generator for Translation distance based algorithm."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
-    knowledge_graph.force_prepare_data()
-    
-    args = KGEArgParser().get_args([])
-    
-    start_time = timeit.default_timer()
-    
-    config = TransEConfig(args)
-
-    gen = Generator(config=GeneratorConfig(data='train', algo='transe'), model_config=config)
-
-    print("----init time:", timeit.default_timer() - start_time)
-    
     for i in range(10):
-        start_time_batch = timeit.default_timer()
-        data = list(next(gen))
+        data = list(next(generator))
+        assert len(data) == 5
+
         h = data[0]
         r = data[1]
         t = data[2]
-        # hr_t = data[3]
-        # tr_h = data[4]
-        print("----batch:", i, "----time:",timeit.default_timer() - start_time_batch)
-        print(h,r,t)
+        hr_t = data[3]
+        tr_h = data[4]
+        assert len(h) == len(r)
+        assert len(h) == len(t)
+        assert isinstance(hr_t, tf.SparseTensor)
+        assert isinstance(tr_h, tf.SparseTensor)
 
-    print("total time:", timeit.default_timer() - start_time)
-    
-    gen.stop()
+    generator.stop()
+
+    ## pass if no exception raised amid the process.
+
+@pytest.mark.parametrize('Config', [
+    TransDConfig,
+    TransEConfig,
+    TransGConfig,
+    TransHConfig,
+    TransMConfig,
+    TransRConfig,
+])
+def test_generator_trans(Config):
+    """Function to test the generator for Translation distance based algorithm."""
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
+    knowledge_graph.force_prepare_data()
+
+    dummy_config = Config(KGEArgParser().get_args([]))
+    generator = Generator(dummy_config, training_strategy='pairwise_based')
+
+    for i in range(10):
+        data = list(next(generator))
+        assert len(data) == 6
+
+        ph = data[0]
+        pr = data[1]
+        pt = data[2]
+        nh = data[3]
+        nr = data[4]
+        nt = data[5]
+        assert len(ph) == len(pr)
+        assert len(ph) == len(pt)
+        assert len(ph) == len(nh)
+        assert len(ph) == len(nr)
+        assert len(ph) == len(nt)
+
+    generator.stop()
+
+    ## pass if no exception raised amid the process.

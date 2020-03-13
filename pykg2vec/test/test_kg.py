@@ -1,40 +1,17 @@
-import os
+import os, pytest
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
-
-def test_fb15k():
+@pytest.mark.parametrize("dataset_name", ["freebase15k", "wordnet18", "wordnet18_rr", "yago3_10"])
+def test_benchmarks(dataset_name):
     """Function to test the the knowledge graph parse for Freebase."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
-    knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
-
-def test_dl50a():
-    """Function to test the the knowledge graph parse for Deep learning knowledge base."""
-    knowledge_graph = KnowledgeGraph(dataset="deeplearning50a", negative_sample="uniform")
-    knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
-
-def test_wn18():
-    """Function to test the the knowledge graph parse for Wordnet dataset."""
-    knowledge_graph = KnowledgeGraph(dataset="wordnet18", negative_sample="uniform")
-    knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
-
-def test_wn18rr():
-    """Function to test the the knowledge graph parse for Wordnet Dataset."""
-    knowledge_graph = KnowledgeGraph(dataset="wordnet18_rr", negative_sample="uniform")
-    knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
-
-def test_yago():
-    """Function to test the the knowledge graph parse for Yago Dataset."""
-    knowledge_graph = KnowledgeGraph(dataset="yago3_10", negative_sample="uniform")
+    print("testing downloading from online sources of benchmarks and KG controller's handling.")
+    knowledge_graph = KnowledgeGraph(dataset=dataset_name)
     knowledge_graph.force_prepare_data()
     knowledge_graph.dump()
 
 def test_fb15k_manipulate():
     """Function to test the the knowledge graph parse for Freebase and basic operations."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="bern")
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
     knowledge_graph.dump()
 
@@ -50,7 +27,7 @@ def test_fb15k_manipulate():
 
 def test_fb15k_meta():
     """Function to test the the knowledge graph parse for Freebase and basic operations."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="bern")
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
     knowledge_graph.dump()
 
@@ -63,7 +40,7 @@ def test_fb15k_meta():
 
 def test_userdefined_dataset():
     custom_dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resource/custom_dataset")
-    knowledge_graph = KnowledgeGraph(dataset="userdefineddataset", negative_sample="uniform", custom_dataset_path=custom_dataset_path)
+    knowledge_graph = KnowledgeGraph(dataset="userdefineddataset", custom_dataset_path=custom_dataset_path)
     knowledge_graph.prepare_data()
     knowledge_graph.dump()
 
