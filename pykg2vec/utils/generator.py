@@ -8,8 +8,10 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-from multiprocessing import Process, Queue
 import tensorflow as tf
+from multiprocessing import Process, Queue
+from enum import Enum
+
 
 def raw_data_generator(raw_queue, processed_queue, config):
     """Function to feed  triples to raw queue for multiprocessing.
@@ -280,7 +282,7 @@ class Generator:
             >>> from pykg2vec.utils.generator import Generator
             >>> from pykg2vec.core.TransE impor TransE
             >>> model = TransE()
-            >>> gen_train = Generator(model.config, training_strategy="pairwise_based")
+            >>> gen_train = Generator(model.config, training_strategy=TrainingStrategy.PAIRWISE_BASED)
     """
 
     def __init__(self, config, training_strategy=None):
@@ -318,14 +320,19 @@ class Generator:
     def create_train_processor_process(self):
         """Function ro create the process for generating training samples."""
         for i in range(self.config.num_process_gen):
-            if self.training_strategy == "projection_based":
+            if self.training_strategy == TrainingStrategy.PROJECTION_BASED:
                 process_worker = Process(target=process_function_multiclass, args=(self.raw_queue, self.processed_queue, self.config))
-            elif self.training_strategy == "pairwise_based":
+            elif self.training_strategy == TrainingStrategy.PAIRWISE_BASED:
                 process_worker = Process(target=process_function_pairwise, args=(self.raw_queue, self.processed_queue, self.config))
-            elif self.training_strategy == "pointwise_based":
+            elif self.training_strategy == TrainingStrategy.POINTWISE_BASED:
                 process_worker = Process(target=process_function_pointwise, args=(self.raw_queue, self.processed_queue, self.config))
             else:
                 raise NotImplementedError("This strategy is not supported.")
             self.process_list.append(process_worker)
             process_worker.daemon = True
             process_worker.start()
+
+class TrainingStrategy(Enum):
+    PROJECTION_BASED = "projection_based"
+    PAIRWISE_BASED = "pairwise_based"
+    POINTWISE_BASED = "pointwise_based"
