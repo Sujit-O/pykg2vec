@@ -144,7 +144,6 @@ class MetricCalculator:
         return self.mr[self.epoch]
 
 
-
     def save_test_summary(self, model_name):
         """Function to save the test of the summary.
                
@@ -221,7 +220,6 @@ class Evaluator(EvaluationMeta):
 
         Args:
             model (object): Model object
-            data_type (str): evaluating 'test' or 'valid'
             tuning (bool): Flag to denoting tuning if True
 
         Examples:
@@ -232,31 +230,12 @@ class Evaluator(EvaluationMeta):
             >>> evaluator.stop()
     """
 
-    def __init__(self, model, data_type='valid', tuning=False):
+    def __init__(self, model, tuning=False):
         
         self.model = model
         self.tuning = tuning
-
-        if data_type == 'test':
-            self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_test')
-        elif data_type == 'valid':
-            self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
-        else:
-            raise NotImplementedError("%s datatype is not available!" % data_type)
-
-        tot_rows_data = len(self.eval_data)
-
-        '''
-            n_test: number of triplets to be tested
-            1) if n_test == 0, test all the triplets. 
-            2) if n_test >= # of testable triplets, then set n_test to # of testable triplets
-        '''
-        self.n_test = self.model.config.test_num
-        if self.n_test == 0:
-            self.n_test = tot_rows_data
-        else:
-            self.n_test = min(self.n_test, tot_rows_data)
-
+        self.test_data = self.model.config.knowledge_graph.read_cache_data('triplets_test')
+        self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
         self.metric_calculator = MetricCalculator(self.model.config)
 
     @tf.function
@@ -271,43 +250,51 @@ class Evaluator(EvaluationMeta):
 
     @tf.function
     def test_tail_rank(self, h, r, topk=-1):
-        tot_ent = self.model.config.kg_meta.tot_entity
-        
-        h_batch = tf.tile([h], [tot_ent])
-        r_batch = tf.tile([r], [tot_ent])
-        entity_array = tf.range(tot_ent)
-
+        h_batch = tf.tile([h], [self.model.config.kg_meta.tot_entity])
+        r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
+        entity_array = tf.range(self.model.config.kg_meta.tot_entity)
         return self.model.predict(h_batch, r_batch, entity_array, topk=topk)
 
     @tf.function
     def test_head_rank(self, r, t, topk=-1):
-        tot_ent = self.model.config.kg_meta.tot_entity
-        
-        entity_array = tf.range(tot_ent)
-        r_batch = tf.tile([r], [tot_ent])
-        t_batch = tf.tile([t], [tot_ent])
-    
+        entity_array = tf.range(self.model.config.kg_meta.tot_entity)
+        r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
+        t_batch = tf.tile([t], [self.model.config.kg_meta.tot_entity])
         return self.model.predict(entity_array, r_batch, t_batch, topk=topk)
 
     @tf.function
     def test_rel_rank(self, h, t, topk=-1):
-        tot_rel = self.model.config.kg_meta.tot_relation
-    
-        h_batch = tf.tile([h], [tot_rel])
-        rel_array = tf.range(tot_rel)
-        t_batch = tf.tile([t], [tot_rel])
-    
+        h_batch = tf.tile([h], [self.model.config.kg_meta.tot_relation])
+        rel_array = tf.range(self.model.config.kg_meta.tot_relation)
+        t_batch = tf.tile([t], [self.model.config.kg_meta.tot_relation])
         return self.model.predict(h_batch, rel_array, t_batch, topk=topk)
 
-    def test(self, epoch=None):
-        print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
+    def mini_test(self, epoch=None):
+        if self.model.config.test_num == 0:
+            tot_valid_to_test = len(self.eval_data)
+        else:
+            tot_valid_to_test = min(self.model.config.test_num, len(self.eval_data))
+        if self.model.config.debug: 
+            tot_valid_to_test = 10
 
-        progress_bar = tf.keras.utils.Progbar(self.n_test)
+        print("Mini-Testing on [%d/%d] Triples in the valid set." % (tot_valid_to_test, len(self.eval_data)))
+        return self.test(self.eval_data, tot_valid_to_test, epoch=epoch)
 
+    def full_test(self, epoch=None):
+        tot_valid_to_test = len(self.test_data)
+        if self.model.config.debug:
+            tot_valid_to_test  = 10
+
+        print("Full-Testing on [%d/%d] Triples in the test set." % (tot_valid_to_test, len(self.test_data)))
+        return self.test(self.test_data, tot_valid_to_test, epoch=epoch)
+
+    def test(self, data, num_of_test, epoch=None):
         self.metric_calculator.reset()
+        
+        progress_bar = tf.keras.utils.Progbar(num_of_test)
 
-        for i in range(self.n_test):
-            h, r, t = self.eval_data[i].h, self.eval_data[i].r, self.eval_data[i].t
+        for i in range(num_of_test):
+            h, r, t = data[i].h, data[i].r, data[i].t
             
             # generate head batch and predict heads. Tensorflow handles broadcasting.
             h_tensor = tf.convert_to_tensor(h, dtype=tf.int32)
@@ -334,5 +321,3 @@ class Evaluator(EvaluationMeta):
             self.metric_calculator.save_test_summary(self.model.model_name)
 
         return self.metric_calculator.get_curr_score()
-
-

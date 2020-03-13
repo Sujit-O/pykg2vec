@@ -38,13 +38,11 @@ class Trainer(TrainerMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
     """
-    def __init__(self, model, trainon='train', teston='valid'):
+    def __init__(self, model):
         self.model = model
         self.config = self.model.config
         self.debug = self.config.debug
         self.training_results = []
-        self.trainon = trainon
-        self.teston = teston
 
         self.evaluator = None
         self.generator = None
@@ -72,6 +70,7 @@ class Trainer(TrainerMeta):
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
         
+        # For optimizer that has not supported gpu computation in TF2, place parameters in cpu. 
         if self.config.optimizer in ['rms', 'adagrad', 'adadelta']:
             with tf.device('cpu:0'):
                 self.model.def_parameters()
@@ -120,7 +119,7 @@ class Trainer(TrainerMeta):
         ### Early Stop Mechanism
 
         self.generator = Generator(self.model.config, training_strategy=self.training_strategy)
-        self.evaluator = Evaluator(model=self.model, data_type=self.teston)
+        self.evaluator = Evaluator(model=self.model)
 
         if self.config.loadFromData:
             self.load_model()
@@ -128,8 +127,10 @@ class Trainer(TrainerMeta):
         for cur_epoch_idx in range(self.config.epochs):
             print("Epoch[%d/%d]"%(cur_epoch_idx,self.config.epochs))
             loss = self.train_model_epoch(cur_epoch_idx)
-            self.test(cur_epoch_idx)
 
+            if cur_epoch_idx % self.config.test_step == 0:
+                mini_result = self.evaluator.mini_test(cur_epoch_idx)
+            
             ### Early Stop Mechanism
             ### start to check if the loss is still decreasing after an interval. 
             ### Example, if early_stop_epoch == 50, the trainer will check loss every 50 epoche.
@@ -148,6 +149,8 @@ class Trainer(TrainerMeta):
 
             previous_loss = loss
             ### Early Stop Mechanism
+
+        self.evaluator.full_test(self.config.epochs)
 
         self.generator.stop()
         self.save_training_result(self.training_results)
@@ -175,7 +178,7 @@ class Trainer(TrainerMeta):
         ### Early Stop Mechanism
 
         self.generator = Generator(self.model.config, training_strategy=self.training_strategy)
-        self.evaluator = Evaluator(model=self.model,data_type=self.teston, tuning=True)
+        self.evaluator = Evaluator(model=self.model, tuning=True)
        
         for cur_epoch_idx in range(self.config.epochs):
             loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
@@ -197,7 +200,7 @@ class Trainer(TrainerMeta):
 
             previous_loss = loss
 
-        acc = self.evaluator.test(cur_epoch_idx)
+        acc = self.evaluator.full_test(cur_epoch_idx)
 
         self.generator.stop()
         
@@ -245,25 +248,6 @@ class Trainer(TrainerMeta):
         self.training_results.append([epoch_idx, acc_loss.numpy()])
 
         return acc_loss.numpy()
-
-    ''' Testing related functions:'''
-
-    def test(self, curr_epoch):
-        """function to test the model.
-           
-           Args:
-                curr_epoch (int): The current epoch number.
-        """
-        if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
-                                               curr_epoch == 0 or
-                                               curr_epoch == self.config.epochs - 1):
-            self.evaluator.test(curr_epoch)
-        else:
-            if curr_epoch == self.config.epochs - 1:
-                self.evaluator.test(curr_epoch)
-
-
-    ''' Interactive Inference related '''
    
     def enter_interactive_mode(self):
         self.build_model()
