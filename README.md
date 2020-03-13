@@ -87,7 +87,7 @@ $ python train.py -mn TransE
 $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
                        distmult|KG2E|NTN|Rescal|SLM|SME|HoLE|ConvE|ConvKB|Proje_pointwise]
 
-# For KGE using projection-based batch generation, use more processes to train 
+# For KGE using projection-based loss function, use more processes for batch generation.
 $ python train.py -mn [ConvE|ConvKB|Proje_pointwise] -npg [# of processes, 4 or 6]
 
 # Train TransE model using different benchmark datasets.
