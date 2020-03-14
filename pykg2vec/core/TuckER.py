@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
+from pykg2vec.core.KGMeta import ModelMeta
 from pykg2vec.utils.generator import TrainingStrategy
 
-class TuckER(ModelMeta, InferenceMeta):
+class TuckER(ModelMeta):
     """ `TuckER-Tensor Factorization for Knowledge Graph Completion`_
 
         TuckER is a Tensor-factorization-based embedding technique based on
@@ -40,38 +40,12 @@ class TuckER(ModelMeta, InferenceMeta):
     """
 
     def __init__(self, config=None):
+        super(TuckER, self).__init__()
         self.config = config
-        self.data_stats = self.config.kg_meta
         self.model_name = 'TuckER'
-        
-        self.def_layer()
-
         self.training_strategy = TrainingStrategy.PROJECTION_BASED
         
-        raise NotImplementedError("TransG is yet finished in pykg2vec.")
-
-    def def_inputs(self):
-        """Defines the inputs to the model.
-
-           Attributes:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               hr_t (Tensor): Tail tensor list for (h,r) pair.
-               rt_h (Tensor): Head tensor list for (r,t) pair.
-               test_h_batch (Tensor): Batch of head ids for testing.
-               test_r_batch (Tensor): Batch of relation ids for testing
-               test_t_batch (Tensor): Batch of tail ids for testing.
-        """
-        self.h = tf.placeholder(tf.int32, [None])
-        self.r = tf.placeholder(tf.int32, [None])
-        self.t = tf.placeholder(tf.int32, [None])
-        self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-        self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-
-        self.test_h_batch = tf.placeholder(tf.int32, [None])
-        self.test_t_batch = tf.placeholder(tf.int32, [None])
-        self.test_r_batch = tf.placeholder(tf.int32, [None])
+        # raise NotImplementedError("TransG is yet finished in pykg2vec.")
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -87,29 +61,22 @@ class TuckER(ModelMeta, InferenceMeta):
                W (Tensor Varible): Transformation matrix.
         """
 
-        num_total_ent = self.data_stats.tot_entity
-        num_total_rel = self.data_stats.tot_relation
+        num_total_ent = self.config.kg_meta.tot_entity
+        num_total_rel = self.config.kg_meta.tot_relation
         self.d1 = self.config.ent_hidden_size
         self.d2 = self.config.rel_hidden_size
+        
+        emb_initializer = tf.initializers.glorot_normal()
 
-        with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, self.d1],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, self.d2],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-        with tf.name_scope("W"):
-            self.W = tf.get_variable(name="W", shape=[self.d2, self.d1, self.d1],
-                                     initializer=tf.initializers.random_uniform(minval=-1, maxval=1))
+        self.ent_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, self.d1)), name="ent_embedding")
+        self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, self.d2)), name="rel_embedding")
+        self.W = tf.Variable(emb_initializer(shape=(self.d2, self.d1, self.d1)), name="W")
+
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.W]
-
-    def def_layer(self):
-        """Defines the layers of the algorithm."""
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
         self.hidden_dropout1 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout1)
         self.hidden_dropout2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout2)
 
-        self.bn0 = tf.keras.layers.BatchNormalization(trainable=True)
-        self.bn1 = tf.keras.layers.BatchNormalization(trainable=True)
 
     def forward(self, e1, r):
         """Implementation of the layer.
@@ -121,112 +88,48 @@ class TuckER(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns the activation values.
         """
-        norm_E = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        norm_R = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        e1 = tf.nn.embedding_lookup(norm_E, e1)
-        rel = tf.squeeze(tf.nn.embedding_lookup(norm_R, r))
-
-        e1 = self.bn0(e1)
+        e1 = tf.nn.embedding_lookup(self.ent_embeddings, e1)
+        e1 = tf.nn.l2_normalize(e1, axis=1)
         e1 = self.inp_drop(e1)
-        e1 = tf.reshape(e1, [-1, 1, self.config.ent_hidden_size])
+        e1 = tf.reshape(e1, [-1, 1, self.d1])
 
+        rel = tf.nn.embedding_lookup(self.rel_embeddings, r)
         W_mat = tf.matmul(rel, tf.reshape(self.W, [self.d2, -1]))
         W_mat = tf.reshape(W_mat, [-1, self.d1, self.d1])
         W_mat = self.hidden_dropout1(W_mat)
 
         x = tf.matmul(e1, W_mat)
         x = tf.reshape(x, [-1, self.d1])
-        x = self.bn1(x)
+        x = tf.nn.l2_normalize(x, axis=1)
         x = self.hidden_dropout2(x)
-        x = tf.matmul(x, tf.transpose(norm_E))
+        x = tf.matmul(x, self.ent_embeddings, transpose_b=True)
         return tf.nn.sigmoid(x)
 
-    def def_loss(self):
+    def get_loss(self, h, r, t, hr_t, tr_h):
         """Defines the loss function for the algorithm."""
-        pred_tails = self.forward(self.h, self.r)
-        pred_heads = self.forward(self.t, self.r)
+        pred_tails = self.forward(h, r)
+        pred_heads = self.forward(t, r)
 
-        hr_t = self.hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
-        rt_h = self.rt_h * (1.0 - self.config.label_smoothing) + 1.0 / self.data_stats.tot_entity
+        hr_t = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(hr_t)), dtype=tf.float32)
+        tr_h = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(tr_h)), dtype=tf.float32)
+        
+        hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+        tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
 
         loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
-        loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(rt_h, pred_heads))
+        loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(tr_h, pred_heads))
 
-        reg_losses = tf.nn.l2_loss(self.ent_embeddings) + tf.nn.l2_loss(self.rel_embeddings) + tf.nn.l2_loss(self.W)
+        loss = loss_heads + loss_tails
 
-        self.loss = loss_heads + loss_tails + self.config.lmbda * reg_losses
+        return loss
 
-    def test_batch(self):
-        """Function that performs batch testing for the algorithm.
+    def predict_tail(self, e, r, topk=-1):
+        # import pdb; pdb.set_trace()
+        e = tf.reshape(e, [-1])
+        r = tf.reshape(r, [-1])
+        predictions = self.forward(e, r)
+        _, rank = tf.nn.top_k(-predictions, k=topk)
+        return rank
 
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        pred_tails = self.forward(self.test_h_batch, self.test_r_batch)
-        pred_heads = self.forward(self.test_t_batch, self.test_r_batch)
-
-        _, head_rank = tf.nn.top_k(pred_tails, k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(pred_heads, k=self.data_stats.tot_entity)
-
-        return head_rank, tail_rank
-
-    # Override
-    def dissimilarity(self, h, r, t):
-        """Function to calculate dissimilarity measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensors: Returns the dissimilarity measure.
-        """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
-
-    def embed(self, h, r, t):
-        """Function to get the embedding value.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-            Returns:
-                Tensors: Returns real and imaginary values of head, relation and tail embedding.
-        """
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
-        return emb_h, emb_r, emb_t
-
-    def get_embed(self, h, r, t, sess=None):
-        """Function to get the embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-            Returns:
-                Tensors: Returns real and imaginary values of head, relation and tail embedding.
-        """
-        emb_h, emb_r, emb_t = self.embed(h, r, t)
-        h, r, t = sess.run([emb_h, emb_r, emb_t])
-        return h, r, t
-
-    def get_proj_embed(self, h, r, t, sess):
-        """Function to get the projected embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-        """
-        return self.get_embed(h, r, t, sess)
+    def predict_head(self, e, r, topk=-1):
+        return self.predict_tail(e, r, topk=topk)
