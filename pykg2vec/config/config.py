@@ -39,6 +39,7 @@ class Importer:
         self.config_path = "pykg2vec.config.config"
 
         self.modelMap = {"complex": "Complex",
+                         "complexn3": "ComplexN3",
                          "conve": "ConvE",
                          "convkb": "ConvKB",
                          "hole": "HoLE",
@@ -59,6 +60,7 @@ class Importer:
                          "tucker": "TuckER"}
 
         self.configMap = {"complex": "ComplexConfig",
+                          "complexn3": "ComplexConfig",
                           "conve": "ConvEConfig",
                           "convkb": "ConvKBConfig",
                           "hole": "HoLEConfig",
@@ -177,7 +179,6 @@ class KGEArgParser:
         self.environment_group = self.parser.add_argument_group('Working Environments')
         self.environment_group.add_argument('-gp',  dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
         self.environment_group.add_argument('-npg', dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
-        self.environment_group.add_argument('-npe', dest='num_process_evl', default=1, type=int, help='number of processes used in the Evaluator.')
 
         ''' basic configs '''
         self.general_group = self.parser.add_argument_group('Generic')
@@ -262,7 +263,6 @@ class BasicConfig:
         
         # Working environment variables.
         self.num_process_gen = args.num_process_gen
-        self.num_process_evl = args.num_process_evl
         self.log_device_placement = False
         self.gpu_fraction = args.gpu_frac
         self.gpu_allow_growth = True
@@ -1337,73 +1337,56 @@ class TuckERConfig(BasicConfig):
     
     """
     def __init__(self, args=None):
+        self.lmbda = 0.1
+        self.input_dropout = 0.3
+        self.hidden_dropout2 = 0.5
+        self.hidden_dropout1 = 0.4
+        self.label_smoothing = 0
 
-        if args is None or args.exp is True:
-            self.lmbda = 0.1
-            self.feature_map_dropout = 0.2
-            self.input_dropout = 0.2
-            self.hidden_dropout2 = 0.3
-            self.hidden_dropout1 = 0.3
-            self.use_bias = True
-            self.label_smoothing = 0.1
-            self.lr_decay = 0.995
+        self.learning_rate = 0.0005
+        self.rel_hidden_size = 200
+        self.ent_hidden_size = 200
+        self.batch_size = 128
+        self.epochs = 500
+        self.data = 'Freebase15k'
+        self.optimizer = 'adam'
+        self.sampling = "uniform"
+        self.neg_rate = 0
 
-            self.learning_rate = 0.003
-            self.L1_flag = True
-            self.hidden_size = 50
-            self.rel_hidden_size = 50
-            self.ent_hidden_size = 50
-            self.batch_size = 128
-            self.epochs = 2
-            self.margin = 1.0
-            self.data = 'Freebase15k'
-            self.optimizer = 'adam'
-            self.sampling = "uniform"
-            self.neg_rate = 1
+        # else:
+        #     self.lmbda = args.lmbda
+        #     self.feature_map_dropout = args.feature_map_dropout
+        #     self.input_dropout = args.input_dropout
+        #     self.hidden_dropout1 = args.hidden_dropout
+        #     self.hidden_dropout2 = args.hidden_dropout2
+        #     self.use_bias = args.use_bias
+        #     self.label_smoothing = args.label_smoothing
+        #     self.lr_decay = args.lr_decay
 
-        else:
-            self.lmbda = args.lmbda
-            self.feature_map_dropout = args.feature_map_dropout
-            self.input_dropout = args.input_dropout
-            self.hidden_dropout1 = args.hidden_dropout
-            self.hidden_dropout2 = args.hidden_dropout2
-            self.use_bias = args.use_bias
-            self.label_smoothing = args.label_smoothing
-            self.lr_decay = args.lr_decay
-
-            self.learning_rate = args.learning_rate
-            self.L1_flag = args.l1_flag
-            self.rel_hidden_size = args.rel_hidden_size
-            self.ent_hidden_size = args.ent_hidden_size
-            self.batch_size = args.batch_training
-            self.epochs = args.epochs
-            self.margin = args.margin
-            self.data = args.dataset_name
-            self.optimizer = args.optimizer
-            self.sampling = args.sampling
-            self.neg_rate = args.negrate
+        #     self.learning_rate = args.learning_rate
+        #     self.L1_flag = args.l1_flag
+        #     self.rel_hidden_size = args.rel_hidden_size
+        #     self.ent_hidden_size = args.ent_hidden_size
+        #     self.batch_size = args.batch_training
+        #     self.epochs = args.epochs
+        #     self.margin = args.margin
+        #     self.data = args.dataset_name
+        #     self.optimizer = args.optimizer
+        #     self.sampling = args.sampling
+        #     self.neg_rate = args.negrate
 
         self.hyperparameters = {
             'lmbda': self.lmbda,
-            'feature_map_dropout': self.feature_map_dropout,
             'input_dropout': self.input_dropout,
             'hidden_dropout1': self.hidden_dropout1,
             'hidden_dropout2': self.hidden_dropout2,
-            'use_bias': self.use_bias,
             'label_smoothing': self.label_smoothing,
-            'lr_decay': self.lr_decay,
-
             'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
             'rel_hidden_size': self.rel_hidden_size,
             'ent_hidden_size': self.ent_hidden_size,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)
