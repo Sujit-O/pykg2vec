@@ -14,6 +14,7 @@ import timeit
 from multiprocessing import Process, Queue
 import tensorflow as tf
 from pykg2vec.core.KGMeta import EvaluationMeta
+from pykg2vec.utils.generator import TrainingStrategy
 
 
 class MetricCalculator:
@@ -301,7 +302,7 @@ class Evaluator(EvaluationMeta):
             r_tensor = tf.convert_to_tensor(r, dtype=tf.int32)
             t_tensor = tf.convert_to_tensor(t, dtype=tf.int32)
 
-            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "proje_pointwise"]:
+            if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
                 hrank = self.test_head_rank_multiclass(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
                 trank = self.test_tail_rank_multiclass(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
             else:
