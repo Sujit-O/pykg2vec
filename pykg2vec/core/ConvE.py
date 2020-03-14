@@ -148,8 +148,8 @@ class ConvE(ModelMeta):
         hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
         tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
 
-        loss_tail_pred = tf.reduce_sum(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
-        loss_head_pred = tf.reduce_sum(tf.keras.backend.binary_crossentropy(tr_h, pred_heads))
+        loss_tail_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
+        loss_head_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(tr_h, pred_heads))
 
         loss = loss_tail_pred + loss_head_pred
 
