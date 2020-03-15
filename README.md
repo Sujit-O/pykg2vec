@@ -37,12 +37,14 @@ $ pip install pykg2vec
 # (Suggested!) Install stable version directly from github repo:
 $ git clone https://github.com/Sujit-O/pykg2vec.git
 $ cd pykg2vec
+$ pip install -r requirements.txt
 $ python setup.py install
 
 #Install development version directly from github repo:  
 $ git clone https://github.com/Sujit-O/pykg2vec.git
 $ cd pykg2vec
 $ git checkout development
+$ pip install -r requirements.txt
 $ python setup.py install
 ```
 
