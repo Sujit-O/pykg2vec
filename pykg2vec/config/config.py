@@ -8,11 +8,11 @@ across all the algorithms, and local parameters which are specific to the algori
 
 """
 
-import tensorflow as tf
 from argparse import ArgumentParser
 import importlib
 
 from pykg2vec.utils.kgcontroller import KnowledgeGraph, KGMetaData
+from pykg2vec.utils.logger import Logger
 from pykg2vec.config.hyperparams import HyperparamterLoader
 
 class Importer:
@@ -34,6 +34,8 @@ class Importer:
         >>> model = model_def(config)
 
     """
+    _LOG = Logger().get_logger(__name__)
+
     def __init__(self):
         self.model_path = "pykg2vec.core"
         self.config_path = "pykg2vec.config.config"
@@ -105,7 +107,7 @@ class Importer:
           model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % self.modelMap[name]),
                               self.modelMap[name])
       except ModuleNotFoundError:
-          print("%s model  has not been implemented. please select from: %s" % (
+          self.__class__._LOG.error("%s model  has not been implemented. please select from: %s" % (
           name, ' '.join(map(str, self.modelMap.values()))))
 
       return config_obj, model_obj
@@ -239,6 +241,8 @@ class BasicConfig:
       kg_meta (object): Stores the statistics metadata of the knowledge graph.
     
     """
+    _LOG = Logger().get_logger(__name__)
+
     def __init__(self, args):
         # Training and evaluating related variables
         self.test_step = args.test_step
@@ -292,7 +296,9 @@ class BasicConfig:
 
     def summary(self):
         """Function to print the summary."""
-        print("\n------------------Global Setting--------------------")
+        summary = []
+        summary.append("")
+        summary.append("------------------Global Setting--------------------")
         # Acquire the max length and add four more spaces
         maxspace = len(max([k for k in self.__dict__.keys()])) +20
         for key, val in self.__dict__.items():
@@ -305,19 +311,24 @@ class BasicConfig:
             if len(key) < maxspace:
                 for i in range(maxspace - len(key)):
                     key = ' ' + key
-            print("%s : %s"%(key, val))
-        print("---------------------------------------------------")
+            summary.append("%s : %s"%(key, val))
+        summary.append("---------------------------------------------------")
+        summary.append("")
+        self.__class__._LOG.info("\n".join(summary))
 
     def summary_hyperparameter(self, model_name):
         """Function to print the hyperparameter summary."""
-        print("\n-----------%s Hyperparameter Setting-------------"%(model_name))
+        summary_hyperparameter = []
+        summary_hyperparameter.append("")
+        summary_hyperparameter.append("-----------%s Hyperparameter Setting-------------"%(model_name))
         maxspace = len(max([k for k in self.hyperparameters.keys()])) + 15
         for key,val in self.hyperparameters.items():
             if len(key) < maxspace:
                 for i in range(maxspace - len(key)):
                     key = ' ' + key
-            print("%s : %s" % (key, val))
-        print("---------------------------------------------------")
+            summary_hyperparameter.append("%s : %s" % (key, val))
+        summary_hyperparameter.append("---------------------------------------------------")
+        self.__class__._LOG.info("\n".join(summary_hyperparameter))
 
 
 class TransEConfig(BasicConfig):

@@ -11,6 +11,7 @@ from pykg2vec.core.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator, TrainingStrategy
+from pykg2vec.utils.logger import Logger
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 tf.config.set_soft_device_placement(True)
@@ -38,6 +39,8 @@ class Trainer(TrainerMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
     """
+    _LOG = Logger().get_logger(__name__)
+
     def __init__(self, model):
         self.model = model
         self.config = model.config
@@ -117,7 +120,7 @@ class Trainer(TrainerMeta):
             self.load_model()
         
         for cur_epoch_idx in range(self.config.epochs):
-            print("Epoch[%d/%d]"%(cur_epoch_idx,self.config.epochs))
+            self.__class__._LOG.info("Epoch[%d/%d]"%(cur_epoch_idx,self.config.epochs))
             loss = self.train_model_epoch(cur_epoch_idx)
 
             if cur_epoch_idx % self.config.test_step == 0:
@@ -130,11 +133,11 @@ class Trainer(TrainerMeta):
             if ((cur_epoch_idx + 1) % self.config.early_stop_epoch) == 0: 
                 if patience_left > 0 and previous_loss <= loss:
                     patience_left -= 1
-                    print('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
+                    self.__class__._LOG.info('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
                         (patience_left, previous_loss, loss))
 
                 elif patience_left == 0 and previous_loss <= loss:
-                    print('Stop the training.')
+                    self.__class__._LOG.info('Stop the training.')
                     break
                 else:
                     patience_left = self.config.patience
@@ -181,11 +184,11 @@ class Trainer(TrainerMeta):
             if ((cur_epoch_idx + 1) % self.config.early_stop_epoch) == 0: 
                 if patience_left > 0 and previous_loss <= loss:
                     patience_left -= 1
-                    print('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
+                    self.__class__._LOG.info('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
                         (patience_left, previous_loss, loss))
 
                 elif patience_left == 0 and previous_loss <= loss:
-                    print('Stop the training.')
+                    self.__class__._LOG.info('Stop the training.')
                     break
                 else:
                     patience_left = self.config.patience
@@ -246,59 +249,72 @@ class Trainer(TrainerMeta):
         self.load_model()
 
         self.evaluator = Evaluator(self.model)
-        print("The training/loading of the model has finished!\nNow enter interactive mode :)")
-        print("-----")
-        print("Example 1: trainer.infer_tails(1,10,topk=5)")
+        self.__class__._LOG.info("""The training/loading of the model has finished!
+                                    Now enter interactive mode :)
+                                    -----
+                                    Example 1: trainer.infer_tails(1,10,topk=5)""")
         self.infer_tails(1,10,topk=5)
 
-        print("-----")
-        print("Example 2: trainer.infer_heads(10,20,topk=5)")
+        self.__class__._LOG.info("""-----
+                                    Example 2: trainer.infer_heads(10,20,topk=5)""")
         self.infer_heads(10,20,topk=5)
 
-        print("-----")
-        print("Example 3: trainer.infer_rels(1,20,topk=5)")
+        self.__class__._LOG.info("""-----
+                                    Example 3: trainer.infer_rels(1,20,topk=5)""")
         self.infer_rels(1,20,topk=5)
 
     def exit_interactive_mode(self):
-        print("Thank you for trying out inference interactive script :)")
+        self.__class__._LOG.info("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self,h,r,topk=5):
         tails = self.evaluator.test_tail_rank(h,r,topk).numpy()
-        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
+        logs = []
+        logs.append("")
+        logs.append("(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])))
+        logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("head: %s" % idx2ent[h])
-        print("relation: %s" % idx2rel[r])
+        logs.append("head: %s" % idx2ent[h])
+        logs.append("relation: %s" % idx2rel[r])
 
         for idx, tail in enumerate(tails):
-            print("%dth predicted tail: %s" % (idx, idx2ent[tail]))
+            logs.append("%dth predicted tail: %s" % (idx, idx2ent[tail]))
 
+        self.__class__._LOG.info("\n".join(logs))
         return {tail: idx2ent[tail] for tail in tails}
 
     def infer_heads(self,r,t,topk=5):
         heads = self.evaluator.test_head_rank(r,t,topk).numpy()
-        print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
+        logs = []
+        logs.append("")
+        logs.append("(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])))
+        logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("tail: %s" % idx2ent[t])
-        print("relation: %s" % idx2rel[r])
+        logs.append("tail: %s" % idx2ent[t])
+        logs.append("relation: %s" % idx2rel[r])
 
         for idx, head in enumerate(heads):
-            print("%dth predicted head: %s" % (idx, idx2ent[head]))
+            logs.append("%dth predicted head: %s" % (idx, idx2ent[head]))
 
+        self.__class__._LOG.info("\n".join(logs))
         return {head: idx2ent[head] for head in heads}
 
     def infer_rels(self, h, t, topk=5):
         rels = self.evaluator.test_rel_rank(h,t,topk).numpy()
-        print("\n(head,tail)->({},{}) :: Inferred rels->({})\n".format(h, t, ",".join([str(i) for i in rels])))
+        logs = []
+        logs.append("")
+        logs.append("(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])))
+        logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("head: %s" % idx2ent[h])
-        print("tail: %s" % idx2ent[t])
+        logs.append("head: %s" % idx2ent[h])
+        logs.append("tail: %s" % idx2ent[t])
 
         for idx, rel in enumerate(rels):
-            print("%dth predicted rel: %s" % (idx, idx2rel[rel]))
+            logs.append("%dth predicted rel: %s" % (idx, idx2rel[rel]))
 
+        self.__class__._LOG.info("\n".join(logs))
         return {rel: idx2rel[rel] for rel in rels}
     
     ''' Procedural functions:'''
