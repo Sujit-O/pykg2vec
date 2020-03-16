@@ -76,12 +76,9 @@ class DistMult(ModelMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        # norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        h_emb = tf.nn.embedding_lookup(norm_ent_embeddings, h)
+        h_emb = tf.nn.embedding_lookup(self.ent_embeddings, h)
         r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        t_emb = tf.nn.embedding_lookup(norm_ent_embeddings, t)
+        t_emb = tf.nn.embedding_lookup(self.ent_embeddings, t)
 
         return h_emb, r_emb, t_emb
 
@@ -108,9 +105,9 @@ class DistMult(ModelMeta):
         score_pos = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
         score_neg = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
 
-        regul_term = tf.nn.l2_loss(self.rel_embeddings)
+        regul_term = tf.reduce_mean(tf.reduce_sum(pos_h_e**2, -1) + tf.reduce_sum(pos_r_e**2, -1) + tf.reduce_sum(pos_t_e**2,-1) + tf.reduce_sum(neg_h_e**2, -1) + tf.reduce_sum(neg_r_e**2, -1) + tf.reduce_sum(neg_t_e**2, -1))
 
-        loss = tf.reduce_sum(tf.maximum(score_neg - score_pos + 1, 0)) + self.config.lmbda*regul_term
+        loss = tf.reduce_mean(tf.maximum(score_neg - score_pos + 1, 0)) + self.config.lmbda*regul_term
 
         return loss
 
