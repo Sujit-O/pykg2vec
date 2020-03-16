@@ -15,8 +15,9 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 tf.config.set_soft_device_placement(True)
 physical_devices = tf.config.list_physical_devices('GPU') 
-try: 
-  tf.config.experimental.set_memory_growth(physical_devices[0], True) 
+try:
+    for gpu in physical_devices: 
+        tf.config.experimental.set_memory_growth(gpu, True) 
 except: 
   # Invalid device or cannot modify virtual devices once initialized. 
   pass 
