@@ -106,7 +106,7 @@ class RotatE(ModelMeta):
         score_r = hr * rr - hi * ri - tr
         score_i = hr * ri + hi * rr - ti
 
-        return self.config.margin - tf.reduce_sum(tf.math.sqrt(score_r**2 + score_i**2), axis=-1)
+        return self.config.margin - tf.reduce_sum(score_r**2 + score_i**2, axis=-1)
 
     def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
         """Defines the layers of the algorithm."""
