@@ -15,179 +15,9 @@ import os
 import seaborn
 import pandas as pd
 from matplotlib import colors as mcolors
+from pykg2vec.utils.logger import Logger
 
 seaborn.set_style("darkgrid")
-
-
-def draw_embedding(embs, names, resultpath, algos, show_label):
-    """Function to draw the embedding.
-
-        Args:
-            embs (matrix): Two dimesnional embeddings.
-            names (list):List of string name.
-            resultpath (str):Path where the result will be save.
-            algos (str): Name of the algorithms which generated the algorithm.
-            show_label (bool): If True, prints the string names of the entities and relations.
-
-    """
-    print("\t drawing figure!")
-
-    pos = {}
-    node_color_mp = {}
-    unique_ent = set(names)
-    colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).keys())
-
-    tot_col = len(colors)
-    j = 0
-    for i, e in enumerate(unique_ent):
-        node_color_mp[e] = colors[j]
-        j += 1
-        if j >= tot_col:
-            j = 0
-
-    G = nx.Graph()
-    hm_ent = {}
-    for i, ent in enumerate(names):
-        hm_ent[i] = ent
-        G.add_node(i)
-        pos[i] = embs[i]
-
-    colors = []
-    for n in list(G.nodes):
-        colors.append(node_color_mp[hm_ent[n]])
-
-    plt.figure()
-    nodes_draw = nx.draw_networkx_nodes(G,
-                                        pos,
-                                        node_color=colors,
-                                        node_size=50)
-    nodes_draw.set_edgecolor('k')
-    if show_label:
-        nx.draw_networkx_labels(G, pos, font_size=8)
-
-    if not os.path.exists(resultpath):
-        os.mkdir(resultpath)
-
-    files = os.listdir(resultpath)
-    file_no = len(
-        [c for c in files if algos + '_embedding_plot' in c])
-    filename = algos + '_embedding_plot_' + str(file_no) + '.png'
-    plt.savefig(str(resultpath / filename), bbox_inches='tight', dpi=300)
-    # plt.show()
-
-
-def draw_embedding_rel_space(h_emb,
-                             r_emb,
-                             t_emb,
-                             h_name,
-                             r_name,
-                             t_name,
-                             resultpath,
-                             algos,
-                             show_label):
-    """Function to draw the embedding in relation space.
-
-        Args:
-            h_emb (matrix): Two dimesnional embeddings of head.
-            r_emb (matrix): Two dimesnional embeddings of relation.
-            t_emb (matrix): Two dimesnional embeddings of tail.
-            h_name (list):List of string name of the head.
-            r_name (list):List of string name of the relation.
-            t_name (list):List of string name of the tail.
-            resultpath (str):Path where the result will be save.
-            algos (str): Name of the algorithms which generated the algorithm.
-            show_label (bool): If True, prints the string names of the entities and relations.
-
-    """
-    print("\t drawing figure!")
-    pos = {}
-    node_color_mp_ent = {}
-    node_color_mp_rel = {}
-    unique_ent = set(h_name) | set(t_name)
-    unique_rel = set(r_name)
-    colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).keys())
-
-    tot_col = len(colors)
-    j = 0
-    for i, e in enumerate(unique_ent):
-        node_color_mp_ent[e] = colors[j]
-        j += 1
-        if j >= tot_col:
-            j = 0
-
-    tot_col = len(colors)
-    j = 0
-    for i, r in enumerate(unique_rel):
-        node_color_mp_rel[r] = colors[j]
-        j += 1
-        if j >= tot_col:
-            j = 0
-
-    G = nx.DiGraph()
-    idx = 0
-    head_colors = []
-    rel_colors = []
-    tail_colors = []
-    head_nodes = []
-    tail_nodes = []
-    rel_nodes = []
-
-    for i in range(len(h_name)):
-        G.add_edge(idx, idx + 1)
-        G.add_edge(idx + 1, idx + 2)
-
-        head_nodes.append(idx)
-        rel_nodes.append(idx + 1)
-        tail_nodes.append(idx + 2)
-
-        head_colors.append(node_color_mp_ent[h_name[i]])
-        rel_colors.append(node_color_mp_rel[r_name[i]])
-        tail_colors.append(node_color_mp_ent[t_name[i]])
-
-        pos[idx] = h_emb[i]
-        pos[idx + 1] = r_emb[i]
-        pos[idx + 2] = t_emb[i]
-        idx += 3
-
-    plt.figure()
-    nodes_draw = nx.draw_networkx_nodes(G,
-                                        pos,
-                                        nodelist=head_nodes,
-                                        node_color=head_colors,
-                                        node_shape='o',
-                                        node_size=50)
-    nodes_draw.set_edgecolor('k')
-
-    nodes_draw = nx.draw_networkx_nodes(G,
-                                        pos,
-                                        nodelist=rel_nodes,
-                                        node_color=rel_colors,
-                                        node_size=50,
-                                        node_shape='D',
-                                        with_labels=show_label)
-    nodes_draw.set_edgecolor('k')
-
-    nodes_draw = nx.draw_networkx_nodes(G,
-                                        pos,
-                                        nodelist=tail_nodes,
-                                        node_color=tail_colors,
-                                        node_shape='*',
-                                        node_size=50)
-    nodes_draw.set_edgecolor('k')
-
-    if show_label:
-        nx.draw_networkx_labels(G, pos, font_size=8)
-    nx.draw_networkx_edges(G, pos, arrows=True, width=0.5, alpha=0.5)
-
-    if not os.path.exists(resultpath):
-        os.mkdir(resultpath)
-
-    files = os.listdir(resultpath)
-    file_no = len(
-        [c for c in files if algos + '_embedding_plot' in c])
-    plt.savefig(str(resultpath / (algos + '_embedding_plot_' + str(file_no) + '.png')), bbox_inches='tight', dpi=300)
-    # plt.show()
-
 
 class Visualization(object):
     """Class to aid in visualizing the results and embddings.
@@ -208,6 +38,8 @@ class Visualization(object):
             >>> viz = Visualization(model=model)
             >>> viz.plot_train_result()
     """
+    _LOG = Logger().get_logger(__name__)
+
     def __init__(self, model=None, vis_opts=None):
 
         if vis_opts:
@@ -271,7 +103,7 @@ class Visualization(object):
                     self.r_proj_emb.append(emb_r)
                     self.t_proj_emb.append(emb_t)
                 except Exception as e:
-                    print(e.args)
+                    self.__class__._LOG.error(e.args)
 
     def plot_embedding(self,
                        resultpath=None,
@@ -293,30 +125,30 @@ class Visualization(object):
         if self.ent_only_plot:
             x = np.concatenate((self.h_emb, self.t_emb), axis=0)
             ent_names = np.concatenate((self.h_name, self.t_name), axis=0)
-            print("\t Reducing dimension using TSNE to 2!")
+            self.__class__._LOG.info("\t Reducing dimension using TSNE to 2!")
             x = TSNE(n_components=2).fit_transform(x)
             x = np.asarray(x)
             ent_names = np.asarray(ent_names)
 
-            draw_embedding(x, ent_names, resultpath, algos + '_entity_plot', show_label)
+            self.draw_embedding(x, ent_names, resultpath, algos + '_entity_plot', show_label)
 
         if self.rel_only_plot:
             x = self.r_emb
-            print("\t Reducing dimension using TSNE to 2!")
+            self.__class__._LOG.info("\t Reducing dimension using TSNE to 2!")
             x = TSNE(n_components=2).fit_transform(x)
-            draw_embedding(x, self.r_name, resultpath, algos + '_rel_plot', show_label)
+            self.draw_embedding(x, self.r_name, resultpath, algos + '_rel_plot', show_label)
 
         if self.ent_and_rel_plot:
             length = len(self.h_proj_emb)
             x = np.concatenate((self.h_proj_emb, self.r_proj_emb, self.t_proj_emb), axis=0)
-            print("\t Reducing dimension using TSNE to 2!")
+            self.__class__._LOG.info("\t Reducing dimension using TSNE to 2!")
             x = TSNE(n_components=2).fit_transform(x)
 
             h_embs = x[:length, :]
             r_embs = x[length:2 * length, :]
             t_embs = x[2 * length:3 * length, :]
 
-            draw_embedding_rel_space(h_embs[:disp_num_r_n_e],
+            self.draw_embedding_rel_space(h_embs[:disp_num_r_n_e],
                                      r_embs[:disp_num_r_n_e],
                                      t_embs[:disp_num_r_n_e],
                                      self.h_name[:disp_num_r_n_e],
@@ -371,7 +203,7 @@ class Visualization(object):
             raise NotImplementedError('Please provide valid path, algorithm and dataset!')
         files = os.listdir(str(path))
         # files_lwcase = [f.lower() for f in files if 'Testing' in f]
-        # print(files_lwcase)
+        # self.__class__._LOG.info(files_lwcase)
         for d in data:
             df = pd.DataFrame()
             for a in algo:
@@ -464,3 +296,174 @@ class Visualization(object):
             plt.savefig(str(result / (d + '_testing_hits_plot_' + str(file_no + 1) + '.pdf')), bbox_inches='tight',
                         dpi=300)
             # plt.show()
+
+    @staticmethod
+    def draw_embedding(embs, names, resultpath, algos, show_label):
+        """Function to draw the embedding.
+
+            Args:
+                embs (matrix): Two dimesnional embeddings.
+                names (list):List of string name.
+                resultpath (str):Path where the result will be save.
+                algos (str): Name of the algorithms which generated the algorithm.
+                show_label (bool): If True, prints the string names of the entities and relations.
+
+        """
+        Visualization._LOG("\t drawing figure!")
+
+        pos = {}
+        node_color_mp = {}
+        unique_ent = set(names)
+        colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).keys())
+
+        tot_col = len(colors)
+        j = 0
+        for i, e in enumerate(unique_ent):
+            node_color_mp[e] = colors[j]
+            j += 1
+            if j >= tot_col:
+                j = 0
+
+        G = nx.Graph()
+        hm_ent = {}
+        for i, ent in enumerate(names):
+            hm_ent[i] = ent
+            G.add_node(i)
+            pos[i] = embs[i]
+
+        colors = []
+        for n in list(G.nodes):
+            colors.append(node_color_mp[hm_ent[n]])
+
+        plt.figure()
+        nodes_draw = nx.draw_networkx_nodes(G,
+                                            pos,
+                                            node_color=colors,
+                                            node_size=50)
+        nodes_draw.set_edgecolor('k')
+        if show_label:
+            nx.draw_networkx_labels(G, pos, font_size=8)
+
+        if not os.path.exists(resultpath):
+            os.mkdir(resultpath)
+
+        files = os.listdir(resultpath)
+        file_no = len(
+            [c for c in files if algos + '_embedding_plot' in c])
+        filename = algos + '_embedding_plot_' + str(file_no) + '.png'
+        plt.savefig(str(resultpath / filename), bbox_inches='tight', dpi=300)
+        # plt.show()
+
+    @staticmethod
+    def draw_embedding_rel_space(h_emb,
+                                 r_emb,
+                                 t_emb,
+                                 h_name,
+                                 r_name,
+                                 t_name,
+                                 resultpath,
+                                 algos,
+                                 show_label):
+        """Function to draw the embedding in relation space.
+
+            Args:
+                h_emb (matrix): Two dimesnional embeddings of head.
+                r_emb (matrix): Two dimesnional embeddings of relation.
+                t_emb (matrix): Two dimesnional embeddings of tail.
+                h_name (list):List of string name of the head.
+                r_name (list):List of string name of the relation.
+                t_name (list):List of string name of the tail.
+                resultpath (str):Path where the result will be save.
+                algos (str): Name of the algorithms which generated the algorithm.
+                show_label (bool): If True, prints the string names of the entities and relations.
+
+        """
+        Visualization._LOG("\t drawing figure!")
+        pos = {}
+        node_color_mp_ent = {}
+        node_color_mp_rel = {}
+        unique_ent = set(h_name) | set(t_name)
+        unique_rel = set(r_name)
+        colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).keys())
+
+        tot_col = len(colors)
+        j = 0
+        for i, e in enumerate(unique_ent):
+            node_color_mp_ent[e] = colors[j]
+            j += 1
+            if j >= tot_col:
+                j = 0
+
+        tot_col = len(colors)
+        j = 0
+        for i, r in enumerate(unique_rel):
+            node_color_mp_rel[r] = colors[j]
+            j += 1
+            if j >= tot_col:
+                j = 0
+
+        G = nx.DiGraph()
+        idx = 0
+        head_colors = []
+        rel_colors = []
+        tail_colors = []
+        head_nodes = []
+        tail_nodes = []
+        rel_nodes = []
+
+        for i in range(len(h_name)):
+            G.add_edge(idx, idx + 1)
+            G.add_edge(idx + 1, idx + 2)
+
+            head_nodes.append(idx)
+            rel_nodes.append(idx + 1)
+            tail_nodes.append(idx + 2)
+
+            head_colors.append(node_color_mp_ent[h_name[i]])
+            rel_colors.append(node_color_mp_rel[r_name[i]])
+            tail_colors.append(node_color_mp_ent[t_name[i]])
+
+            pos[idx] = h_emb[i]
+            pos[idx + 1] = r_emb[i]
+            pos[idx + 2] = t_emb[i]
+            idx += 3
+
+        plt.figure()
+        nodes_draw = nx.draw_networkx_nodes(G,
+                                            pos,
+                                            nodelist=head_nodes,
+                                            node_color=head_colors,
+                                            node_shape='o',
+                                            node_size=50)
+        nodes_draw.set_edgecolor('k')
+
+        nodes_draw = nx.draw_networkx_nodes(G,
+                                            pos,
+                                            nodelist=rel_nodes,
+                                            node_color=rel_colors,
+                                            node_size=50,
+                                            node_shape='D',
+                                            with_labels=show_label)
+        nodes_draw.set_edgecolor('k')
+
+        nodes_draw = nx.draw_networkx_nodes(G,
+                                            pos,
+                                            nodelist=tail_nodes,
+                                            node_color=tail_colors,
+                                            node_shape='*',
+                                            node_size=50)
+        nodes_draw.set_edgecolor('k')
+
+        if show_label:
+            nx.draw_networkx_labels(G, pos, font_size=8)
+        nx.draw_networkx_edges(G, pos, arrows=True, width=0.5, alpha=0.5)
+
+        if not os.path.exists(resultpath):
+            os.mkdir(resultpath)
+
+        files = os.listdir(resultpath)
+        file_no = len(
+            [c for c in files if algos + '_embedding_plot' in c])
+        plt.savefig(str(resultpath / (algos + '_embedding_plot_' + str(file_no) + '.png')), bbox_inches='tight',
+                    dpi=300)
+        # plt.show()

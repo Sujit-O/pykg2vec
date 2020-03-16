@@ -5,7 +5,6 @@ This module is for evaluating the results
 """
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import print_function
 
 import os
 import numpy as np
@@ -15,6 +14,7 @@ from multiprocessing import Process, Queue
 import tensorflow as tf
 from pykg2vec.core.KGMeta import EvaluationMeta
 from pykg2vec.utils.generator import TrainingStrategy
+from pykg2vec.utils.logger import Logger
 
 
 class MetricCalculator:
@@ -25,6 +25,9 @@ class MetricCalculator:
 
         MetricCalculator is expected to be used by "evaluation_process".
     '''
+
+    _LOG = Logger().get_logger(__name__)
+
     def __init__(self, config):
         self.config = config 
 
@@ -206,14 +209,18 @@ class MetricCalculator:
         """Function to print the test summary."""
         kg = self.config.knowledge_graph
         stop_time = timeit.default_timer()
-        print("------Test Results for %s: Epoch: %d --- time: %.2f------------" % (kg.dataset_name, self.epoch, stop_time - self.start_time))
-        print('--# of entities, # of relations: %d, %d'%(kg.kg_meta.tot_entity, kg.kg_meta.tot_relation) )
-        print('--mr,  filtered mr             : %.4f, %.4f'%(self.mr[self.epoch], self.fmr[self.epoch]))
-        print('--mrr, filtered mrr            : %.4f, %.4f'%(self.mrr[self.epoch], self.fmrr[self.epoch]))
+        test_results = []
+        test_results.append('')
+        test_results.append("------Test Results for %s: Epoch: %d --- time: %.2f------------" % (kg.dataset_name, self.epoch, stop_time - self.start_time))
+        test_results.append('--# of entities, # of relations: %d, %d'%(kg.kg_meta.tot_entity, kg.kg_meta.tot_relation) )
+        test_results.append('--mr,  filtered mr             : %.4f, %.4f'%(self.mr[self.epoch], self.fmr[self.epoch]))
+        test_results.append('--mrr, filtered mrr            : %.4f, %.4f'%(self.mrr[self.epoch], self.fmrr[self.epoch]))
         for hit in self.config.hits:
-            print('--hits%d                        : %.4f ' % (hit, (self.hit[(self.epoch, hit)])))
-            print('--filtered hits%d               : %.4f ' % (hit, (self.fhit[(self.epoch, hit)])))
-        print("---------------------------------------------------------")
+            test_results.append('--hits%d                        : %.4f ' % (hit, (self.hit[(self.epoch, hit)])))
+            test_results.append('--filtered hits%d               : %.4f ' % (hit, (self.fhit[(self.epoch, hit)])))
+        test_results.append("---------------------------------------------------------")
+        test_results.append('')
+        self.__class__._LOG.info("\n".join(test_results))
 
 
 class Evaluator(EvaluationMeta):
@@ -230,9 +237,9 @@ class Evaluator(EvaluationMeta):
             >>> acc = evaluator.output_queue.get()
             >>> evaluator.stop()
     """
+    _LOG = Logger().get_logger(__name__)
 
     def __init__(self, model, tuning=False):
-        
         self.model = model
         self.tuning = tuning
         self.test_data = self.model.config.knowledge_graph.read_cache_data('triplets_test')
@@ -278,7 +285,7 @@ class Evaluator(EvaluationMeta):
         if self.model.config.debug: 
             tot_valid_to_test = 10
 
-        print("Mini-Testing on [%d/%d] Triples in the valid set." % (tot_valid_to_test, len(self.eval_data)))
+        self.__class__._LOG.info("Mini-Testing on [%d/%d] Triples in the valid set." % (tot_valid_to_test, len(self.eval_data)))
         return self.test(self.eval_data, tot_valid_to_test, epoch=epoch)
 
     def full_test(self, epoch=None):
@@ -286,7 +293,7 @@ class Evaluator(EvaluationMeta):
         if self.model.config.debug:
             tot_valid_to_test  = 10
 
-        print("Full-Testing on [%d/%d] Triples in the test set." % (tot_valid_to_test, len(self.test_data)))
+        self.__class__._LOG.info("Full-Testing on [%d/%d] Triples in the test set." % (tot_valid_to_test, len(self.test_data)))
         return self.test(self.test_data, tot_valid_to_test, epoch=epoch)
 
     def test(self, data, num_of_test, epoch=None):

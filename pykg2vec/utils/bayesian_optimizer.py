@@ -5,7 +5,6 @@ This module is for performing bayesian optimization on algorithms
 """
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import print_function
 import importlib
 
 from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
@@ -14,7 +13,7 @@ import pandas as pd
 
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
-from pprint import pprint
+from pykg2vec.utils.logger import Logger
 
 model_path = "pykg2vec.core"
 config_path = "pykg2vec.config.config"
@@ -101,6 +100,8 @@ class BaysOptimizer(object):
         >>> bays_opt.optimize()
     """
 
+    _LOG = Logger().get_logger(__name__)
+
     def __init__(self, args=None):
         """store the information of database"""
         if args.model.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
@@ -117,8 +118,8 @@ class BaysOptimizer(object):
             hyper_params = getattr(importlib.import_module(hyper_param_path), hypMap[model_name])()
 
         except ModuleNotFoundError:
-            print("%s not implemented! Select from: %s" % \
-                 (model_name, ' '.join(map(str, modelMap.values()))))
+            BaysOptimizer._LOG.error("%s not implemented! Select from: %s" % \
+                                    (model_name, ' '.join(map(str, modelMap.values()))))
         
         from pykg2vec.config.config import KGEArgParser
         kge_args = KGEArgParser().get_args([])
@@ -155,9 +156,9 @@ class BaysOptimizer(object):
         path.mkdir(parents=True, exist_ok=True)
         results.to_csv(str(path / "trials.csv"), index=False)
         
-        print(results)
-        print('Found Golden Setting:')
-        pprint(space_eval(self.search_space, self.best_result))
+        BaysOptimizer._LOG.info(results)
+        BaysOptimizer._LOG.info('Found Golden Setting:')
+        BaysOptimizer._LOG.info(space_eval(self.search_space, self.best_result))
 
     def return_best(self):
         """Function to return the best hyper-parameters"""
