@@ -117,12 +117,12 @@ class RotatE(ModelMeta):
         pos_score = self.dissimilarity(pos_h_e_r, pos_h_e_i, pos_r_e_r, pos_r_e_i, pos_t_e_r, pos_t_e_i)
         neg_score = self.dissimilarity(neg_h_e_r, neg_h_e_i, neg_r_e_r, neg_r_e_i, neg_t_e_r, neg_t_e_i)
 
-        pos_score = tf.math.log_sigmoid(pos_score)
+        pos_score = -tf.nn.softplus(-pos_score)
 
         # self-adversarial training strategy:
         neg_score = tf.reshape(neg_score, [-1, self.config.neg_rate])
         softmax = tf.stop_gradient(tf.nn.softmax(neg_score*self.config.alpha, axis=1))
-        neg_score = tf.reduce_sum(softmax * tf.math.log_sigmoid(-neg_score), axis=-1)
+        neg_score = tf.reduce_sum(softmax * (-tf.nn.softplus(neg_score)), axis=-1)
 
         loss = -tf.reduce_mean(neg_score) - tf.reduce_mean(pos_score)
 
