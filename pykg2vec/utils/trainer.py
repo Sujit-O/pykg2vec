@@ -57,7 +57,7 @@ class Trainer(TrainerMeta):
         elif self.config.optimizer == 'adam':
             self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adagrad':
-            self.optimizer = tf.keras.optimizers.Adagrad(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.keras.optimizers.Adagrad(learning_rate=self.config.learning_rate, initial_accumulator_value=0.0, epsilon=1e-08)
         elif self.config.optimizer == 'adadelta':
             self.optimizer = tf.keras.optimizers.Adadelta(learning_rate=self.config.learning_rate)
         else:
