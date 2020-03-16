@@ -89,7 +89,7 @@ class Complex(ModelMeta):
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
     def dissimilarity(self, h_real, h_img, r_real, r_img, t_real, t_img):
-        return tf.reduce_sum(h_real * t_real * r_real + h_img * t_img * r_real + h_real * t_img * r_img - h_img * t_real * r_img, axis=-1, keepdims = False)
+        return tf.reduce_sum(h_real * t_real * r_real + h_img * t_img * r_real + h_real * t_img * r_img - h_img * t_real * r_img, axis=-1)
 
     def get_loss(self, h, r, t, y):
         """Defines the loss function for the algorithm."""
@@ -97,8 +97,8 @@ class Complex(ModelMeta):
 
         score = self.dissimilarity(h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img)
 
-        regul_term = tf.nn.l2_loss(h_e_real) + tf.nn.l2_loss(h_e_img) + tf.nn.l2_loss(r_e_real) + tf.nn.l2_loss(r_e_img) + tf.nn.l2_loss(t_e_real) + tf.nn.l2_loss(t_e_img)
-        loss = tf.reduce_sum(tf.nn.softplus(-score*y)) + self.config.lmbda*regul_term
+        regul_term = tf.reduce_mean(tf.reduce_sum(h_e_real**2, -1) + tf.reduce_sum(h_e_img**2, -1) + tf.reduce_sum(r_e_real**2,-1) + tf.reduce_sum(r_e_img**2, -1) + tf.reduce_sum(t_e_real**2, -1) + tf.reduce_sum(t_e_img**2, -1))
+        loss = tf.reduce_mean(tf.nn.softplus(-y*score)) + self.config.lmbda*regul_term
 
         return loss
 
