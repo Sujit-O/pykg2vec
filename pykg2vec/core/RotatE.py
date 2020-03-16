@@ -106,10 +106,7 @@ class RotatE(ModelMeta):
         score_r = hr * rr - hi * ri - tr
         score_i = hr * ri + hi * rr - ti
 
-        score_r = tf.nn.l2_normalize(score_r, -1)
-        score_i = tf.nn.l2_normalize(score_i, -1)
-
-        return self.config.margin - tf.reduce_sum(score_r + score_i, axis=-1)
+        return self.config.margin - tf.reduce_sum(tf.math.sqrt(score_r**2 + score_i**2), axis=-1)
 
     def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
         """Defines the layers of the algorithm."""
@@ -120,12 +117,12 @@ class RotatE(ModelMeta):
         pos_score = self.dissimilarity(pos_h_e_r, pos_h_e_i, pos_r_e_r, pos_r_e_i, pos_t_e_r, pos_t_e_i)
         neg_score = self.dissimilarity(neg_h_e_r, neg_h_e_i, neg_r_e_r, neg_r_e_i, neg_t_e_r, neg_t_e_i)
 
-        pos_score = tf.math.log(tf.nn.sigmoid(pos_score))
+        pos_score = tf.math.log_sigmoid(pos_score)
 
         # self-adversarial training strategy:
         neg_score = tf.reshape(neg_score, [-1, self.config.neg_rate])
         softmax = tf.stop_gradient(tf.nn.softmax(neg_score*self.config.alpha, axis=1))
-        neg_score = tf.reduce_sum(softmax * tf.math.log(tf.nn.sigmoid(-neg_score)), axis=-1)
+        neg_score = tf.reduce_sum(softmax * tf.math.log_sigmoid(-neg_score), axis=-1)
 
         loss = -tf.reduce_mean(neg_score) - tf.reduce_mean(pos_score)
 

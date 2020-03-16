@@ -21,7 +21,7 @@ class HyperparamterLoader:
           'hole'    : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size': 512,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
           'transm'  : {'learning_rate': 0.001,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
           'rescal'  : {'learning_rate': 0.001,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
-          'rotate'  : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
+          'rotate'  : {'learning_rate':0.0001,'hidden_size':1000,'batch_size': 1024,'epochs':1000,'margin': 24.0,'optimizer':'adam','sampling':"adversarial_negative_sampling",'alpha': 1.0, 'neg_rate':16},
           'sme'     : {'learning_rate': 0.001,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1,'bilinear':False},
           'transr'  : {'learning_rate': 0.001,'L1_flag': True,'ent_hidden_size':50,'rel_hidden_size':50,'batch_size': 4800,'epochs': 1000,'margin': 1.0,'optimizer': 'sgd','sampling':   "bern",'neg_rate':1},
           'transd'  : {'learning_rate': 0.001,'L1_flag':False,'ent_hidden_size':50,'rel_hidden_size':50,'batch_size':  200,'epochs': 1000,'margin': 1.0,'optimizer': 'sgd','sampling':"uniform",'neg_rate':1},
