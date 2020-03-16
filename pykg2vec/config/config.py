@@ -159,6 +159,10 @@ class KGEArgParser:
         self.convkb_group.add_argument('-fsize', dest='filter_sizes', default=[1,2,3],nargs='+', type=int, help='Filter sizes to be used in convKB which acts as the widths of the kernals')
         self.convkb_group.add_argument('-fnum', dest='num_filters', default=50, type=int, help='Filter numbers to be used in convKB')
 
+        '''for RotatE'''
+        self.rotate_group = self.parser.add_argument_group('RotatE specific Hyperparameters')
+        self.rotate_group.add_argument('-al', dest='alpha', default=0.1, type=float, help='The alpha used in self-adversarial negative sampling.')
+
         ''' arguments regarding hyperparameters '''
         self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
         self.general_hyper_group.add_argument('-lmda', dest='lmbda', default=0.1, type=float, help='The lmbda for regularization.')
@@ -915,6 +919,7 @@ class RotatEConfig(BasicConfig):
         self.optimizer = args.optimizer
         self.sampling = args.sampling
         self.neg_rate = args.negrate
+        self.alpha = args.alpha
 
         if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'rotate')
@@ -930,7 +935,9 @@ class RotatEConfig(BasicConfig):
             'margin': self.margin,
             'data': self.data,
             'optimizer': self.optimizer,
-            'sampling': self.sampling
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
+            'alpha': self.alpha
         }
 
         BasicConfig.__init__(self, args)
