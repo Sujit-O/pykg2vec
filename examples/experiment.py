@@ -7,8 +7,6 @@ In this example, we will show how to import all the modules to start training an
 # Author: Sujit Rokka Chhetri and Shiy Yuan Yu
 # License: MIT
 
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
 from pykg2vec.core.TransE import TransE

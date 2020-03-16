@@ -119,7 +119,7 @@ class BaysOptimizer(object):
 
         except ModuleNotFoundError:
             BaysOptimizer._LOG.error("%s not implemented! Select from: %s" % \
-                                     (model_name, ' '.join(map(str, modelMap.values()))))
+                                    (model_name, ' '.join(map(str, modelMap.values()))))
         
         from pykg2vec.config.config import KGEArgParser
         kge_args = KGEArgParser().get_args([])
