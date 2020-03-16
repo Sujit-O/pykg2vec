@@ -85,7 +85,7 @@ $ python train.py -mn TransE
 
 # Train using different KGE methods.
 $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complexn3|RotatE|
-                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE|ConvE|ConvKB|Proje_pointwise]
+                       distmult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise]
 
 # For KGE using projection-based loss function, use more processes for batch generation.
 $ python train.py -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of processes, 4 or 6]
@@ -100,7 +100,7 @@ To ensure the correctness of included KGE methods we also use the hyperparameter
 ```bash
 # train KGE method with the hyperparameters used in original papers. (FB15k supported only)
 $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complexn3|RotatE|
-                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE|ConvE|ConvKB|Proje_pointwise] -exp true -ds fb15k
+                       distmult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise] -exp true -ds fb15k
 
 ```
 Some metrics running on benchmark dataset (FB15k) is shown below (all are filtered). We are still working on this table so it will be updated.

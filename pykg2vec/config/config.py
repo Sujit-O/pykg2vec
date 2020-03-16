@@ -38,26 +38,28 @@ class Importer:
         self.model_path = "pykg2vec.core"
         self.config_path = "pykg2vec.config.config"
 
-        self.modelMap = {"complex": "Complex",
-                         "complexn3": "ComplexN3",
-                         "conve": "ConvE",
-                         "convkb": "ConvKB",
-                         "hole": "HoLE",
-                         "distmult": "DistMult",
-                         "kg2e": "KG2E",
-                         "ntn": "NTN",
-                         "proje_pointwise": "ProjE_pointwise",
-                         "rescal": "Rescal",
-                         "rotate": "RotatE",
-                         "slm": "SLM",
-                         "sme": "SME",
-                         "transd": "TransD",
-                         "transe": "TransE",
-                         "transh": "TransH",
-                         "transg": "TransG",
-                         "transm": "TransM",
-                         "transr": "TransR",
-                         "tucker": "TuckER"}
+        self.modelMap = {"complex": "Complex.Complex",
+                         "complexn3": "Complex.ComplexN3",
+                         "conve": "ConvE.ConvE",
+                         "convkb": "ConvKB.ConvKB",
+                         "hole": "HoLE.HoLE",
+                         "distmult": "DistMult.DistMult",
+                         "kg2e": "KG2E.KG2E",
+                         "kg2e_el": "KG2E.KG2E_EL",
+                         "ntn": "NTN.NTN",
+                         "proje_pointwise": "ProjE_pointwise.ProjE_pointwise",
+                         "rescal": "Rescal.Rescal",
+                         "rotate": "RotatE.RotatE",
+                         "slm": "SLM.SLM",
+                         "sme": "SME.SME",
+                         "sme_bl": "SME.SME_BL",
+                         "transd": "TransD.TransD",
+                         "transe": "TransE.TransE",
+                         "transh": "TransH.TransH",
+                         "transg": "TransG.TransG",
+                         "transm": "TransM.TransM",
+                         "transr": "TransR.TransR",
+                         "tucker": "TuckER.TuckER"}
 
         self.configMap = {"complex": "ComplexConfig",
                           "complexn3": "ComplexConfig",
@@ -66,12 +68,14 @@ class Importer:
                           "hole": "HoLEConfig",
                           "distmult": "DistMultConfig",
                           "kg2e": "KG2EConfig",
+                          "kg2e_el": "KG2EConfig",
                           "ntn": "NTNConfig",
                           "proje_pointwise": "ProjE_pointwiseConfig",
                           "rescal": "RescalConfig",
                           "rotate": "RotatEConfig",
                           "slm": "SLMConfig",
                           "sme": "SMEConfig",
+                          "sme_bl": "SMEConfig",
                           "transd": "TransDConfig",
                           "transe": "TransEConfig",
                           "transg": "TransGConfig",
@@ -102,8 +106,9 @@ class Importer:
       model_obj = None
       try:
           config_obj = getattr(importlib.import_module(self.config_path), self.configMap[name])
-          model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % self.modelMap[name]),
-                              self.modelMap[name])
+          splited_path = self.modelMap[name].split('.')
+          model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % splited_path[0]), splited_path[1])
+
       except ModuleNotFoundError:
           print("%s model  has not been implemented. please select from: %s" % (
           name, ' '.join(map(str, self.modelMap.values()))))
@@ -747,7 +752,6 @@ class SMEConfig(BasicConfig):
         self.data = args.dataset_name
         self.optimizer = args.optimizer
         self.sampling = args.sampling
-        self.bilinear = True if args.function == 'bilinear' else False
         self.neg_rate = args.negrate
 
         if args.exp is True:
@@ -765,7 +769,6 @@ class SMEConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
-            'bilinear': self.bilinear,
             'neg_rate': self.neg_rate,
         }
 
@@ -978,7 +981,6 @@ class KG2EConfig(BasicConfig):
         self.data = args.dataset_name
         self.optimizer = args.optimizer
         self.sampling = args.sampling
-        self.distance_measure = args.function
         self.cmax = args.cmax
         self.cmin = args.cmin
         self.neg_rate = args.negrate
@@ -998,7 +1000,6 @@ class KG2EConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
-            'distance_measure': self.distance_measure,
             'cmax': self.cmax,
             'cmin': self.cmin,
             'neg_rate': self.neg_rate,
