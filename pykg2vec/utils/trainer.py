@@ -40,9 +40,8 @@ class Trainer(TrainerMeta):
             >>> trainer.build_model()
             >>> trainer.train_model()
     """
-    _LOG = Logger().get_logger(__name__)
-
     def __init__(self, model):
+        self.logger = Logger().get_logger(self.__class__.__name__)
         self.model = model
         self.config = model.config
 
@@ -121,7 +120,7 @@ class Trainer(TrainerMeta):
             self.load_model()
         
         for cur_epoch_idx in range(self.config.epochs):
-            self.__class__._LOG.info("Epoch[%d/%d]"%(cur_epoch_idx,self.config.epochs))
+            self.logger.info("Epoch[%d/%d]"%(cur_epoch_idx,self.config.epochs))
             loss = self.train_model_epoch(cur_epoch_idx)
 
             if cur_epoch_idx % self.config.test_step == 0:
@@ -134,11 +133,11 @@ class Trainer(TrainerMeta):
             if ((cur_epoch_idx + 1) % self.config.early_stop_epoch) == 0: 
                 if patience_left > 0 and previous_loss <= loss:
                     patience_left -= 1
-                    self.__class__._LOG.info('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
+                    self.logger.info('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
                         (patience_left, previous_loss, loss))
 
                 elif patience_left == 0 and previous_loss <= loss:
-                    self.__class__._LOG.info('Stop the training.')
+                    self.logger.info('Stop the training.')
                     break
                 else:
                     patience_left = self.config.patience
@@ -186,11 +185,11 @@ class Trainer(TrainerMeta):
             if ((cur_epoch_idx + 1) % self.config.early_stop_epoch) == 0: 
                 if patience_left > 0 and previous_loss <= loss:
                     patience_left -= 1
-                    self.__class__._LOG.info('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
+                    self.logger.info('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
                         (patience_left, previous_loss, loss))
 
                 elif patience_left == 0 and previous_loss <= loss:
-                    self.__class__._LOG.info('Stop the training.')
+                    self.logger.info('Stop the training.')
                     break
                 else:
                     patience_left = self.config.patience
@@ -251,22 +250,22 @@ class Trainer(TrainerMeta):
         self.load_model()
 
         self.evaluator = Evaluator(self.model)
-        self.__class__._LOG.info("""The training/loading of the model has finished!
+        self.logger.info("""The training/loading of the model has finished!
                                     Now enter interactive mode :)
                                     -----
                                     Example 1: trainer.infer_tails(1,10,topk=5)""")
         self.infer_tails(1,10,topk=5)
 
-        self.__class__._LOG.info("""-----
+        self.logger.info("""-----
                                     Example 2: trainer.infer_heads(10,20,topk=5)""")
         self.infer_heads(10,20,topk=5)
 
-        self.__class__._LOG.info("""-----
+        self.logger.info("""-----
                                     Example 3: trainer.infer_rels(1,20,topk=5)""")
         self.infer_rels(1,20,topk=5)
 
     def exit_interactive_mode(self):
-        self.__class__._LOG.info("Thank you for trying out inference interactive script :)")
+        self.logger.info("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self,h,r,topk=5):
         tails = self.evaluator.test_tail_rank(h,r,topk).numpy()
@@ -282,7 +281,7 @@ class Trainer(TrainerMeta):
         for idx, tail in enumerate(tails):
             logs.append("%dth predicted tail: %s" % (idx, idx2ent[tail]))
 
-        self.__class__._LOG.info("\n".join(logs))
+        self.logger.info("\n".join(logs))
         return {tail: idx2ent[tail] for tail in tails}
 
     def infer_heads(self,r,t,topk=5):
@@ -299,7 +298,7 @@ class Trainer(TrainerMeta):
         for idx, head in enumerate(heads):
             logs.append("%dth predicted head: %s" % (idx, idx2ent[head]))
 
-        self.__class__._LOG.info("\n".join(logs))
+        self.logger.info("\n".join(logs))
         return {head: idx2ent[head] for head in heads}
 
     def infer_rels(self, h, t, topk=5):
@@ -316,7 +315,7 @@ class Trainer(TrainerMeta):
         for idx, rel in enumerate(rels):
             logs.append("%dth predicted rel: %s" % (idx, idx2rel[rel]))
 
-        self.__class__._LOG.info("\n".join(logs))
+        self.logger.info("\n".join(logs))
         return {rel: idx2rel[rel] for rel in rels}
     
     ''' Procedural functions:'''
