@@ -84,8 +84,8 @@ $ python train.py -h
 $ python train.py -mn TransE
 
 # Train using different KGE methods.
-$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
-                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE|ConvE|ConvKB|Proje_pointwise]
+$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complexn3|RotatE|
+                       distmult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise]
 
 # For KGE using projection-based loss function, use more processes for batch generation.
 $ python train.py -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of processes, 4 or 6]
@@ -95,12 +95,12 @@ $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
                                   ks|nations|umls|dl50a]
                                 
 ```
-Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. Some models are still under development [Conv2D|RotatE|TuckER].
+Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. Some models are still under development [Conv2D|TuckER].
 To ensure the correctness of included KGE methods we also use the hyperparameter settings from original papers to see if the result is consistent.
 ```bash
 # train KGE method with the hyperparameters used in original papers. (FB15k supported only)
-$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
-                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE|ConvE|ConvKB|Proje_pointwise] -exp true -ds fb15k
+$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complexn3|RotatE|
+                       distmult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise] -exp true -ds fb15k
 
 ```
 Some metrics running on benchmark dataset (FB15k) is shown below (all are filtered). We are still working on this table so it will be updated.
