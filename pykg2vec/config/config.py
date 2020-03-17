@@ -758,7 +758,8 @@ class SMEConfig(BasicConfig):
         self.data = args.dataset_name
         self.optimizer = args.optimizer
         self.sampling = args.sampling
-
+        self.neg_rate = 1
+        
         if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'sme')
             for key, value in paper_params.items():
