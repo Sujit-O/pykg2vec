@@ -25,6 +25,9 @@ class MetricCalculator:
 
         MetricCalculator is expected to be used by "evaluation_process".
     '''
+
+    _LOG = Logger().get_logger(__name__)
+
     def __init__(self, config):
         self.config = config 
 
@@ -40,8 +43,6 @@ class MetricCalculator:
         self.fmrr = {}
         self.hit  = {}
         self.fhit = {}
-
-        self.logger = Logger().get_logger(self.__class__.__name__)
 
         self.reset()
 
@@ -219,7 +220,7 @@ class MetricCalculator:
             test_results.append('--filtered hits%d               : %.4f ' % (hit, (self.fhit[(self.epoch, hit)])))
         test_results.append("---------------------------------------------------------")
         test_results.append('')
-        self.logger.info("\n".join(test_results))
+        self.__class__._LOG.info("\n".join(test_results))
 
 
 class Evaluator(EvaluationMeta):
@@ -236,8 +237,9 @@ class Evaluator(EvaluationMeta):
             >>> acc = evaluator.output_queue.get()
             >>> evaluator.stop()
     """
+    _LOG = Logger().get_logger(__name__)
+
     def __init__(self, model, tuning=False):
-        self.logger = Logger().get_logger(self.__class__.__name__)
         self.model = model
         self.tuning = tuning
         self.test_data = self.model.config.knowledge_graph.read_cache_data('triplets_test')
@@ -283,7 +285,7 @@ class Evaluator(EvaluationMeta):
         if self.model.config.debug: 
             tot_valid_to_test = 10
 
-        self.logger.info("Mini-Testing on [%d/%d] Triples in the valid set." % (tot_valid_to_test, len(self.eval_data)))
+        self.__class__._LOG.info("Mini-Testing on [%d/%d] Triples in the valid set." % (tot_valid_to_test, len(self.eval_data)))
         return self.test(self.eval_data, tot_valid_to_test, epoch=epoch)
 
     def full_test(self, epoch=None):
@@ -291,7 +293,7 @@ class Evaluator(EvaluationMeta):
         if self.model.config.debug:
             tot_valid_to_test  = 10
 
-        self.logger.info("Full-Testing on [%d/%d] Triples in the test set." % (tot_valid_to_test, len(self.test_data)))
+        self.__class__._LOG.info("Full-Testing on [%d/%d] Triples in the test set." % (tot_valid_to_test, len(self.test_data)))
         return self.test(self.test_data, tot_valid_to_test, epoch=epoch)
 
     def test(self, data, num_of_test, epoch=None):
