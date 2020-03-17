@@ -147,6 +147,7 @@ class Trainer(TrainerMeta):
             ### Early Stop Mechanism
 
         self.evaluator.full_test(cur_epoch_idx)
+        self.evaluator.metric_calculator.save_test_summary(self.model.model_name)
 
         self.generator.stop()
         self.save_training_result()
