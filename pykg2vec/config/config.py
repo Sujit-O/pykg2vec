@@ -741,11 +741,9 @@ class SMEConfig(BasicConfig):
     Args:
       learning_rate (float): Defines the learning rate for the optimization.
       L1_flag (bool): If True, perform L1 regularization on the model parameters.
-      ent_hidden_size (int): Defines the size of the latent dimension for entities.
-      rel_hidden_size (int): Defines the size of the latent dimension for relations.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
       batch_size (int): Defines the batch size for training the algorithm.
       epochs (int): Defines the total number of epochs for training the algorithm.
-      margin (float): Defines the margin used between the positive and negative triple loss.
       data (str): Defines the knowledge base dataset to be used for training the algorithm.
       optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
@@ -754,15 +752,12 @@ class SMEConfig(BasicConfig):
     """
     def __init__(self, args=None):
         self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
         self.batch_size = args.batch_training
         self.epochs = args.epochs
-        self.margin = args.margin
         self.data = args.dataset_name
         self.optimizer = args.optimizer
         self.sampling = args.sampling
-        self.neg_rate = args.negrate
 
         if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'sme')
@@ -771,15 +766,11 @@ class SMEConfig(BasicConfig):
 
         self.hyperparameters = {
             'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
             'hidden_size': self.hidden_size,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
         }
 
         BasicConfig.__init__(self, args)

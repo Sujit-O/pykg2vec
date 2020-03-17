@@ -152,7 +152,7 @@ class SME(ModelMeta):
         energy_pos = self.match(pos_h_e, pos_r_e, pos_t_e)
         energy_neg = self.match(neg_h_e, neg_r_e, neg_t_e)
 
-        loss = tf.reduce_sum(tf.maximum(energy_neg + self.config.margin - energy_pos, 0))
+        loss = tf.reduce_sum(tf.maximum(energy_pos - energy_neg + 1, 0))
 
         return loss
 
@@ -165,7 +165,7 @@ class SME(ModelMeta):
               Tensors: Returns ranks of head and tail.
         """
         h_e, r_e, t_e = self.embed(h, r, t)
-        score = -self.match(h_e, r_e, t_e)
+        score = self.match(h_e, r_e, t_e)
         _, rank = tf.nn.top_k(score, k=topk)
 
         return rank
