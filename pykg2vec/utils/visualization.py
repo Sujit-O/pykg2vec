@@ -38,9 +38,8 @@ class Visualization(object):
             >>> viz = Visualization(model=model)
             >>> viz.plot_train_result()
     """
-    _LOG = Logger().get_logger(__name__)
-
     def __init__(self, model=None, vis_opts=None):
+        self.logger = Logger().get_logger(self.__class__.__name__)
 
         if vis_opts:
             self.ent_only_plot = vis_opts["ent_only_plot"]
@@ -103,7 +102,7 @@ class Visualization(object):
                     self.r_proj_emb.append(emb_r)
                     self.t_proj_emb.append(emb_t)
                 except Exception as e:
-                    self.__class__._LOG.error(e.args)
+                    self.logger.error(e.args)
 
     def plot_embedding(self,
                        resultpath=None,
@@ -125,7 +124,7 @@ class Visualization(object):
         if self.ent_only_plot:
             x = np.concatenate((self.h_emb, self.t_emb), axis=0)
             ent_names = np.concatenate((self.h_name, self.t_name), axis=0)
-            self.__class__._LOG.info("\t Reducing dimension using TSNE to 2!")
+            self.logger.info("\t Reducing dimension using TSNE to 2!")
             x = TSNE(n_components=2).fit_transform(x)
             x = np.asarray(x)
             ent_names = np.asarray(ent_names)
@@ -134,14 +133,14 @@ class Visualization(object):
 
         if self.rel_only_plot:
             x = self.r_emb
-            self.__class__._LOG.info("\t Reducing dimension using TSNE to 2!")
+            self.logger.info("\t Reducing dimension using TSNE to 2!")
             x = TSNE(n_components=2).fit_transform(x)
             self.draw_embedding(x, self.r_name, resultpath, algos + '_rel_plot', show_label)
 
         if self.ent_and_rel_plot:
             length = len(self.h_proj_emb)
             x = np.concatenate((self.h_proj_emb, self.r_proj_emb, self.t_proj_emb), axis=0)
-            self.__class__._LOG.info("\t Reducing dimension using TSNE to 2!")
+            self.logger.info("\t Reducing dimension using TSNE to 2!")
             x = TSNE(n_components=2).fit_transform(x)
 
             h_embs = x[:length, :]
@@ -203,7 +202,7 @@ class Visualization(object):
             raise NotImplementedError('Please provide valid path, algorithm and dataset!')
         files = os.listdir(str(path))
         # files_lwcase = [f.lower() for f in files if 'Testing' in f]
-        # self.__class__._LOG.info(files_lwcase)
+        # self.logger.info(files_lwcase)
         for d in data:
             df = pd.DataFrame()
             for a in algo:

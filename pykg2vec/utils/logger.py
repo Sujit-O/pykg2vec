@@ -21,17 +21,17 @@ class Singleton(_Singleton("SingletonMeta", (object,), {})):
 class Logger(Singleton):
 
     _FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    _VERBOSE = False
 
     def __init__(self):
-        self.loggers = {}
-        self.lock = threading.Lock()
+        self._loggers = {}
+        self._log_level = logging.INFO
+        self._lock = threading.Lock()
 
     def get_logger(self, name):
-        self.lock.acquire()
-        if self.loggers.get(name) is None:
+        self._lock.acquire()
+        if self._loggers.get(name) is None:
             logger = logging.getLogger(name)
-            logger.setLevel(logging.DEBUG if Logger._VERBOSE else logging.INFO)
+            logger.setLevel(self._log_level)
             formatter = logging.Formatter(Logger._FORMAT)
 
             console_handler = logging.StreamHandler()
@@ -40,8 +40,17 @@ class Logger(Singleton):
             if not logger.handlers:
                 logger.addHandler(console_handler)
 
-            self.loggers[name] = logger
-        self.lock.release()
+            self._loggers[name] = logger
+        self._lock.release()
 
-        return self.loggers.get(name)
+        return self._loggers.get(name)
+
+    @property
+    def level(self):
+        return self._log_level
+
+    @level.setter
+    def level(self, value):
+        for name in self._loggers:
+            self._loggers[name].setLevel(value)
 
