@@ -106,12 +106,16 @@ $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complex
 Some metrics running on benchmark dataset (FB15k) is shown below (all are filtered). We are still working on this table so it will be updated.
 |        |MR    |MRR |Hit1|Hit3|Hit5|Hit10|
 | ------ |------|----|----|----|----|-----|
-| TransE |69.52 |0.36|0.22|0.42|0.51|0.61 |
+| TransE |69.52 |0.38|0.23|0.46|0.56|0.66 |
 | TransH |77.60 |0.32|0.16|0.41|0.51|0.62 |
 | TransR |128.31|0.30|0.18|0.36|0.43|0.54 |
 | TransD |57.73 |0.33|0.19|0.39|0.48|0.60 | 
-| KG2E_EL|64.76 |0.31|0.16|0.39|0.49|0.61 | 
-|DistMult|116.24|0.26|0.16|0.28|0.36|0.45 | 
+| KG2E_EL|64.76 |0.31|0.16|0.39|0.49|0.61 |
+|Complex |96.74 |0.65|0.54|0.74|0.78|0.82 |
+|DistMult|128.78|0.45|0.32|0.53|0.61|0.70 |
+|RotatE  |48.69 |0.74|0.67|0.80|0.82|0.86 |
+|SME_L   |86.3  |0.32|0.20|0.35|0.43|0.54 | 
+|SLM_BL  |112.65|0.29|0.18|0.32|0.39|0.50 |
 
 
 To use your own dataset, these steps are required:
