@@ -302,6 +302,15 @@ class BasicConfig:
         # debugging information 
         self.debug = args.debug
 
+    def __getstate__(self):
+        attributes = dict(self.__dict__)
+        del attributes['logger']
+        return attributes
+
+    def __setstate__(self, attributes):
+        attributes['logger'] = self.logger
+        self.__dict__.update(attributes)
+
     def summary(self):
         """Function to print the summary."""
         summary = []
