@@ -99,9 +99,9 @@ class BaysOptimizer(object):
         >>> bays_opt = BaysOptimizer(args=args)
         >>> bays_opt.optimize()
     """
-    def __init__(self, args=None):
-        self.logger = Logger().get_logger(self.__class__.__name__)
+    _logger = Logger().get_logger(__name__)
 
+    def __init__(self, args=None):
         """store the information of database"""
         if args.model.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
           raise Exception("Model %s has not been supported in tuning hyperparameters!" % args.model)
@@ -117,8 +117,8 @@ class BaysOptimizer(object):
             hyper_params = getattr(importlib.import_module(hyper_param_path), hypMap[model_name])()
 
         except ModuleNotFoundError:
-            self.logger.error("%s not implemented! Select from: %s" % \
-                                    (model_name, ' '.join(map(str, modelMap.values()))))
+            self._logger.error("%s not implemented! Select from: %s" % \
+                               (model_name, ' '.join(map(str, modelMap.values()))))
         
         from pykg2vec.config.config import KGEArgParser
         kge_args = KGEArgParser().get_args([])
@@ -155,9 +155,9 @@ class BaysOptimizer(object):
         path.mkdir(parents=True, exist_ok=True)
         results.to_csv(str(path / "trials.csv"), index=False)
         
-        self.logger.info(results)
-        self.logger.info('Found Golden Setting:')
-        self.logger.info(space_eval(self.search_space, self.best_result))
+        self._logger.info(results)
+        self._logger.info('Found Golden Setting:')
+        self._logger.info(space_eval(self.search_space, self.best_result))
 
     def return_best(self):
         """Function to return the best hyper-parameters"""

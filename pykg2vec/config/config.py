@@ -34,6 +34,8 @@ class Importer:
         >>> model = model_def(config)
 
     """
+    _logger = Logger().get_logger(__name__)
+
     def __init__(self):
         self.model_path = "pykg2vec.core"
         self.config_path = "pykg2vec.config.config"
@@ -83,7 +85,6 @@ class Importer:
                           "transm": "TransMConfig",
                           "transr": "TransRConfig",
                           "tucker": "TuckERConfig"}
-        self.logger = Logger().get_logger(self.__class__.__name__)
 
     def import_model_config(self, name):
       """This function imports models and configuration.
@@ -111,7 +112,7 @@ class Importer:
           model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % splited_path[0]), splited_path[1])
 
       except ModuleNotFoundError:
-          self.logger.error("%s model  has not been implemented. please select from: %s" % (
+          self._logger.error("%s model  has not been implemented. please select from: %s" % (
           name, ' '.join(map(str, self.modelMap.values()))))
 
       return config_obj, model_obj
@@ -249,8 +250,9 @@ class BasicConfig:
       kg_meta (object): Stores the statistics metadata of the knowledge graph.
     
     """
+    _logger = Logger().get_logger(__name__)
+
     def __init__(self, args):
-        self.logger = Logger().get_logger(self.__class__.__name__)
 
         # Training and evaluating related variables
         self.test_step = args.test_step
@@ -322,7 +324,7 @@ class BasicConfig:
             summary.append("%s : %s"%(key, val))
         summary.append("---------------------------------------------------")
         summary.append("")
-        self.logger.info("\n".join(summary))
+        self._logger.info("\n".join(summary))
 
     def summary_hyperparameter(self, model_name):
         """Function to print the hyperparameter summary."""
@@ -336,7 +338,7 @@ class BasicConfig:
                     key = ' ' + key
             summary_hyperparameter.append("%s : %s" % (key, val))
         summary_hyperparameter.append("---------------------------------------------------")
-        self.logger.info("\n".join(summary_hyperparameter))
+        self._logger.info("\n".join(summary_hyperparameter))
 
 
 class TransEConfig(BasicConfig):

@@ -139,9 +139,10 @@ class KnownDataset:
            >>> kgdata.dump()
 
     """
+    _logger = Logger().get_logger(__name__)
+
     def __init__(self, name, url, prefix):
 
-        self.logger = Logger().get_logger(self.__class__.__name__)
         self.name = name
         self.url = url
         self.prefix = prefix
@@ -190,7 +191,7 @@ class KnownDataset:
 
     def download(self):
         ''' Downloads the given dataset from url'''
-        self.logger.info("Downloading the dataset %s" % self.name)
+        self._logger.info("Downloading the dataset %s" % self.name)
 
         self.root_path.mkdir()
         with urllib.request.urlopen(self.url) as response, open(str(self.tar), 'wb') as out_file:
@@ -198,13 +199,13 @@ class KnownDataset:
 
     def extract(self):
         ''' Extract the downloaded tar under the folder with the given dataset name'''
-        self.logger.info("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
+        self._logger.info("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
 
         try:
             extract(str(self.tar), str(self.root_path))
         except Exception as e:
-            self.logger.info("Could not extract the tgz file!")
-            self.logger.info("%s %s" % (type(e), e.args))
+            self._logger.info("Could not extract the tgz file!")
+            self._logger.info("%s %s" % (type(e), e.args))
 
     def read_metadata(self):
         ''' Reads the metadata of the knowledge graph if available'''
@@ -219,7 +220,7 @@ class KnownDataset:
     def dump(self):
         ''' Displays all the metadata of the knowledge graph'''
         for key, value in self.__dict__.items():
-            self.logger.info("%s %s" % (key, value))
+            self._logger.info("%s %s" % (key, value))
 
 
 class FreebaseFB15k(KnownDataset):
@@ -416,6 +417,8 @@ class UserDefinedDataset(object):
           root_oath (object): Path object for the specific dataset.
 
     """
+    _logger = Logger().get_logger(__name__)
+
     def __init__(self, name, custom_dataset_path):
         self.name = name
 
@@ -459,8 +462,6 @@ class UserDefinedDataset(object):
         self.cache_relation2idx_path = self.root_path / 'relation2idx.pkl'
         self.cache_relationproperty_path = self.root_path / 'relationproperty.pkl'
 
-        self.logger = Logger().get_logger(self.__class__.__name__)
-
     def is_meta_cache_exists(self):
         """ Checks if the metadata has been cached"""
         return self.cache_metadata_path.exists()
@@ -474,7 +475,7 @@ class UserDefinedDataset(object):
     def dump(self):
         """ Prints the metadata of the user-defined dataset."""
         for key, value in self.__dict__.items():
-            self.logger.info("%s %s" % (key, value))
+            self._logger.info("%s %s" % (key, value))
 
 
 class KnowledgeGraph(object):
@@ -508,6 +509,8 @@ class KnowledgeGraph(object):
           >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k')
           >>> knowledge_graph.prepare_data()
     """
+    _logger = Logger().get_logger(__name__)
+
     def __init__(self, dataset='Freebase15k', custom_dataset_path=None):
 
         self.dataset_name = dataset
@@ -565,8 +568,6 @@ class KnowledgeGraph(object):
         else:
             self.kg_meta = KGMetaData()
             self.prepare_data()
-
-        self.logger = Logger().get_logger(self.__class__.__name__)
 
     def force_prepare_data(self):
         shutil.rmtree(str(self.dataset.root_path), ignore_errors=True)
@@ -882,4 +883,4 @@ class KnowledgeGraph(object):
         dump.append("Total Relations          :%s" % self.kg_meta.tot_relation)
         dump.append("---------------------------------------------")
         dump.append("")
-        self.logger.info(("\n".join(dump)))
+        self._logger.info(("\n".join(dump)))
