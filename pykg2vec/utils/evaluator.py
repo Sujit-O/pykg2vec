@@ -143,8 +143,12 @@ class MetricCalculator:
             self.hit[(self.epoch, hit)] = np.mean(ranks<=hit, dtype=np.float32)
             self.fhit[(self.epoch, hit)] = np.mean(franks<=hit, dtype=np.float32)
 
-    def get_curr_score(self):
-        return self.mr[self.epoch]
+    def get_curr_scores(self):
+        scores = (self.mr[self.epoch], self.fmr[self.epoch],
+                  self.mrr[self.epoch], self.fmrr[self.epoch],
+                  self.hit, self.fhit)
+
+        return scores
 
 
     def save_test_summary(self, model_name):
@@ -327,4 +331,4 @@ class Evaluator(EvaluationMeta):
         if self.metric_calculator.epoch >= self.model.config.epochs - 1:
             self.metric_calculator.save_test_summary(self.model.model_name)
 
-        return self.metric_calculator.get_curr_score()
+        return self.metric_calculator.get_curr_scores()
