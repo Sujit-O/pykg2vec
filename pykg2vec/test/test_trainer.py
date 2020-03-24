@@ -3,16 +3,14 @@
 """
 This module is for testing unit functions of training
 """
-import os
 import pytest
-import tensorflow as tf
 
 from pykg2vec.config.config import KGEArgParser, Importer
-from pykg2vec.utils.trainer import Trainer
+from pykg2vec.utils.trainer import Trainer, Monitor
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 @pytest.mark.skip(reason="This is a functional method.")
-def get_model(result_path_dir, configured_epochs, early_stop_epoch):
+def get_model(result_path_dir, configured_epochs, patience, early_stop_epoch):
     args = KGEArgParser().get_args([])
 
     knowledge_graph = KnowledgeGraph(dataset="Freebase15k")
@@ -23,20 +21,20 @@ def get_model(result_path_dir, configured_epochs, early_stop_epoch):
 
     config.epochs = configured_epochs
     config.test_step = 1
-    config.test_num = 10
+    config.test_num = 1
     config.disp_result = False
     config.save_model = False
     config.path_result = result_path_dir
-    config.patience = 1
     config.early_stop_epoch = early_stop_epoch
     config.debug = True
-    
+    config.patience = patience
+
     return model_def(config)
 
 def test_full_epochs(tmpdir):
     result_path_dir = tmpdir.mkdir("result_path")
-    configured_epochs = 5
-    model = get_model(result_path_dir, configured_epochs, 5)
+    configured_epochs = 10
+    model = get_model(result_path_dir, configured_epochs, -1, 5)
 
     trainer = Trainer(model=model)
     trainer.build_model()
@@ -44,13 +42,49 @@ def test_full_epochs(tmpdir):
 
     assert actual_epochs == configured_epochs - 1
 
-def test_early_stopping(tmpdir):
+def test_early_stopping_on_loss(tmpdir):
     result_path_dir = tmpdir.mkdir("result_path")
-    configured_epochs = 5
-    model = get_model(result_path_dir, configured_epochs, 1)
+    configured_epochs = 10
+    model = get_model(result_path_dir, configured_epochs, 1, 1)
 
     trainer = Trainer(model=model)
     trainer.build_model()
     actual_epochs = trainer.train_model()
 
     assert actual_epochs < configured_epochs - 1
+
+@pytest.mark.parametrize("monitor", [
+    Monitor.MEAN_RANK,
+    Monitor.FILTERED_MEAN_RANK,
+    Monitor.MEAN_RECIPROCAL_RANK,
+    Monitor.FILTERED_MEAN_RECIPROCAL_RANK,
+    Monitor.HIT1,
+    Monitor.FILTERED_HIT1,
+    Monitor.HIT3,
+    Monitor.FILTERED_HIT3,
+    Monitor.HIT5,
+    Monitor.FILTERED_HIT5,
+    Monitor.HIT10,
+    Monitor.FILTERED_HIT10
+])
+def test_early_stopping_on_ranks(tmpdir, monitor):
+    result_path_dir = tmpdir.mkdir("result_path")
+    configured_epochs = 10
+    model = get_model(result_path_dir, configured_epochs, 0, 1)
+
+    trainer = Trainer(model=model)
+    trainer.build_model()
+    actual_epochs = trainer.train_model(monitor=monitor)
+
+    assert actual_epochs < configured_epochs - 1
+
+def test_throw_exception_on_unknown_monitor(tmpdir):
+    result_path_dir = tmpdir.mkdir("result_path")
+    configured_epochs = 10
+    model = get_model(result_path_dir, configured_epochs, 0, 1)
+
+    trainer = Trainer(model=model)
+    trainer.build_model()
+
+    with pytest.raises(NotImplementedError, match="Unknown monitor dummy"):
+        trainer.train_model(monitor="dummy")
