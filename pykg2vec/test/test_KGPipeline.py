@@ -5,6 +5,8 @@ This module is for testing unit functions of KGPipeline
 """
 from pykg2vec.utils.KGPipeline import KGPipeline
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
+import tensorflow as tf
+tf.config.experimental_run_functions_eagerly(True)
 
 def test_kgpipeline():
     """Function to test the KGPipeline function."""

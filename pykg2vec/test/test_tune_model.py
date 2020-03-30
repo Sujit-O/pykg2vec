@@ -9,6 +9,9 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.config.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
+import tensorflow as tf
+tf.config.experimental_run_functions_eagerly(True)
+
 
 @pytest.mark.skip(reason="This is a functional method.")
 def tunning_function(name):

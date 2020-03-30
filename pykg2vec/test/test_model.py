@@ -9,7 +9,9 @@ import pytest
 from pykg2vec.config.config import *
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
-  
+import tensorflow as tf
+tf.config.experimental_run_functions_eagerly(True)
+
 
 @pytest.mark.skip(reason="This is a functional method.")
 def testing_function(name, distance_measure=None, bilinear=None, display=False, ent_hidden_size=None, rel_hidden_size=None, channels=None):

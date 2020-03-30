@@ -16,6 +16,8 @@ from pykg2vec.utils.logger import Logger
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 tf.config.set_soft_device_placement(True)
+tf.config.experimental_run_functions_eagerly(True)
+
 physical_devices = tf.config.list_physical_devices('GPU') 
 try:
     for gpu in physical_devices: 
