@@ -155,7 +155,7 @@ class ConvE(ModelMeta):
 
         return loss
 
-    def predict_tail(self, e, r, topk=-1):
+    def predict_tail_rank(self, e, r, topk=-1):
         h_emb = tf.nn.embedding_lookup(self.ent_embeddings, e)
         r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
 
@@ -169,7 +169,7 @@ class ConvE(ModelMeta):
 
         return rank
 
-    def predict_head(self, e, r, topk=-1):
+    def predict_head_rank(self, e, r, topk=-1):
         t_emb = tf.nn.embedding_lookup(self.ent_embeddings, e)
         r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
 
@@ -180,5 +180,19 @@ class ConvE(ModelMeta):
         pred_heads = -self.forward(stacked_tr, 1)
 
         _, rank = tf.nn.top_k(pred_heads, k=topk)
+
+        return rank
+
+    def predict_rel_rank(self, e, r, topk=-1):
+        h_emb = tf.nn.embedding_lookup(self.ent_embeddings, e)
+        t_emb = tf.nn.embedding_lookup(self.ent_embeddings, e)
+
+        stacked_h = tf.reshape(h_emb, [-1, 1, 10, 20])
+        stacked_t = tf.reshape(t_emb, [-1, 1, 10, 20])
+
+        stacked_ht = tf.concat([stacked_h, stacked_t], 1)
+        pred_rels = -self.forward(stacked_ht, 1)
+
+        _, rank = tf.nn.top_k(pred_rels, k=topk)
 
         return rank

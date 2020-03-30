@@ -10,13 +10,13 @@ from pykg2vec.utils.trainer import Trainer, Monitor
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 @pytest.mark.skip(reason="This is a functional method.")
-def get_model(result_path_dir, configured_epochs, patience, early_stop_epoch):
+def get_model(result_path_dir, configured_epochs, patience, early_stop_epoch, config_key):
     args = KGEArgParser().get_args([])
 
     knowledge_graph = KnowledgeGraph(dataset="Freebase15k")
     knowledge_graph.prepare_data()
 
-    config_def, model_def = Importer().import_model_config("complex")
+    config_def, model_def = Importer().import_model_config(config_key)
     config = config_def(args=args)
 
     config.epochs = configured_epochs
@@ -31,10 +31,12 @@ def get_model(result_path_dir, configured_epochs, patience, early_stop_epoch):
 
     return model_def(config)
 
-def test_full_epochs(tmpdir):
+@pytest.mark.parametrize("config_key",
+                         filter(lambda x: x != "conve" and x != "convkb" and x != "transg", list(Importer().configMap.keys())))
+def test_full_epochs(tmpdir, config_key):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 10
-    model = get_model(result_path_dir, configured_epochs, -1, 5)
+    model = get_model(result_path_dir, configured_epochs, -1, 5, config_key)
 
     trainer = Trainer(model=model)
     trainer.build_model()
@@ -45,7 +47,7 @@ def test_full_epochs(tmpdir):
 def test_early_stopping_on_loss(tmpdir):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 10
-    model = get_model(result_path_dir, configured_epochs, 1, 1)
+    model = get_model(result_path_dir, configured_epochs, 1, 1, "complex")
 
     trainer = Trainer(model=model)
     trainer.build_model()
@@ -70,7 +72,7 @@ def test_early_stopping_on_loss(tmpdir):
 def test_early_stopping_on_ranks(tmpdir, monitor):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 10
-    model = get_model(result_path_dir, configured_epochs, 0, 1)
+    model = get_model(result_path_dir, configured_epochs, 0, 1, "complex")
 
     trainer = Trainer(model=model)
     trainer.build_model()
@@ -81,7 +83,7 @@ def test_early_stopping_on_ranks(tmpdir, monitor):
 def test_throw_exception_on_unknown_monitor(tmpdir):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 10
-    model = get_model(result_path_dir, configured_epochs, 0, 1)
+    model = get_model(result_path_dir, configured_epochs, 0, 1, "complex")
 
     trainer = Trainer(model=model)
     trainer.build_model()

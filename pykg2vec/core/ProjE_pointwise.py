@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import numpy as np
 
 from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 from pykg2vec.utils.generator import TrainingStrategy
@@ -70,8 +71,14 @@ class ProjE_pointwise(ModelMeta):
         self.bc2 = tf.Variable(emb_initializer(shape=(1, k)), name="bc2")
         self.De2 = tf.Variable(emb_initializer(shape=(1, k)), name="De2")
         self.Dr2 = tf.Variable(emb_initializer(shape=(1, k)), name="Dr2")
+        self.bc3 = tf.Variable(emb_initializer(shape=(1, k)), name="bc3")
+        self.De3 = tf.Variable(emb_initializer(shape=(1, k)), name="De3")
+        self.Dr3 = tf.Variable(emb_initializer(shape=(1, k)), name="Dr3")
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2, self.De2, self.Dr2]
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings,
+                               self.bc1, self.De1, self.Dr1,
+                               self.bc2, self.De2, self.Dr2,
+                               self.bc3, self.De3, self.Dr3]
 
     def get_loss(self, h, r, t, hr_t, tr_h):
         """Defines the loss function for the algorithm."""
@@ -128,6 +135,15 @@ class ProjE_pointwise(ModelMeta):
         """
         return tf.tanh(t * self.De2 + r * self.Dr2 + self.bc2)
 
+    def f3(self, h, t):
+        """Defines forward layer for relation.
+
+            Args:
+               h (Tensor): Head entities ids.
+               t (Tensor): Tail entities ids.
+        """
+        return tf.tanh(h * self.De3 + t * self.Dr3 + self.bc3)
+
     def g(self, f, w):
         """Defines activation layer.
 
@@ -138,20 +154,30 @@ class ProjE_pointwise(ModelMeta):
         # [b, k] [k, tot_ent]
         return tf.sigmoid(tf.matmul(f, w, transpose_b=True))
 
-    def predict_tail(self, e, r, topk=-1):
-        emb_hr_e = tf.nn.embedding_lookup(self.ent_embeddings, e)  # [1, k]
-        emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [1, k]
+    def predict_tail_rank(self, h, r, topk=-1):
+        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)  # [1, k]
+        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [1, k]
         
-        hrt_sigmoid = -self.g(self.f1(emb_hr_e, emb_hr_r), self.ent_embeddings)
+        hrt_sigmoid = -self.g(self.f1(emb_h, emb_r), self.ent_embeddings)
         _, rank = tf.nn.top_k(hrt_sigmoid, k=topk)
 
         return rank
 
-    def predict_head(self, e, r, topk=-1):
-        emb_hr_e = tf.nn.embedding_lookup(self.ent_embeddings, e)  # [m, k]
-        emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
+    def predict_head_rank(self, t, r, topk=-1):
+        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)  # [m, k]
+        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
         
-        hrt_sigmoid = -self.g(self.f2(emb_hr_e, emb_hr_r), self.ent_embeddings)
+        hrt_sigmoid = -self.g(self.f2(emb_t, emb_r), self.ent_embeddings)
         _, rank = tf.nn.top_k(hrt_sigmoid, k=topk)
 
         return rank
+
+    def predict_rel_rank(self, h, t, topk=-1):
+        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
+
+        hrt_sigmoid = -self.g(self.f3(emb_h, emb_t), self.rel_embeddings)
+        _, rank = tf.nn.top_k(hrt_sigmoid, k=topk)
+
+        return rank
+

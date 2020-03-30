@@ -123,7 +123,7 @@ class TuckER(ModelMeta):
 
         return loss
 
-    def predict_tail(self, e, r, topk=-1):
+    def predict_tail_rank(self, e, r, topk=-1):
         # import pdb; pdb.set_trace()
         e = tf.reshape(e, [-1])
         r = tf.reshape(r, [-1])
@@ -131,5 +131,5 @@ class TuckER(ModelMeta):
         _, rank = tf.nn.top_k(-predictions, k=topk)
         return rank
 
-    def predict_head(self, e, r, topk=-1):
-        return self.predict_tail(e, r, topk=topk)
+    def predict_head_rank(self, e, r, topk=-1):
+        return self.predict_tail_rank(e, r, topk=topk)
