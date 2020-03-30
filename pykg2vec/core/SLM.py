@@ -117,7 +117,7 @@ class SLM(ModelMeta):
         mr2t = tf.matmul(t, self.mr2) # t => [m, d], self.mr2 => [d, k]
         return tf.tanh(mr1h + mr2t)
 
-    def predict(self, h, r, t, topk=-1):
+    def predict_rank(self, h, r, t, topk=-1):
         """Function that performs prediction for TransE. 
            shape of h can be either [num_tot_entity] or [1]. 
            shape of t can be either [num_tot_entity] or [1].

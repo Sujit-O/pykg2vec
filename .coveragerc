@@ -1,0 +1,5 @@
+[run]
+branch = True
+concurrency = multiprocessing
+source = pykg2vec
+parallel = True

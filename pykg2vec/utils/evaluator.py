@@ -250,35 +250,46 @@ class Evaluator(EvaluationMeta):
         self.metric_calculator = MetricCalculator(self.model.config)
 
     @tf.function
-    def test_tail_rank_multiclass(self, h, r, topk=-1):
-        rank = self.model.predict_tail(h, r, topk=topk)
-        return tf.squeeze(rank, 0)
-
-    @tf.function
-    def test_head_rank_multiclass(self, r, t, topk=-1):
-        rank = self.model.predict_head(t, r, topk=topk)
-        return tf.squeeze(rank, 0)
-
-    @tf.function
     def test_tail_rank(self, h, r, topk=-1):
-        h_batch = tf.tile([h], [self.model.config.kg_meta.tot_entity])
-        r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
-        entity_array = tf.range(self.model.config.kg_meta.tot_entity)
-        return self.model.predict(h_batch, r_batch, entity_array, topk=topk)
+        if hasattr(self.model, 'predict_tail_rank'):
+            rank = self.model.predict_tail_rank(h, r, topk=topk)
+            return tf.squeeze(rank, 0)
+
+        if hasattr(self.model, 'predict_rank'):
+            h_batch = tf.tile([h], [self.model.config.kg_meta.tot_entity])
+            r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
+            entity_array = tf.range(self.model.config.kg_meta.tot_entity)
+            return self.model.predict_rank(h_batch, r_batch, entity_array, topk=topk)
+
+        raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_tail_rank", "predict_rank"))
 
     @tf.function
     def test_head_rank(self, r, t, topk=-1):
-        entity_array = tf.range(self.model.config.kg_meta.tot_entity)
-        r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
-        t_batch = tf.tile([t], [self.model.config.kg_meta.tot_entity])
-        return self.model.predict(entity_array, r_batch, t_batch, topk=topk)
+        if hasattr(self.model, 'predict_head_rank'):
+            rank = self.model.predict_head_rank(t, r, topk=topk)
+            return tf.squeeze(rank, 0)
+
+        if hasattr(self.model, 'predict_rank'):
+            entity_array = tf.range(self.model.config.kg_meta.tot_entity)
+            r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
+            t_batch = tf.tile([t], [self.model.config.kg_meta.tot_entity])
+            return self.model.predict_rank(entity_array, r_batch, t_batch, topk=topk)
+
+        raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_head_rank", "predict_rank"))
 
     @tf.function
     def test_rel_rank(self, h, t, topk=-1):
-        h_batch = tf.tile([h], [self.model.config.kg_meta.tot_relation])
-        rel_array = tf.range(self.model.config.kg_meta.tot_relation)
-        t_batch = tf.tile([t], [self.model.config.kg_meta.tot_relation])
-        return self.model.predict(h_batch, rel_array, t_batch, topk=topk)
+        if hasattr(self.model, 'predict_rel_rank'):
+            rank = self.model.predict_rel_rank(h, t, topk=topk)
+            return tf.squeeze(rank, 0)
+
+        if hasattr(self.model, 'predict_rank'):
+            h_batch = tf.tile([h], [self.model.config.kg_meta.tot_relation])
+            rel_array = tf.range(self.model.config.kg_meta.tot_relation)
+            t_batch = tf.tile([t], [self.model.config.kg_meta.tot_relation])
+            return self.model.predict_rank(h_batch, rel_array, t_batch, topk=topk)
+
+        raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_rel_rank", "predict_rank"))
 
     def mini_test(self, epoch=None):
         if self.model.config.test_num == 0:
@@ -312,12 +323,8 @@ class Evaluator(EvaluationMeta):
             r_tensor = tf.convert_to_tensor(r, dtype=tf.int32)
             t_tensor = tf.convert_to_tensor(t, dtype=tf.int32)
 
-            if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
-                hrank = self.test_head_rank_multiclass(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
-                trank = self.test_tail_rank_multiclass(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
-            else:
-                hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
-                trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
+            hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
+            trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
             
             result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
 

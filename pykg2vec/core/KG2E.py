@@ -99,7 +99,7 @@ class KG2E(ModelMeta):
 
         return loss
 
-    def predict(self, h, r, t, topk=-1):
+    def predict_rank(self, h, r, t, topk=-1):
         """Function that performs prediction for TransE. 
            shape of h can be either [num_tot_entity] or [1]. 
            shape of t can be either [num_tot_entity] or [1].
@@ -216,7 +216,7 @@ class KG2E_EL(KG2E):
 
         return loss
 
-    def predict(self, h, r, t, topk=-1):
+    def predict_rank(self, h, r, t, topk=-1):
         """Function that performs prediction for TransE. 
            shape of h can be either [num_tot_entity] or [1]. 
            shape of t can be either [num_tot_entity] or [1].
