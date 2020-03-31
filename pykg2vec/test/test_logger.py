@@ -6,8 +6,6 @@ This module is for testing unit functions of Logger
 import io
 import logging
 from pykg2vec.utils.logger import Logger
-import tensorflow as tf
-tf.config.experimental_run_functions_eagerly(True)
 
 def test_logger():
     logger_name = "TEST"

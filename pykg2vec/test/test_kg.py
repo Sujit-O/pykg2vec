@@ -1,7 +1,5 @@
 import os, pytest
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
-import tensorflow as tf
-tf.config.experimental_run_functions_eagerly(True)
 
 @pytest.mark.parametrize("dataset_name", ["freebase15k", "wordnet18", "wordnet18_rr", "yago3_10"])
 def test_benchmarks(dataset_name):
