@@ -43,7 +43,7 @@ def raw_data_generator(event, raw_queue, config):
             batch_idx = 0
 
 
-def process_function_pairwise(raw_queue, processed_queue, config):
+def process_function_pairwise(event, raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -63,7 +63,7 @@ def process_function_pairwise(raw_queue, processed_queue, config):
     
     del data # save memory space
     
-    while True:
+    while not event.is_set():
 
         item = raw_queue.get()
         if item is None:
@@ -107,7 +107,7 @@ def process_function_pairwise(raw_queue, processed_queue, config):
 
         processed_queue.put([ph, pr, pt, nh, nr, nt])
 
-def process_function_pointwise(raw_queue, processed_queue, config):
+def process_function_pointwise(event, raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -127,7 +127,7 @@ def process_function_pointwise(raw_queue, processed_queue, config):
     
     del data # save memory space
     
-    while True:
+    while not event.is_set():
 
         item = raw_queue.get()
         if item is None:
@@ -176,7 +176,7 @@ def process_function_pointwise(raw_queue, processed_queue, config):
         processed_queue.put([point_h, point_r, point_t, point_y])
 
 
-def process_function_multiclass(raw_queue, processed_queue, config):
+def process_function_multiclass(event, raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -194,7 +194,7 @@ def process_function_multiclass(raw_queue, processed_queue, config):
     shape = [config.batch_size, config.kg_meta.tot_entity] 
     shape = tf.convert_to_tensor(shape, dtype=tf.int64)
 
-    while True:
+    while not event.is_set():
         item = raw_queue.get()
         if item is None:
             break
@@ -323,14 +323,12 @@ class Generator:
         self.event.set()
         while not self.raw_queue.empty():
             self.raw_queue.get()
-        for _ in range(self.config.num_process_gen): 
-            self.raw_queue.put(None)
-        while not self.processed_queue.empty():
-            self.processed_queue.get()
-        self.raw_queue.close()
-        self.processed_queue.close()
-
         self.feeder_process.join()
+        
+        while not self.processed_queue.empty():
+            print('cleaning process queue')
+            self.processed_queue.get()
+
         for worker_process in self.process_list:
             worker_process.join()
 
@@ -346,11 +344,11 @@ class Generator:
         """Function ro create the process for generating training samples."""
         for i in range(self.config.num_process_gen):
             if self.training_strategy == TrainingStrategy.PROJECTION_BASED:
-                process_worker = Process(target=process_function_multiclass, args=(self.raw_queue, self.processed_queue, self.config))
+                process_worker = Process(target=process_function_multiclass, args=(self.event, self.raw_queue, self.processed_queue, self.config))
             elif self.training_strategy == TrainingStrategy.PAIRWISE_BASED:
-                process_worker = Process(target=process_function_pairwise, args=(self.raw_queue, self.processed_queue, self.config))
+                process_worker = Process(target=process_function_pairwise, args=(self.event, self.raw_queue, self.processed_queue, self.config))
             elif self.training_strategy == TrainingStrategy.POINTWISE_BASED:
-                process_worker = Process(target=process_function_pointwise, args=(self.raw_queue, self.processed_queue, self.config))
+                process_worker = Process(target=process_function_pointwise, args=(self.event, self.raw_queue, self.processed_queue, self.config))
             else:
                 raise NotImplementedError("This strategy is not supported.")
             self.process_list.append(process_worker)
