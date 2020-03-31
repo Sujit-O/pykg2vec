@@ -322,11 +322,11 @@ class Generator:
         """Function to stop all the worker process."""
         self.event.set()
         while not self.raw_queue.empty():
-            self.raw_queue.get_nowait()
-        while not self.processed_queue.empty():
-            self.processed_queue.get_nowait()
+            self.raw_queue.get()
         for _ in range(self.config.num_process_gen): 
             self.raw_queue.put(None)
+        while not self.processed_queue.empty():
+            self.processed_queue.get()
         self.raw_queue.close()
         self.processed_queue.close()
 
