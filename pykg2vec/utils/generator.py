@@ -8,11 +8,11 @@ from __future__ import division
 
 import numpy as np
 import tensorflow as tf
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Event
 from enum import Enum
 
 
-def raw_data_generator(raw_queue, processed_queue, config):
+def raw_data_generator(event, raw_queue, config):
     """Function to feed  triples to raw queue for multiprocessing.
            
         Args:
@@ -30,7 +30,7 @@ def raw_data_generator(raw_queue, processed_queue, config):
 
     random_ids = np.random.permutation(len(data))
     
-    while True:
+    while not event.is_set():
         pos_start = config.batch_size * batch_idx
         pos_end   = config.batch_size * (batch_idx+1)
         
@@ -65,7 +65,11 @@ def process_function_pairwise(raw_queue, processed_queue, config):
     
     while True:
 
-        idx, pos_triples = raw_queue.get()
+        item = raw_queue.get()
+        if item is None:
+            break
+
+        idx, pos_triples = item
 
         ph = pos_triples[:, 0]
         pr = pos_triples[:, 1]
@@ -125,7 +129,11 @@ def process_function_pointwise(raw_queue, processed_queue, config):
     
     while True:
 
-        idx, pos_triples = raw_queue.get()
+        item = raw_queue.get()
+        if item is None:
+            break
+
+        idx, pos_triples = item
 
         point_h = []
         point_r = []
@@ -187,7 +195,11 @@ def process_function_multiclass(raw_queue, processed_queue, config):
     shape = tf.convert_to_tensor(shape, dtype=tf.int64)
 
     while True:
-        idx, raw_data = raw_queue.get()
+        item = raw_queue.get()
+        if item is None:
+            break
+        
+        idx, raw_data = item
         
         h = raw_data[:, 0]
         r = raw_data[:, 1]
@@ -295,6 +307,7 @@ class Generator:
         self.processed_queue_size = 10
         self.raw_queue = Queue(self.raw_queue_size)
         self.processed_queue = Queue(self.processed_queue_size)
+        self.event = Event()
         
         self.create_feeder_process()
         self.create_train_processor_process()
@@ -307,13 +320,25 @@ class Generator:
         
     def stop(self):
         """Function to stop all the worker process."""
+        self.event.set()
+        while not self.raw_queue.empty():
+            self.raw_queue.get_nowait()
+        while not self.processed_queue.empty():
+            self.processed_queue.get_nowait()
+        for _ in range(self.config.num_process_gen): 
+            self.raw_queue.put(None)
+        self.raw_queue.close()
+        self.processed_queue.close()
+
+        self.feeder_process.join()
         for worker_process in self.process_list:
-            worker_process.terminate()
+            worker_process.join()
 
     def create_feeder_process(self):
         """Function create the feeder process."""
-        feeder_worker = Process(target=raw_data_generator, args=(self.raw_queue, self.processed_queue, self.config))
-        self.process_list.append(feeder_worker)
+        feeder_worker = Process(target=raw_data_generator, args=(self.event, self.raw_queue, self.config))
+        # self.process_list.append(feeder_worker)
+        self.feeder_process = feeder_worker
         feeder_worker.daemon = True
         feeder_worker.start()
 
