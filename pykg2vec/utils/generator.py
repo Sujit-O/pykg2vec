@@ -313,8 +313,8 @@ class Generator:
     def create_feeder_process(self):
         """Function create the feeder process."""
         feeder_worker = Process(target=raw_data_generator, args=(self.raw_queue, self.processed_queue, self.config))
-        feeder_worker.daemon = True
         self.process_list.append(feeder_worker)
+        feeder_worker.daemon = True
         feeder_worker.start()
 
     def create_train_processor_process(self):
