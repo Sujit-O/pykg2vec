@@ -11,6 +11,7 @@ import tensorflow as tf
 from multiprocessing import Process, Queue, Event
 from enum import Enum
 
+import os
 
 def raw_data_generator(event, raw_queue, config):
     """Function to feed  triples to raw queue for multiprocessing.
@@ -30,6 +31,8 @@ def raw_data_generator(event, raw_queue, config):
 
     random_ids = np.random.permutation(len(data))
     
+    print("feeder worker id:", os.getpid())
+
     while not event.is_set():
         pos_start = config.batch_size * batch_idx
         pos_end   = config.batch_size * (batch_idx+1)
@@ -41,6 +44,8 @@ def raw_data_generator(event, raw_queue, config):
         batch_idx += 1
         if batch_idx >= number_of_batch:
             batch_idx = 0
+
+    print("feeder process to end", os.getpid())
 
 
 def process_function_pairwise(event, raw_queue, processed_queue, config):
@@ -62,7 +67,8 @@ def process_function_pairwise(event, raw_queue, processed_queue, config):
     neg_rate = config.neg_rate
     
     del data # save memory space
-    
+    print("handling worker id:", os.getpid())
+
     while not event.is_set():
 
         item = raw_queue.get()
@@ -106,6 +112,7 @@ def process_function_pairwise(event, raw_queue, processed_queue, config):
                     nt.append(t[2])
 
         processed_queue.put([ph, pr, pt, nh, nr, nt])
+    print("handling process to end", os.getpid())
 
 def process_function_pointwise(event, raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
@@ -126,7 +133,7 @@ def process_function_pointwise(event, raw_queue, processed_queue, config):
     neg_rate = config.neg_rate
     
     del data # save memory space
-    
+    print("handling worker id:", os.getpid())
     while not event.is_set():
 
         item = raw_queue.get()
@@ -174,7 +181,7 @@ def process_function_pointwise(event, raw_queue, processed_queue, config):
                     point_y.append(-1)
 
         processed_queue.put([point_h, point_r, point_t, point_y])
-
+    print("handling process to end", os.getpid())
 
 def process_function_multiclass(event, raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
@@ -193,6 +200,8 @@ def process_function_multiclass(event, raw_queue, processed_queue, config):
     
     shape = [config.batch_size, config.kg_meta.tot_entity] 
     shape = tf.convert_to_tensor(shape, dtype=tf.int64)
+    
+    print("handling worker id:", os.getpid())
 
     while not event.is_set():
         item = raw_queue.get()
@@ -248,7 +257,8 @@ def process_function_multiclass(event, raw_queue, processed_queue, config):
             tr_h = tf.sparse.add(tr_h, neg_tr_h)
 
         processed_queue.put([h, r, t, hr_t, tr_h])
-
+    
+    print("handling process to end", os.getpid())
 # def get_label_mat(data, bs, te, neg_rate=1):
 #     """Function to label the matrix.
            
@@ -325,9 +335,17 @@ class Generator:
             self.raw_queue.get()
         self.feeder_process.join()
         
+        # for process stuck at get()
+        for i in range(self.config.num_process_gen):
+            self.raw_queue.put(None)
+        
+        # for process stuck at put()
         while not self.processed_queue.empty():
-            print('cleaning process queue')
-            self.processed_queue.get()
+            self.processed_queue.get_nowait()
+
+        # # for process stuck at put()
+        # while not self.processed_queue.empty():
+        #     self.processed_queue.get_nowait()        
 
         for worker_process in self.process_list:
             worker_process.join()
