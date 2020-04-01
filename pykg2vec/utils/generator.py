@@ -18,7 +18,6 @@ def raw_data_generator(event, raw_queue, config):
            
         Args:
             raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
-            processed_queue (Queue) : Multiprocessing Queue to put the processed data.
             data (list) : List of integer ids denoting positive triples.
             batch_size (int) : Size of each batch.
             number_of_batch (int) : Total number of batch.
@@ -31,8 +30,6 @@ def raw_data_generator(event, raw_queue, config):
 
     random_ids = np.random.permutation(len(data))
     
-    print("feeder worker id:", os.getpid())
-
     while not event.is_set():
         pos_start = config.batch_size * batch_idx
         pos_end   = config.batch_size * (batch_idx+1)
@@ -44,8 +41,6 @@ def raw_data_generator(event, raw_queue, config):
         batch_idx += 1
         if batch_idx >= number_of_batch:
             batch_idx = 0
-
-    print("feeder process to end", os.getpid())
 
 
 def process_function_pairwise(event, raw_queue, processed_queue, config):
@@ -67,14 +62,11 @@ def process_function_pairwise(event, raw_queue, processed_queue, config):
     neg_rate = config.neg_rate
     
     del data # save memory space
-    print("handling worker id:", os.getpid())
 
-    while not event.is_set():
-
+    while True:
         item = raw_queue.get()
         if item is None:
-            break
-
+            return
         idx, pos_triples = item
 
         ph = pos_triples[:, 0]
@@ -112,7 +104,6 @@ def process_function_pairwise(event, raw_queue, processed_queue, config):
                     nt.append(t[2])
 
         processed_queue.put([ph, pr, pt, nh, nr, nt])
-    print("handling process to end", os.getpid())
 
 def process_function_pointwise(event, raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
@@ -133,13 +124,11 @@ def process_function_pointwise(event, raw_queue, processed_queue, config):
     neg_rate = config.neg_rate
     
     del data # save memory space
-    print("handling worker id:", os.getpid())
-    while not event.is_set():
 
+    while True:
         item = raw_queue.get()
         if item is None:
-            break
-
+            return
         idx, pos_triples = item
 
         point_h = []
@@ -181,7 +170,7 @@ def process_function_pointwise(event, raw_queue, processed_queue, config):
                     point_y.append(-1)
 
         processed_queue.put([point_h, point_r, point_t, point_y])
-    print("handling process to end", os.getpid())
+
 
 def process_function_multiclass(event, raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
@@ -201,13 +190,10 @@ def process_function_multiclass(event, raw_queue, processed_queue, config):
     shape = [config.batch_size, config.kg_meta.tot_entity] 
     shape = tf.convert_to_tensor(shape, dtype=tf.int64)
     
-    print("handling worker id:", os.getpid())
-
-    while not event.is_set():
+    while True:
         item = raw_queue.get()
         if item is None:
-            break
-        
+            return
         idx, raw_data = item
         
         h = raw_data[:, 0]
@@ -258,7 +244,6 @@ def process_function_multiclass(event, raw_queue, processed_queue, config):
 
         processed_queue.put([h, r, t, hr_t, tr_h])
     
-    print("handling process to end", os.getpid())
 # def get_label_mat(data, bs, te, neg_rate=1):
 #     """Function to label the matrix.
            
@@ -331,30 +316,21 @@ class Generator:
     def stop(self):
         """Function to stop all the worker process."""
         self.event.set()
-        while not self.raw_queue.empty():
-            self.raw_queue.get()
-        self.feeder_process.join()
-        
-        # for process stuck at get()
-        for i in range(self.config.num_process_gen):
-            self.raw_queue.put(None)
-        
-        # for process stuck at put()
-        while not self.processed_queue.empty():
-            self.processed_queue.get_nowait()
-
-        # # for process stuck at put()
-        # while not self.processed_queue.empty():
-        #     self.processed_queue.get_nowait()        
-
         for worker_process in self.process_list:
-            worker_process.join()
+            while True:
+                worker_process.join(1)
+                while not self.processed_queue.empty():
+                    self.processed_queue.get()
+                if self.raw_queue.empty():
+                    for _ in range(self.config.num_process_gen):
+                        self.raw_queue.put(None)
+                if not worker_process.is_alive():
+                    break
 
     def create_feeder_process(self):
         """Function create the feeder process."""
         feeder_worker = Process(target=raw_data_generator, args=(self.event, self.raw_queue, self.config))
-        # self.process_list.append(feeder_worker)
-        self.feeder_process = feeder_worker
+        self.process_list.append(feeder_worker)
         feeder_worker.daemon = True
         feeder_worker.start()
 
