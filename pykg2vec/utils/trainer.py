@@ -283,6 +283,8 @@ class Trainer(TrainerMeta):
        
         metrics_names = ['acc_loss', 'loss'] 
         progress_bar = tf.keras.utils.Progbar(num_batch, stateful_metrics=metrics_names)
+        
+        self.generator.start_one_epoch(num_batch)
 
         for batch_idx in range(num_batch):
             data = list(next(self.generator))

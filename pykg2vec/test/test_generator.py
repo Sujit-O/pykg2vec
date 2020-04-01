@@ -16,7 +16,7 @@ def test_generator_proje():
 
     config_def, model_def = Importer().import_model_config("proje_pointwise")
     generator = Generator(model_def(config_def(KGEArgParser().get_args([]))))
-
+    generator.start_one_epoch(10)
     for i in range(10):
         data = list(next(generator))
         assert len(data) == 5
@@ -40,7 +40,7 @@ def test_generator_pointwise():
 
     config_def, model_def = Importer().import_model_config("complex")
     generator = Generator(model_def(config_def(KGEArgParser().get_args([]))))
-
+    generator.start_one_epoch(10)
     for i in range(10):
         data = list(next(generator))
         assert len(data) == 4
@@ -62,7 +62,7 @@ def test_generator_pairwise():
 
     config_def, model_def = Importer().import_model_config('transe')
     generator = Generator(model_def(config_def(KGEArgParser().get_args([]))))
-
+    generator.start_one_epoch(10)
     for i in range(10):
         data = list(next(generator))
         assert len(data) == 6

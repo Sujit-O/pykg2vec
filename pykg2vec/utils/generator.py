@@ -13,7 +13,7 @@ from enum import Enum
 
 import os
 
-def raw_data_generator(event, raw_queue, config):
+def raw_data_generator(command_queue, raw_queue, config):
     """Function to feed  triples to raw queue for multiprocessing.
            
         Args:
@@ -26,24 +26,29 @@ def raw_data_generator(event, raw_queue, config):
     data = config.knowledge_graph.read_cache_data('triplets_train')
 
     number_of_batch = len(data) // config.batch_size
-    batch_idx = 0
 
     random_ids = np.random.permutation(len(data))
     
-    while not event.is_set():
-        pos_start = config.batch_size * batch_idx
-        pos_end   = config.batch_size * (batch_idx+1)
-        
-        raw_data = np.asarray([[data[x].h, data[x].r, data[x].t] for x in random_ids[pos_start:pos_end]])
-        
-        raw_queue.put((batch_idx, raw_data))
+    while True:
 
-        batch_idx += 1
-        if batch_idx >= number_of_batch:
-            batch_idx = 0
+        command = command_queue.get()
+
+        if command == "quit":
+            raw_queue.put(None)
+            raw_queue.put(None)
+            return 
+        else:
+            number_of_batch = command 
+            for batch_idx in range(number_of_batch):                
+                pos_start = config.batch_size * batch_idx
+                pos_end   = config.batch_size * (batch_idx+1)
+                
+                raw_data = np.asarray([[data[x].h, data[x].r, data[x].t] for x in random_ids[pos_start:pos_end]])
+                
+                raw_queue.put((batch_idx, raw_data))
 
 
-def process_function_pairwise(event, raw_queue, processed_queue, config):
+def process_function_pairwise(raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -105,7 +110,7 @@ def process_function_pairwise(event, raw_queue, processed_queue, config):
 
         processed_queue.put([ph, pr, pt, nh, nr, nt])
 
-def process_function_pointwise(event, raw_queue, processed_queue, config):
+def process_function_pointwise(raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -172,7 +177,7 @@ def process_function_pointwise(event, raw_queue, processed_queue, config):
         processed_queue.put([point_h, point_r, point_t, point_y])
 
 
-def process_function_multiclass(event, raw_queue, processed_queue, config):
+def process_function_multiclass(raw_queue, processed_queue, config):
     """Function that puts the processed data in the queue.
            
         Args:
@@ -300,9 +305,9 @@ class Generator:
         
         self.raw_queue_size = 10
         self.processed_queue_size = 10
+        self.command_queue = Queue(self.raw_queue_size)
         self.raw_queue = Queue(self.raw_queue_size)
         self.processed_queue = Queue(self.processed_queue_size)
-        self.event = Event()
         
         self.create_feeder_process()
         self.create_train_processor_process()
@@ -315,25 +320,16 @@ class Generator:
         
     def stop(self):
         """Function to stop all the worker process."""
-        self.event.set()
-        while not self.processed_queue.empty():
-            self.processed_queue.get()
-        
-        if not self.raw_queue.full():
-            for _ in range(self.config.num_process_gen):
-                self.raw_queue.put(None)
-        
+        self.command_queue.put("quit")        
         for worker_process in self.process_list:
             while True:
-                while not self.processed_queue.empty():
-                    self.processed_queue.get()        
                 worker_process.join(1)
                 if not worker_process.is_alive():
                     break
 
     def create_feeder_process(self):
         """Function create the feeder process."""
-        feeder_worker = Process(target=raw_data_generator, args=(self.event, self.raw_queue, self.config))
+        feeder_worker = Process(target=raw_data_generator, args=(self.command_queue, self.raw_queue, self.config))
         self.process_list.append(feeder_worker)
         feeder_worker.daemon = True
         feeder_worker.start()
@@ -342,16 +338,20 @@ class Generator:
         """Function ro create the process for generating training samples."""
         for i in range(self.config.num_process_gen):
             if self.training_strategy == TrainingStrategy.PROJECTION_BASED:
-                process_worker = Process(target=process_function_multiclass, args=(self.event, self.raw_queue, self.processed_queue, self.config))
+                process_worker = Process(target=process_function_multiclass, args=(self.raw_queue, self.processed_queue, self.config))
             elif self.training_strategy == TrainingStrategy.PAIRWISE_BASED:
-                process_worker = Process(target=process_function_pairwise, args=(self.event, self.raw_queue, self.processed_queue, self.config))
+                process_worker = Process(target=process_function_pairwise, args=(self.raw_queue, self.processed_queue, self.config))
             elif self.training_strategy == TrainingStrategy.POINTWISE_BASED:
-                process_worker = Process(target=process_function_pointwise, args=(self.event, self.raw_queue, self.processed_queue, self.config))
+                process_worker = Process(target=process_function_pointwise, args=(self.raw_queue, self.processed_queue, self.config))
             else:
                 raise NotImplementedError("This strategy is not supported.")
             self.process_list.append(process_worker)
             process_worker.daemon = True
             process_worker.start()
+
+    def start_one_epoch(self, num_batch):
+        self.command_queue.put(num_batch)
+
 
 class TrainingStrategy(Enum):
     PROJECTION_BASED = "projection_based"
