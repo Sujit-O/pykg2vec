@@ -316,14 +316,18 @@ class Generator:
     def stop(self):
         """Function to stop all the worker process."""
         self.event.set()
+        while not self.processed_queue.empty():
+            self.processed_queue.get()
+        
+        if not self.raw_queue.full():
+            for _ in range(self.config.num_process_gen):
+                self.raw_queue.put(None)
+        
         for worker_process in self.process_list:
             while True:
-                worker_process.join(1)
                 while not self.processed_queue.empty():
-                    self.processed_queue.get()
-                if self.raw_queue.empty():
-                    for _ in range(self.config.num_process_gen):
-                        self.raw_queue.put(None)
+                    self.processed_queue.get()        
+                worker_process.join(1)
                 if not worker_process.is_alive():
                     break
 
