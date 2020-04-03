@@ -55,8 +55,8 @@ def test_KGE_methods(model_name):
 def test_NTN():
     testing_function('ntn', ent_hidden_size=10, rel_hidden_size=10) # for avoiding OOM.
 
-# def test_ConvE():
-#     testing_function('conve', channels=2) # for avoiding OOM.
+def test_ConvE():
+    testing_function('conve', channels=2) # for avoiding OOM.
 
 def test_KG2E_EL_args():
     """Function to test KG2E Algorithm with arguments."""
