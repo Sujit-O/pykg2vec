@@ -41,10 +41,6 @@ class ConvE(ModelMeta):
         super(ConvE, self).__init__()
         self.config = config
         self.model_name = 'ConvE'
-        self.dense_last_dim = {50: 2592, 100: 5184, 200: 10368}
-        if self.config.hidden_size not in self.dense_last_dim:
-            raise NotImplementedError("The hidden dimension is not supported!")
-        self.last_dim = self.dense_last_dim[self.config.hidden_size]
         self.training_strategy = TrainingStrategy.PROJECTION_BASED
 
     def def_parameters(self):
