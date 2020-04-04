@@ -68,11 +68,11 @@ class ConvE(ModelMeta):
         self.ent_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embedding")
         self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
         self.b = tf.Variable(emb_initializer(shape=(1, num_total_ent)), name="bias")
-        self.bn0 = tf.keras.layers.BatchNormalization(axis=1)
+        self.bn0 = tf.keras.layers.BatchNormalization(axis=-1)
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
-        self.conv2d_1 = tf.keras.layers.Conv2D(self.config.channels, [3, 3], strides=(1, 1), padding='valid', use_bias=True, data_format="channels_first")
-        self.bn1 = tf.keras.layers.BatchNormalization(axis=1)
-        self.feat_drop = tf.keras.layers.SpatialDropout2D(self.config.feature_map_dropout, data_format='channels_first')
+        self.conv2d_1 = tf.keras.layers.Conv2D(self.config.channels, [3, 3], strides=(1, 1), padding='valid', use_bias=True)
+        self.bn1 = tf.keras.layers.BatchNormalization(axis=-1)
+        self.feat_drop = tf.keras.layers.SpatialDropout2D(self.config.feature_map_dropout)
         self.fc1 = tf.keras.layers.Dense(units=self.config.hidden_size)
         self.hidden_drop = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
         self.bn2 = tf.keras.layers.BatchNormalization(axis=-1)
@@ -132,13 +132,13 @@ class ConvE(ModelMeta):
         """Defines the loss function for the algorithm."""
         h_emb, r_emb, t_emb = self.embed(h, r, t)
         
-        stacked_h = tf.reshape(h_emb, [-1, 1, 10, 20])
-        stacked_r = tf.reshape(r_emb, [-1, 1, 10, 20])
-        stacked_t = tf.reshape(t_emb, [-1, 1, 10, 20])
+        stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
+        stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
+        stacked_t = tf.reshape(t_emb, [-1, 10, 20, 1])
 
         stacked_hr = tf.concat([stacked_h, stacked_r], 1)
         stacked_tr = tf.concat([stacked_t, stacked_r], 1)
-
+        
         # TODO make two different forward layers for head and tail
         pred_tails = self.forward(stacked_hr, self.config.batch_size)
         pred_heads = self.forward(stacked_tr, self.config.batch_size)
@@ -159,8 +159,8 @@ class ConvE(ModelMeta):
         h_emb = tf.nn.embedding_lookup(self.ent_embeddings, e)
         r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
 
-        stacked_h = tf.reshape(h_emb, [-1, 1, 10, 20])
-        stacked_r = tf.reshape(r_emb, [-1, 1, 10, 20])
+        stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
+        stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
         
         stacked_hr = tf.concat([stacked_h, stacked_r], 1)
         pred_tails = -self.forward(stacked_hr, 1)
@@ -173,8 +173,8 @@ class ConvE(ModelMeta):
         t_emb = tf.nn.embedding_lookup(self.ent_embeddings, e)
         r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
 
-        stacked_t = tf.reshape(t_emb, [-1, 1, 10, 20])
-        stacked_r = tf.reshape(r_emb, [-1, 1, 10, 20])
+        stacked_t = tf.reshape(t_emb, [-1, 10, 20, 1])
+        stacked_r = tf.reshape(r_emb, [-1, 10, 20, 1])
         
         stacked_tr = tf.concat([stacked_t, stacked_r], 1)
         pred_heads = -self.forward(stacked_tr, 1)
@@ -187,8 +187,8 @@ class ConvE(ModelMeta):
         h_emb = tf.nn.embedding_lookup(self.ent_embeddings, e)
         t_emb = tf.nn.embedding_lookup(self.ent_embeddings, e)
 
-        stacked_h = tf.reshape(h_emb, [-1, 1, 10, 20])
-        stacked_t = tf.reshape(t_emb, [-1, 1, 10, 20])
+        stacked_h = tf.reshape(h_emb, [-1, 10, 20, 1])
+        stacked_t = tf.reshape(t_emb, [-1, 10, 20, 1])
 
         stacked_ht = tf.concat([stacked_h, stacked_t], 1)
         pred_rels = -self.forward(stacked_ht, 1)
