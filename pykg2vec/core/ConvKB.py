@@ -73,7 +73,6 @@ class ConvKB(ModelMeta):
             (3, filter_size), 
             padding = 'valid', 
             use_bias= True, 
-            data_format="channels_first",
             strides = (1,1),
             activation = tf.keras.layers.ReLU()) for filter_size in self.config.filter_sizes]
         
@@ -84,7 +83,7 @@ class ConvKB(ModelMeta):
 
     def forward(self, x, batch):
         x = [self.conv_list[i](x) for i in range(len(self.config.filter_sizes))]
-        x = tf.keras.layers.concatenate(x,axis=-1)
+        x = tf.keras.layers.concatenate(x, axis=2)
         x = tf.reshape(x, [batch, -1])
         x = self.fc1(x)
         return x
@@ -101,7 +100,7 @@ class ConvKB(ModelMeta):
 
         stacked_hrt = tf.concat([stacked_h, stacked_r, stacked_t], 1)
 
-        stacked_hrt = tf.expand_dims(stacked_hrt, 1) # [b, 1, 3, k]
+        stacked_hrt = tf.expand_dims(stacked_hrt, -1) # [b, 3, k, 1]
 
         predictions = self.forward(stacked_hrt, (1+self.config.neg_rate)*self.config.batch_size)
 
@@ -124,7 +123,7 @@ class ConvKB(ModelMeta):
         stacked_t = tf.expand_dims(t_emb, 1)
 
         stacked_hrt = tf.concat([stacked_h, stacked_r, stacked_t], 1)
-        stacked_hrt = tf.expand_dims(stacked_hrt, 1) # [1, 1, 3, k]
+        stacked_hrt = tf.expand_dims(stacked_hrt, -1) # [1, 3, k, 1]
 
         predictions = self.forward(stacked_hrt, self.config.kg_meta.tot_entity)
         predictions = tf.squeeze(predictions, -1)

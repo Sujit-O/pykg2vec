@@ -1297,7 +1297,8 @@ class ConvEConfig(BasicConfig):
         self.optimizer = args.optimizer
         self.sampling = args.sampling
         self.neg_rate = 0
-        self.channels = 32
+        self.num_filters = args.num_filters
+
         if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'conve')
             for key, value in paper_params.items():
@@ -1316,6 +1317,7 @@ class ConvEConfig(BasicConfig):
             'optimizer': self.optimizer,
             'sampling': self.sampling,
             'neg_rate': self.neg_rate,
+            'num_filters': self.num_filters
         }
 
         BasicConfig.__init__(self, args)

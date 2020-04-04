@@ -58,6 +58,9 @@ def test_NTN():
 def test_ConvE():
     testing_function('conve', channels=2) # for avoiding OOM.
 
+def test_ConvKB():
+    testing_function('convkb', channels=2) # for avoiding OOM.
+
 def test_KG2E_EL_args():
     """Function to test KG2E Algorithm with arguments."""
     testing_function('kg2e', distance_measure="expected_likelihood")
