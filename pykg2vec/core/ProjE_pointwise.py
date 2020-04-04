@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 import numpy as np
 
-from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
+from pykg2vec.core.KGMeta import ModelMeta
 from pykg2vec.utils.generator import TrainingStrategy
 
 class ProjE_pointwise(ModelMeta):
