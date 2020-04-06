@@ -248,35 +248,6 @@ def process_function_multiclass(raw_queue, processed_queue, config):
             tr_h = tf.sparse.add(tr_h, neg_tr_h)
 
         processed_queue.put([h, r, t, hr_t, tr_h])
-    
-# def get_label_mat(data, bs, te, neg_rate=1):
-#     """Function to label the matrix.
-           
-#         Args:
-#             data (list): List of integer id denoting positive data.
-#             bs (int): Batch size of the samples.
-#             te (int): Total number of entity.
-#             neg_rate (int): Ratio of negative to positive samples.
-
-#         Returns:
-#             Matrix: Returns numpy matrix with labels
-#     """
-#     mat = np.full((bs, te), 0.0)
-#     for i in range(bs):
-#         pos_samples = len(data[i])
-#         distribution_data = data[i]
-#         for j in range(pos_samples):
-#             mat[i][distribution_data[j]] = 1.0
-#         neg_samples = neg_rate * pos_samples
-#         idx = list(range(te))
-#         arr = data[i]
-#         arr.sort(reverse=True)
-#         for k in arr:
-#             del idx[k]
-#         np.random.shuffle(idx)
-#         for j in range(neg_samples):
-#             mat[i][idx[j]] = 0.0
-#     return mat
 
 
 class Generator:
