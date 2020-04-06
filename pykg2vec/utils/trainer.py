@@ -15,14 +15,17 @@ from pykg2vec.utils.generator import Generator, TrainingStrategy
 from pykg2vec.utils.logger import Logger
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
+import warnings
+warnings.filterwarnings('ignore')
+
 tf.config.set_soft_device_placement(True)
 physical_devices = tf.config.list_physical_devices('GPU') 
 try:
     for gpu in physical_devices: 
         tf.config.experimental.set_memory_growth(gpu, True) 
 except: 
-  # Invalid device or cannot modify virtual devices once initialized. 
-  pass
+    # Invalid device or cannot modify virtual devices once initialized. 
+    pass
 
 
 class Monitor(Enum):
@@ -106,9 +109,16 @@ class Trainer(TrainerMeta):
         return loss
 
     @tf.function
-    def train_step_projection(self, h, r, t, hr_t, rt_h):
+    def train_step_projection(self, h, r, t, hr_t, tr_h):
         with tf.GradientTape() as tape:
-            loss = self.model.get_loss(h, r, t, hr_t, rt_h)
+            hr_t = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(hr_t)), dtype=tf.float32)
+            tr_h = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(tr_h)), dtype=tf.float32)
+       
+            if hasattr(self.config, 'label_smoothing'):
+                hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+                tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+
+            loss = self.model.get_loss(h, r, t, hr_t, tr_h)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))

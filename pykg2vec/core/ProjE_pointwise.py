@@ -82,8 +82,8 @@ class ProjE_pointwise(ModelMeta):
 
     def get_loss(self, h, r, t, hr_t, tr_h):
         """Defines the loss function for the algorithm."""
-        hrt_loss = self.forward(h, r, tf.cast(tf.sparse.to_dense(tf.sparse.reorder(hr_t)), dtype=tf.float32))
-        trh_loss = self.backward(t, r, tf.cast(tf.sparse.to_dense(tf.sparse.reorder(tr_h)), dtype=tf.float32))
+        hrt_loss = self.forward(h, r, hr_t)
+        trh_loss = self.backward(t, r, tr_h)
 
         regularizer_loss = tf.reduce_sum(tf.abs(self.De1) + tf.abs(self.Dr1)) + tf.reduce_sum(tf.abs(self.De2) + tf.abs(self.Dr2)) + tf.reduce_sum(tf.abs(self.ent_embeddings)) + tf.reduce_sum(tf.abs(self.rel_embeddings))
         

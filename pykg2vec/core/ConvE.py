@@ -139,11 +139,6 @@ class ConvE(ModelMeta):
         pred_tails = self.forward(stacked_hr, self.config.batch_size)
         pred_heads = self.forward(stacked_tr, self.config.batch_size)
 
-        hr_t = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(hr_t)), dtype=tf.float32)
-        tr_h = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(tr_h)), dtype=tf.float32)
-        hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
-        tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
-
         loss_tail_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
         loss_head_pred = tf.reduce_mean(tf.keras.backend.binary_crossentropy(tr_h, pred_heads))
 

@@ -1080,7 +1080,6 @@ class DistMultConfig(BasicConfig):
       input_dropout (float) : Sets the dropout rate for the input layer.
       hidden_dropout (float) : Sets the dropout rate for the hidden layer.
       use_bias (bool) : If true, adds bias in the end before the activation.
-      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
       lr_decay (float) : Sets the learning decay rate for optimization.
       learning_rate (float): Defines the learning rate for the optimization.
       L1_flag (bool): If True, perform L1 regularization on the model parameters.
@@ -1140,7 +1139,6 @@ class ProjE_pointwiseConfig(BasicConfig):
       input_dropout (float) : Sets the dropout rate for the input layer.
       hidden_dropout (float) : Sets the dropout rate for the hidden layer.
       use_bias (bool) : If true, adds bias in the end before the activation.
-      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
       lr_decay (float) : Sets the learning decay rate for optimization.
       learning_rate (float): Defines the learning rate for the optimization.
       L1_flag (bool): If True, perform L1 regularization on the model parameters.
@@ -1205,7 +1203,6 @@ class ConvKBConfig(BasicConfig):
       input_dropout (float) : Sets the dropout rate for the input layer.
       hidden_dropout (float) : Sets the dropout rate for the hidden layer.
       use_bias (bool) : If true, adds bias in the end before the activation.
-      label_smoothing (float) : Smoothens the label from 0 and 1 by adding it on the 0 and subtracting it from 1. 
       lr_decay (float) : Sets the learning decay rate for optimization.
       learning_rate (float): Defines the learning rate for the optimization.
       L1_flag (bool): If True, perform L1 regularization on the model parameters.
