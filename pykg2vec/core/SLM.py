@@ -85,26 +85,12 @@ class SLM(ModelMeta):
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
-    def dissimilarity(self, h, r, t):
-        return -self.match(h, r, t) 
-
-    def match(self, h, r, t, axis=-1):
-        norm_h = tf.nn.l2_normalize(h, axis=axis)
-        norm_r = tf.nn.l2_normalize(r, axis=axis)
-        norm_t = tf.nn.l2_normalize(t, axis=axis)
-        return tf.reduce_sum(norm_r * self.layer(norm_h, norm_t), axis=axis)
-
-    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        """Defines the loss function for the algorithm."""
-        pos_h_e, pos_r_e, pos_t_e = self.embed(pos_h, pos_r, pos_t)
-        neg_h_e, neg_r_e, neg_t_e = self.embed(neg_h, neg_r, neg_t)
-
-        energy_pos = self.match(pos_h_e, pos_r_e, pos_t_e)
-        energy_neg = self.match(neg_h_e, neg_r_e, neg_t_e)
-
-        loss = tf.reduce_sum(tf.maximum(energy_neg + self.config.margin - energy_pos, 0))
-
-        return loss
+    def forward(self, h, r, t):
+        h_e, r_e, t_e = self.embed(h, r, t)
+        norm_h = tf.nn.l2_normalize(h_e, -1)
+        norm_r = tf.nn.l2_normalize(r_e, -1)
+        norm_t = tf.nn.l2_normalize(t_e, -1)
+        return -tf.reduce_sum(norm_r * self.layer(norm_h, norm_t), -1)
 
     def layer(self, h, t):
         """Defines the forward pass layer of the algorithm.
@@ -116,17 +102,3 @@ class SLM(ModelMeta):
         mr1h = tf.matmul(h, self.mr1) # h => [m, d], self.mr1 => [d, k]
         mr2t = tf.matmul(t, self.mr2) # t => [m, d], self.mr2 => [d, k]
         return tf.tanh(mr1h + mr2t)
-
-    def predict_rank(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
-        h_e, r_e, t_e = self.embed(h, r, t)
-        score = self.match(h_e, r_e, t_e)
-        _, rank = tf.nn.top_k(-score, k=topk)
-
-        return rank

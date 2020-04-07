@@ -184,7 +184,6 @@ class KGEArgParser:
         self.general_hyper_group.add_argument('-km',  dest='ent_hidden_size', default=50, type=int, help="Hidden embedding size for entities.")
         self.general_hyper_group.add_argument('-kr',  dest='rel_hidden_size', default=50, type=int, help="Hidden embedding size for relations.")
         self.general_hyper_group.add_argument('-l1',  dest='l1_flag', default=True, type=lambda x: (str(x).lower() == 'true'),help='The flag of using L1 or L2 norm.')
-        self.general_hyper_group.add_argument('-c',   dest='C', default=0.0125, type=float, help='The parameter C used in transH.')
 
         ''' working environments '''
         self.environment_group = self.parser.add_argument_group('Working Environments')
@@ -652,7 +651,6 @@ class TransHConfig(BasicConfig):
         self.data = args.dataset_name
         self.optimizer = args.optimizer
         self.sampling = args.sampling
-        self.C = args.C
         self.neg_rate = args.negrate
 
         if args.exp is True:
@@ -670,7 +668,6 @@ class TransHConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
-            'C': self.C,
             'neg_rate': self.neg_rate,
         }
 
@@ -761,6 +758,7 @@ class SMEConfig(BasicConfig):
         self.optimizer = args.optimizer
         self.sampling = args.sampling
         self.neg_rate = 1
+        self.margin = 1.0
         
         if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'sme')
@@ -774,6 +772,7 @@ class SMEConfig(BasicConfig):
             'epochs': self.epochs,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
+            'margin': self.margin,
         }
 
         BasicConfig.__init__(self, args)
@@ -813,6 +812,7 @@ class NTNConfig(BasicConfig):
         self.optimizer = args.optimizer
         self.sampling = args.sampling
         self.neg_rate = args.negrate
+        self.margin = 1.0
 
         if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'ntn')

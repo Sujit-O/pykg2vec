@@ -101,7 +101,26 @@ class Trainer(TrainerMeta):
     @tf.function
     def train_step_pairwise(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
         with tf.GradientTape() as tape:
-            loss = self.model.get_loss(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
+            pos_preds = self.model.forward(pos_h, pos_r, pos_t)
+            neg_preds = self.model.forward(neg_h, neg_r, neg_t)
+            
+            if self.config.sampling == 'adversarial_negative_sampling':
+                # RotatE: Adversarial Nnegative Sampling and alpha is the temperature.
+                pos_preds = -pos_preds
+                neg_preds = -neg_preds
+                pos_preds = tf.math.log_sigmoid(pos_preds)
+                neg_preds = tf.reshape(neg_preds, [-1, self.config.neg_rate])
+                softmax = tf.stop_gradient(tf.nn.softmax(neg_preds*self.config.alpha, axis=1))
+                neg_preds = tf.reduce_sum(softmax * (tf.math.log_sigmoid(-neg_preds)), axis=-1)
+                loss = -tf.reduce_mean(neg_preds) - tf.reduce_mean(pos_preds)
+            else:
+                # others that use margin-based & pairwise loss function. (unif or bern)
+                loss = tf.reduce_sum(tf.maximum(pos_preds + self.config.margin - neg_preds, 0))
+            
+            if hasattr(self.model, 'get_reg'):
+                # now only NTN uses regularizer, 
+                # other pairwise based KGE methods use normalization to regularize parameters.
+                loss += self.model.get_reg()
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))

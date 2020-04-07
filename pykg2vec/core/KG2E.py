@@ -48,7 +48,7 @@ class KG2E(ModelMeta):
     def __init__(self, config=None):
         super(KG2E, self).__init__()
         self.config = config
-        self.model_name = 'KG2E_EL'
+        self.model_name = 'KG2E_KL'
         self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     def def_parameters(self):
@@ -85,33 +85,9 @@ class KG2E(ModelMeta):
         self.ent_embeddings_sigma = tf.maximum(self.config.cmin, tf.minimum(self.config.cmax, (self.ent_embeddings_sigma + 1.0)))
         self.rel_embeddings_sigma = tf.maximum(self.config.cmin, tf.minimum(self.config.cmax, (self.rel_embeddings_sigma + 1.0)))
 
-    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        """Defines the loss function for the algorithm."""
-        pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu, pos_t_sigma = self.embed(pos_h, pos_r, pos_t)
-        neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu, neg_t_sigma = self.embed(neg_h, neg_r, neg_t)
-
-        score_pos = self.cal_score_expected_likelihood(pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu,
-                                                       pos_t_sigma)
-        score_neg = self.cal_score_expected_likelihood(neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu,
-                                                       neg_t_sigma)
-
-        loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
-
-        return loss
-
-    def predict_rank(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
+    def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
-        score = self.cal_score_expected_likelihood(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
-        _, rank = tf.nn.top_k(score, k=topk)
-
-        return rank
+        return self.cal_score_expected_likelihood(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
 
     def cal_score_expected_likelihood(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
         """ It calculates the expected likelihood as a score.
@@ -204,31 +180,9 @@ class KG2E_EL(KG2E):
         self.model_name = 'KG2E_EL'
         self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
-    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        """Defines the loss function for the algorithm."""
-        pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu, pos_t_sigma = self.embed(pos_h, pos_r, pos_t)
-        neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu, neg_t_sigma = self.embed(neg_h, neg_r, neg_t)
-
-        score_pos = self.cal_score_kl_divergence(pos_h_mu, pos_h_sigma, pos_r_mu, pos_r_sigma, pos_t_mu, pos_t_sigma)
-        score_neg = self.cal_score_kl_divergence(neg_h_mu, neg_h_sigma, neg_r_mu, neg_r_sigma, neg_t_mu, neg_t_sigma)
-
-        loss = tf.reduce_sum(tf.maximum(score_pos + self.config.margin - score_neg, 0))
-
-        return loss
-
-    def predict_rank(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
+    def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
-        score = self.cal_score_kl_divergence(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
-        _, rank = tf.nn.top_k(score, k=topk)
-
-        return rank
+        return self.cal_score_kl_divergence(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
 
     def cal_score_kl_divergence(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
         """ It calculates the kl_divergence as a score.

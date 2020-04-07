@@ -63,16 +63,25 @@ class TransH(ModelMeta):
         """
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+        initializer = tf.initializers.glorot_normal()
 
-        emb_initializer = tf.initializers.glorot_normal()
-
-        self.ent_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embedding")
-        self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
-        self.w = tf.Variable(emb_initializer(shape=(num_total_rel, k)),name="w")
-
+        self.ent_embeddings = tf.Variable(initializer(shape=(num_total_ent, self.config.hidden_size)), name="ent_embedding")
+        self.rel_embeddings = tf.Variable(initializer(shape=(num_total_rel, self.config.hidden_size)), name="rel_embedding")
+        self.w              = tf.Variable(initializer(shape=(num_total_rel, self.config.hidden_size)), name="w")
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.w]
 
+    def forward(self, h, r, t):
+        h_e, r_e, t_e = self.embed(h, r, t)
+
+        norm_h_e = tf.nn.l2_normalize(h_e, -1)
+        norm_r_e = tf.nn.l2_normalize(r_e, -1)
+        norm_t_e = tf.nn.l2_normalize(t_e, -1)
+
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.math.abs(norm_h_e + norm_r_e - norm_t_e), -1) # L1 norm 
+        else:
+            return tf.reduce_sum(tf.math.square(norm_h_e + norm_r_e - norm_t_e), -1) # L2 norm
+    
     def projection(self, emb_e, proj_vec):
         """Calculates the projection of entities"""
         proj_vec = tf.nn.l2_normalize(proj_vec, axis=-1)
@@ -94,73 +103,9 @@ class TransH(ModelMeta):
         emb_h =    tf.nn.embedding_lookup(self.ent_embeddings, h)
         emb_r =    tf.nn.embedding_lookup(self.rel_embeddings, r)
         emb_t =    tf.nn.embedding_lookup(self.ent_embeddings, t)
-        
         proj_vec = tf.nn.embedding_lookup(self.w, r)
 
         emb_h = self.projection(emb_h, proj_vec)
         emb_t = self.projection(emb_t, proj_vec)
 
         return emb_h, emb_r, emb_t
-
-    def dissimilarity(self, h, r, t, axis=-1):
-        """Function to calculate distance measure in embedding space.
-
-        Args:
-            h (Tensor): shape [b, k] Head entities in a batch. 
-            r (Tensor): shape [b, k] Relation entities in a batch.
-            t (Tensor): shape [b, k] Tail entities in a batch.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensor: shape [b] the aggregated distance measure.
-        """
-        norm_h = tf.nn.l2_normalize(h, axis=axis)
-        norm_r = tf.nn.l2_normalize(r, axis=axis)
-        norm_t = tf.nn.l2_normalize(t, axis=axis)
-        
-        dissimilarity = norm_h + norm_r - norm_t 
-
-        if self.config.L1_flag:
-            dissimilarity = tf.math.abs(dissimilarity) # L1 norm 
-        else:
-            dissimilarity = tf.math.square(dissimilarity) # L2 norm
-        
-        return tf.reduce_sum(dissimilarity, axis=axis)
-
-    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        """Defines the loss function for the algorithm."""
-        pos_h_e, pos_r_e, pos_t_e = self.embed(pos_h, pos_r, pos_t)
-        pos_score = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
-
-        neg_h_e, neg_r_e, neg_t_e = self.embed(neg_h, neg_r, neg_t)
-        neg_score = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
-
-        loss = self.pairwise_margin_loss(pos_score, neg_score) + self.get_reg()
-
-        return loss
-      
-    def get_reg(self):
-        """Performs regularization."""
-        norm_ent_embedding = tf.nn.l2_normalize(self.ent_embeddings, axis=-1)
-        norm_rel_embedding = tf.nn.l2_normalize(self.rel_embeddings, axis=-1)
-        norm_w = tf.nn.l2_normalize(self.w, axis=-1)
-
-        term1 = tf.reduce_sum(tf.maximum(tf.reduce_sum(norm_ent_embedding ** 2, -1) - 1, 0))
-        term2 = tf.reduce_sum(tf.maximum(tf.divide(tf.reduce_sum(norm_rel_embedding * norm_w, -1) ** 2,
-                                                tf.reduce_sum(norm_rel_embedding ** 2, -1)) - 1e-07, 0))
-
-        return self.config.C * (term1 + term2)
-
-    def predict_rank(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransH. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
-        h_e, r_e, t_e = self.embed(h, r, t)
-        score = self.dissimilarity(h_e, r_e, t_e)
-        _, rank = tf.nn.top_k(score, k=topk)
-
-        return rank

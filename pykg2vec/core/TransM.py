@@ -79,6 +79,30 @@ class TransM(ModelMeta):
         
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.theta]
 
+    def forward(self, h, r, t):
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids.
+               t (Tensor): Tail entity ids.
+
+            Returns:
+                Tensors: the scores of evaluationReturns head, relation and tail embedding Tensors.
+        """
+        h_e, r_e, t_e = self.embed(h, r, t)
+
+        norm_h_e = tf.nn.l2_normalize(h_e, -1)
+        norm_r_e = tf.nn.l2_normalize(r_e, -1)
+        norm_t_e = tf.nn.l2_normalize(t_e, -1)
+        
+        r_theta = tf.nn.embedding_lookup(self.theta, r)
+
+        if self.config.L1_flag:
+            return r_theta*tf.reduce_sum(tf.math.abs(norm_h_e + norm_r_e - norm_t_e), -1) # L1 norm 
+        else:
+            return r_theta*tf.reduce_sum(tf.math.square(norm_h_e + norm_r_e - norm_t_e), -1) # L2 norm
+
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
@@ -95,57 +119,3 @@ class TransM(ModelMeta):
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
 
         return emb_h, emb_r, emb_t
-
-    def dissimilarity(self, h, r, t, axis=-1):
-        """Function to calculate distance measure in embedding space.
-
-        Args:
-            h (Tensor): shape [b, k] Head entities in a batch. 
-            r (Tensor): shape [b, k] Relation entities in a batch.
-            t (Tensor): shape [b, k] Tail entities in a batch.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensor: shape [b] the aggregated distance measure.
-        """
-        norm_h = tf.nn.l2_normalize(h, axis=axis)
-        norm_r = tf.nn.l2_normalize(r, axis=axis)
-        norm_t = tf.nn.l2_normalize(t, axis=axis)
-        
-        dissimilarity = norm_h + norm_r - norm_t 
-
-        if self.config.L1_flag:
-            dissimilarity = tf.math.abs(dissimilarity) # L1 norm 
-        else:
-            dissimilarity = tf.math.square(dissimilarity) # L2 norm
-        
-        return tf.reduce_sum(dissimilarity, axis=axis)
-
-    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        """Defines the loss function for the algorithm."""
-        pos_h_e, pos_r_e, pos_t_e = self.embed(pos_h, pos_r, pos_t)
-        neg_h_e, neg_r_e, neg_t_e = self.embed(neg_h, neg_r, neg_t)
-
-        pos_r_theta = tf.nn.embedding_lookup(self.theta, pos_r)
-        neg_r_theta = tf.nn.embedding_lookup(self.theta, neg_r)
-
-        pos_score = pos_r_theta*self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
-        neg_score = neg_r_theta*self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
-
-        loss = self.pairwise_margin_loss(pos_score, neg_score)
-
-        return loss
-
-    def predict_rank(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
-        h_e, r_e, t_e = self.embed(h, r, t)
-        score = self.dissimilarity(h_e, r_e, t_e)
-        _, rank = tf.nn.top_k(score, k=topk)
-
-        return rank

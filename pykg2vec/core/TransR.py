@@ -108,54 +108,24 @@ class TransR(ModelMeta):
         # [b, d]
         return h_e, r_e, t_e
 
-    def dissimilarity(self, h, r, t, axis=-1):
-        """Function to calculate distance measure in embedding space.
-        
-        Args:
-            h (Tensor): shape [b, k] Head entities in a batch. 
-            r (Tensor): shape [b, k] Relation entities in a batch.
-            t (Tensor): shape [b, k] Tail entities in a batch.
-            axis (int): Determines the axis for reduction
+    def forward(self, h, r, t):
+        """Function to get the embedding value.
 
-        Returns:
-            Tensor: shape [b] the aggregated distance measure.
-        """
-        norm_h = tf.nn.l2_normalize(h, axis=axis)
-        norm_r = tf.nn.l2_normalize(r, axis=axis)
-        norm_t = tf.nn.l2_normalize(t, axis=axis)
-        
-        dissimilarity = norm_h + norm_r - norm_t 
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids.
+               t (Tensor): Tail entity ids.
 
-        if self.config.L1_flag:
-            dissimilarity = tf.math.abs(dissimilarity) # L1 norm 
-        else:
-            dissimilarity = tf.math.square(dissimilarity) # L2 norm
-        
-        return tf.reduce_sum(dissimilarity, axis=axis)
-
-    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        """Defines the loss function for the algorithm."""
-        pos_h_e, pos_r_e, pos_t_e = self.embed(pos_h, pos_r, pos_t)
-        pos_score = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
-
-        neg_h_e, neg_r_e, neg_t_e = self.embed(neg_h, neg_r, neg_t)
-        neg_score = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
-
-        loss = self.pairwise_margin_loss(pos_score, neg_score)
-
-        return loss
-
-    def predict_rank(self, h, r, t, topk=-1):
-
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
+            Returns:
+                Tensors: the scores of evaluationReturns head, relation and tail embedding Tensors.
         """
         h_e, r_e, t_e = self.embed(h, r, t)
-        score = self.dissimilarity(h_e, r_e, t_e)
-        _, rank = tf.nn.top_k(score, k=topk)
 
-        return rank
+        norm_h_e = tf.nn.l2_normalize(h_e, -1)
+        norm_r_e = tf.nn.l2_normalize(r_e, -1)
+        norm_t_e = tf.nn.l2_normalize(t_e, -1)
+
+        if self.config.L1_flag:
+            return tf.reduce_sum(tf.math.abs(norm_h_e + norm_r_e - norm_t_e), -1) # L1 norm 
+        else:
+            return tf.reduce_sum(tf.math.square(norm_h_e + norm_r_e - norm_t_e), -1) # L2 norm

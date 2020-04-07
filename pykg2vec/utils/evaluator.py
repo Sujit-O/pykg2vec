@@ -255,11 +255,14 @@ class Evaluator(EvaluationMeta):
             rank = self.model.predict_tail_rank(h, r, topk=topk)
             return tf.squeeze(rank, 0)
 
-        if hasattr(self.model, 'predict_rank'):
+        if hasattr(self.model, 'predict'):
             h_batch = tf.tile([h], [self.model.config.kg_meta.tot_entity])
             r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
             entity_array = tf.range(self.model.config.kg_meta.tot_entity)
-            return self.model.predict_rank(h_batch, r_batch, entity_array, topk=topk)
+
+            preds = self.model.forward(h_batch, r_batch, entity_array)
+            _, rank = tf.nn.top_k(preds, k=topk)
+            return rank
 
         raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_tail_rank", "predict_rank"))
 
@@ -269,11 +272,14 @@ class Evaluator(EvaluationMeta):
             rank = self.model.predict_head_rank(t, r, topk=topk)
             return tf.squeeze(rank, 0)
 
-        if hasattr(self.model, 'predict_rank'):
+        if hasattr(self.model, 'predict'):
             entity_array = tf.range(self.model.config.kg_meta.tot_entity)
             r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
             t_batch = tf.tile([t], [self.model.config.kg_meta.tot_entity])
-            return self.model.predict_rank(entity_array, r_batch, t_batch, topk=topk)
+
+            preds = self.model.forward(entity_array, r_batch, t_batch)
+            _, rank = tf.nn.top_k(preds, k=topk)
+            return rank
 
         raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_head_rank", "predict_rank"))
 
@@ -283,11 +289,14 @@ class Evaluator(EvaluationMeta):
             rank = self.model.predict_rel_rank(h, t, topk=topk)
             return tf.squeeze(rank, 0)
 
-        if hasattr(self.model, 'predict_rank'):
+        if hasattr(self.model, 'predict'):
             h_batch = tf.tile([h], [self.model.config.kg_meta.tot_relation])
             rel_array = tf.range(self.model.config.kg_meta.tot_relation)
             t_batch = tf.tile([t], [self.model.config.kg_meta.tot_relation])
-            return self.model.predict_rank(h_batch, rel_array, t_batch, topk=topk)
+            
+            preds = self.model.forward(h_batch, rel_array, t_batch)
+            _, rank = tf.nn.top_k(preds, k=topk)
+            return rank
 
         raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_rel_rank", "predict_rank"))
 

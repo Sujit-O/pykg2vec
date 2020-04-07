@@ -90,11 +90,9 @@ class SME(ModelMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=-1)
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=-1)
-        emb_h = tf.nn.embedding_lookup(norm_ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(norm_rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(norm_ent_embeddings, t)
+        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         return emb_h, emb_r, emb_t
 
     def gu_linear(self, h, r):
@@ -125,7 +123,7 @@ class SME(ModelMeta):
         mv2r = tf.matmul(self.mv2, tf.transpose(r)) # [k, b]
         return tf.transpose(mv1t + mv2r + self.bv)  # [b, k]
 
-    def match(self, h, r, t, axis=-1):
+    def forward(self, h, r, t):
         """Function to that performs semanting matching.
 
             Args:
@@ -136,39 +134,12 @@ class SME(ModelMeta):
             Returns:
                 Tensors: Returns the semantic matchin score.
         """
-        norm_h = tf.nn.l2_normalize(h, axis=axis)
-        norm_r = tf.nn.l2_normalize(r, axis=axis)
-        norm_t = tf.nn.l2_normalize(t, axis=axis)
-
-        return tf.reduce_sum(self.gu_linear(norm_h, norm_r)*self.gv_linear(norm_r, norm_t), 1)
-
-    def dissimilarity(self, h, r, t):
-        return -self.match(h, r, t)
-
-    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        """Defines the loss function for the algorithm."""
-        pos_h_e, pos_r_e, pos_t_e = self.embed(pos_h, pos_r, pos_t)
-        neg_h_e, neg_r_e, neg_t_e = self.embed(neg_h, neg_r, neg_t)
-        energy_pos = self.match(pos_h_e, pos_r_e, pos_t_e)
-        energy_neg = self.match(neg_h_e, neg_r_e, neg_t_e)
-
-        loss = tf.reduce_sum(tf.maximum(energy_pos - energy_neg + 1, 0))
-
-        return loss
-
-    def predict_rank(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
         h_e, r_e, t_e = self.embed(h, r, t)
-        score = self.match(h_e, r_e, t_e)
-        _, rank = tf.nn.top_k(score, k=topk)
+        norm_h = tf.nn.l2_normalize(h_e, -1)
+        norm_r = tf.nn.l2_normalize(r_e, -1)
+        norm_t = tf.nn.l2_normalize(t_e, -1)
 
-        return rank
+        return -tf.reduce_sum(self.gu_linear(norm_h, norm_r)*self.gv_linear(norm_r, norm_t), 1)
 
 class SME_BL(SME):
     """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
@@ -238,8 +209,7 @@ class SME_BL(SME):
         mv2r = tf.matmul(self.mv2, tf.transpose(r)) # [k, b]
         return tf.transpose(mv1t * mv2r + self.bv)  # [b, k]
 
-
-    def match(self, h, r, t, axis=-1):
+    def forward(self, h, r, t):
         """Function to that performs semanting matching.
 
             Args:
@@ -250,8 +220,9 @@ class SME_BL(SME):
             Returns:
                 Tensors: Returns the semantic matchin score.
         """
-        norm_h = tf.nn.l2_normalize(h, axis=axis)
-        norm_r = tf.nn.l2_normalize(r, axis=axis)
-        norm_t = tf.nn.l2_normalize(t, axis=axis)
+        h_e, r_e, t_e = self.embed(h, r, t)
+        norm_h = tf.nn.l2_normalize(h_e, -1)
+        norm_r = tf.nn.l2_normalize(r_e, -1)
+        norm_t = tf.nn.l2_normalize(t_e, -1)
 
         return tf.reduce_sum(self.gu_bilinear(norm_h, norm_r)*self.gv_bilinear(norm_r, norm_t), -1)
