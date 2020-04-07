@@ -71,49 +71,27 @@ class ProjE_pointwise(ModelMeta):
         self.bc2 = tf.Variable(emb_initializer(shape=(1, k)), name="bc2")
         self.De2 = tf.Variable(emb_initializer(shape=(1, k)), name="De2")
         self.Dr2 = tf.Variable(emb_initializer(shape=(1, k)), name="Dr2")
-        self.bc3 = tf.Variable(emb_initializer(shape=(1, k)), name="bc3")
-        self.De3 = tf.Variable(emb_initializer(shape=(1, k)), name="De3")
-        self.Dr3 = tf.Variable(emb_initializer(shape=(1, k)), name="Dr3")
 
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings,
                                self.bc1, self.De1, self.Dr1,
-                               self.bc2, self.De2, self.Dr2,
-                               self.bc3, self.De3, self.Dr3]
+                               self.bc2, self.De2, self.Dr2]
 
-    def get_loss(self, h, r, t, hr_t, tr_h):
-        """Defines the loss function for the algorithm."""
-        hrt_loss = self.forward(h, r, hr_t)
-        trh_loss = self.backward(t, r, tr_h)
+    def get_reg(self):
+        return self.config.lmbda*(tf.reduce_sum(tf.abs(self.De1) + tf.abs(self.Dr1)) + tf.reduce_sum(tf.abs(self.De2) + tf.abs(self.Dr2)) + tf.reduce_sum(tf.abs(self.ent_embeddings)) + tf.reduce_sum(tf.abs(self.rel_embeddings)))
 
-        regularizer_loss = tf.reduce_sum(tf.abs(self.De1) + tf.abs(self.Dr1)) + tf.reduce_sum(tf.abs(self.De2) + tf.abs(self.Dr2)) + tf.reduce_sum(tf.abs(self.ent_embeddings)) + tf.reduce_sum(tf.abs(self.rel_embeddings))
-        
-        loss = hrt_loss + trh_loss + regularizer_loss*self.config.lmbda
-        
-        return loss
-
-    def forward(self, h, r, hr_t):
-        emb_hr_h = tf.nn.embedding_lookup(self.ent_embeddings, h)  # [m, k]
+    def forward(self, e, r, er_e2, direction="tail"):
+        emb_hr_e = tf.nn.embedding_lookup(self.ent_embeddings, e)  # [m, k]
         emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
         
-        hrt_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_h, emb_hr_r), self.config.hidden_dropout), self.ent_embeddings)
-        
-        hrt_loss_left = - tf.reduce_sum((tf.math.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., hr_t)))
-        hrt_loss_right = - tf.reduce_sum((tf.math.log(tf.clip_by_value(1 - hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(hr_t))))
+        if direction == "tail":
+            ere2_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_e, emb_hr_r), self.config.hidden_dropout), self.ent_embeddings)
+        else:
+            ere2_sigmoid = self.g(tf.nn.dropout(self.f2(emb_hr_e, emb_hr_r), self.config.hidden_dropout), self.ent_embeddings) 
 
-        hrt_loss = hrt_loss_left + hrt_loss_right
+        ere2_loss_left = - tf.reduce_sum((tf.math.log(tf.clip_by_value(ere2_sigmoid, 1e-10, 1.0)) * tf.maximum(0., er_e2)))
+        ere2_loss_right = - tf.reduce_sum((tf.math.log(tf.clip_by_value(1 - ere2_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(er_e2))))
 
-        return hrt_loss
-
-    def backward(self, h, r, hr_t):
-        emb_hr_h = tf.nn.embedding_lookup(self.ent_embeddings, h)  # [m, k]
-        emb_hr_r = tf.nn.embedding_lookup(self.rel_embeddings, r)  # [m, k]
-        
-        hrt_sigmoid = self.g(tf.nn.dropout(self.f2(emb_hr_h, emb_hr_r), self.config.hidden_dropout), self.ent_embeddings)
-        
-        hrt_loss_left = - tf.reduce_sum((tf.math.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., hr_t)))
-        hrt_loss_right = - tf.reduce_sum((tf.math.log(tf.clip_by_value(1 - hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(hr_t))))
-
-        hrt_loss = hrt_loss_left + hrt_loss_right
+        hrt_loss = ere2_loss_left + ere2_loss_right
 
         return hrt_loss
 
@@ -134,15 +112,6 @@ class ProjE_pointwise(ModelMeta):
                r (Tensor): Relation ids of the triple.
         """
         return tf.tanh(t * self.De2 + r * self.Dr2 + self.bc2)
-
-    def f3(self, h, t):
-        """Defines forward layer for relation.
-
-            Args:
-               h (Tensor): Head entities ids.
-               t (Tensor): Tail entities ids.
-        """
-        return tf.tanh(h * self.De3 + t * self.Dr3 + self.bc3)
 
     def g(self, f, w):
         """Defines activation layer.
@@ -171,13 +140,3 @@ class ProjE_pointwise(ModelMeta):
         _, rank = tf.nn.top_k(hrt_sigmoid, k=topk)
 
         return rank
-
-    def predict_rel_rank(self, h, t, topk=-1):
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
-
-        hrt_sigmoid = -self.g(self.f3(emb_h, emb_t), self.rel_embeddings)
-        _, rank = tf.nn.top_k(hrt_sigmoid, k=topk)
-
-        return rank
-

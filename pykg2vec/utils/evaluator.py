@@ -252,6 +252,8 @@ class Evaluator(EvaluationMeta):
     @tf.function
     def test_tail_rank(self, h, r, topk=-1):
         if hasattr(self.model, 'predict_tail_rank'):
+            h = tf.expand_dims(h, 0)
+            r = tf.expand_dims(r, 0)
             rank = self.model.predict_tail_rank(h, r, topk=topk)
             return tf.squeeze(rank, 0)
 
@@ -269,6 +271,8 @@ class Evaluator(EvaluationMeta):
     @tf.function
     def test_head_rank(self, r, t, topk=-1):
         if hasattr(self.model, 'predict_head_rank'):
+            t = tf.expand_dims(t, 0)
+            r = tf.expand_dims(r, 0)
             rank = self.model.predict_head_rank(t, r, topk=topk)
             return tf.squeeze(rank, 0)
 
@@ -286,6 +290,8 @@ class Evaluator(EvaluationMeta):
     @tf.function
     def test_rel_rank(self, h, t, topk=-1):
         if hasattr(self.model, 'predict_rel_rank'):
+            h = tf.expand_dims(h, 0)
+            t = tf.expand_dims(t, 0)
             rank = self.model.predict_rel_rank(h, t, topk=topk)
             return tf.squeeze(rank, 0)
 

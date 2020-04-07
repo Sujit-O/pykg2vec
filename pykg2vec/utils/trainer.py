@@ -132,12 +132,31 @@ class Trainer(TrainerMeta):
         with tf.GradientTape() as tape:
             hr_t = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(hr_t)), dtype=tf.float32)
             tr_h = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(tr_h)), dtype=tf.float32)
-       
-            if hasattr(self.config, 'label_smoothing'):
-                hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
-                tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+           
+            if self.model.model_name.lower() == "conve" or self.model.model_name.lower() == "tucker":   
+                if hasattr(self.config, 'label_smoothing'):
+                    hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+                    tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
 
-            loss = self.model.get_loss(h, r, t, hr_t, tr_h)
+                pred_tails = self.model.forward(h, r, direction="tail") # (h, r) -> hr_t forward
+                pred_heads = self.model.forward(h, r, direction="head") # (t, r) -> tr_h backward
+
+                loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
+                loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(tr_h, pred_heads))
+
+                loss = loss_tails + loss_heads
+            
+            else:
+                loss_tails = self.model.forward(h, r, hr_t, direction="tail") # (h, r) -> hr_t forward
+                loss_heads = self.model.forward(h, r, tr_h, direction="head") # (t, r) -> tr_h backward
+
+                loss = loss_tails + loss_heads
+
+                if hasattr(self.model, 'get_reg'):
+                    # now only NTN uses regularizer, 
+                    # other pairwise based KGE methods use normalization to regularize parameters.
+                    loss += self.model.get_reg()
+
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))

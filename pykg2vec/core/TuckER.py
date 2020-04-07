@@ -77,8 +77,7 @@ class TuckER(ModelMeta):
         self.hidden_dropout1 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout1)
         self.hidden_dropout2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout2)
 
-
-    def forward(self, e1, r):
+    def forward(self, e1, r, direction=None):
         """Implementation of the layer.
 
             Args:
@@ -105,25 +104,10 @@ class TuckER(ModelMeta):
         x = tf.matmul(x, self.ent_embeddings, transpose_b=True)
         return tf.nn.sigmoid(x)
 
-    def get_loss(self, h, r, t, hr_t, tr_h):
-        """Defines the loss function for the algorithm."""
-        pred_tails = self.forward(h, r)
-        pred_heads = self.forward(t, r)
-
-        loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
-        loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(tr_h, pred_heads))
-
-        loss = loss_heads + loss_tails
-
-        return loss
-
     def predict_tail_rank(self, e, r, topk=-1):
-        # import pdb; pdb.set_trace()
-        e = tf.reshape(e, [-1])
-        r = tf.reshape(r, [-1])
-        predictions = self.forward(e, r)
-        _, rank = tf.nn.top_k(-predictions, k=topk)
+        _, rank = tf.nn.top_k(-self.forward(e, r), k=topk)
         return rank
 
     def predict_head_rank(self, e, r, topk=-1):
-        return self.predict_tail_rank(e, r, topk=topk)
+        _, rank = tf.nn.top_k(-self.forward(e, r), k=topk)
+        return rank
