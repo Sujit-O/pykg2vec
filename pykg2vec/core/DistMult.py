@@ -82,56 +82,11 @@ class DistMult(ModelMeta):
 
         return h_emb, r_emb, t_emb
 
-    def dissimilarity(self, h, r, t, axis=-1):
-        """Function to calculate dissimilarity measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensors: Returns the dissimilarity measure.
-        """
-        return tf.reduce_sum(h*r*t, axis=axis, keepdims=False)
-
-    
-    # def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-    #     """Defines the loss function for the algorithm."""
-    #     pos_h_e, pos_r_e, pos_t_e = self.embed(pos_h, pos_r, pos_t)
-    #     neg_h_e, neg_r_e, neg_t_e = self.embed(neg_h, neg_r, neg_t)
-
-    #     score_pos = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
-    #     score_neg = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
-
-    #     regul_term = tf.reduce_mean(tf.reduce_sum(pos_h_e**2, -1) + tf.reduce_sum(pos_r_e**2, -1) + tf.reduce_sum(pos_t_e**2,-1) + tf.reduce_sum(neg_h_e**2, -1) + tf.reduce_sum(neg_r_e**2, -1) + tf.reduce_sum(neg_t_e**2, -1))
-
-    #     loss = tf.reduce_mean(tf.maximum(score_neg - score_pos + 1, 0)) + self.config.lmbda*regul_term
-
-    #     return loss
-
-    def get_loss(self, h, r, t, y):
-        """Defines the loss function for the algorithm."""
+    def forward(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)
+        return -tf.reduce_sum(h_e*r_e*t_e, -1)
 
-        score = self.dissimilarity(h_e, r_e, t_e)
-
+    def get_regul(self, h, r, t):
+        h_e, r_e, t_e = self.embed(h, r, t)
         regul_term = tf.reduce_mean(tf.reduce_sum(h_e**2, -1) + tf.reduce_sum(r_e**2, -1) + tf.reduce_sum(t_e**2,-1))
-        loss = tf.reduce_mean(tf.nn.softplus(-y*score)) + self.config.lmbda*regul_term
-
-        return loss
-
-    def predict_rank(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
-        h_e, r_e, t_e = self.embed(h, r, t)
-        score = self.dissimilarity(h_e, r_e, t_e)
-        _, rank = tf.nn.top_k(-score, k=topk)
-
-        return rank
+        return self.config.lmbda*regul_term

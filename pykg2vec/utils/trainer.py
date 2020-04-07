@@ -147,7 +147,12 @@ class Trainer(TrainerMeta):
     @tf.function
     def train_step_pointwise(self, h, r, t, y):
         with tf.GradientTape() as tape:
-            loss = self.model.get_loss(h, r, t, y)
+            preds = self.model.forward(h, r, t)
+
+            loss = tf.reduce_mean(tf.nn.softplus(y*preds)) 
+
+            if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult
+                loss += self.model.get_reg(h, r, t)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))

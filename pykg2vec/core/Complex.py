@@ -88,33 +88,14 @@ class Complex(ModelMeta):
 
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
-    def dissimilarity(self, h_real, h_img, r_real, r_img, t_real, t_img):
-        return tf.reduce_sum(h_real * t_real * r_real + h_img * t_img * r_real + h_real * t_img * r_img - h_img * t_real * r_img, axis=-1)
-
-    def get_loss(self, h, r, t, y):
-        """Defines the loss function for the algorithm."""
+    def forward(self, h, r, t):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
+        return -tf.reduce_sum(h_e_real * t_e_real * r_e_real + h_e_img * t_e_img * r_e_real + h_e_real * t_e_img * r_e_img - h_e_img * t_e_real * r_e_img, -1)
 
-        score = self.dissimilarity(h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img)
-
+    def get_reg(self, h, r, t):
+        h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
         regul_term = tf.reduce_mean(tf.reduce_sum(h_e_real**2, -1) + tf.reduce_sum(h_e_img**2, -1) + tf.reduce_sum(r_e_real**2,-1) + tf.reduce_sum(r_e_img**2, -1) + tf.reduce_sum(t_e_real**2, -1) + tf.reduce_sum(t_e_img**2, -1))
-        loss = tf.reduce_mean(tf.nn.softplus(-y*score)) + self.config.lmbda*regul_term
-
-        return loss
-
-    def predict_rank(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
-        h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
-        score = self.dissimilarity(h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img)
-        _, rank = tf.nn.top_k(-score, k=topk)
-
-        return rank
+        return self.config.lmbda*regul_term
 
 class ComplexN3(Complex):
     """`Complex Embeddings for Simple Link Prediction`_.
@@ -147,13 +128,7 @@ class ComplexN3(Complex):
         super(ComplexN3, self).__init__(config)
         self.model_name = 'ComplexN3'
 
-    def get_loss(self, h, r, t, y):
-        """Defines the loss function for the algorithm."""
+    def get_reg(self, h, r, t):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
-
-        score = self.dissimilarity(h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img)
-
         regul_term = tf.reduce_mean(tf.reduce_sum(tf.abs(h_e_real)**3, -1) + tf.reduce_sum(tf.abs(h_e_img)**3, -1) + tf.reduce_sum(tf.abs(r_e_real)**3,-1) + tf.reduce_sum(tf.abs(r_e_img)**3, -1) + tf.reduce_sum(tf.abs(t_e_real)**3, -1) + tf.reduce_sum(tf.abs(t_e_img)**3, -1))
-        loss = tf.reduce_mean(tf.nn.softplus(-y*score)) + self.config.lmbda*regul_term
-
-        return loss
+        return self.config.lmbda*regul_term
