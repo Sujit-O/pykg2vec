@@ -183,6 +183,8 @@ class KGEArgParser:
         self.general_hyper_group.add_argument('-k',   dest='hidden_size', default=50, type=int,help='Hidden embedding size.')
         self.general_hyper_group.add_argument('-km',  dest='ent_hidden_size', default=50, type=int, help="Hidden embedding size for entities.")
         self.general_hyper_group.add_argument('-kr',  dest='rel_hidden_size', default=50, type=int, help="Hidden embedding size for relations.")
+        self.general_hyper_group.add_argument('-k2',  dest='hidden_size_1', default=10, type=int, help="Hidden embedding size for relations.")
+
         self.general_hyper_group.add_argument('-l1',  dest='l1_flag', default=True, type=lambda x: (str(x).lower() == 'true'),help='The flag of using L1 or L2 norm.')
 
         ''' working environments '''
@@ -1285,16 +1287,15 @@ class ConvEConfig(BasicConfig):
         self.hidden_dropout = args.hidden_dropout
         self.label_smoothing = args.label_smoothing
         self.learning_rate = args.learning_rate
-        # TODO: Currently conve can only have k=50, 100, or 200
-        # self.hidden_size = args.hidden_size
-        self.hidden_size = 200
+        self.hidden_size = args.hidden_size
+        self.hidden_size_1 = args.hidden_size_1
+        self.hidden_size_2 = args.hidden_size // args.hidden_size_1
         self.batch_size = args.batch_training
         self.epochs = args.epochs
         self.data = args.dataset_name
         self.optimizer = args.optimizer
         self.sampling = args.sampling
         self.neg_rate = 0
-        self.num_filters = args.num_filters
 
         if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'conve')
@@ -1308,13 +1309,13 @@ class ConvEConfig(BasicConfig):
             'label_smoothing': self.label_smoothing,
             'learning_rate': self.learning_rate,
             'hidden_size': self.hidden_size,
+            'hidden_size_1': self.hidden_size_1,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling,
             'neg_rate': self.neg_rate,
-            'num_filters': self.num_filters
         }
 
         BasicConfig.__init__(self, args)

@@ -66,7 +66,7 @@ class ConvE(ModelMeta):
         self.b = tf.Variable(emb_initializer(shape=(1, num_total_ent)), name="bias")
         self.bn0 = tf.keras.layers.BatchNormalization(axis=-1)
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
-        self.conv2d_1 = tf.keras.layers.Conv2D(self.config.num_filters, [3, 3], strides=(1, 1), padding='valid', use_bias=True)
+        self.conv2d_1 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', use_bias=True)
         self.bn1 = tf.keras.layers.BatchNormalization(axis=-1)
         self.feat_drop = tf.keras.layers.SpatialDropout2D(self.config.feature_map_dropout)
         self.fc1 = tf.keras.layers.Dense(units=self.config.hidden_size)
@@ -76,13 +76,13 @@ class ConvE(ModelMeta):
         self.b2 = tf.Variable(emb_initializer(shape=(1, num_total_ent)), name="bias2")
         self.bn02 = tf.keras.layers.BatchNormalization(axis=-1)
         self.inp_drop2 = tf.keras.layers.Dropout(rate=self.config.input_dropout)
-        self.conv2d_12 = tf.keras.layers.Conv2D(self.config.num_filters, [3, 3], strides=(1, 1), padding='valid', use_bias=True)
+        self.conv2d_12 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', use_bias=True)
         self.bn12 = tf.keras.layers.BatchNormalization(axis=-1)
         self.feat_drop2 = tf.keras.layers.SpatialDropout2D(self.config.feature_map_dropout)
         self.fc12 = tf.keras.layers.Dense(units=self.config.hidden_size)
         self.hidden_drop2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
         self.bn22 = tf.keras.layers.BatchNormalization(axis=-1)
-        
+
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
 
     def embed(self, h, r, t):
@@ -175,8 +175,8 @@ class ConvE(ModelMeta):
         e_emb, r_emb, = self.embed2(e, r)
         first_dimension_size = e.get_shape().as_list()[0]
 
-        stacked_e  = tf.reshape(e_emb, [-1, 10, 20, 1])
-        stacked_r  = tf.reshape(r_emb, [-1, 10, 20, 1])
+        stacked_e  = tf.reshape(e_emb, [-1, self.config.hidden_size_2, self.config.hidden_size_1, 1])
+        stacked_r  = tf.reshape(r_emb, [-1, self.config.hidden_size_2, self.config.hidden_size_1, 1])
         stacked_er = tf.concat([stacked_e, stacked_r], 1)
 
         if direction == "tail":
