@@ -82,7 +82,8 @@ class ConvE(ModelMeta):
         self.fc12 = tf.keras.layers.Dense(units=self.config.hidden_size)
         self.hidden_drop2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
         self.bn22 = tf.keras.layers.BatchNormalization(axis=-1)
-        self.parameter_list2 = [self.ent_embeddings, self.rel_embeddings, self.b]
+        
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
