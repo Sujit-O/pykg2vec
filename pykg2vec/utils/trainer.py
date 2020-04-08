@@ -430,6 +430,10 @@ class Trainer(TrainerMeta):
         return {head: idx2ent[head] for head in heads}
 
     def infer_rels(self, h, t, topk=5):
+        if self.model.model_name.lower() in ["proje_pointwise", "conve", "tucker"]:
+            self._logger.info("%s model doesn't support relation inference in nature.")
+            return
+
         rels = self.evaluator.test_rel_rank(h,t,topk).numpy()
         logs = []
         logs.append("")
