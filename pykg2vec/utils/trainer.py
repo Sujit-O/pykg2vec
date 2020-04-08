@@ -153,8 +153,7 @@ class Trainer(TrainerMeta):
                 loss = loss_tails + loss_heads
 
                 if hasattr(self.model, 'get_reg'):
-                    # now only NTN uses regularizer, 
-                    # other pairwise based KGE methods use normalization to regularize parameters.
+                    # now only complex distmult uses regularizer in algorithms, 
                     loss += self.model.get_reg()
 
 
