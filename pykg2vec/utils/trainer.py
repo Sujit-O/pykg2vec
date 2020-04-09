@@ -39,42 +39,41 @@ class EarlyStopper:
     
     _logger = Logger().get_logger(__name__)
 
-    def __init__(self, config, monitor):
+    def __init__(self, patience, monitor):
 
         self.monitor = monitor
-        self.config = config
 
         # controlling variables.
         self.previous_metrics = None
-        self.patience_left = self.config.patience
+        self.patience_left = patience
 
-    def should_stop(self, curr_metric):
-        stop_early = False
+    def should_stop(self, curr_metrics):
+        should_stop = False
         value, name = self.monitor.value, self.monitor.name
 
         if self.previous_metrics is not None:
             if self.monitor == Monitor.MEAN_RANK or self.monitor == Monitor.FILTERED_MEAN_RANK:
-                is_worse = self.previous_metrics[value] < curr_metric[value]
+                is_worse = self.previous_metrics[value] < curr_metrics[value]
             else:
-                is_worse = self.previous_metrics[value] > curr_metric[value]
+                is_worse = self.previous_metrics[value] > curr_metrics[value]
 
             if self.patience_left > 0 and is_worse:
                 self.patience_left -= 1
                 self._logger.info(
                     '%s more chances before the trainer stops the training. (prev_%s, curr_%s): (%.4f, %.4f)' %
-                    (self.patience_left, name, name, self.previous_metrics[value], curr_metric[value]))
+                    (self.patience_left, name, name, self.previous_metrics[value], curr_metrics[value]))
             
             elif self.patience_left == 0 and is_worse:
                 self._logger.info('Stop the training.')
-                stop_early = True
+                should_stop = True
             
             else:
                 self._logger.info('Reset the patience count to %d' % (self.config.patience))
                 self.patience_left = self.config.patience
                 
-        self.previous_metrics = curr_metric
+        self.previous_metrics = curr_metrics
 
-        return stop_early
+        return should_stop
 
 
 class Trainer(TrainerMeta):
@@ -130,7 +129,7 @@ class Trainer(TrainerMeta):
         self.config.summary()
         self.config.summary_hyperparameter(self.model.model_name)
 
-        self.early_stopper = EarlyStopper(self.config, Monitor.FILTERED_MEAN_RANK)
+        self.early_stopper = EarlyStopper(self.config.patience, Monitor.FILTERED_MEAN_RANK)
 
     ''' Training related functions:'''
     @tf.function
@@ -227,15 +226,12 @@ class Trainer(TrainerMeta):
 
             if cur_epoch_idx % self.config.test_step == 0:
                 metrics = self.evaluator.mini_test(cur_epoch_idx)
-                
-                ### Early Stop Mechanism
-                ### start to check if the metric is still improving after each mini-test. 
-                ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
-                
+                              
                 if self.early_stopper.should_stop(metrics):
+                    ### Early Stop Mechanism
+                    ### start to check if the metric is still improving after each mini-test. 
+                    ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
                     break
-
-                ### Early Stop Mechanism
 
         self.evaluator.full_test(cur_epoch_idx)
         self.evaluator.metric_calculator.save_test_summary(self.model.model_name)
