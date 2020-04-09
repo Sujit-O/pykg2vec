@@ -144,10 +144,10 @@ class MetricCalculator:
             self.fhit[(self.epoch, hit)] = np.mean(franks<=hit, dtype=np.float32)
 
     def get_curr_scores(self):
-        scores = (self.mr[self.epoch], self.fmr[self.epoch],
-                  self.mrr[self.epoch], self.fmrr[self.epoch],
-                  self.hit, self.fhit)
-
+        scores = {'mr': self.mr[self.epoch], 
+                  'fmr':self.fmr[self.epoch],
+                  'mrr':self.mrr[self.epoch], 
+                  'fmrr':self.fmrr[self.epoch]}
         return scores
 
 
