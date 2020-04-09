@@ -9,6 +9,7 @@ import shutil, tarfile, pickle, time
 import urllib.request
 from pathlib import Path
 from collections import defaultdict
+from pykg2vec.utils.logger import Logger
 import numpy as np
 
 
@@ -75,6 +76,7 @@ class KGMetaData(object):
             >>> kg_meta = KGMetaData(tot_triple =1000)
 
     """
+
     def __init__(self, tot_entity=None,
                  tot_relation=None,
                  tot_triple=None,
@@ -137,6 +139,7 @@ class KnownDataset:
            >>> kgdata.dump()
 
     """
+    _logger = Logger().get_logger(__name__)
 
     def __init__(self, name, url, prefix):
 
@@ -188,7 +191,7 @@ class KnownDataset:
 
     def download(self):
         ''' Downloads the given dataset from url'''
-        print("Downloading the dataset %s" % self.name)
+        self._logger.info("Downloading the dataset %s" % self.name)
 
         self.root_path.mkdir()
         with urllib.request.urlopen(self.url) as response, open(str(self.tar), 'wb') as out_file:
@@ -196,13 +199,13 @@ class KnownDataset:
 
     def extract(self):
         ''' Extract the downloaded tar under the folder with the given dataset name'''
-        print("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
+        self._logger.info("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
 
         try:
             extract(str(self.tar), str(self.root_path))
         except Exception as e:
-            print("Could not extract the tgz file!")
-            print(type(e), e.args)
+            self._logger.info("Could not extract the tgz file!")
+            self._logger.info("%s %s" % (type(e), e.args))
 
     def read_metadata(self):
         ''' Reads the metadata of the knowledge graph if available'''
@@ -217,7 +220,7 @@ class KnownDataset:
     def dump(self):
         ''' Displays all the metadata of the knowledge graph'''
         for key, value in self.__dict__.items():
-            print(key, value)
+            self._logger.info("%s %s" % (key, value))
 
 
 class FreebaseFB15k(KnownDataset):
@@ -413,7 +416,9 @@ class UserDefinedDataset(object):
           dataset_home_path (object): Path object where the data will be downloaded
           root_oath (object): Path object for the specific dataset.
 
-   """
+    """
+    _logger = Logger().get_logger(__name__)
+
     def __init__(self, name, custom_dataset_path):
         self.name = name
 
@@ -470,7 +475,7 @@ class UserDefinedDataset(object):
     def dump(self):
         """ Prints the metadata of the user-defined dataset."""
         for key, value in self.__dict__.items():
-            print(key, value)
+            self._logger.info("%s %s" % (key, value))
 
 
 class KnowledgeGraph(object):
@@ -503,7 +508,9 @@ class KnowledgeGraph(object):
           >>> from pykg2vec.config.global_config import KnowledgeGraph
           >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k')
           >>> knowledge_graph.prepare_data()
-   """
+    """
+    _logger = Logger().get_logger(__name__)
+
     def __init__(self, dataset='Freebase15k', custom_dataset_path=None):
 
         self.dataset_name = dataset
@@ -866,10 +873,14 @@ class KnowledgeGraph(object):
     def dump(self):
         """ Function to dump statistic information of a dataset """
         ''' dump key information'''
-        print("\n----------Metadata Info for Dataset:%s----------------" % self.dataset_name)
-        print("Total Training Triples   :", self.kg_meta.tot_train_triples)
-        print("Total Testing Triples    :", self.kg_meta.tot_test_triples)
-        print("Total validation Triples :", self.kg_meta.tot_valid_triples)
-        print("Total Entities           :", self.kg_meta.tot_entity)
-        print("Total Relations          :", self.kg_meta.tot_relation)
-        print("---------------------------------------------")
+        dump = []
+        dump.append("")
+        dump.append("----------Metadata Info for Dataset:%s----------------" % self.dataset_name)
+        dump.append("Total Training Triples   :%s" % self.kg_meta.tot_train_triples)
+        dump.append("Total Testing Triples    :%s" % self.kg_meta.tot_test_triples)
+        dump.append("Total validation Triples :%s" % self.kg_meta.tot_valid_triples)
+        dump.append("Total Entities           :%s" % self.kg_meta.tot_entity)
+        dump.append("Total Relations          :%s" % self.kg_meta.tot_relation)
+        dump.append("---------------------------------------------")
+        dump.append("")
+        self._logger.info(("\n".join(dump)))

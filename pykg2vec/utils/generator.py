@@ -5,18 +5,19 @@ This module is for generating the batch data for training and testing.
 """
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import print_function
 
 import numpy as np
-from multiprocessing import Process, Queue
 import tensorflow as tf
+from multiprocessing import Process, Queue, Event
+from enum import Enum
 
-def raw_data_generator(raw_queue, processed_queue, config):
+import os
+
+def raw_data_generator(command_queue, raw_queue, config):
     """Function to feed  triples to raw queue for multiprocessing.
            
         Args:
             raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
-            processed_queue (Queue) : Multiprocessing Queue to put the processed data.
             data (list) : List of integer ids denoting positive triples.
             batch_size (int) : Size of each batch.
             number_of_batch (int) : Total number of batch.
@@ -25,21 +26,26 @@ def raw_data_generator(raw_queue, processed_queue, config):
     data = config.knowledge_graph.read_cache_data('triplets_train')
 
     number_of_batch = len(data) // config.batch_size
-    batch_idx = 0
 
     random_ids = np.random.permutation(len(data))
     
     while True:
-        pos_start = config.batch_size * batch_idx
-        pos_end   = config.batch_size * (batch_idx+1)
-        
-        raw_data = np.asarray([[data[x].h, data[x].r, data[x].t] for x in random_ids[pos_start:pos_end]])
-        
-        raw_queue.put((batch_idx, raw_data))
 
-        batch_idx += 1
-        if batch_idx >= number_of_batch:
-            batch_idx = 0
+        command = command_queue.get()
+
+        if command == "quit":
+            raw_queue.put(None)
+            raw_queue.put(None)
+            return 
+        else:
+            number_of_batch = command 
+            for batch_idx in range(number_of_batch):                
+                pos_start = config.batch_size * batch_idx
+                pos_end   = config.batch_size * (batch_idx+1)
+                
+                raw_data = np.asarray([[data[x].h, data[x].r, data[x].t] for x in random_ids[pos_start:pos_end]])
+                
+                raw_queue.put((batch_idx, raw_data))
 
 
 def process_function_pairwise(raw_queue, processed_queue, config):
@@ -61,10 +67,12 @@ def process_function_pairwise(raw_queue, processed_queue, config):
     neg_rate = config.neg_rate
     
     del data # save memory space
-    
-    while True:
 
-        idx, pos_triples = raw_queue.get()
+    while True:
+        item = raw_queue.get()
+        if item is None:
+            return
+        idx, pos_triples = item
 
         ph = pos_triples[:, 0]
         pr = pos_triples[:, 1]
@@ -121,10 +129,12 @@ def process_function_pointwise(raw_queue, processed_queue, config):
     neg_rate = config.neg_rate
     
     del data # save memory space
-    
-    while True:
 
-        idx, pos_triples = raw_queue.get()
+    while True:
+        item = raw_queue.get()
+        if item is None:
+            return
+        idx, pos_triples = item
 
         point_h = []
         point_r = []
@@ -184,9 +194,12 @@ def process_function_multiclass(raw_queue, processed_queue, config):
     
     shape = [config.batch_size, config.kg_meta.tot_entity] 
     shape = tf.convert_to_tensor(shape, dtype=tf.int64)
-
+    
     while True:
-        idx, raw_data = raw_queue.get()
+        item = raw_queue.get()
+        if item is None:
+            return
+        idx, raw_data = item
         
         h = raw_data[:, 0]
         r = raw_data[:, 1]
@@ -236,35 +249,6 @@ def process_function_multiclass(raw_queue, processed_queue, config):
 
         processed_queue.put([h, r, t, hr_t, tr_h])
 
-# def get_label_mat(data, bs, te, neg_rate=1):
-#     """Function to label the matrix.
-           
-#         Args:
-#             data (list): List of integer id denoting positive data.
-#             bs (int): Batch size of the samples.
-#             te (int): Total number of entity.
-#             neg_rate (int): Ratio of negative to positive samples.
-
-#         Returns:
-#             Matrix: Returns numpy matrix with labels
-#     """
-#     mat = np.full((bs, te), 0.0)
-#     for i in range(bs):
-#         pos_samples = len(data[i])
-#         distribution_data = data[i]
-#         for j in range(pos_samples):
-#             mat[i][distribution_data[j]] = 1.0
-#         neg_samples = neg_rate * pos_samples
-#         idx = list(range(te))
-#         arr = data[i]
-#         arr.sort(reverse=True)
-#         for k in arr:
-#             del idx[k]
-#         np.random.shuffle(idx)
-#         for j in range(neg_samples):
-#             mat[i][idx[j]] = 0.0
-#     return mat
-
 
 class Generator:
     """Generator class for the embedding algorithms
@@ -280,20 +264,22 @@ class Generator:
             >>> from pykg2vec.utils.generator import Generator
             >>> from pykg2vec.core.TransE impor TransE
             >>> model = TransE()
-            >>> gen_train = Generator(model.config, training_strategy="pairwise_based")
+            >>> gen_train = Generator(model.config, training_strategy=TrainingStrategy.PAIRWISE_BASED)
     """
 
-    def __init__(self, config, training_strategy=None):
-        self.config = config
+    def __init__(self, model):
+        self.model = model
+        self.config = model.config
+        self.training_strategy = model.training_strategy
+
         self.process_list = []
         
         self.raw_queue_size = 10
         self.processed_queue_size = 10
+        self.command_queue = Queue(self.raw_queue_size)
         self.raw_queue = Queue(self.raw_queue_size)
         self.processed_queue = Queue(self.processed_queue_size)
         
-        self.training_strategy = training_strategy
-
         self.create_feeder_process()
         self.create_train_processor_process()
 
@@ -305,27 +291,40 @@ class Generator:
         
     def stop(self):
         """Function to stop all the worker process."""
+        self.command_queue.put("quit")        
         for worker_process in self.process_list:
-            worker_process.terminate()
+            while True:
+                worker_process.join(1)
+                if not worker_process.is_alive():
+                    break
 
     def create_feeder_process(self):
         """Function create the feeder process."""
-        feeder_worker = Process(target=raw_data_generator, args=(self.raw_queue, self.processed_queue, self.config))
-        feeder_worker.daemon = True
+        feeder_worker = Process(target=raw_data_generator, args=(self.command_queue, self.raw_queue, self.config))
         self.process_list.append(feeder_worker)
+        feeder_worker.daemon = True
         feeder_worker.start()
 
     def create_train_processor_process(self):
         """Function ro create the process for generating training samples."""
         for i in range(self.config.num_process_gen):
-            if self.training_strategy == "projection_based":
+            if self.training_strategy == TrainingStrategy.PROJECTION_BASED:
                 process_worker = Process(target=process_function_multiclass, args=(self.raw_queue, self.processed_queue, self.config))
-            elif self.training_strategy == "pairwise_based":
+            elif self.training_strategy == TrainingStrategy.PAIRWISE_BASED:
                 process_worker = Process(target=process_function_pairwise, args=(self.raw_queue, self.processed_queue, self.config))
-            elif self.training_strategy == "pointwise_based":
+            elif self.training_strategy == TrainingStrategy.POINTWISE_BASED:
                 process_worker = Process(target=process_function_pointwise, args=(self.raw_queue, self.processed_queue, self.config))
             else:
                 raise NotImplementedError("This strategy is not supported.")
             self.process_list.append(process_worker)
             process_worker.daemon = True
             process_worker.start()
+
+    def start_one_epoch(self, num_batch):
+        self.command_queue.put(num_batch)
+
+
+class TrainingStrategy(Enum):
+    PROJECTION_BASED = "projection_based"
+    PAIRWISE_BASED = "pairwise_based"
+    POINTWISE_BASED = "pointwise_based"

@@ -8,7 +8,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class Rescal(ModelMeta):
     """`A Three-Way Model for Collective Learning on Multi-Relational Data`_
@@ -28,7 +28,7 @@ class Rescal(ModelMeta):
             >>> from pykg2vec.core.Rescal import Rescal
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = Rescal()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 
@@ -45,6 +45,7 @@ class Rescal(ModelMeta):
         super(Rescal, self).__init__()
         self.config = config
         self.model_name = 'Rescal'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -82,51 +83,18 @@ class Rescal(ModelMeta):
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
         k = self.config.hidden_size
-        emb_h = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), h)
-        emb_r = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.rel_matrices, axis=1), r)
-        emb_t = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t)
+        emb_h = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=-1), h)
+        emb_r = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.rel_matrices, axis=-1), r)
+        emb_t = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=-1), t)
         emb_h = tf.reshape(emb_h, [-1, k, 1])
         emb_r = tf.reshape(emb_r, [-1, k, k])
         emb_t = tf.reshape(emb_t, [-1, k, 1])
 
         return emb_h, emb_r, emb_t
 
-    def match(self, h, r, t):
-        """Function to calculate truth value.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-            Returns:
-                Tensors: Returns Tensors.
-        """
+    def forward(self, h, r, t):
+        h_e, r_e, t_e = self.embed(h, r, t)
         # dim of h: [m, k, 1]
         #        r: [m, k, k]
         #        t: [m, k, 1]
-        return tf.reduce_sum(h * tf.matmul(r, t), [1, 2])
-
-    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        """Defines the loss function for the algorithm."""
-        pos_h_e, pos_r_e, pos_t_e = self.embed(pos_h, pos_r, pos_t)
-        neg_h_e, neg_r_e, neg_t_e = self.embed(neg_h, neg_r, neg_t)
-        pos_score = self.match(pos_h_e, pos_r_e, pos_t_e)
-        neg_score = self.match(neg_h_e, neg_r_e, neg_t_e)
-
-        loss = tf.reduce_sum(tf.maximum(neg_score + self.config.margin - pos_score, 0))
-        return loss
-
-    def predict(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
-        h_e, r_e, t_e = self.embed(h, r, t)
-        score = -self.match(h_e, r_e, t_e)
-        _, rank = tf.nn.top_k(score, k=topk)
-
-        return rank
+        return -tf.reduce_sum(h_e * tf.matmul(r_e, t_e), [1, 2])

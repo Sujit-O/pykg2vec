@@ -6,7 +6,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class DistMult(ModelMeta):
     """`EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES`_
@@ -31,7 +31,7 @@ class DistMult(ModelMeta):
             >>> from pykg2vec.core.Complex import DistMult
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = DistMult()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 
@@ -44,6 +44,7 @@ class DistMult(ModelMeta):
         super(DistMult, self).__init__()
         self.config = config
         self.model_name = 'DistMult'
+        self.training_strategy = TrainingStrategy.POINTWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -75,54 +76,17 @@ class DistMult(ModelMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        # norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        h_emb = tf.nn.embedding_lookup(norm_ent_embeddings, h)
+        h_emb = tf.nn.embedding_lookup(self.ent_embeddings, h)
         r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        t_emb = tf.nn.embedding_lookup(norm_ent_embeddings, t)
+        t_emb = tf.nn.embedding_lookup(self.ent_embeddings, t)
 
         return h_emb, r_emb, t_emb
 
-    def dissimilarity(self, h, r, t, axis=-1):
-        """Function to calculate dissimilarity measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensors: Returns the dissimilarity measure.
-        """
-        return tf.reduce_sum(h*r*t, axis=axis, keepdims=False)
-
-    
-    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        """Defines the loss function for the algorithm."""
-        pos_h_e, pos_r_e, pos_t_e = self.embed(pos_h, pos_r, pos_t)
-        neg_h_e, neg_r_e, neg_t_e = self.embed(neg_h, neg_r, neg_t)
-
-        score_pos = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
-        score_neg = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
-
-        regul_term = tf.nn.l2_loss(self.rel_embeddings)
-
-        loss = tf.reduce_sum(tf.maximum(score_neg - score_pos + 1, 0)) + self.config.lmbda*regul_term
-
-        return loss
-
-    def predict(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
+    def forward(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)
-        score = self.dissimilarity(h_e, r_e, t_e)
-        _, rank = tf.nn.top_k(-score, k=topk)
+        return -tf.reduce_sum(h_e*r_e*t_e, -1)
 
-        return rank
+    def get_regul(self, h, r, t):
+        h_e, r_e, t_e = self.embed(h, r, t)
+        regul_term = tf.reduce_mean(tf.reduce_sum(h_e**2, -1) + tf.reduce_sum(r_e**2, -1) + tf.reduce_sum(t_e**2,-1))
+        return self.config.lmbda*regul_term

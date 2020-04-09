@@ -23,7 +23,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
 
     # Extracting the corresponding model config and definition from Importer().
     config_def, model_def = Importer().import_model_config(name)
-    config = config_def(args=args)
+    config = config_def(args)
     
     config.epochs     = 1
     config.test_step  = 1
@@ -43,7 +43,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     model = model_def(config)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model, debug=True)
+    trainer = Trainer(model=model)
     trainer.build_model()
     trainer.train_model()
 
@@ -55,8 +55,11 @@ def test_KGE_methods(model_name):
 def test_NTN():
     testing_function('ntn', ent_hidden_size=10, rel_hidden_size=10) # for avoiding OOM.
 
-# def test_ConvE():
-#     testing_function('conve', channels=2) # for avoiding OOM.
+def test_ConvE():
+    testing_function('conve', channels=2) # for avoiding OOM.
+
+def test_ConvKB():
+    testing_function('convkb', channels=2) # for avoiding OOM.
 
 def test_KG2E_EL_args():
     """Function to test KG2E Algorithm with arguments."""

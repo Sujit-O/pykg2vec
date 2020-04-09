@@ -5,7 +5,6 @@ This module is for performing bayesian optimization on algorithms
 """
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import print_function
 import importlib
 
 from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
@@ -14,7 +13,7 @@ import pandas as pd
 
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
-from pprint import pprint
+from pykg2vec.utils.logger import Logger
 
 model_path = "pykg2vec.core"
 config_path = "pykg2vec.config.config"
@@ -100,6 +99,7 @@ class BaysOptimizer(object):
         >>> bays_opt = BaysOptimizer(args=args)
         >>> bays_opt.optimize()
     """
+    _logger = Logger().get_logger(__name__)
 
     def __init__(self, args=None):
         """store the information of database"""
@@ -117,15 +117,17 @@ class BaysOptimizer(object):
             hyper_params = getattr(importlib.import_module(hyper_param_path), hypMap[model_name])()
 
         except ModuleNotFoundError:
-            print("%s not implemented! Select from: %s" % \
-                 (model_name, ' '.join(map(str, modelMap.values()))))
+            self._logger.error("%s not implemented! Select from: %s" % \
+                               (model_name, ' '.join(map(str, modelMap.values()))))
         
         from pykg2vec.config.config import KGEArgParser
         kge_args = KGEArgParser().get_args([])
         kge_args.dataset_name = args.dataset_name
+        kge_args.debug = self.args.debug
         config = self.config_obj(kge_args)
-
-        self.trainer = Trainer(model=self.model_obj(config), debug=self.args.debug)
+        model =  self.model_obj(config)
+        
+        self.trainer = Trainer(model)
         
         self.search_space = hyper_params.search_space
         self.max_evals = self.args.max_number_trials if not self.args.debug else 1
@@ -153,9 +155,9 @@ class BaysOptimizer(object):
         path.mkdir(parents=True, exist_ok=True)
         results.to_csv(str(path / "trials.csv"), index=False)
         
-        print(results)
-        print('Found Golden Setting:')
-        pprint(space_eval(self.search_space, self.best_result))
+        self._logger.info(results)
+        self._logger.info('Found Golden Setting:')
+        self._logger.info(space_eval(self.search_space, self.best_result))
 
     def return_best(self):
         """Function to return the best hyper-parameters"""

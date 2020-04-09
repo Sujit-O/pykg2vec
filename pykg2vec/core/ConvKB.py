@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class ConvKB(ModelMeta):
     """`A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network`_
@@ -29,7 +29,7 @@ class ConvKB(ModelMeta):
         >>> from pykg2vec.core.ConvKB import ConvKB
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = ConvKB()
-        >>> trainer = Trainer(model=model, debug=False)
+        >>> trainer = Trainer(model=model)
         >>> trainer.build_model()
         >>> trainer.train_model()
     
@@ -46,6 +46,7 @@ class ConvKB(ModelMeta):
         super(ConvKB, self).__init__()
         self.config = config
         self.model_name = 'ConvKB'
+        self.training_strategy = TrainingStrategy.POINTWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -68,69 +69,13 @@ class ConvKB(ModelMeta):
         self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
 
-        self.conv_list = [tf.keras.layers.Conv2D(self.config.num_filters, 
-            (3, filter_size), 
-            padding = 'valid', 
-            use_bias= True, 
-            data_format="channels_first",
-            strides = (1,1),
-            activation = tf.keras.layers.ReLU()) for filter_size in self.config.filter_sizes]
+        self.conv_list = [tf.keras.layers.Conv2D(self.config.num_filters, (3, filter_size), padding = 'valid', 
+            use_bias=True, strides=(1,1), activation=tf.keras.layers.ReLU()) for filter_size in self.config.filter_sizes]
         
-        self.fc1 = tf.keras.layers.Dense(1,
-            use_bias=True,
-            kernel_regularizer = tf.keras.regularizers.l2(l=self.config.lmbda),
-            bias_regularizer = tf.keras.regularizers.l2(l=self.config.lmbda))
-
-    def forward(self, x, batch):
-        x = [self.conv_list[i](x) for i in range(len(self.config.filter_sizes))]
-        x = tf.keras.layers.concatenate(x,axis=-1)
-        x = tf.reshape(x, [batch, -1])
-        x = self.fc1(x)
-        return x
-
-    def get_loss(self, h, r, t, y):
-        """Defines the loss function for the algorithm."""
-
-        h_emb, r_emb, t_emb = self.embed(h, r, t) 
-        y = tf.expand_dims(y, -1)
-
-        stacked_h = tf.expand_dims(h_emb, 1)
-        stacked_r = tf.expand_dims(r_emb, 1)
-        stacked_t = tf.expand_dims(t_emb, 1)
-
-        stacked_hrt = tf.concat([stacked_h, stacked_r, stacked_t], 1)
-
-        stacked_hrt = tf.expand_dims(stacked_hrt, 1) # [b, 1, 3, k]
-
-        predictions = self.forward(stacked_hrt, (1+self.config.neg_rate)*self.config.batch_size)
-
-        loss = tf.reduce_mean(tf.nn.softplus(predictions*y))
-
-        return loss
-
-    def predict(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
-        h_emb, r_emb, t_emb = self.embed(h, r, t) 
-        
-        stacked_h = tf.expand_dims(h_emb, 1)
-        stacked_r = tf.expand_dims(r_emb, 1)
-        stacked_t = tf.expand_dims(t_emb, 1)
-
-        stacked_hrt = tf.concat([stacked_h, stacked_r, stacked_t], 1)
-        stacked_hrt = tf.expand_dims(stacked_hrt, 1) # [1, 1, 3, k]
-
-        predictions = self.forward(stacked_hrt, self.config.kg_meta.tot_entity)
-        predictions = tf.squeeze(predictions, -1)
-        _, rank = tf.nn.top_k(tf.nn.sigmoid(predictions), k=topk)
-
-        return rank
-
+        self.fc1 = tf.keras.layers.Dense(1, use_bias=True,
+            kernel_regularizer=tf.keras.regularizers.l2(l=self.config.lmbda),
+            bias_regularizer=tf.keras.regularizers.l2(l=self.config.lmbda))
+    
     def embed(self, h, r, t):
         """Function to get the embedding value.
            
@@ -146,3 +91,21 @@ class ConvKB(ModelMeta):
         emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
         emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
         return emb_h, emb_r, emb_t
+
+    def forward(self, h, r, t):
+        h_emb, r_emb, t_emb = self.embed(h, r, t)
+        first_dimen = h_emb.get_shape().as_list()[0]
+
+        stacked_h = tf.expand_dims(h_emb, 1)
+        stacked_r = tf.expand_dims(r_emb, 1)
+        stacked_t = tf.expand_dims(t_emb, 1)
+
+        stacked_hrt = tf.concat([stacked_h, stacked_r, stacked_t], 1)
+        stacked_hrt = tf.expand_dims(stacked_hrt, -1) # [b, 3, k, 1]
+
+        stacked_hrt = [self.conv_list[i](stacked_hrt) for i in range(len(self.config.filter_sizes))]
+        stacked_hrt = tf.keras.layers.concatenate(stacked_hrt, axis=2)
+        stacked_hrt = tf.reshape(stacked_hrt, [first_dimen, -1])
+        preds = self.fc1(stacked_hrt)
+        preds = tf.squeeze(preds, -1)
+        return preds

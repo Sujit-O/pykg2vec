@@ -5,7 +5,6 @@ This module is for evaluating the results
 """
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import print_function
 
 import os
 import numpy as np
@@ -14,6 +13,8 @@ import timeit
 from multiprocessing import Process, Queue
 import tensorflow as tf
 from pykg2vec.core.KGMeta import EvaluationMeta
+from pykg2vec.utils.generator import TrainingStrategy
+from pykg2vec.utils.logger import Logger
 
 
 class MetricCalculator:
@@ -24,6 +25,8 @@ class MetricCalculator:
 
         MetricCalculator is expected to be used by "evaluation_process".
     '''
+    _logger = Logger().get_logger(__name__)
+
     def __init__(self, config):
         self.config = config 
 
@@ -41,6 +44,15 @@ class MetricCalculator:
         self.fhit = {}
 
         self.reset()
+
+    def reset(self):
+        # temporarily used buffers and indexes.
+        self.rank_head = []
+        self.rank_tail = []
+        self.f_rank_head = []
+        self.f_rank_tail = []
+        self.epoch = None
+        self.start_time = timeit.default_timer()
 
     def append_result(self, result):
         predict_tail = result[0]
@@ -131,17 +143,13 @@ class MetricCalculator:
             self.hit[(self.epoch, hit)] = np.mean(ranks<=hit, dtype=np.float32)
             self.fhit[(self.epoch, hit)] = np.mean(franks<=hit, dtype=np.float32)
 
-    def get_curr_score(self):
-        return self.mr[self.epoch]
+    def get_curr_scores(self):
+        scores = {'mr': self.mr[self.epoch], 
+                  'fmr':self.fmr[self.epoch],
+                  'mrr':self.mrr[self.epoch], 
+                  'fmrr':self.fmrr[self.epoch]}
+        return scores
 
-    def reset(self):
-        # temporarily used buffers and indexes.
-        self.rank_head = []
-        self.rank_tail = []
-        self.f_rank_head = []
-        self.f_rank_tail = []
-        self.epoch = None
-        self.start_time = timeit.default_timer()
 
     def save_test_summary(self, model_name):
         """Function to save the test of the summary.
@@ -204,51 +212,18 @@ class MetricCalculator:
         """Function to print the test summary."""
         kg = self.config.knowledge_graph
         stop_time = timeit.default_timer()
-        print("------Test Results for %s: Epoch: %d --- time: %.2f------------" % (kg.dataset_name, self.epoch, stop_time - self.start_time))
-        print('--# of entities, # of relations: %d, %d'%(kg.kg_meta.tot_entity, kg.kg_meta.tot_relation) )
-        print('--mr,  filtered mr             : %.4f, %.4f'%(self.mr[self.epoch], self.fmr[self.epoch]))
-        print('--mrr, filtered mrr            : %.4f, %.4f'%(self.mrr[self.epoch], self.fmrr[self.epoch]))
+        test_results = []
+        test_results.append('')
+        test_results.append("------Test Results for %s: Epoch: %d --- time: %.2f------------" % (kg.dataset_name, self.epoch, stop_time - self.start_time))
+        test_results.append('--# of entities, # of relations: %d, %d'%(kg.kg_meta.tot_entity, kg.kg_meta.tot_relation) )
+        test_results.append('--mr,  filtered mr             : %.4f, %.4f'%(self.mr[self.epoch], self.fmr[self.epoch]))
+        test_results.append('--mrr, filtered mrr            : %.4f, %.4f'%(self.mrr[self.epoch], self.fmrr[self.epoch]))
         for hit in self.config.hits:
-            print('--hits%d                        : %.4f ' % (hit, (self.hit[(self.epoch, hit)])))
-            print('--filtered hits%d               : %.4f ' % (hit, (self.fhit[(self.epoch, hit)])))
-        print("---------------------------------------------------------")
-
-def evaluation_process(result_queue, output_queue, config, model_name, tuning):
-    """ The process that coordinates the tasks of evaluation.
-           
-        Args:
-            result_queue (Queue): Multiprocessing queue to acquire inference result
-            output_queue (Queue): Multiprocessing queue to store the evaluation result
-            config (object):Model configuration object instance
-            model_name (str): Name of the model
-            tuning (bool): Check if tuning or performing full test.
-
-    """
-
-    calculator = MetricCalculator(config)
-
-    while True:
-        result = result_queue.get()
-        
-        if result == Evaluator.TEST_BATCH_START:
-            calculator.reset()
-            
-        elif result == Evaluator.TEST_BATCH_STOP:
-            calculator.settle()
-            calculator.display_summary()
-
-            if calculator.epoch >= config.epochs - 1:
-                calculator.save_test_summary(model_name)
-
-                if tuning:
-                    score = calculator.get_curr_score()
-                    output_queue.put(score)
-
-                break
-        elif result == Evaluator.TEST_BATCH_EARLY_STOP:
-            break
-        else:
-            calculator.append_result(result)
+            test_results.append('--hits%d                        : %.4f ' % (hit, (self.hit[(self.epoch, hit)])))
+            test_results.append('--filtered hits%d               : %.4f ' % (hit, (self.fhit[(self.epoch, hit)])))
+        test_results.append("---------------------------------------------------------")
+        test_results.append('')
+        self._logger.info("\n".join(test_results))
 
 
 class Evaluator(EvaluationMeta):
@@ -256,147 +231,126 @@ class Evaluator(EvaluationMeta):
 
         Args:
             model (object): Model object
-            debug (bool): Flag to check if its debugging
-            data_type (str): evaluating 'test' or 'valid'
             tuning (bool): Flag to denoting tuning if True
 
         Examples:
             >>> from pykg2vec.utils.evaluator import Evaluator
-            >>> evaluator = Evaluator(model=model, debug=False, tuning=True)
+            >>> evaluator = Evaluator(model=model, tuning=True)
             >>> evaluator.test_batch(Session(), 0)
             >>> acc = evaluator.output_queue.get()
             >>> evaluator.stop()
     """
-    TEST_BATCH_START = "Start!"
-    TEST_BATCH_STOP = "Stop!"
-    TEST_BATCH_EARLY_STOP = "EarlyStop!"
+    _logger = Logger().get_logger(__name__)
 
-    def __init__(self, model=None, debug=False, data_type='valid', tuning=False, multiprocess=True):
-        
+    def __init__(self, model, tuning=False):
         self.model = model
-        self.debug = debug
         self.tuning = tuning
-        self.result_path = self.model.config.path_result
-
-        if data_type == 'test':
-            self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_test')
-        elif data_type == 'valid':
-            self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
-        else:
-            raise NotImplementedError("%s datatype is not available!" % data_type)
-
-        tot_rows_data = len(self.eval_data)
-
-        '''
-            n_test: number of triplets to be tested
-            1) if n_test == 0, test all the triplets. 
-            2) if n_test >= # of testable triplets, then set n_test to # of testable triplets
-        '''
-        self.n_test = model.config.test_num
-        if self.n_test == 0:
-            self.n_test = tot_rows_data
-        else:
-            self.n_test = min(self.n_test, tot_rows_data)
-
-        '''
-            create the process that manages the batched evaluating results.
-            result_queue: stores the results for each batch. 
-            output_queue: stores the result for a trial, used by bayesian_optimizer.
-        '''
-        self.multiprocess = multiprocess
-        if self.multiprocess:
-            self.result_queue = Queue()
-            self.output_queue = Queue()
-            self.rank_calculator = Process(target=evaluation_process,
-                                           args=(self.result_queue, self.output_queue, 
-                                                 self.model.config, self.model.model_name, self.tuning))
-            self.rank_calculator.start()
-
-    def stop(self):
-        """Function that stops the evaluation process"""
-        if self.multiprocess:
-            self.rank_calculator.join()
-            self.rank_calculator.terminate()
-
-    @tf.function
-    def test_step_batch(self, h_batch, r_batch, t_batch):
-        hrank, trank = self.model.test_batch(h_batch, r_batch, t_batch)
-        return hrank, trank
-
-    @tf.function
-    def test_tail_rank_multiclass(self, h, r, topk=-1):
-        rank = self.model.predict_tail(h, r, topk=topk)
-        return tf.squeeze(rank, 0)
-
-    @tf.function
-    def test_head_rank_multiclass(self, r, t, topk=-1):
-        rank = self.model.predict_head(t, r, topk=topk)
-        return tf.squeeze(rank, 0)
+        self.test_data = self.model.config.knowledge_graph.read_cache_data('triplets_test')
+        self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
+        self.metric_calculator = MetricCalculator(self.model.config)
 
     @tf.function
     def test_tail_rank(self, h, r, topk=-1):
-        tot_ent = self.model.config.kg_meta.tot_entity
-        
-        h_batch = tf.tile([h], [tot_ent])
-        r_batch = tf.tile([r], [tot_ent])
-        entity_array = tf.range(tot_ent)
+        if hasattr(self.model, 'predict_tail_rank'):
+            h = tf.expand_dims(h, 0)
+            r = tf.expand_dims(r, 0)
+            rank = self.model.predict_tail_rank(h, r, topk=topk)
+            return tf.squeeze(rank, 0)
 
-        return self.model.predict(h_batch, r_batch, entity_array, topk=topk)
+        if hasattr(self.model, 'predict'):
+            h_batch = tf.tile([h], [self.model.config.kg_meta.tot_entity])
+            r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
+            entity_array = tf.range(self.model.config.kg_meta.tot_entity)
+
+            preds = self.model.forward(h_batch, r_batch, entity_array)
+            _, rank = tf.nn.top_k(preds, k=topk)
+            return rank
+
+        raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_tail_rank", "predict_rank"))
 
     @tf.function
     def test_head_rank(self, r, t, topk=-1):
-        tot_ent = self.model.config.kg_meta.tot_entity
-        
-        entity_array = tf.range(tot_ent)
-        r_batch = tf.tile([r], [tot_ent])
-        t_batch = tf.tile([t], [tot_ent])
-    
-        return self.model.predict(entity_array, r_batch, t_batch, topk=topk)
+        if hasattr(self.model, 'predict_head_rank'):
+            t = tf.expand_dims(t, 0)
+            r = tf.expand_dims(r, 0)
+            rank = self.model.predict_head_rank(t, r, topk=topk)
+            return tf.squeeze(rank, 0)
+
+        if hasattr(self.model, 'predict'):
+            entity_array = tf.range(self.model.config.kg_meta.tot_entity)
+            r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
+            t_batch = tf.tile([t], [self.model.config.kg_meta.tot_entity])
+
+            preds = self.model.forward(entity_array, r_batch, t_batch)
+            _, rank = tf.nn.top_k(preds, k=topk)
+            return rank
+
+        raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_head_rank", "predict_rank"))
 
     @tf.function
     def test_rel_rank(self, h, t, topk=-1):
-        tot_rel = self.model.config.kg_meta.tot_relation
-    
-        h_batch = tf.tile([h], [tot_rel])
-        rel_array = tf.range(tot_rel)
-        t_batch = tf.tile([t], [tot_rel])
-    
-        return self.model.predict(h_batch, rel_array, t_batch, topk=topk)
+        if hasattr(self.model, 'predict_rel_rank'):
+            h = tf.expand_dims(h, 0)
+            t = tf.expand_dims(t, 0)
+            rank = self.model.predict_rel_rank(h, t, topk=topk)
+            return tf.squeeze(rank, 0)
 
-    def test(self, epoch=None):
-        print("Testing [%d/%d] Triples" % (self.n_test, len(self.eval_data)))
+        if hasattr(self.model, 'predict'):
+            h_batch = tf.tile([h], [self.model.config.kg_meta.tot_relation])
+            rel_array = tf.range(self.model.config.kg_meta.tot_relation)
+            t_batch = tf.tile([t], [self.model.config.kg_meta.tot_relation])
+            
+            preds = self.model.forward(h_batch, rel_array, t_batch)
+            _, rank = tf.nn.top_k(preds, k=topk)
+            return rank
 
-        progress_bar = tf.keras.utils.Progbar(self.n_test)
+        raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_rel_rank", "predict_rank"))
 
-        self.result_queue.put(self.TEST_BATCH_START)
-        for i in range(self.n_test):
-            h, r, t = self.eval_data[i].h, self.eval_data[i].r, self.eval_data[i].t
+    def mini_test(self, epoch=None):
+        if self.model.config.test_num == 0:
+            tot_valid_to_test = len(self.eval_data)
+        else:
+            tot_valid_to_test = min(self.model.config.test_num, len(self.eval_data))
+        if self.model.config.debug: 
+            tot_valid_to_test = 10
+
+        self._logger.info("Mini-Testing on [%d/%d] Triples in the valid set." % (tot_valid_to_test, len(self.eval_data)))
+        return self.test(self.eval_data, tot_valid_to_test, epoch=epoch)
+
+    def full_test(self, epoch=None):
+        tot_valid_to_test = len(self.test_data)
+        if self.model.config.debug:
+            tot_valid_to_test  = 10
+
+        self._logger.info("Full-Testing on [%d/%d] Triples in the test set." % (tot_valid_to_test, len(self.test_data)))
+        return self.test(self.test_data, tot_valid_to_test, epoch=epoch)
+
+    def test(self, data, num_of_test, epoch=None):
+        self.metric_calculator.reset()
+        
+        progress_bar = tf.keras.utils.Progbar(num_of_test)
+
+        for i in range(num_of_test):
+            h, r, t = data[i].h, data[i].r, data[i].t
             
             # generate head batch and predict heads. Tensorflow handles broadcasting.
             h_tensor = tf.convert_to_tensor(h, dtype=tf.int32)
             r_tensor = tf.convert_to_tensor(r, dtype=tf.int32)
             t_tensor = tf.convert_to_tensor(t, dtype=tf.int32)
 
-            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "proje_pointwise"]:
-                hrank = self.test_head_rank_multiclass(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
-                trank = self.test_tail_rank_multiclass(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
-            else:
-                hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
-                trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
+            hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
+            trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
             
             result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
 
-            self.result_queue.put(result_data)
+            self.metric_calculator.append_result(result_data)
 
             progress_bar.add(1)
 
-        self.result_queue.put(self.TEST_BATCH_STOP) 
+        self.metric_calculator.settle()
+        self.metric_calculator.display_summary()
 
-    def save_training_result(self, losses):
-        """Function that saves training result"""
-        files = os.listdir(str(self.result_path))
-        l = len([f for f in files if self.model.model_name in f if 'Training' in f])
-        df = pd.DataFrame(losses, columns=['Epochs', 'Loss'])
-        with open(str(self.result_path / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
-                  'w') as fh:
-            df.to_csv(fh)
+        if self.metric_calculator.epoch >= self.model.config.epochs - 1:
+            self.metric_calculator.save_test_summary(self.model.model_name)
+
+        return self.metric_calculator.get_curr_scores()

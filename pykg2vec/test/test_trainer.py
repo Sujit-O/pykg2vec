@@ -3,63 +3,64 @@
 """
 This module is for testing unit functions of training
 """
-import os
 import pytest
 import tensorflow as tf
 
 from pykg2vec.config.config import KGEArgParser, Importer
-from pykg2vec.utils.trainer import Trainer
+from pykg2vec.utils.trainer import Trainer, Monitor
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
+@pytest.fixture(scope="session", autouse=True)
+def run_tf_function_eagerly(request):
+    tf.config.experimental_run_functions_eagerly(True)
+
 @pytest.mark.skip(reason="This is a functional method.")
-def get_model(result_path_dir, configured_epochs, early_stop_epoch):
+def get_model(result_path_dir, configured_epochs, patience, config_key):
     args = KGEArgParser().get_args([])
 
     knowledge_graph = KnowledgeGraph(dataset="Freebase15k")
     knowledge_graph.prepare_data()
 
-    config_def, model_def = Importer().import_model_config("complex")
+    config_def, model_def = Importer().import_model_config(config_key)
     config = config_def(args=args)
 
     config.epochs = configured_epochs
     config.test_step = 1
-    config.test_num = 10
+    config.test_num = 1
     config.disp_result = False
     config.save_model = False
     config.path_result = result_path_dir
-    config.patience = 1
-    config.early_stop_epoch = early_stop_epoch
-    
+    config.debug = True
+    config.patience = patience
+
     return model_def(config)
 
-def test_full_epochs(tmpdir):
+@pytest.mark.parametrize("config_key",
+                         filter(lambda x: x != "conve" and x != "convkb" and x != "transg", list(Importer().configMap.keys())))
+def test_full_epochs(tmpdir, config_key):
     result_path_dir = tmpdir.mkdir("result_path")
-    configured_epochs = 5
-    model = get_model(result_path_dir, configured_epochs, 5)
+    configured_epochs = 10
+    model = get_model(result_path_dir, configured_epochs, -1, config_key)
 
-    trainer = Trainer(model=model, debug=True)
+    trainer = Trainer(model=model)
     trainer.build_model()
-    trainer.train_model()
+    actual_epochs = trainer.train_model()
 
-    files = os.listdir(result_path_dir)
-    training_result = [f for f in files if f.endswith(".csv")][0]
-    with open(os.path.join(result_path_dir, training_result)) as file:
-        actual_epochs = len(file.readlines()) - 1
+    assert actual_epochs == configured_epochs - 1
 
-    assert actual_epochs == configured_epochs
-
-def test_early_stopping(tmpdir):
+@pytest.mark.parametrize("monitor", [
+    Monitor.MEAN_RANK,
+    Monitor.FILTERED_MEAN_RANK,
+    Monitor.MEAN_RECIPROCAL_RANK,
+    Monitor.FILTERED_MEAN_RECIPROCAL_RANK,
+])
+def test_early_stopping_on_ranks(tmpdir, monitor):
     result_path_dir = tmpdir.mkdir("result_path")
-    configured_epochs = 5
-    model = get_model(result_path_dir, configured_epochs, 1)
+    configured_epochs = 10
+    model = get_model(result_path_dir, configured_epochs, 0, "complex")
 
-    trainer = Trainer(model=model, debug=True)
+    trainer = Trainer(model=model)
     trainer.build_model()
-    trainer.train_model()
+    actual_epochs = trainer.train_model(monitor=monitor)
 
-    files = os.listdir(result_path_dir)
-    training_result = [f for f in files if f.endswith(".csv")][0]
-    with open(os.path.join(result_path_dir, training_result)) as file:
-        actual_epochs = len(file.readlines()) - 1
-
-    assert actual_epochs < configured_epochs
+    assert actual_epochs < configured_epochs - 1

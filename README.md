@@ -70,7 +70,7 @@ def main():
     model = model_def(config)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model, debug=args.debug)
+    trainer = Trainer(model=model)
     trainer.build_model()
     trainer.train_model()
 
@@ -86,8 +86,8 @@ $ python train.py -h
 $ python train.py -mn TransE
 
 # Train using different KGE methods.
-$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
-                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE|ConvE|ConvKB|Proje_pointwise]
+$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complexn3|RotatE|
+                       distmult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise]
 
 # For KGE using projection-based loss function, use more processes for batch generation.
 $ python train.py -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of processes, 4 or 6]
@@ -97,23 +97,27 @@ $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
                                   ks|nations|umls|dl50a]
                                 
 ```
-Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. Some models are still under development [Conv2D|RotatE|TuckER].
+Pykg2vec aims to include most of the state-of-the-art KGE methods. You can check [Implemented Algorithms](https://pykg2vec.readthedocs.io/en/latest/algos.html) for more details. Some models are still under development [Conv2D|TuckER].
 To ensure the correctness of included KGE methods we also use the hyperparameter settings from original papers to see if the result is consistent.
 ```bash
 # train KGE method with the hyperparameters used in original papers. (FB15k supported only)
-$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|
-                       distmult|KG2E|NTN|Rescal|SLM|SME|HoLE|ConvE|ConvKB|Proje_pointwise] -exp true -ds fb15k
+$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complexn3|RotatE|
+                       distmult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise] -exp true -ds fb15k
 
 ```
 Some metrics running on benchmark dataset (FB15k) is shown below (all are filtered). We are still working on this table so it will be updated.
 |        |MR    |MRR |Hit1|Hit3|Hit5|Hit10|
 | ------ |------|----|----|----|----|-----|
-| TransE |69.52 |0.36|0.22|0.42|0.51|0.61 |
+| TransE |69.52 |0.38|0.23|0.46|0.56|0.66 |
 | TransH |77.60 |0.32|0.16|0.41|0.51|0.62 |
 | TransR |128.31|0.30|0.18|0.36|0.43|0.54 |
 | TransD |57.73 |0.33|0.19|0.39|0.48|0.60 | 
-| KG2E_EL|64.76 |0.31|0.16|0.39|0.49|0.61 | 
-|DistMult|116.24|0.26|0.16|0.28|0.36|0.45 | 
+| KG2E_EL|64.76 |0.31|0.16|0.39|0.49|0.61 |
+|Complex |96.74 |0.65|0.54|0.74|0.78|0.82 |
+|DistMult|128.78|0.45|0.32|0.53|0.61|0.70 |
+|RotatE  |48.69 |0.74|0.67|0.80|0.82|0.86 |
+|SME_L   |86.3  |0.32|0.20|0.35|0.43|0.54 | 
+|SLM_BL  |112.65|0.29|0.18|0.32|0.39|0.50 |
 
 
 To use your own dataset, these steps are required:
@@ -185,7 +189,7 @@ def main():
     model = model_def(config)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model, debug=args.debug)
+    trainer = Trainer(model=model)
     trainer.build_model()
     trainer.train_model()
     

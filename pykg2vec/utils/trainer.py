@@ -3,24 +3,80 @@
 """
 This module is for training process.
 """
-import timeit
+import timeit, os
 import tensorflow as tf
 import pandas as pd
 
+from enum import Enum
 from pykg2vec.core.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
-from pykg2vec.utils.generator import Generator
+from pykg2vec.utils.generator import Generator, TrainingStrategy
+from pykg2vec.utils.logger import Logger
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
+
+import warnings
+warnings.filterwarnings('ignore')
 
 tf.config.set_soft_device_placement(True)
 physical_devices = tf.config.list_physical_devices('GPU') 
-try: 
-  tf.config.experimental.set_memory_growth(physical_devices[0], True) 
+try:
+    for gpu in physical_devices: 
+        tf.config.experimental.set_memory_growth(gpu, True) 
 except: 
-  # Invalid device or cannot modify virtual devices once initialized. 
-  pass 
-  
+    # Invalid device or cannot modify virtual devices once initialized. 
+    pass
+
+
+class Monitor(Enum):
+    MEAN_RANK = "mr"
+    FILTERED_MEAN_RANK = "fmr"
+    MEAN_RECIPROCAL_RANK = "mrr"
+    FILTERED_MEAN_RECIPROCAL_RANK = "fmrr"
+
+
+class EarlyStopper:
+    
+    _logger = Logger().get_logger(__name__)
+
+    def __init__(self, config, monitor):
+
+        self.monitor = monitor
+        self.config = config
+
+        # controlling variables.
+        self.previous_metrics = None
+        self.patience_left = self.config.patience
+
+    def should_stop(self, curr_metric):
+        stop_early = False
+        value, name = self.monitor.value, self.monitor.name
+
+        if self.previous_metrics is not None:
+            if self.monitor == Monitor.MEAN_RANK or self.monitor == Monitor.FILTERED_MEAN_RANK:
+                is_worse = self.previous_metrics[value] < curr_metric[value]
+            else:
+                is_worse = self.previous_metrics[value] > curr_metric[value]
+
+            if self.patience_left > 0 and is_worse:
+                self.patience_left -= 1
+                self._logger.info(
+                    '%s more chances before the trainer stops the training. (prev_%s, curr_%s): (%.4f, %.4f)' %
+                    (self.patience_left, name, name, self.previous_metrics[value], curr_metric[value]))
+            
+            elif self.patience_left == 0 and is_worse:
+                self._logger.info('Stop the training.')
+                stop_early = True
+            
+            else:
+                self._logger.info('Reset the patience count to %d' % (self.config.patience))
+                self.patience_left = self.config.patience
+                
+        self.previous_metrics = curr_metric
+
+        return stop_early
+
+
 class Trainer(TrainerMeta):
     """Class for handling the training of the algorithms.
 
@@ -34,33 +90,23 @@ class Trainer(TrainerMeta):
         Examples:
             >>> from pykg2vec.utils.trainer import Trainer
             >>> from pykg2vec.core.TransE import TransE
-            >>> trainer = Trainer(model=TransE(), debug=False)
+            >>> trainer = Trainer(TransE())
             >>> trainer.build_model()
             >>> trainer.train_model()
     """
-    def __init__(self, model, trainon='train', teston='valid', debug=False):
-        self.debug = debug
+    _logger = Logger().get_logger(__name__)
+
+    def __init__(self, model):
         self.model = model
-        self.config = self.model.config
+        self.config = model.config
+
         self.training_results = []
-        self.trainon = trainon
-        self.teston = teston
 
         self.evaluator = None
         self.generator = None
 
-        if model.model_name.lower() in ["tucker", "tucker_v2", "conve", "proje_pointwise"]:
-            self.training_strategy = "projection_based"
-        elif model.model_name.lower() in ["convkb", "complex"]:
-            self.training_strategy = "pointwise_based"
-        else:
-            self.training_strategy = "pairwise_based"
-
-
     def build_model(self):
         """function to build the model"""
-        self.global_step = tf.Variable(0, name="global_step", trainable=False)
-
         if self.config.optimizer == 'sgd':
             self.optimizer = tf.keras.optimizers.SGD(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'rms':
@@ -68,12 +114,13 @@ class Trainer(TrainerMeta):
         elif self.config.optimizer == 'adam':
             self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.config.learning_rate)
         elif self.config.optimizer == 'adagrad':
-            self.optimizer = tf.keras.optimizers.Adagrad(learning_rate=self.config.learning_rate)
+            self.optimizer = tf.keras.optimizers.Adagrad(learning_rate=self.config.learning_rate, initial_accumulator_value=0.0, epsilon=1e-08)
         elif self.config.optimizer == 'adadelta':
             self.optimizer = tf.keras.optimizers.Adadelta(learning_rate=self.config.learning_rate)
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
         
+        # For optimizer that has not supported gpu computation in TF2, place parameters in cpu. 
         if self.config.optimizer in ['rms', 'adagrad', 'adadelta']:
             with tf.device('cpu:0'):
                 self.model.def_parameters()
@@ -83,11 +130,32 @@ class Trainer(TrainerMeta):
         self.config.summary()
         self.config.summary_hyperparameter(self.model.model_name)
 
+        self.early_stopper = EarlyStopper(self.config, Monitor.FILTERED_MEAN_RANK)
+
     ''' Training related functions:'''
     @tf.function
-    def train_step(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
+    def train_step_pairwise(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
         with tf.GradientTape() as tape:
-            loss = self.model.get_loss(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
+            pos_preds = self.model.forward(pos_h, pos_r, pos_t)
+            neg_preds = self.model.forward(neg_h, neg_r, neg_t)
+            
+            if self.config.sampling == 'adversarial_negative_sampling':
+                # RotatE: Adversarial Nnegative Sampling and alpha is the temperature.
+                pos_preds = -pos_preds
+                neg_preds = -neg_preds
+                pos_preds = tf.math.log_sigmoid(pos_preds)
+                neg_preds = tf.reshape(neg_preds, [-1, self.config.neg_rate])
+                softmax = tf.stop_gradient(tf.nn.softmax(neg_preds*self.config.alpha, axis=1))
+                neg_preds = tf.reduce_sum(softmax * (tf.math.log_sigmoid(-neg_preds)), axis=-1)
+                loss = -tf.reduce_mean(neg_preds) - tf.reduce_mean(pos_preds)
+            else:
+                # others that use margin-based & pairwise loss function. (unif or bern)
+                loss = tf.reduce_sum(tf.maximum(pos_preds + self.config.margin - neg_preds, 0))
+            
+            if hasattr(self.model, 'get_reg'):
+                # now only NTN uses regularizer, 
+                # other pairwise based KGE methods use normalization to regularize parameters.
+                loss += self.model.get_reg()
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
@@ -95,9 +163,34 @@ class Trainer(TrainerMeta):
         return loss
 
     @tf.function
-    def train_step_projection(self, h, r, t, hr_t, rt_h):
+    def train_step_projection(self, h, r, t, hr_t, tr_h):
         with tf.GradientTape() as tape:
-            loss = self.model.get_loss(h, r, t, hr_t, rt_h)
+            hr_t = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(hr_t)), dtype=tf.float32)
+            tr_h = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(tr_h)), dtype=tf.float32)
+           
+            if self.model.model_name.lower() == "conve" or self.model.model_name.lower() == "tucker":   
+                if hasattr(self.config, 'label_smoothing'):
+                    hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+                    tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+
+                pred_tails = self.model.forward(h, r, direction="tail") # (h, r) -> hr_t forward
+                pred_heads = self.model.forward(h, r, direction="head") # (t, r) -> tr_h backward
+
+                loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
+                loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(tr_h, pred_heads))
+
+                loss = loss_tails + loss_heads
+            
+            else:
+                loss_tails = self.model.forward(h, r, hr_t, direction="tail") # (h, r) -> hr_t forward
+                loss_heads = self.model.forward(h, r, tr_h, direction="head") # (t, r) -> tr_h backward
+
+                loss = loss_tails + loss_heads
+
+                if hasattr(self.model, 'get_reg'):
+                    # now only complex distmult uses regularizer in algorithms, 
+                    loss += self.model.get_reg()
+
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
@@ -107,54 +200,48 @@ class Trainer(TrainerMeta):
     @tf.function
     def train_step_pointwise(self, h, r, t, y):
         with tf.GradientTape() as tape:
-            loss = self.model.get_loss(h, r, t, y)
+            preds = self.model.forward(h, r, t)
+
+            loss = tf.reduce_mean(tf.nn.softplus(y*preds)) 
+
+            if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult
+                loss += self.model.get_reg(h, r, t)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
 
         return loss
 
-
-    def train_model(self):
+    def train_model(self, monitor=Monitor.FILTERED_MEAN_RANK):
         """Function to train the model."""
-        ### Early Stop Mechanism
-        loss = previous_loss = float("inf")
-        patience_left = self.config.patience
-        ### Early Stop Mechanism
-
-        self.generator = Generator(self.model.config, training_strategy=self.training_strategy)
-        self.evaluator = Evaluator(model=self.model, data_type=self.teston, debug=self.debug)
+        self.generator = Generator(self.model)
+        self.evaluator = Evaluator(self.model)
 
         if self.config.loadFromData:
             self.load_model()
         
         for cur_epoch_idx in range(self.config.epochs):
-            print("Epoch[%d/%d]"%(cur_epoch_idx,self.config.epochs))
-            loss = self.train_model_epoch(cur_epoch_idx)
-            self.test(cur_epoch_idx)
+            self._logger.info("Epoch[%d/%d]" % (cur_epoch_idx, self.config.epochs))
+            
+            self.train_model_epoch(cur_epoch_idx)
 
-            ### Early Stop Mechanism
-            ### start to check if the loss is still decreasing after an interval. 
-            ### Example, if early_stop_epoch == 50, the trainer will check loss every 50 epoche.
-            ### TODO: change to support different metrics.
-            if ((cur_epoch_idx + 1) % self.config.early_stop_epoch) == 0: 
-                if patience_left > 0 and previous_loss <= loss:
-                    patience_left -= 1
-                    print('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
-                        (patience_left, previous_loss, loss))
-
-                elif patience_left == 0 and previous_loss <= loss:
-                    self.evaluator.result_queue.put(Evaluator.TEST_BATCH_EARLY_STOP)
+            if cur_epoch_idx % self.config.test_step == 0:
+                metrics = self.evaluator.mini_test(cur_epoch_idx)
+                
+                ### Early Stop Mechanism
+                ### start to check if the metric is still improving after each mini-test. 
+                ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
+                
+                if self.early_stopper.should_stop(metrics):
                     break
-                else:
-                    patience_left = self.config.patience
 
-            previous_loss = loss
-            ### Early Stop Mechanism
+                ### Early Stop Mechanism
+
+        self.evaluator.full_test(cur_epoch_idx)
+        self.evaluator.metric_calculator.save_test_summary(self.model.model_name)
 
         self.generator.stop()
-        self.evaluator.save_training_result(self.training_results)
-        self.evaluator.stop()
+        self.save_training_result()
 
         if self.config.save_model:
             self.save_model()
@@ -168,66 +255,46 @@ class Trainer(TrainerMeta):
 
         self.export_embeddings()
 
-        return loss
+        return cur_epoch_idx # the runned epoches.
 
     def tune_model(self):
         """Function to tune the model."""
-        acc = 0
-        ### Early Stop Mechanism
-        loss = previous_loss = float("inf")
-        patience_left = self.config.patience
-        ### Early Stop Mechanism
+        current_loss = float("inf")
 
-        self.generator = Generator(self.model.config, training_strategy=self.training_strategy)
-        self.evaluator = Evaluator(model=self.model,data_type=self.teston, debug=self.debug, tuning=True)
+        self.generator = Generator(self.model)
+        self.evaluator = Evaluator(self.model, tuning=True)
        
         for cur_epoch_idx in range(self.config.epochs):
-            loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
-            ### Early Stop Mechanism
-            ### start to check if the loss is still decreasing after an interval. 
-            ### Example, if early_stop_epoch == 50, the trainer will check loss every 50 epoche.
-            ### TODO: change to support different metrics.
-            if ((cur_epoch_idx + 1) % self.config.early_stop_epoch) == 0: 
-                if patience_left > 0 and previous_loss <= loss:
-                    patience_left -= 1
-                    print('%s more chances before the trainer stops the training. (prev_loss, curr_loss): (%.f, %.f)' % \
-                        (patience_left, previous_loss, loss))
+            current_loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
 
-                elif patience_left == 0 and previous_loss <= loss:
-                    self.evaluator.result_queue.put(Evaluator.TEST_BATCH_EARLY_STOP)
-                    break
-                else:
-                    patience_left = self.config.patience
-
-            previous_loss = loss
+        self.evaluator.full_test(cur_epoch_idx)
 
         self.generator.stop()
-        self.evaluator.test(cur_epoch_idx)
-        acc = self.evaluator.output_queue.get()
-        self.evaluator.stop()
-
-        return acc
+        
+        return current_loss
 
     def train_model_epoch(self, epoch_idx, tuning=False):
         """Function to train the model for one epoch."""
         acc_loss = 0
 
-        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 10
+        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.config.debug else 10
        
         metrics_names = ['acc_loss', 'loss'] 
         progress_bar = tf.keras.utils.Progbar(num_batch, stateful_metrics=metrics_names)
+        
+        self.generator.start_one_epoch(num_batch)
 
         for batch_idx in range(num_batch):
             data = list(next(self.generator))
             
-            if self.training_strategy == "projection_based":
+            if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
                 h = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 r = tf.convert_to_tensor(data[1], dtype=tf.int32)
                 t = tf.convert_to_tensor(data[2], dtype=tf.int32)
-                hr_t = data[3] # tf.convert_to_tensor(data[3], dtype=tf.float32)
-                rt_h = data[4] # tf.convert_to_tensor(data[4], dtype=tf.float32)
+                hr_t = data[3]
+                rt_h = data[4]
                 loss = self.train_step_projection(h, r, t, hr_t, rt_h)
-            elif self.training_strategy == "pointwise_based":
+            elif self.model.training_strategy == TrainingStrategy.POINTWISE_BASED:
                 h = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 r = tf.convert_to_tensor(data[1], dtype=tf.int32)
                 t = tf.convert_to_tensor(data[2], dtype=tf.int32)
@@ -240,7 +307,7 @@ class Trainer(TrainerMeta):
                 nh = tf.convert_to_tensor(data[3], dtype=tf.int32)
                 nr = tf.convert_to_tensor(data[4], dtype=tf.int32)
                 nt = tf.convert_to_tensor(data[5], dtype=tf.int32)
-                loss = self.train_step(ph, pr, pt, nh, nr, nt)
+                loss = self.train_step_pairwise(ph, pr, pt, nh, nr, nt)
 
             acc_loss += loss
 
@@ -249,86 +316,83 @@ class Trainer(TrainerMeta):
 
         self.training_results.append([epoch_idx, acc_loss.numpy()])
 
-        return acc_loss
-
-    ''' Testing related functions:'''
-
-    def test(self, curr_epoch):
-        """function to test the model.
-           
-           Args:
-                curr_epoch (int): The current epoch number.
-        """
-        if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
-                                               curr_epoch == 0 or
-                                               curr_epoch == self.config.epochs - 1):
-            self.evaluator.test(curr_epoch)
-        else:
-            if curr_epoch == self.config.epochs - 1:
-                self.evaluator.test(curr_epoch)
-
-
-    ''' Interactive Inference related '''
+        return acc_loss.numpy()
    
     def enter_interactive_mode(self):
         self.build_model()
         self.load_model()
 
-        self.evaluator = Evaluator(model=self.model, multiprocess=False)
-        print("The training/loading of the model has finished!\nNow enter interactive mode :)")
-        print("-----")
-        print("Example 1: trainer.infer_tails(1,10,topk=5)")
+        self.evaluator = Evaluator(self.model)
+        self._logger.info("""The training/loading of the model has finished!
+                                    Now enter interactive mode :)
+                                    -----
+                                    Example 1: trainer.infer_tails(1,10,topk=5)""")
         self.infer_tails(1,10,topk=5)
 
-        print("-----")
-        print("Example 2: trainer.infer_heads(10,20,topk=5)")
+        self._logger.info("""-----
+                                    Example 2: trainer.infer_heads(10,20,topk=5)""")
         self.infer_heads(10,20,topk=5)
 
-        print("-----")
-        print("Example 3: trainer.infer_rels(1,20,topk=5)")
+        self._logger.info("""-----
+                                    Example 3: trainer.infer_rels(1,20,topk=5)""")
         self.infer_rels(1,20,topk=5)
 
     def exit_interactive_mode(self):
-        self.evaluator.stop()
-        print("Thank you for trying out inference interactive script :)")
+        self._logger.info("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self,h,r,topk=5):
         tails = self.evaluator.test_tail_rank(h,r,topk).numpy()
-        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
+        logs = []
+        logs.append("")
+        logs.append("(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])))
+        logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("head: %s" % idx2ent[h])
-        print("relation: %s" % idx2rel[r])
+        logs.append("head: %s" % idx2ent[h])
+        logs.append("relation: %s" % idx2rel[r])
 
         for idx, tail in enumerate(tails):
-            print("%dth predicted tail: %s" % (idx, idx2ent[tail]))
+            logs.append("%dth predicted tail: %s" % (idx, idx2ent[tail]))
 
+        self._logger.info("\n".join(logs))
         return {tail: idx2ent[tail] for tail in tails}
 
     def infer_heads(self,r,t,topk=5):
         heads = self.evaluator.test_head_rank(r,t,topk).numpy()
-        print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
+        logs = []
+        logs.append("")
+        logs.append("(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])))
+        logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("tail: %s" % idx2ent[t])
-        print("relation: %s" % idx2rel[r])
+        logs.append("tail: %s" % idx2ent[t])
+        logs.append("relation: %s" % idx2rel[r])
 
         for idx, head in enumerate(heads):
-            print("%dth predicted head: %s" % (idx, idx2ent[head]))
+            logs.append("%dth predicted head: %s" % (idx, idx2ent[head]))
 
+        self._logger.info("\n".join(logs))
         return {head: idx2ent[head] for head in heads}
 
     def infer_rels(self, h, t, topk=5):
+        if self.model.model_name.lower() in ["proje_pointwise", "conve", "tucker"]:
+            self._logger.info("%s model doesn't support relation inference in nature.")
+            return
+
         rels = self.evaluator.test_rel_rank(h,t,topk).numpy()
-        print("\n(head,tail)->({},{}) :: Inferred rels->({})\n".format(h, t, ",".join([str(i) for i in rels])))
+        logs = []
+        logs.append("")
+        logs.append("(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])))
+        logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("head: %s" % idx2ent[h])
-        print("tail: %s" % idx2ent[t])
+        logs.append("head: %s" % idx2ent[h])
+        logs.append("tail: %s" % idx2ent[t])
 
         for idx, rel in enumerate(rels):
-            print("%dth predicted rel: %s" % (idx, idx2rel[rel]))
+            logs.append("%dth predicted rel: %s" % (idx, idx2rel[rel]))
 
+        self._logger.info("\n".join(logs))
         return {rel: idx2rel[rel] for rel in rels}
     
     ''' Procedural functions:'''
@@ -406,3 +470,12 @@ class Trainer(TrainerMeta):
 
                 df = pd.DataFrame(all_embs)
                 df.to_pickle(save_path / ("%s.pickle" % stored_name))
+
+    def save_training_result(self):
+        """Function that saves training result"""
+        files = os.listdir(str(self.model.config.path_result))
+        l = len([f for f in files if self.model.model_name in f if 'Training' in f])
+        df = pd.DataFrame(self.training_results, columns=['Epochs', 'Loss'])
+        with open(str(self.model.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
+                  'w') as fh:
+            df.to_csv(fh)

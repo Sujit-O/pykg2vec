@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
-
+from pykg2vec.utils.generator import TrainingStrategy
 
 class RotatE(ModelMeta):
     """ `Rotate-Knowledge graph embedding by relation rotation in complex space`_
@@ -29,7 +29,7 @@ class RotatE(ModelMeta):
             >>> from pykg2vec.core.RotatE import RotatE
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = RotatE()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 
@@ -41,6 +41,7 @@ class RotatE(ModelMeta):
         super(RotatE, self).__init__()
         self.config = config
         self.model_name = 'RotatE'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -56,7 +57,9 @@ class RotatE(ModelMeta):
         num_total_rel = self.config.kg_meta.tot_relation
 
         k = self.config.hidden_size
-        emb_initializer = tf.initializers.glorot_normal()
+        # emb_initializer = tf.initializers.glorot_normal()
+        self.embedding_range = (self.config.margin + 2.0) / k 
+        emb_initializer = tf.random_uniform_initializer(minval=-self.embedding_range, maxval=self.embedding_range)
         
         self.ent_embeddings       = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embeddings_real")
         self.ent_embeddings_imag  = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embeddings_imag") 
@@ -81,52 +84,13 @@ class RotatE(ModelMeta):
         r_e_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
         t_e_r = tf.nn.embedding_lookup(self.ent_embeddings, t)
         t_e_i = tf.nn.embedding_lookup(self.ent_embeddings_imag, t)
-        r_e_r = r_e_r / pi
+        r_e_r = r_e_r / (self.embedding_range / pi)
         r_e_i = tf.sin(r_e_r)
         r_e_r = tf.cos(r_e_r)
-        return (h_e_r, h_e_i), (r_e_r, r_e_i), (t_e_r, t_e_i)
-
-    def dissimilarity(self, hr, hi, rr, ri, tr, ti):
-        """Calculates training score for loss function.
-
-            Args:
-                hi(Tensor): Imaginary part of the head embedding.
-                hr(Tensor): Real part of the head embedding.
-                ri(Tensor): Imaginary part of the tail embedding.
-                rr(Tensor): Real part of the tail embedding.
-                ti(Tensor): Imaginary part of the relation embedding.
-                tr(Tensor): Real part of the relation embedding.
-
-            Returns:
-                Tensors: Returns a tensor
-        """
-        score_r = hr * rr - hi * ri - tr
-        score_i = hr * ri + hi * rr - ti
-        return tf.reduce_sum(tf.sqrt(score_r ** 2 + score_i ** 2), -1)
-
-    def get_loss(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        """Defines the layers of the algorithm."""
-        (pos_h_e_r, pos_h_e_i), (pos_r_e_r, pos_r_e_i), (pos_t_e_r, pos_t_e_i) = self.embed(pos_h, pos_r, pos_t)
-
-        (neg_h_e_r, neg_h_e_i), (neg_r_e_r, neg_r_e_i), (neg_t_e_r, neg_t_e_i) = self.embed(neg_h, neg_r, neg_t)
-
-        pos_score = self.dissimilarity(pos_h_e_r, pos_h_e_i, pos_r_e_r, pos_r_e_i, pos_t_e_r, pos_t_e_i)
-        neg_score = self.dissimilarity(neg_h_e_r, neg_h_e_i, neg_r_e_r, neg_r_e_i, neg_t_e_r, neg_t_e_i)
-
-        loss = tf.reduce_sum(tf.maximum(pos_score + self.config.margin - neg_score, 0))
-
-        return loss
-
-    def predict(self, h, r, t, topk=-1):
-        """Function that performs prediction for TransE. 
-           shape of h can be either [num_tot_entity] or [1]. 
-           shape of t can be either [num_tot_entity] or [1].
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
-        (h_e_r, h_e_i), (r_e_r, r_e_i), (t_e_r, t_e_i) = self.embed(h, r, t)
-        score = self.dissimilarity(h_e_r, h_e_i, r_e_r, r_e_i, t_e_r, t_e_i)
-        _, rank = tf.nn.top_k(score, k=topk)
-
-        return rank
+        return h_e_r, h_e_i, r_e_r, r_e_i, t_e_r, t_e_i
+   
+    def forward(self, h, r, t):
+        h_e_r, h_e_i, r_e_r, r_e_i, t_e_r, t_e_i = self.embed(h, r, t)
+        score_r = h_e_r * r_e_r - h_e_i * r_e_i - t_e_r
+        score_i = h_e_r * r_e_i + h_e_i * r_e_r - t_e_i
+        return -(self.config.margin - tf.reduce_sum(score_r**2 + score_i**2, axis=-1))

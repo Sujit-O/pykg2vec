@@ -17,22 +17,22 @@ class HyperparamterLoader:
         'freebase15k': 
         {
           'transe'  : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin':1.00,'optimizer': 'sgd','sampling':"uniform",'neg_rate':1},
-          'transh'  : {'learning_rate': 0.005,'L1_flag':False,'hidden_size':50,'batch_size':1200,'epochs':1000,'margin': 0.5,'optimizer': 'sgd','sampling':"uniform",'neg_rate':1,'C': 0.015625},
-          'hole'    : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size': 512,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
+          'transh'  : {'learning_rate': 0.005,'L1_flag':False,'hidden_size':50,'batch_size':1200,'epochs':1000,'margin': 0.5,'optimizer': 'sgd','sampling':"uniform",'neg_rate':1},
+          'hole'    : {'learning_rate':   0.1,'hidden_size':150,'batch_size': 5000,'epochs':1000,'margin': 0.2,'optimizer':'sgd','sampling':"uniform",'neg_rate':1},
           'transm'  : {'learning_rate': 0.001,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
           'rescal'  : {'learning_rate': 0.001,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
-          'rotate'  : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
-          'sme'     : {'learning_rate': 0.001,'L1_flag': True,'hidden_size':50,'batch_size': 128,'epochs':1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1,'bilinear':False},
+          'rotate'  : {'learning_rate':0.0001,'hidden_size':1000,'batch_size': 1024,'epochs':1000,'margin': 24.0,'optimizer':'adam','sampling':"adversarial_negative_sampling",'alpha': 1.0, 'neg_rate':16},
+          'sme'     : {'learning_rate': 0.1,'L1_flag': True,'hidden_size':50,'batch_size':50000,'epochs':1000,'optimizer':'adam'},
           'transr'  : {'learning_rate': 0.001,'L1_flag': True,'ent_hidden_size':50,'rel_hidden_size':50,'batch_size': 4800,'epochs': 1000,'margin': 1.0,'optimizer': 'sgd','sampling':   "bern",'neg_rate':1},
           'transd'  : {'learning_rate': 0.001,'L1_flag':False,'ent_hidden_size':50,'rel_hidden_size':50,'batch_size':  200,'epochs': 1000,'margin': 1.0,'optimizer': 'sgd','sampling':"uniform",'neg_rate':1},
-          'ntn'     : {'learning_rate':  0.01,'L1_flag': True,'ent_hidden_size':64,'rel_hidden_size':32,'batch_size':  128,'epochs': 1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1}, # problematic
+          'ntn'     : {'learning_rate':  0.01,'ent_hidden_size':100,'rel_hidden_size':100,'batch_size':  128,'epochs': 1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1, 'lmbda':0.0001}, # problematic
           'slm'     : {'learning_rate':  0.01,'L1_flag': True,'ent_hidden_size':64,'rel_hidden_size':32,'batch_size':  128,'epochs': 1000,'margin': 1.0,'optimizer':'adam','sampling':"uniform",'neg_rate':1},
           'kg2e'    : {'learning_rate':  0.01,'L1_flag': True,'hidden_size':50,'batch_size':1440,'epochs':1000,'margin': 4.0,'optimizer': 'sgd','sampling':"uniform",'distance_measure': "kl_divergence",'cmax': 0.05,'cmin': 5.00,'neg_rate': 1},
-          'complex' : {'learning_rate':   0.5,'hidden_size':200,'batch_size':5000,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':10,'lmbda':0.0001},
+          'complex' : {'learning_rate':  0.05,'hidden_size':200,'batch_size':5000,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':1,'lmbda':0.0001},
           'distmult': {'learning_rate':   0.1,'hidden_size':100,'batch_size':50000,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':1,'lmbda':0.0001},
           'proje_po': {'learning_rate':  0.01,'hidden_dropout': 0.5, 'hidden_size':200,'batch_size':200,' epochs':100, 'optimizer':'adam','lmbda':0.00001},
-          'conve'   : {'learning_rate': 0.001,'optimizer':'adam', 'label_smoothing':0.1, 'batch_size':128, 'hidden_size':200, 'input_dropout':0.2, 'feature_map_dropout':0.2, 'hidden_dropout':0.3,'neg_rate':0, 'epochs':100},
-          'convkb'  : {'lmbda': 0.001,'filter_sizes':[1,2,3],'num_filters':50,'learning_rate': 0.0001,'optimizer':'adam','hidden_size': 100,'batch_size': 128,'epochs':200,'neg_rate':1}
+          'conve'   : {'learning_rate': 0.003,'optimizer':'adam', 'label_smoothing':0.1, 'batch_size':128, 'hidden_size':200, 'hidden_size_1':20, 'input_dropout':0.2, 'feature_map_dropout':0.2, 'hidden_dropout':0.3,'neg_rate':0, 'epochs':100},
+          'convkb'  : {'lmbda': 0.001,'filter_sizes':[1,2],'num_filters':50,'learning_rate': 0.0001,'optimizer':'adam','hidden_size': 100,'batch_size': 128,'epochs':200,'neg_rate':1}
         }
       }
 
@@ -198,7 +198,7 @@ class RescalParams:
         self.search_space = {
           'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
           'L1_flag': hp.choice('L1_flag', [True, False]),
-          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(128),1)),
           'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
           'margin': hp.uniform('margin', 0.0, 2.0),
           'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),

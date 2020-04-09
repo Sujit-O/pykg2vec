@@ -10,12 +10,15 @@ os:
 python:
   - "3.6"
 
+env:
+  - COVERAGE_RCFILE=".coveragerc"
+
 install:
   - pip install -r requirements.txt
   - pip install .
   - pip uninstall -y bson && pip install pymongo
   - pip install 'pytest>=3.6'
-  - pip install pytest-cov coverage coveralls
+  - pip install -r requirements-dev.txt
 
 script:
   - pytest --disable-pytest-warnings --cov pykg2vec
