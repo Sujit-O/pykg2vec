@@ -42,7 +42,8 @@ class EarlyStopper:
     def __init__(self, patience, monitor):
 
         self.monitor = monitor
-
+        self.patience = patience
+        
         # controlling variables.
         self.previous_metrics = None
         self.patience_left = patience
