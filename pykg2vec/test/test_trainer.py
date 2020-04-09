@@ -15,7 +15,7 @@ def run_tf_function_eagerly(request):
     tf.config.experimental_run_functions_eagerly(True)
 
 @pytest.mark.skip(reason="This is a functional method.")
-def get_model(result_path_dir, configured_epochs, patience, early_stop_epoch, config_key):
+def get_model(result_path_dir, configured_epochs, patience, config_key):
     args = KGEArgParser().get_args([])
 
     knowledge_graph = KnowledgeGraph(dataset="Freebase15k")
@@ -30,7 +30,6 @@ def get_model(result_path_dir, configured_epochs, patience, early_stop_epoch, co
     config.disp_result = False
     config.save_model = False
     config.path_result = result_path_dir
-    config.early_stop_epoch = early_stop_epoch
     config.debug = True
     config.patience = patience
 
@@ -41,7 +40,7 @@ def get_model(result_path_dir, configured_epochs, patience, early_stop_epoch, co
 def test_full_epochs(tmpdir, config_key):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 10
-    model = get_model(result_path_dir, configured_epochs, -1, 5, config_key)
+    model = get_model(result_path_dir, configured_epochs, -1, config_key)
 
     trainer = Trainer(model=model)
     trainer.build_model()
@@ -49,49 +48,19 @@ def test_full_epochs(tmpdir, config_key):
 
     assert actual_epochs == configured_epochs - 1
 
-def test_early_stopping_on_loss(tmpdir):
-    result_path_dir = tmpdir.mkdir("result_path")
-    configured_epochs = 10
-    model = get_model(result_path_dir, configured_epochs, 1, 1, "complex")
-
-    trainer = Trainer(model=model)
-    trainer.build_model()
-    actual_epochs = trainer.train_model()
-
-    assert actual_epochs < configured_epochs - 1
-
 @pytest.mark.parametrize("monitor", [
     Monitor.MEAN_RANK,
     Monitor.FILTERED_MEAN_RANK,
     Monitor.MEAN_RECIPROCAL_RANK,
     Monitor.FILTERED_MEAN_RECIPROCAL_RANK,
-    Monitor.HIT1,
-    Monitor.FILTERED_HIT1,
-    Monitor.HIT3,
-    Monitor.FILTERED_HIT3,
-    Monitor.HIT5,
-    Monitor.FILTERED_HIT5,
-    Monitor.HIT10,
-    Monitor.FILTERED_HIT10
 ])
 def test_early_stopping_on_ranks(tmpdir, monitor):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 10
-    model = get_model(result_path_dir, configured_epochs, 0, 1, "complex")
+    model = get_model(result_path_dir, configured_epochs, 0, "complex")
 
     trainer = Trainer(model=model)
     trainer.build_model()
     actual_epochs = trainer.train_model(monitor=monitor)
 
     assert actual_epochs < configured_epochs - 1
-
-def test_throw_exception_on_unknown_monitor(tmpdir):
-    result_path_dir = tmpdir.mkdir("result_path")
-    configured_epochs = 10
-    model = get_model(result_path_dir, configured_epochs, 0, 1, "complex")
-
-    trainer = Trainer(model=model)
-    trainer.build_model()
-
-    with pytest.raises(NotImplementedError, match="Unknown monitor dummy"):
-        trainer.train_model(monitor="dummy")

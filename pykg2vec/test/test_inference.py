@@ -66,7 +66,7 @@ def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=No
     'kg2e',
     'kg2e_el',
     'ntn',
-    'proje_pointwise',
+    # 'proje_pointwise',
     'rotate',
     'rescal',
     'slm',

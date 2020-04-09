@@ -29,19 +29,52 @@ except:
 
 
 class Monitor(Enum):
-    ACC_LOSS = "acc_loss"
     MEAN_RANK = "mr"
     FILTERED_MEAN_RANK = "fmr"
     MEAN_RECIPROCAL_RANK = "mrr"
     FILTERED_MEAN_RECIPROCAL_RANK = "fmrr"
-    HIT1 = "hit1"
-    FILTERED_HIT1 = "fhit1"
-    HIT3 = "hit3"
-    FILTERED_HIT3 = "fhit3"
-    HIT5 = "hit5"
-    FILTERED_HIT5 = "fhit5"
-    HIT10 = "hit10"
-    FILTERED_HIT10 = "fhit10"
+
+
+class EarlyStopper:
+    
+    _logger = Logger().get_logger(__name__)
+
+    def __init__(self, config, monitor):
+
+        self.monitor = monitor
+        self.config = config
+
+        # controlling variables.
+        self.previous_metrics = None
+        self.patience_left = self.config.patience
+
+    def should_stop(self, curr_metric):
+        stop_early = False
+        value, name = self.monitor.value, self.monitor.name
+
+        if self.previous_metrics is not None:
+            if self.monitor == Monitor.MEAN_RANK or self.monitor == Monitor.FILTERED_MEAN_RANK:
+                is_worse = self.previous_metrics[value] < curr_metric[value]
+            else:
+                is_worse = self.previous_metrics[value] > curr_metric[value]
+
+            if self.patience_left > 0 and is_worse:
+                self.patience_left -= 1
+                self._logger.info(
+                    '%s more chances before the trainer stops the training. (prev_%s, curr_%s): (%.4f, %.4f)' %
+                    (self.patience_left, name, name, self.previous_metrics[value], curr_metric[value]))
+            
+            elif self.patience_left == 0 and is_worse:
+                self._logger.info('Stop the training.')
+                stop_early = True
+            
+            else:
+                self._logger.info('Reset the patience count to %d' % (self.config.patience))
+                self.patience_left = self.config.patience
+                
+        self.previous_metrics = curr_metric
+
+        return stop_early
 
 
 class Trainer(TrainerMeta):
@@ -96,6 +129,8 @@ class Trainer(TrainerMeta):
 
         self.config.summary()
         self.config.summary_hyperparameter(self.model.model_name)
+
+        self.early_stopper = EarlyStopper(self.config, Monitor.FILTERED_MEAN_RANK)
 
     ''' Training related functions:'''
     @tf.function
@@ -153,8 +188,7 @@ class Trainer(TrainerMeta):
                 loss = loss_tails + loss_heads
 
                 if hasattr(self.model, 'get_reg'):
-                    # now only NTN uses regularizer, 
-                    # other pairwise based KGE methods use normalization to regularize parameters.
+                    # now only complex distmult uses regularizer in algorithms, 
                     loss += self.model.get_reg()
 
 
@@ -178,24 +212,8 @@ class Trainer(TrainerMeta):
 
         return loss
 
-    def train_model(self, monitor=Monitor.ACC_LOSS):
+    def train_model(self, monitor=Monitor.FILTERED_MEAN_RANK):
         """Function to train the model."""
-        previous_loss = float("inf")
-        previous_mr = 0.0
-        previous_fmr = 0.0
-        previous_mrr = 0.0
-        previous_fmrr = 0.0
-        previous_hit1 = 0.0
-        previous_fhit1 = 0.0
-        previous_hit3 = 0.0
-        previous_fhit3 = 0.0
-        previous_hit5 = 0.0
-        previous_fhit5 = 0.0
-        previous_hit10 = 0.0
-        previous_fhit10 = 0.0
-
-        patience_left = self.config.patience
-
         self.generator = Generator(self.model)
         self.evaluator = Evaluator(self.model)
 
@@ -204,81 +222,20 @@ class Trainer(TrainerMeta):
         
         for cur_epoch_idx in range(self.config.epochs):
             self._logger.info("Epoch[%d/%d]" % (cur_epoch_idx, self.config.epochs))
-            current_loss = self.train_model_epoch(cur_epoch_idx)
-
-            ### Early Stop Mechanism
-            if cur_epoch_idx % self.config.test_step == 0:
-                mr, fmr, mrr, fmrr, hits, fhits = self.evaluator.mini_test(cur_epoch_idx)
-                if monitor is not Monitor.ACC_LOSS:
-                    if monitor is Monitor.MEAN_RANK:
-                        previous_watched = previous_mr
-                        current_watched = mr
-                    elif monitor is Monitor.FILTERED_MEAN_RANK:
-                        previous_watched = previous_fmr
-                        current_watched = fmr
-                    elif monitor is Monitor.MEAN_RECIPROCAL_RANK:
-                        previous_watched = previous_mrr
-                        current_watched = mrr
-                    elif monitor is Monitor.FILTERED_MEAN_RECIPROCAL_RANK:
-                        previous_watched = previous_fmrr
-                        current_watched = fmrr
-                    elif monitor is Monitor.HIT1:
-                        previous_watched = previous_hit1
-                        current_watched = hits[(cur_epoch_idx, 1)]
-                    elif monitor is Monitor.FILTERED_HIT1:
-                        previous_watched = previous_fhit1
-                        current_watched = fhits[(cur_epoch_idx, 1)]
-                    elif monitor is Monitor.HIT3:
-                        previous_watched = previous_hit3
-                        current_watched = hits[(cur_epoch_idx, 3)]
-                    elif monitor is Monitor.FILTERED_HIT3:
-                        previous_watched = previous_fhit3
-                        current_watched = fhits[(cur_epoch_idx, 3)]
-                    elif monitor is Monitor.HIT5:
-                        previous_watched = previous_hit5
-                        current_watched = hits[(cur_epoch_idx, 5)]
-                    elif monitor is Monitor.FILTERED_HIT5:
-                        previous_watched = previous_fhit5
-                        current_watched = fhits[(cur_epoch_idx, 5)]
-                    elif monitor is Monitor.HIT10:
-                        previous_watched = previous_hit10
-                        current_watched = hits[(cur_epoch_idx, 10)]
-                    elif monitor is Monitor.FILTERED_HIT10:
-                        previous_watched = previous_fhit10
-                        current_watched = fhits[(cur_epoch_idx, 10)]
-                    else:
-                        raise NotImplementedError("Unknown monitor %s" % monitor)
-
-                    patience_left, stop_early = self._get_patience_left(patience_left, previous_watched, current_watched,
-                                                                        monitor, min_mode=False)
-                    if stop_early:
-                        break
-
-                previous_mr = mr
-                previous_fmr = fmr
-                previous_mrr = mrr
-                previous_fmrr = fmrr
-                previous_hit1 = hits[(cur_epoch_idx, 1)]
-                previous_fhit1 = fhits[(cur_epoch_idx, 1)]
-                previous_hit3 = hits[(cur_epoch_idx, 3)]
-                previous_fhit3 = fhits[(cur_epoch_idx, 3)]
-                previous_hit5 = hits[(cur_epoch_idx, 5)]
-                previous_fhit5 = fhits[(cur_epoch_idx, 5)]
-                previous_hit10 = hits[(cur_epoch_idx, 10)]
-                previous_fhit10 = fhits[(cur_epoch_idx, 10)]
-                ### Early Stop Mechanism
             
-            ### Early Stop Mechanism
-            ### start to check if the loss is still decreasing after an interval. 
-            ### Example, if early_stop_epoch == 50, the trainer will check loss every 50 epoch.
-            if ((cur_epoch_idx + 1) % self.config.early_stop_epoch) == 0 and monitor is Monitor.ACC_LOSS:
-                patience_left, stop_early = self._get_patience_left(patience_left, previous_loss, current_loss,
-                                                                    monitor, min_mode=True)
-                if stop_early:
+            self.train_model_epoch(cur_epoch_idx)
+
+            if cur_epoch_idx % self.config.test_step == 0:
+                metrics = self.evaluator.mini_test(cur_epoch_idx)
+                
+                ### Early Stop Mechanism
+                ### start to check if the metric is still improving after each mini-test. 
+                ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
+                
+                if self.early_stopper.should_stop(metrics):
                     break
 
-            previous_loss = current_loss
-            ### Early Stop Mechanism
+                ### Early Stop Mechanism
 
         self.evaluator.full_test(cur_epoch_idx)
         self.evaluator.metric_calculator.save_test_summary(self.model.model_name)
@@ -302,31 +259,19 @@ class Trainer(TrainerMeta):
 
     def tune_model(self):
         """Function to tune the model."""
-        previous_loss = float("inf")
-        patience_left = self.config.patience
+        current_loss = float("inf")
 
         self.generator = Generator(self.model)
         self.evaluator = Evaluator(self.model, tuning=True)
        
         for cur_epoch_idx in range(self.config.epochs):
             current_loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
-            ### Early Stop Mechanism
-            ### start to check if the loss is still decreasing after an interval.
-            ### Example, if early_stop_epoch == 50, the trainer will check loss every 50 epoch.
-            if ((cur_epoch_idx + 1) % self.config.early_stop_epoch) == 0:
-                patience_left, stop_early = self._get_patience_left(patience_left, previous_loss, current_loss,
-                                                                    Monitor.ACC_LOSS, min_mode=True)
-                if stop_early:
-                    break
-
-            previous_loss = current_loss
-            ### Early Stop Mechanism
 
         self.evaluator.full_test(cur_epoch_idx)
 
         self.generator.stop()
         
-        return previous_loss
+        return current_loss
 
     def train_model_epoch(self, epoch_idx, tuning=False):
         """Function to train the model for one epoch."""
@@ -430,6 +375,10 @@ class Trainer(TrainerMeta):
         return {head: idx2ent[head] for head in heads}
 
     def infer_rels(self, h, t, topk=5):
+        if self.model.model_name.lower() in ["proje_pointwise", "conve", "tucker"]:
+            self._logger.info("%s model doesn't support relation inference in nature.")
+            return
+
         rels = self.evaluator.test_rel_rank(h,t,topk).numpy()
         logs = []
         logs.append("")
@@ -530,19 +479,3 @@ class Trainer(TrainerMeta):
         with open(str(self.model.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)
-
-    def _get_patience_left(self, patience_left, previous_watched, current_watched, monitor, min_mode=True):
-        is_worse = previous_watched <= current_watched if min_mode else previous_watched >= current_watched
-        stop_early = False
-        if patience_left > 0 and is_worse:
-            patience_left -= 1
-            self._logger.info(
-                '%s more chances before the trainer stops the training. (prev_%s, curr_%s): (%.4f, %.4f)' %
-                (patience_left, monitor.name.lower(), monitor.name.lower(), previous_watched, current_watched))
-        elif patience_left == 0 and is_worse:
-            self._logger.info('Stop the training.')
-            stop_early = True
-        else:
-            patience_left = self.config.patience
-        return patience_left, stop_early
-
