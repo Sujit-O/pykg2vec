@@ -68,8 +68,8 @@ class EarlyStopper:
                 should_stop = True
             
             else:
-                self._logger.info('Reset the patience count to %d' % (self.config.patience))
-                self.patience_left = self.config.patience
+                self._logger.info('Reset the patience count to %d' % (self.patience))
+                self.patience_left = self.patience
                 
         self.previous_metrics = curr_metrics
 
