@@ -62,7 +62,9 @@ class ConvE(ModelMeta):
         emb_initializer = tf.initializers.glorot_normal()
 
         self.ent_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embedding")
-        self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
+        self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel*2, k)), name="rel_embedding") 
+        # because conve considers the reciprocal relations, so every rel should have its mirrored rev_rel in ConvE. 
+        
         self.b = tf.Variable(emb_initializer(shape=(1, num_total_ent)), name="bias")
         self.bn0 = tf.keras.layers.BatchNormalization(axis=-1)
         self.inp_drop = tf.keras.layers.Dropout(rate=self.config.input_dropout)
@@ -72,18 +74,7 @@ class ConvE(ModelMeta):
         self.fc1 = tf.keras.layers.Dense(units=self.config.hidden_size)
         self.hidden_drop = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
         self.bn2 = tf.keras.layers.BatchNormalization(axis=-1)
-
-        self.b2 = tf.Variable(emb_initializer(shape=(1, num_total_ent)), name="bias2")
-        self.bn02 = tf.keras.layers.BatchNormalization(axis=-1)
-        self.inp_drop2 = tf.keras.layers.Dropout(rate=self.config.input_dropout)
-        self.conv2d_12 = tf.keras.layers.Conv2D(32, [3, 3], strides=(1, 1), padding='valid', use_bias=True)
-        self.bn12 = tf.keras.layers.BatchNormalization(axis=-1)
-        self.feat_drop2 = tf.keras.layers.SpatialDropout2D(self.config.feature_map_dropout)
-        self.fc12 = tf.keras.layers.Dense(units=self.config.hidden_size)
-        self.hidden_drop2 = tf.keras.layers.Dropout(rate=self.config.hidden_dropout)
-        self.bn22 = tf.keras.layers.BatchNormalization(axis=-1)
-
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b, self.b2]
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -107,7 +98,7 @@ class ConvE(ModelMeta):
         emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
         return emb_e, emb_r
 
-    def inner_forward1(self, st_inp, first_dimension_size):
+    def inner_forward(self, st_inp, first_dimension_size):
         """Implements the forward pass layers of the algorithm."""
         # batch normalization in the first axis
         x = self.bn0(st_inp)
@@ -139,51 +130,18 @@ class ConvE(ModelMeta):
         # sigmoid activation
         return tf.nn.sigmoid(x)
 
-    def inner_forward2(self, st_inp, first_dimension_size):
-        """Implements the forward pass layers of the algorithm."""
-        # batch normalization in the first axis
-        x = self.bn02(st_inp)
-        # input dropout
-        x = self.inp_drop2(x)
-        # 2d convolution layer, output channel =32, kernel size = 3,3
-        x = self.conv2d_12(x)
-        # batch normalization across feature dimension
-        x = self.bn12(x)
-        # first non-linear activation
-        x = tf.nn.relu(x)
-        # feature dropout
-        x = self.feat_drop2(x)
-        # reshape the tensor to get the batch size
-        '''10368 with k=200,5184 with k=100, 2592 with k=50'''
-        x = tf.reshape(x, [first_dimension_size, -1])
-        # pass the feature through fully connected layer, output size = batch size, hidden size
-        x = self.fc12(x)
-        # dropout in the hidden layer
-        x = self.hidden_drop2(x)
-        # batch normalization across feature dimension
-        x = self.bn22(x)
-        # second non-linear activation
-        x = tf.nn.relu(x)
-        # project and get inner product with the tail triple
-        x = tf.matmul(x, self.ent_embeddings, transpose_b=True) # [b, k] * [k, tot_ent]
-        # add a bias value
-        x = tf.add(x, self.b2)
-        # sigmoid activation
-        return tf.nn.sigmoid(x)
-
     def forward(self, e, r, direction="tail"):
-        e_emb, r_emb, = self.embed2(e, r)
-        first_dimension_size = e.get_shape().as_list()[0]
-
+        if direction == "head":
+            e_emb, r_emb = self.embed2(e, r + self.config.kg_meta.tot_relation)
+        else:
+            e_emb, r_emb = self.embed2(e, r)
+        
         stacked_e  = tf.reshape(e_emb, [-1, self.config.hidden_size_2, self.config.hidden_size_1, 1])
         stacked_r  = tf.reshape(r_emb, [-1, self.config.hidden_size_2, self.config.hidden_size_1, 1])
         stacked_er = tf.concat([stacked_e, stacked_r], 1)
 
-        if direction == "tail":
-            preds = self.inner_forward1(stacked_er, first_dimension_size)
-        else:
-            preds = self.inner_forward2(stacked_er, first_dimension_size)
-        
+        preds = self.inner_forward(stacked_er, e.get_shape().as_list()[0])
+    
         return preds
 
     def predict_tail_rank(self, e, r, topk=-1):
