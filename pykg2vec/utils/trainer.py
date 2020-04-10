@@ -174,7 +174,7 @@ class Trainer(TrainerMeta):
                     tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
 
                 pred_tails = self.model.forward(h, r, direction="tail") # (h, r) -> hr_t forward
-                pred_heads = self.model.forward(h, r, direction="head") # (t, r) -> tr_h backward
+                pred_heads = self.model.forward(t, r, direction="head") # (t, r) -> tr_h backward
 
                 loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
                 loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(tr_h, pred_heads))
@@ -183,7 +183,7 @@ class Trainer(TrainerMeta):
             
             else:
                 loss_tails = self.model.forward(h, r, hr_t, direction="tail") # (h, r) -> hr_t forward
-                loss_heads = self.model.forward(h, r, tr_h, direction="head") # (t, r) -> tr_h backward
+                loss_heads = self.model.forward(t, r, tr_h, direction="head") # (t, r) -> tr_h backward
 
                 loss = loss_tails + loss_heads
 
