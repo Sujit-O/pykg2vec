@@ -4,15 +4,10 @@
 This module is for testing unit functions of training
 """
 import pytest
-import tensorflow as tf
 
 from pykg2vec.config.config import KGEArgParser, Importer
 from pykg2vec.utils.trainer import Trainer, Monitor
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
-
-@pytest.fixture(scope="session", autouse=True)
-def run_tf_function_eagerly(request):
-    tf.config.experimental_run_functions_eagerly(True)
 
 @pytest.mark.skip(reason="This is a functional method.")
 def get_model(result_path_dir, configured_epochs, patience, config_key):
