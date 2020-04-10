@@ -47,7 +47,21 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     trainer.build_model()
     trainer.train_model()
 
-@pytest.mark.parametrize("model_name", ['complex', 'distmult', 'proje_pointwise', 'rescal', 'rotate', 'slm', 'transe', 'transh', 'transr', 'transd', 'transm', 'hole'])
+@pytest.mark.parametrize("model_name", [
+    'complex',
+    'complexn3',
+    'distmult',
+    'proje_pointwise',
+    'rescal',
+    'rotate',
+    'slm',
+    'transe',
+    'transh',
+    'transr',
+    'transd',
+    'transm',
+    'hole',
+])
 def test_KGE_methods(model_name):
     """Function to test a set of KGE algorithsm."""
     testing_function(model_name)
@@ -63,7 +77,7 @@ def test_ConvKB():
 
 def test_KG2E_EL_args():
     """Function to test KG2E Algorithm with arguments."""
-    testing_function('kg2e', distance_measure="expected_likelihood")
+    testing_function('kg2e_el', distance_measure="expected_likelihood")
 
 def test_KG2E_KL_args():
     """Function to test KG2E Algorithm with arguments."""
@@ -75,7 +89,7 @@ def test_SMEL_args():
 
 def test_SMEB_args():
     """Function to test SME Algorithm with arguments."""
-    testing_function('sme', bilinear=True)
+    testing_function('sme_bl', bilinear=True)
 
 def test_transE_display():
     """Function to test transE display."""
