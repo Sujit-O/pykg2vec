@@ -32,7 +32,8 @@ class HyperparamterLoader:
           'distmult': {'learning_rate':   0.1,'hidden_size':100,'batch_size':50000,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':1,'lmbda':0.0001},
           'proje_po': {'learning_rate':  0.01,'hidden_dropout': 0.5, 'hidden_size':200,'batch_size':200,' epochs':100, 'optimizer':'adam','lmbda':0.00001},
           'conve'   : {'learning_rate': 0.003,'optimizer':'adam', 'label_smoothing':0.1, 'batch_size':128, 'hidden_size':200, 'hidden_size_1':20, 'input_dropout':0.2, 'feature_map_dropout':0.2, 'hidden_dropout':0.3,'neg_rate':0, 'epochs':100},
-          'convkb'  : {'lmbda': 0.001,'filter_sizes':[1,2],'num_filters':50,'learning_rate': 0.0001,'optimizer':'adam','hidden_size': 100,'batch_size': 128,'epochs':200,'neg_rate':1}
+          'convkb'  : {'lmbda': 0.001,'filter_sizes':[1,2],'num_filters':50,'learning_rate': 0.0001,'optimizer':'adam','hidden_size': 100,'batch_size': 128,'epochs':200,'neg_rate':1},
+          'cp': {'learning_rate': 0.01, 'hidden_size': 50, 'batch_size': 128, 'epochs': 50, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.0001},
         }
       }
 
@@ -699,3 +700,46 @@ class TransGParams:
         self.ncluster = [3, 4, 5, 6, 7]
         self.CRP_factor = [0.01, 0.05, 0.1]
         self.weight_norm = [True, False]
+
+
+class CPParams:
+    """This class defines the hyperameters and its ranges for tuning Canonical Tensor Decomposition algorithm.
+
+    CPParams defines all the possibel values to be tuned for the algorithm. User may
+    change these values directly for performing the bayesian optimization of the hyper-parameters
+
+    Args:
+      lambda (list) : List of floating point values.
+      feature_map_dropout (list) :List of floating point values.
+      input_dropout (list) : List of floating point values.
+      hidden_dropout (list) : List of floating point values.
+      use_bias (list) :List of boolean values.
+      label_smoothing (list) : List of floating point values.
+      lr_decay (float) : List of floating point values.
+      learning_rate (list): List of floating point values.
+      L1_flag (list): List of boolean values.
+      hidden_size (list): List of integer values.
+      batch_size (list): List of integer values.
+      epochs (list): List of integer values.
+      margin (list): List of floating point values.
+      optimizer (list): List of strings defining the optimization algorithm to be used.
+      sampling (list): List of string defining the sampling to be used for generating negative examples.
+
+    """
+
+    def __init__(self):
+        self.lmbda = [0.1, 0.2]
+        self.feature_map_dropout = [0.1, 0.2, 0.5]
+        self.input_dropout = [0.1, 0.2, 0.5]
+        self.hidden_dropout = [0.1, 0.2, 0.5]
+        self.use_bias = [True, False]
+        self.label_smoothing = [0.1, 0.2, 0.5]
+        self.lr_decay = [0.95, 0.9, 0.8]
+        self.learning_rate = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+        self.L1_flag = [True, False]
+        self.hidden_size = [8, 16, 32, 64, 128, 256]
+        self.batch_size = [25, 50, 100]
+        self.epochs = [2, 5, 10]
+        self.margin = [0.4, 1.0, 2.0]
+        self.optimizer = ["adagrad", "adam", "sgd"]
+        self.sampling = ["uniform", "bern"]

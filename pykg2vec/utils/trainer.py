@@ -168,7 +168,7 @@ class Trainer(TrainerMeta):
             hr_t = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(hr_t)), dtype=tf.float32)
             tr_h = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(tr_h)), dtype=tf.float32)
            
-            if self.model.model_name.lower() == "conve" or self.model.model_name.lower() == "tucker":   
+            if self.model.model_name.lower() == "conve" or self.model.model_name.lower() == "tucker":
                 if hasattr(self.config, 'label_smoothing'):
                     hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
                     tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
@@ -204,7 +204,7 @@ class Trainer(TrainerMeta):
 
             loss = tf.reduce_mean(tf.nn.softplus(y*preds)) 
 
-            if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult
+            if hasattr(self.model, 'get_reg'): # for Complex & Complex-N3 & DistMult & CP
                 loss += self.model.get_reg(h, r, t)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
@@ -283,7 +283,7 @@ class Trainer(TrainerMeta):
 
         for batch_idx in range(num_batch):
             data = list(next(self.generator))
-            
+
             if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
                 h = tf.convert_to_tensor(data[0], dtype=tf.int32)
                 r = tf.convert_to_tensor(data[1], dtype=tf.int32)

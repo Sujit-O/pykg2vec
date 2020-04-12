@@ -8,10 +8,9 @@ from __future__ import division
 
 import numpy as np
 import tensorflow as tf
-from multiprocessing import Process, Queue, Event
+from multiprocessing import Process, Queue
 from enum import Enum
 
-import os
 
 def raw_data_generator(command_queue, raw_queue, config):
     """Function to feed  triples to raw queue for multiprocessing.
@@ -25,15 +24,13 @@ def raw_data_generator(command_queue, raw_queue, config):
     """
     data = config.knowledge_graph.read_cache_data('triplets_train')
 
-    number_of_batch = len(data) // config.batch_size
-
     random_ids = np.random.permutation(len(data))
     
     while True:
 
         command = command_queue.get()
 
-        if command == "quit":
+        if command == Generator.QUIT_SIGNAL:
             raw_queue.put(None)
             raw_queue.put(None)
             return 
@@ -266,6 +263,7 @@ class Generator:
             >>> model = TransE()
             >>> gen_train = Generator(model.config, training_strategy=TrainingStrategy.PAIRWISE_BASED)
     """
+    QUIT_SIGNAL = "quit"
 
     def __init__(self, model):
         self.model = model
@@ -283,6 +281,8 @@ class Generator:
         self.create_feeder_process()
         self.create_train_processor_process()
 
+        self.seconds_waited_before_stopping = 5
+
     def __iter__(self):
         return self
 
@@ -291,10 +291,10 @@ class Generator:
         
     def stop(self):
         """Function to stop all the worker process."""
-        self.command_queue.put("quit")        
+        self.command_queue.put(Generator.QUIT_SIGNAL)
         for worker_process in self.process_list:
             while True:
-                worker_process.join(1)
+                worker_process.join(self.seconds_waited_before_stopping)
                 if not worker_process.is_alive():
                     break
 
