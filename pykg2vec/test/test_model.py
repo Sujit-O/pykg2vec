@@ -48,50 +48,50 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     trainer.train_model()
 
 @pytest.mark.parametrize("model_name", [
-    # 'complex',
-    # 'complexn3',
-    # 'distmult',
-    # 'proje_pointwise',
-    # 'rescal',
-    # 'rotate',
-    # 'slm',
-    # 'transe',
-    # 'transh',
-    # 'transr',
-    # 'transd',
-    # 'transm',
-    # 'hole',
+    'complex',
+    'complexn3',
+    'distmult',
+    'proje_pointwise',
+    'rescal',
+    'rotate',
+    'slm',
+    'transe',
+    'transh',
+    'transr',
+    'transd',
+    'transm',
+    'hole',
     'cp',
 ])
 def test_KGE_methods(model_name):
     """Function to test a set of KGE algorithsm."""
     testing_function(model_name)
 
-# def test_NTN():
-#     testing_function('ntn', ent_hidden_size=10, rel_hidden_size=10) # for avoiding OOM.
-#
-# def test_ConvE():
-#     testing_function('conve', channels=2) # for avoiding OOM.
-#
-# def test_ConvKB():
-#     testing_function('convkb', channels=2) # for avoiding OOM.
-#
-# def test_KG2E_EL_args():
-#     """Function to test KG2E Algorithm with arguments."""
-#     testing_function('kg2e_el', distance_measure="expected_likelihood")
-#
-# def test_KG2E_KL_args():
-#     """Function to test KG2E Algorithm with arguments."""
-#     testing_function('kg2e', distance_measure="kl_divergence")
-#
-# def test_SMEL_args():
-#     """Function to test SME Algorithm with arguments."""
-#     testing_function('sme', bilinear=False)
-#
-# def test_SMEB_args():
-#     """Function to test SME Algorithm with arguments."""
-#     testing_function('sme_bl', bilinear=True)
-#
-# def test_transE_display():
-#     """Function to test transE display."""
-#     testing_function('transe', display=True)
+def test_NTN():
+    testing_function('ntn', ent_hidden_size=10, rel_hidden_size=10) # for avoiding OOM.
+
+def test_ConvE():
+    testing_function('conve', channels=2) # for avoiding OOM.
+
+def test_ConvKB():
+    testing_function('convkb', channels=2) # for avoiding OOM.
+
+def test_KG2E_EL_args():
+    """Function to test KG2E Algorithm with arguments."""
+    testing_function('kg2e_el', distance_measure="expected_likelihood")
+
+def test_KG2E_KL_args():
+    """Function to test KG2E Algorithm with arguments."""
+    testing_function('kg2e', distance_measure="kl_divergence")
+
+def test_SMEL_args():
+    """Function to test SME Algorithm with arguments."""
+    testing_function('sme', bilinear=False)
+
+def test_SMEB_args():
+    """Function to test SME Algorithm with arguments."""
+    testing_function('sme_bl', bilinear=True)
+
+def test_transE_display():
+    """Function to test transE display."""
+    testing_function('transe', display=True)
