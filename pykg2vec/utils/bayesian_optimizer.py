@@ -39,7 +39,8 @@ moduleMap = {"complex": "Complex",
             "transh": "TransH",
             "transm": "TransM",
             "transr": "TransR",
-            "tucker": "TuckER"}
+            "tucker": "TuckER",
+            "analogy": "ANALOGY"}
 
 modelMap = {"complex": "Complex",
             "complexn3": "ComplexN3",
@@ -61,7 +62,8 @@ modelMap = {"complex": "Complex",
             "transh": "TransH",
             "transm": "TransM",
             "transr": "TransR",
-            "tucker": "TuckER"}
+            "tucker": "TuckER",
+            "analogy": "ANALOGY"}
 
 
 configMap = {"complex": "ComplexConfig",
@@ -84,7 +86,8 @@ configMap = {"complex": "ComplexConfig",
              "transh": "TransHConfig",
              "transm": "TransMConfig",
              "transr": "TransRConfig",
-             "tucker": "TuckERConfig"}
+             "tucker": "TuckERConfig",
+             "analogy": "ANALOGYConfig"}
 
 
 hypMap = {"complex": "ComplexParams",
@@ -107,7 +110,8 @@ hypMap = {"complex": "ComplexParams",
           "transh": "TransHParams",
           "transm": "TransMParams",
           "transr": "TransRParams",
-          "tucker": "TuckERParams"}
+          "tucker": "TuckERParams",
+          "analogy": "ANALOGYParams"}
 
 
 class BaysOptimizer(object):
