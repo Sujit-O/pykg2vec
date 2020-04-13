@@ -36,6 +36,7 @@ def tunning_function(name):
     'transm',
     'rescal',
     'sme',
+    'sme_bl',
     'transd',
     'transr',
     'ntn',
@@ -43,8 +44,10 @@ def tunning_function(name):
     'hole',
     'rotate',
     'kg2e',
+    'kg2e_el',
     'complex',
-    'distmult'
+    'complexn3',
+    'distmult',
 ])
 def test_tuning(model_name):
     """Function to test the tuning function."""

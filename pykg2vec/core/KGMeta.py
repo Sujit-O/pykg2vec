@@ -8,7 +8,6 @@ It provides Abstract class for the Knowledge graph models.
 
 from abc import ABCMeta, abstractmethod
 import tensorflow as tf
-from pykg2vec.utils.generator import TrainingStrategy
 
 class ModelMeta(tf.keras.Model):
     """ Meta Class for knowledge graph embedding algorithms"""
