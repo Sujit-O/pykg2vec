@@ -61,6 +61,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     'transd',
     'transm',
     'hole',
+    'analogy',
 ])
 def test_KGE_methods(model_name):
     """Function to test a set of KGE algorithsm."""

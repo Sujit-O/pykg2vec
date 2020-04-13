@@ -48,6 +48,7 @@ def tunning_function(name):
     'complex',
     'complexn3',
     'distmult',
+    'analogy',
 ])
 def test_tuning(model_name):
     """Function to test the tuning function."""
