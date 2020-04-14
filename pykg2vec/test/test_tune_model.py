@@ -31,24 +31,25 @@ def tunning_function(name):
 
 
 @pytest.mark.parametrize('model_name', [
+    'analogy',
+    'complex',
+    'complexn3',
+    'cp',
+    'distmult',
+    'hole',
+    'kg2e',
+    'kg2e_el',
+    'ntn',
+    'rescal',
+    'rotate',
+    'slm',
+    'sme',
+    'sme_bl',
     'transe',
     'transh',
     'transm',
-    'rescal',
-    'sme',
-    'sme_bl',
     'transd',
     'transr',
-    'ntn',
-    'slm',
-    'hole',
-    'rotate',
-    'kg2e',
-    'kg2e_el',
-    'complex',
-    'complexn3',
-    'distmult',
-    'analogy',
 ])
 def test_tuning(model_name):
     """Function to test the tuning function."""

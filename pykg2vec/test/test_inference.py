@@ -57,10 +57,12 @@ def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=No
     trainer.exit_interactive_mode()
 
 @pytest.mark.parametrize("model_name", [
+    'analogy',
     'complex',
     'complexn3',
     # 'conve',
     # 'convkb',
+    'cp',
     'distmult',
     'hole',
     'kg2e',
