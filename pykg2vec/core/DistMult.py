@@ -86,7 +86,7 @@ class DistMult(ModelMeta):
         h_e, r_e, t_e = self.embed(h, r, t)
         return -tf.reduce_sum(h_e*r_e*t_e, -1)
 
-    def get_regul(self, h, r, t):
+    def get_reg(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)
         regul_term = tf.reduce_mean(tf.reduce_sum(h_e**2, -1) + tf.reduce_sum(r_e**2, -1) + tf.reduce_sum(t_e**2,-1))
         return self.config.lmbda*regul_term

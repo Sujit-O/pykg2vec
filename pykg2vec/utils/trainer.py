@@ -204,7 +204,7 @@ class Trainer(TrainerMeta):
 
             loss = tf.reduce_mean(tf.nn.softplus(y*preds)) 
 
-            if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult
+            if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult & CP
                 loss += self.model.get_reg(h, r, t)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)

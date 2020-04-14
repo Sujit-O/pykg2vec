@@ -50,7 +50,9 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
 @pytest.mark.parametrize("model_name", [
     'complex',
     'complexn3',
+    'cp',
     'distmult',
+    'hole',
     'proje_pointwise',
     'rescal',
     'rotate',
@@ -60,8 +62,6 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     'transr',
     'transd',
     'transm',
-    'hole',
-    'cp',
 ])
 def test_KGE_methods(model_name):
     """Function to test a set of KGE algorithsm."""

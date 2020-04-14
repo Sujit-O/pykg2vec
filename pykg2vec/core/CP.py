@@ -14,7 +14,7 @@ class CP(ModelMeta):
         super(CP, self).__init__()
         self.config = config
         self.model_name = 'CP'
-        self.training_strategy = TrainingStrategy.PROJECTION_BASED
+        self.training_strategy = TrainingStrategy.POINTWISE_BASED
 
     def def_parameters(self):
         """Defines the model parameters.
@@ -33,9 +33,11 @@ class CP(ModelMeta):
         k = self.config.hidden_size
 
         emb_initializer = tf.initializers.glorot_normal()
-        self.ent_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embedding")
+        self.sub_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="sub_embedding")
         self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
+        self.obj_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="obj_embedding")
+        self.parameter_list = [self.sub_embeddings, self.rel_embeddings, self.obj_embeddings]
+
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -48,29 +50,22 @@ class CP(ModelMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        emb_h = tf.nn.embedding_lookup(self.sub_embeddings, h)
         emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
+        emb_t = tf.nn.embedding_lookup(self.obj_embeddings, t)
         return emb_h, emb_r, emb_t
 
-    def forward(self, e, r, er_e2, direction=None):
-        emb_e = tf.nn.embedding_lookup(self.ent_embeddings, e)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
+    def forward(self, h, r, t):
+        h_e, r_e, t_e = self.embed(h, r, t)
+        return -tf.reduce_sum(h_e * r_e * t_e, -1)
 
-        return -tf.reduce_mean(tf.keras.backend.binary_crossentropy(er_e2, (emb_e * emb_r) @ tf.transpose(self.ent_embeddings)))
+    def get_reg(self, h, r, t, type='N3'):
+        h_e, r_e, t_e = self.embed(h, r, t)
+        if type.lower() == 'f2':
+            regul_term = tf.reduce_mean(tf.reduce_sum(h_e**2, -1) + tf.reduce_sum(r_e**2, -1) + tf.reduce_sum(t_e**2,-1))
+        elif type.lower() == 'n3':
+            regul_term = tf.reduce_mean(tf.reduce_sum(h_e**3, -1) + tf.reduce_sum(r_e**3, -1) + tf.reduce_sum(t_e**3,-1))
+        else:
+            raise NotImplementedError('Unknown regularizer type: %s' % type)
 
-    def get_reg(self):
-        return self.config.lmbda * (tf.reduce_sum(tf.reduce_sum(tf.abs(self.ent_embeddings) ** 3) + tf.reduce_sum(
-            tf.abs(self.rel_embeddings) ** 3)))
-
-    def predict_tail_rank(self, h, r, topk=-1):
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-
-        candidates = -(emb_h * emb_r) @ tf.transpose(self.ent_embeddings)
-        _, rank = tf.nn.top_k(candidates, k=topk)
-
-        return rank
-
-    def predict_head_rank(self, t, r, topk=-1):
-        return self.predict_tail_rank(t, r, topk)
+        return self.config.lmbda * regul_term
