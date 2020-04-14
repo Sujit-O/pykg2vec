@@ -40,10 +40,12 @@ class Importer:
         self.model_path = "pykg2vec.core"
         self.config_path = "pykg2vec.config.config"
 
-        self.modelMap = {"complex": "Complex.Complex",
+        self.modelMap = {"analogy": "ANALOGY.ANALOGY",
+                         "complex": "Complex.Complex",
                          "complexn3": "Complex.ComplexN3",
                          "conve": "ConvE.ConvE",
                          "convkb": "ConvKB.ConvKB",
+                         "cp": "CP.CP",
                          "hole": "HoLE.HoLE",
                          "distmult": "DistMult.DistMult",
                          "kg2e": "KG2E.KG2E",
@@ -61,14 +63,14 @@ class Importer:
                          "transg": "TransG.TransG",
                          "transm": "TransM.TransM",
                          "transr": "TransR.TransR",
-                         "tucker": "TuckER.TuckER",
-                         "cp": "CP.CP",
-                         "analogy": "ANALOGY.ANALOGY"}
+                         "tucker": "TuckER.TuckER"}
 
-        self.configMap = {"complex": "ComplexConfig",
+        self.configMap = {"analogy": "ANALOGYConfig",
+                          "complex": "ComplexConfig",
                           "complexn3": "ComplexConfig",
                           "conve": "ConvEConfig",
                           "convkb": "ConvKBConfig",
+                          "cp": "CPConfig",
                           "hole": "HoLEConfig",
                           "distmult": "DistMultConfig",
                           "kg2e": "KG2EConfig",
@@ -86,9 +88,7 @@ class Importer:
                           "transh": "TransHConfig",
                           "transm": "TransMConfig",
                           "transr": "TransRConfig",
-                          "tucker": "TuckERConfig",
-                          "cp": "CPConfig",
-                          "analogy": "ANALOGYConfig"}
+                          "tucker": "TuckERConfig"}
 
     def import_model_config(self, name):
       """This function imports models and configuration.
