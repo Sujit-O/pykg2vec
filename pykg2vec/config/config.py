@@ -62,7 +62,8 @@ class Importer:
                          "transm": "TransM.TransM",
                          "transr": "TransR.TransR",
                          "tucker": "TuckER.TuckER",
-                         "cp": "CP.CP"}
+                         "cp": "CP.CP",
+                         "analogy": "ANALOGY.ANALOGY"}
 
         self.configMap = {"complex": "ComplexConfig",
                           "complexn3": "ComplexConfig",
@@ -86,7 +87,8 @@ class Importer:
                           "transm": "TransMConfig",
                           "transr": "TransRConfig",
                           "tucker": "TuckERConfig",
-                          "cp": "CPConfig"}
+                          "cp": "CPConfig",
+                          "analogy": "ANALOGYConfig"}
 
     def import_model_config(self, name):
       """This function imports models and configuration.
@@ -1522,6 +1524,58 @@ class CPConfig(BasicConfig):
 
         if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'cp')
+            for key, value in paper_params.items():
+                self.__dict__[key] = value  # copy all the setting from the paper.
+
+        self.hyperparameters = {
+            'lmbda': self.lmbda,
+            'learning_rate': self.learning_rate,
+            'hidden_size': self.hidden_size,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            'data': self.data,
+            'optimizer': self.optimizer,
+            'sampling': self.sampling,
+            'neg_rate': self.neg_rate,
+        }
+
+        BasicConfig.__init__(self, args)
+
+
+class ANALOGYConfig(BasicConfig):
+    """This class defines the configuration for the ANALOGY Algorithm.
+
+    ANALOGYConfig inherits the BasicConfig and defines the local arguements used in the
+    algorithm.
+
+    Attributes:
+      hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
+    Args:
+      lambda (float) : Weigth applied to the regularization in the loss function.
+      learning_rate (float): Defines the learning rate for the optimization.
+      L1_flag (bool): If True, perform L1 regularization on the model parameters.
+      hidden_size (int): Defines the size of the latent dimension for entities and relations.
+      batch_size (int): Defines the batch size for training the algorithm.
+      epochs (int): Defines the total number of epochs for training the algorithm.
+      margin (float): Defines the margin used between the positive and negative triple loss.
+      data (str): Defines the knowledge base dataset to be used for training the algorithm.
+      optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
+      sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
+    """
+
+    def __init__(self, args=None):
+        self.lmbda = args.lmbda
+        self.learning_rate = args.learning_rate
+        self.hidden_size = args.hidden_size
+        self.batch_size = args.batch_training
+        self.epochs = args.epochs
+        self.data = args.dataset_name
+        self.optimizer = args.optimizer
+        self.sampling = args.sampling
+        self.neg_rate = args.negrate
+
+        if args.exp is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'analogy')
             for key, value in paper_params.items():
                 self.__dict__[key] = value  # copy all the setting from the paper.
 

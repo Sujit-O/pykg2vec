@@ -31,6 +31,7 @@ def tunning_function(name):
 
 
 @pytest.mark.parametrize('model_name', [
+    'analogy',
     'complex',
     'complexn3',
     'cp',

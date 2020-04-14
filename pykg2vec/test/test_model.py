@@ -8,15 +8,36 @@ import pytest
 
 from pykg2vec.config.config import *
 from pykg2vec.utils.trainer import Trainer
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
+@pytest.mark.parametrize("model_name", [
+    'analogy',
+    'complex',
+    'complexn3',
+    'cp',
+    'distmult',
+    'hole',
+    'proje_pointwise',
+    'rescal',
+    'rotate',
+    'slm',
+    'transe',
+    'transh',
+    'transr',
+    'transd',
+    'transm',
+])
+def test_KGE_methods(model_name):
+    """Function to test a set of KGE algorithsm."""
+    testing_function(model_name)
   
+
+from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 @pytest.mark.skip(reason="This is a functional method.")
 def testing_function(name, distance_measure=None, bilinear=None, display=False, ent_hidden_size=None, rel_hidden_size=None, channels=None):
     """Function to test the models with arguments."""
     # getting the customized configurations from the command-line arguments.
     args = KGEArgParser().get_args(['-exp', 'True'])
-    
+
     # Preparing data and cache the data for later usage
     knowledge_graph = KnowledgeGraph(dataset=args.dataset_name)
     knowledge_graph.prepare_data()
@@ -24,7 +45,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     # Extracting the corresponding model config and definition from Importer().
     config_def, model_def = Importer().import_model_config(name)
     config = config_def(args)
-    
+
     config.epochs     = 1
     config.test_step  = 1
     config.test_num   = 10
@@ -46,26 +67,6 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     trainer = Trainer(model=model)
     trainer.build_model()
     trainer.train_model()
-
-@pytest.mark.parametrize("model_name", [
-    'complex',
-    'complexn3',
-    'cp',
-    'distmult',
-    'hole',
-    'proje_pointwise',
-    'rescal',
-    'rotate',
-    'slm',
-    'transe',
-    'transh',
-    'transr',
-    'transd',
-    'transm',
-])
-def test_KGE_methods(model_name):
-    """Function to test a set of KGE algorithsm."""
-    testing_function(model_name)
 
 def test_NTN():
     testing_function('ntn', ent_hidden_size=10, rel_hidden_size=10) # for avoiding OOM.
