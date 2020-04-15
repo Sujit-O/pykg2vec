@@ -35,13 +35,30 @@ class ANALOGY(ModelMeta):
         emb_initializer = tf.initializers.glorot_normal()
         self.ent_embeddings = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="ent_embedding")
         self.rel_embeddings = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="rel_embedding")
-        self.ent_embeddings_real = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="emb_e_real")
-        self.ent_embeddings_img  = tf.Variable(emb_initializer(shape=(num_total_ent, k)), name="emb_e_img")
-        self.rel_embeddings_real = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="emb_rel_real")
-        self.rel_embeddings_img  = tf.Variable(emb_initializer(shape=(num_total_rel, k)), name="emb_rel_img")
+        self.ent_embeddings_real = tf.Variable(emb_initializer(shape=(num_total_ent, k // 2)), name="emb_e_real")
+        self.ent_embeddings_img  = tf.Variable(emb_initializer(shape=(num_total_ent, k // 2)), name="emb_e_img")
+        self.rel_embeddings_real = tf.Variable(emb_initializer(shape=(num_total_rel, k // 2)), name="emb_rel_real")
+        self.rel_embeddings_img  = tf.Variable(emb_initializer(shape=(num_total_rel, k // 2)), name="emb_rel_img")
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.ent_embeddings_real, self.ent_embeddings_img, self.rel_embeddings_real, self.rel_embeddings_img]
 
-    def embed1(self, h, r, t):
+    def embed(self, h, r, t):
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
+        h_emb = tf.nn.embedding_lookup(self.ent_embeddings, h)
+        r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
+        t_emb = tf.nn.embedding_lookup(self.ent_embeddings, t)
+
+        return h_emb, r_emb, t_emb
+
+    def embed2(self, h, r, t):
         """Function to get the embedding value.
 
            Args:
@@ -63,34 +80,17 @@ class ANALOGY(ModelMeta):
 
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
-    def embed2(self, h, r, t):
-        """Function to get the embedding value.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        h_emb = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        t_emb = tf.nn.embedding_lookup(self.ent_embeddings, t)
-
-        return h_emb, r_emb, t_emb
-
     def forward(self, h, r, t):
-        h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed1(h, r, t)
-        h_e, r_e, t_e = self.embed2(h, r, t)
-        return -tf.reduce_sum(
-            h_e_real * t_e_real * r_e_real + h_e_img * t_e_img * r_e_real + h_e_real * t_e_img * r_e_img - h_e_img * t_e_real * r_e_img, -1) \
-            + -tf.reduce_sum(h_e * r_e * t_e, -1)
+        h_e, r_e, t_e = self.embed(h, r, t)
+        h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed2(h, r, t)
 
-    # TODO: double check if we need the regularizer here
+        complex_loss = -tf.reduce_sum(h_e_real * t_e_real * r_e_real + h_e_img * t_e_img * r_e_real + h_e_real * t_e_img * r_e_img - h_e_img * t_e_real * r_e_img, -1)
+        distmult_loss = -tf.reduce_sum(h_e * r_e * t_e, -1)
+        return complex_loss + distmult_loss
+
     def get_reg(self, h, r, t):
-        h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed1(h, r, t)
-        h_e, r_e, t_e = self.embed2(h, r, t)
+        h_e, r_e, t_e = self.embed(h, r, t)
+        h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed2(h, r, t)
 
         regul_term = tf.reduce_mean(tf.reduce_sum(h_e_real**2, -1) + tf.reduce_sum(h_e_img**2, -1) + tf.reduce_sum(r_e_real**2,-1)
                                     + tf.reduce_sum(r_e_img**2, -1) + tf.reduce_sum(t_e_real**2, -1) + tf.reduce_sum(t_e_img**2, -1)

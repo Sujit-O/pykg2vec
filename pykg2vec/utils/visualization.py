@@ -52,9 +52,9 @@ class Visualization(object):
 
         self.model = model
 
-        self.algo_list = ['Complex', 'ComplexN3', 'ConvE', 'HoLE', 'DistMult', 'DistMult2', 'KG2E_EL', 'KG2E_KL',
-                          'KGMeta', 'NTN', 'ProjE_pointwise', 'Rescal', 'RotatE', 'SLM', 'SME_Bilinear', 'SME_Linear',
-                          'TransD', 'TransE', 'TransH', 'TransM', 'TransR', 'TuckER']
+        self.algo_list = ['ANALOGY', 'Complex', 'ComplexN3', 'ConvE', 'CP', 'DistMult', 'DistMult2', 'HoLE',
+                          'KG2E_EL', 'KG2E_KL', 'KGMeta', 'NTN', 'ProjE_pointwise', 'Rescal', 'RotatE', 'SLM',
+                          'SME_Bilinear', 'SME_Linear', 'TransD', 'TransE', 'TransH', 'TransM', 'TransR', 'TuckER']
 
         self.h_name = []
         self.r_name = []
