@@ -5,9 +5,11 @@ This module is for testing unit functions of model
 """
 import pytest
 
-
-from pykg2vec.config.config import *
+from pykg2vec.config.config import KGEArgParser, Importer
 from pykg2vec.utils.trainer import Trainer
+from pykg2vec.utils.kgcontroller import KnowledgeGraph
+
+
 @pytest.mark.parametrize("model_name", [
     'analogy',
     'complex',
@@ -29,8 +31,6 @@ def test_KGE_methods(model_name):
     """Function to test a set of KGE algorithsm."""
     testing_function(model_name)
   
-
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 @pytest.mark.skip(reason="This is a functional method.")
 def testing_function(name, distance_measure=None, bilinear=None, display=False, ent_hidden_size=None, rel_hidden_size=None, channels=None):
