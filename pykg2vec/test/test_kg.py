@@ -40,7 +40,7 @@ def test_fb15k_meta():
 
 
 def test_userdefined_dataset():
-    custom_dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resource/custom_dataset")
+    custom_dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resource', 'custom_dataset')
     knowledge_graph = KnowledgeGraph(dataset="userdefineddataset", custom_dataset_path=custom_dataset_path)
     knowledge_graph.prepare_data()
     knowledge_graph.dump()
@@ -70,7 +70,7 @@ def test_userdefined_dataset():
     ('dataset.zip', 'zip'),
 ])
 def test_extract_compressed_dataset(file_name, new_ext):
-    url = Path('resource/%s' % file_name).absolute().as_uri()
+    url = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resource', file_name)).absolute().as_uri()
     dataset_name = 'test_dataset_%s' % file_name.replace('.', '_')
     dataset = KnownDataset(dataset_name, url, 'userdefineddataset-')
     dataset_dir = os.path.join(dataset.dataset_home_path, dataset_name)
