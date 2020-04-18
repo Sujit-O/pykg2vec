@@ -1,5 +1,6 @@
 import os, pytest
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pathlib import Path
+from pykg2vec.utils.kgcontroller import KnowledgeGraph, KnownDataset
 
 @pytest.mark.parametrize("dataset_name", ["freebase15k", "wordnet18", "wordnet18_rr", "yago3_10"])
 def test_benchmarks(dataset_name):
@@ -62,3 +63,21 @@ def test_userdefined_dataset():
     assert knowledge_graph.kg_meta.tot_valid_triples == 1
     assert knowledge_graph.kg_meta.tot_entity == 6
     assert knowledge_graph.kg_meta.tot_relation == 3
+
+@pytest.mark.parametrize('file_name, new_ext', [
+    ('dataset.tar.gz', 'tgz'),
+    ('dataset.tgz', 'tgz'),
+    ('dataset.zip', 'zip'),
+])
+def test_extract_compressed_dataset(file_name, new_ext):
+    url = Path('resource/%s' % file_name).absolute().as_uri()
+    dataset_name = 'test_dataset_%s' % file_name.replace('.', '_')
+    dataset = KnownDataset(dataset_name, url, 'userdefineddataset-')
+    dataset_dir = os.path.join(dataset.dataset_home_path, dataset_name)
+    dataset_files = os.listdir(dataset_dir)
+
+    assert len(dataset_files) == 4
+    assert dataset_name + '.' + new_ext in dataset_files
+    assert 'userdefineddataset-train.txt' in dataset_files
+    assert 'userdefineddataset-test.txt' in dataset_files
+    assert 'userdefineddataset-valid.txt' in dataset_files
