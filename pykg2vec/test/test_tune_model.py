@@ -42,6 +42,8 @@ def tunning_function(name):
     'ntn',
     'rescal',
     'rotate',
+    'simple',
+    'simple_ignr',
     'slm',
     'sme',
     'sme_bl',

@@ -25,7 +25,10 @@ class ANALOGY(ModelMeta):
                k (Tensor): Size of the latent dimesnion for entities and relations.
                ent_embeddings  (Tensor Variable): Lookup variable containing embedding of the entities.
                rel_embeddings  (Tensor Variable): Lookup variable containing embedding of the relations.
-               b  (Tensor Variable): Variable storing the bias values.
+               ent_embeddings_real (Tensor Variable): Lookup variable containing real values of the entities.
+               ent_embeddings_img (Tensor Variable): Lookup variable containing imaginary values of the entities.
+               rel_embeddings_real (Tensor Variable): Lookup variable containing real values of the relations.
+               rel_embeddings_img (Tensor Variable): Lookup variable containing imaginary values of the relations.
                parameter_list  (list): List of Tensor parameters.
         """
         num_total_ent = self.config.kg_meta.tot_entity

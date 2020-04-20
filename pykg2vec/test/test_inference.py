@@ -71,6 +71,8 @@ def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=No
     # 'proje_pointwise',
     'rotate',
     'rescal',
+    'simple',
+    'simple_ignr',
     'slm',
     'sme',
     'transd',
