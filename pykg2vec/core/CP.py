@@ -23,9 +23,9 @@ class CP(ModelMeta):
                num_total_ent (int): Total number of entities.
                num_total_rel (int): Total number of relations.
                k (Tensor): Size of the latent dimesnion for entities and relations.
-               ent_embeddings  (Tensor Variable): Lookup variable containing embedding of the entities.
+               sub_embeddings  (Tensor Variable): Lookup variable containing embedding of the head entities.
                rel_embeddings  (Tensor Variable): Lookup variable containing embedding of the relations.
-               b  (Tensor Variable): Variable storing the bias values.
+               obj_embeddings  (Tensor Variable): Lookup variable containing embedding of the tail entities.
                parameter_list  (list): List of Tensor parameters.
         """
         num_total_ent = self.config.kg_meta.tot_entity

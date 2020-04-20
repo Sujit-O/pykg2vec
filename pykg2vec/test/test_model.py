@@ -20,6 +20,8 @@ from pykg2vec.utils.kgcontroller import KnowledgeGraph
     'proje_pointwise',
     'rescal',
     'rotate',
+    'simple',
+    'simple_ignr',
     'slm',
     'transe',
     'transh',
