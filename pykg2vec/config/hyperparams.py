@@ -31,8 +31,11 @@ class HyperparamterLoader:
           'complex' : {'learning_rate':  0.05,'hidden_size':200,'batch_size':5000,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':1,'lmbda':0.0001},
           'distmult': {'learning_rate':   0.1,'hidden_size':100,'batch_size':50000,'epochs':1000,'optimizer':'adagrad','sampling':"uniform",'neg_rate':1,'lmbda':0.0001},
           'proje_po': {'learning_rate':  0.01,'hidden_dropout': 0.5, 'hidden_size':200,'batch_size':200,' epochs':100, 'optimizer':'adam','lmbda':0.00001},
-          'conve'   : {'learning_rate': 0.003,'optimizer':'adam', 'label_smoothing':0.1, 'batch_size':128, 'hidden_size':200, 'hidden_size_1':20, 'input_dropout':0.2, 'feature_map_dropout':0.2, 'hidden_dropout':0.3,'neg_rate':0, 'epochs':100},
-          'convkb'  : {'lmbda': 0.001,'filter_sizes':[1,2],'num_filters':50,'learning_rate': 0.0001,'optimizer':'adam','hidden_size': 100,'batch_size': 128,'epochs':200,'neg_rate':1}
+          'conve'   : {'learning_rate': 0.003,'optimizer':'adam', 'label_smoothing':0.1, 'batch_size':128, 'hidden_size':200, 'hidden_size_1':20, 'input_dropout':0.2, 'feature_map_dropout':0.2, 'hidden_dropout':0.3,'neg_rate':0},
+          'convkb'  : {'lmbda': 0.001,'filter_sizes':[1,2],'num_filters':50,'learning_rate': 0.0001,'optimizer':'adam','hidden_size': 100,'batch_size': 128,'epochs':200,'neg_rate':1},
+          'cp': {'learning_rate': 0.01, 'hidden_size': 50, 'batch_size': 128, 'epochs': 50, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.0001},
+          'analogy': {'learning_rate': 0.1, 'hidden_size': 200, 'batch_size': 128, 'epochs': 500, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.0001},
+          'simple': {'learning_rate': 0.05, 'hidden_size': 100, 'batch_size': 128, 'epochs': 1000, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.1}
         }
       }
 
@@ -699,3 +702,108 @@ class TransGParams:
         self.ncluster = [3, 4, 5, 6, 7]
         self.CRP_factor = [0.01, 0.05, 0.1]
         self.weight_norm = [True, False]
+
+
+class CPParams:
+    """This class defines the hyperameters and its ranges for tuning Canonical Tensor Decomposition algorithm.
+
+    CPParams defines all the possibel values to be tuned for the algorithm. User may
+
+    change these values directly for performing the bayesian optimization of the hyper-parameters
+
+    Args:
+      lambda (list) : List of floating point values.
+      feature_map_dropout (list) :List of floating point values.
+      input_dropout (list) : List of floating point values.
+      hidden_dropout (list) : List of floating point values.
+      use_bias (list) :List of boolean values.
+      label_smoothing (list) : List of floating point values.
+      lr_decay (float) : List of floating point values.
+      learning_rate (list): List of floating point values.
+      L1_flag (list): List of boolean values.
+      hidden_size (list): List of integer values.
+      batch_size (list): List of integer values.
+      epochs (list): List of integer values.
+      margin (list): List of floating point values.
+      optimizer (list): List of strings defining the optimization algorithm to be used.
+      sampling (list): List of string defining the sampling to be used for generating negative examples.
+
+    """
+
+    def __init__(self):
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'lmbda': hp.loguniform('lmbda', np.log(0.00001), np.log(0.001)),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+
+class ANALOGYParams:
+    """This class defines the hyperameters and its ranges for tuning ANALOGY algorithm.
+    ANALOGYParams defines all the possibel values to be tuned for the algorithm. User may
+    change these values directly for performing the bayesian optimization of the hyper-parameters
+    Args:
+      lambda (list) : List of floating point values.
+      feature_map_dropout (list) :List of floating point values.
+      input_dropout (list) : List of floating point values.
+      hidden_dropout (list) : List of floating point values.
+      use_bias (list) :List of boolean values.
+      label_smoothing (list) : List of floating point values.
+      lr_decay (float) : List of floating point values.
+      learning_rate (list): List of floating point values.
+      L1_flag (list): List of boolean values.
+      hidden_size (list): List of integer values.
+      batch_size (list): List of integer values.
+      epochs (list): List of integer values.
+      margin (list): List of floating point values.
+      optimizer (list): List of strings defining the optimization algorithm to be used.
+      sampling (list): List of string defining the sampling to be used for generating negative examples.
+    """
+
+    def __init__(self):
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'lmbda': hp.loguniform('lmbda', np.log(0.00001), np.log(0.001)),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }
+
+class SimplEParams:
+    """This class defines the hyperameters and its ranges for tuning SimplE algorithm.
+
+    SimplEParams defines all the possibel values to be tuned for the algorithm. User may
+
+    change these values directly for performing the bayesian optimization of the hyper-parameters
+
+    Args:
+      lambda (list) : List of floating point values.
+      feature_map_dropout (list) :List of floating point values.
+      input_dropout (list) : List of floating point values.
+      hidden_dropout (list) : List of floating point values.
+      use_bias (list) :List of boolean values.
+      label_smoothing (list) : List of floating point values.
+      lr_decay (float) : List of floating point values.
+      learning_rate (list): List of floating point values.
+      L1_flag (list): List of boolean values.
+      hidden_size (list): List of integer values.
+      batch_size (list): List of integer values.
+      epochs (list): List of integer values.
+      margin (list): List of floating point values.
+      optimizer (list): List of strings defining the optimization algorithm to be used.
+      sampling (list): List of string defining the sampling to be used for generating negative examples.
+
+    """
+
+    def __init__(self):
+        self.search_space = {
+          'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
+          'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
+          'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
+          'lmbda': hp.loguniform('lmbda', np.log(0.00001), np.log(0.001)),
+          'optimizer': hp.choice('optimizer', ["adam", "sgd", 'rms']),
+          'epochs': hp.choice('epochs', [10]) # always choose 10 training epochs.
+        }

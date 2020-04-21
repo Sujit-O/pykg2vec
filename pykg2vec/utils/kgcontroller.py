@@ -3,9 +3,7 @@
 """
 This module is for controlling knowledge graph
 """
-
-
-import shutil, tarfile, pickle, time
+import shutil, tarfile, pickle, time, os, zipfile
 import urllib.request
 from pathlib import Path
 from collections import defaultdict
@@ -91,7 +89,7 @@ class KGMetaData(object):
         self.tot_entity = tot_entity
 
 
-def extract(tar_path, extract_path='.'):
+def extract_tar(tar_path, extract_path='.'):
     """This function extracts the tar file.
 
         Most of the knowledge graph dataset are donwloaded in a compressed
@@ -108,7 +106,23 @@ def extract(tar_path, extract_path='.'):
     for item in tar:
         tar.extract(item, extract_path)
         if item.name.find(".tgz") != -1 or item.name.find(".tar") != -1:
-            extract(item.name, "./" + item.name[:item.name.rfind('/')])
+            extract_tar(item.name, "./" + item.name[:item.name.rfind('/')])
+
+def extract_zip(zip_path, extract_path='.'):
+    """This function extracts the zip file.
+
+        Most of the knowledge graph dataset are donwloaded in a compressed
+        zip format. This function is used to extract them
+
+        Args:
+            zip_path (str): Location of the zip folder.
+            extract_path (str): Path where the files will be decompressed.
+
+        Todo:
+            * Move this module to utils!
+    """
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_path)
 
 
 class KnownDataset:
@@ -152,13 +166,14 @@ class KnownDataset:
         self.dataset_home_path = self.dataset_home_path.resolve()
         self.root_path = self.dataset_home_path / self.name
         self.tar = self.root_path / ('%s.tgz' % self.name)
+        self.zip = self.root_path / ('%s.zip' % self.name)
 
         if not self.root_path.exists():
             self.download()
             self.extract()
 
         path_eq_root = ['YAGO3_10', 'WN18RR', 'FB15K_237', 'Kinship',
-                        'Nations', 'UMLS']
+                        'Nations', 'UMLS', 'NELL_995']
         if self.name == 'WN18':
             self.dataset_path = self.root_path / 'wordnet-mlj12'
         elif self.name in path_eq_root:
@@ -194,17 +209,29 @@ class KnownDataset:
         self._logger.info("Downloading the dataset %s" % self.name)
 
         self.root_path.mkdir()
-        with urllib.request.urlopen(self.url) as response, open(str(self.tar), 'wb') as out_file:
-            shutil.copyfileobj(response, out_file)
+        if self.url.endswith('.tar.gz') or self.url.endswith('.tgz'):
+            with urllib.request.urlopen(self.url) as response, open(str(self.tar), 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        elif self.url.endswith('.zip'):
+            with urllib.request.urlopen(self.url) as response, open(str(self.zip), 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        else:
+            raise NotImplementedError("Unknown compression format")
 
     def extract(self):
-        ''' Extract the downloaded tar under the folder with the given dataset name'''
-        self._logger.info("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
+        ''' Extract the downloaded file under the folder with the given dataset name'''
 
         try:
-            extract(str(self.tar), str(self.root_path))
+            if (os.path.exists(self.tar)):
+                self._logger.info("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
+                extract_tar(str(self.tar), str(self.root_path))
+                return
+            if (os.path.exists(self.zip)):
+                self._logger.info("Extracting the downloaded dataset from %s to %s" % (self.zip, self.root_path))
+                extract_zip(str(self.zip), str(self.root_path))
+                return
         except Exception as e:
-            self._logger.info("Could not extract the tgz file!")
+            self._logger.info("Could not extract the target file!")
             self._logger.info("%s %s" % (type(e), e.args))
 
     def read_metadata(self):
@@ -403,6 +430,26 @@ class UMLS(KnownDataset):
         KnownDataset.__init__(self, name, url, prefix)
 
 
+class NELL_995(KnownDataset):
+    """This data structure defines the necessary information for downloading NELL-995 dataset.
+
+        NELL-995 module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
+    def __init__(self):
+        name = "NELL_995"
+        url = "https://github.com/louisccc/KGppler/raw/master/datasets/NELL_995.zip"
+        prefix = ''
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
 class UserDefinedDataset(object):
     """The class consists of modules to handle the user defined datasets.
 
@@ -533,6 +580,8 @@ class KnowledgeGraph(object):
             self.dataset = Nations()
         elif dataset.lower() == 'umls':
             self.dataset = UMLS()
+        elif dataset.lower() == 'nell_995':
+            self.dataset = NELL_995()
         else:
             # if the dataset does not match with existing one, check if it exists in user's local space.
             # if it still can't find corresponding folder, raise exception in UserDefinedDataset.__init__()

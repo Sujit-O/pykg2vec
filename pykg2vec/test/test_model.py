@@ -5,10 +5,33 @@ This module is for testing unit functions of model
 """
 import pytest
 
-
-from pykg2vec.config.config import *
+from pykg2vec.config.config import KGEArgParser, Importer
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
+
+
+@pytest.mark.parametrize("model_name", [
+    'analogy',
+    'complex',
+    'complexn3',
+    'cp',
+    'distmult',
+    'hole',
+    'proje_pointwise',
+    'rescal',
+    'rotate',
+    'simple',
+    'simple_ignr',
+    'slm',
+    'transe',
+    'transh',
+    'transr',
+    'transd',
+    'transm',
+])
+def test_KGE_methods(model_name):
+    """Function to test a set of KGE algorithsm."""
+    testing_function(model_name)
   
 
 @pytest.mark.skip(reason="This is a functional method.")
@@ -16,7 +39,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     """Function to test the models with arguments."""
     # getting the customized configurations from the command-line arguments.
     args = KGEArgParser().get_args(['-exp', 'True'])
-    
+
     # Preparing data and cache the data for later usage
     knowledge_graph = KnowledgeGraph(dataset=args.dataset_name)
     knowledge_graph.prepare_data()
@@ -24,7 +47,7 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     # Extracting the corresponding model config and definition from Importer().
     config_def, model_def = Importer().import_model_config(name)
     config = config_def(args)
-    
+
     config.epochs     = 1
     config.test_step  = 1
     config.test_num   = 10
@@ -47,11 +70,6 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     trainer.build_model()
     trainer.train_model()
 
-@pytest.mark.parametrize("model_name", ['complex', 'distmult', 'proje_pointwise', 'rescal', 'rotate', 'slm', 'transe', 'transh', 'transr', 'transd', 'transm', 'hole'])
-def test_KGE_methods(model_name):
-    """Function to test a set of KGE algorithsm."""
-    testing_function(model_name)
-
 def test_NTN():
     testing_function('ntn', ent_hidden_size=10, rel_hidden_size=10) # for avoiding OOM.
 
@@ -63,7 +81,7 @@ def test_ConvKB():
 
 def test_KG2E_EL_args():
     """Function to test KG2E Algorithm with arguments."""
-    testing_function('kg2e', distance_measure="expected_likelihood")
+    testing_function('kg2e_el', distance_measure="expected_likelihood")
 
 def test_KG2E_KL_args():
     """Function to test KG2E Algorithm with arguments."""
@@ -75,7 +93,7 @@ def test_SMEL_args():
 
 def test_SMEB_args():
     """Function to test SME Algorithm with arguments."""
-    testing_function('sme', bilinear=True)
+    testing_function('sme_bl', bilinear=True)
 
 def test_transE_display():
     """Function to test transE display."""

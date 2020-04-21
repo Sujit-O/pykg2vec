@@ -325,6 +325,6 @@ class Generator:
 
 
 class TrainingStrategy(Enum):
-    PROJECTION_BASED = "projection_based"
-    PAIRWISE_BASED = "pairwise_based"
-    POINTWISE_BASED = "pointwise_based"
+    PROJECTION_BASED = "projection_based"   # matching models with neural network
+    PAIRWISE_BASED = "pairwise_based"       # translational distance models
+    POINTWISE_BASED = "pointwise_based"     # semantic matching models

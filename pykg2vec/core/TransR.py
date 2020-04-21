@@ -101,7 +101,7 @@ class TransR(ModelMeta):
 
         transform_h_e = tf.matmul(h_e, matrix)
         transform_t_e = tf.matmul(t_e, matrix)
-        # [b, d, 1] = [b, 1, k] * [b, k, d]
+        # [b, 1, d] = [b, 1, k] * [b, k, d]
 
         h_e = tf.squeeze(transform_h_e, axis=1)
         t_e = tf.squeeze(transform_t_e, axis=1)

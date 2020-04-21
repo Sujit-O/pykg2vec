@@ -52,10 +52,10 @@ class Visualization(object):
 
         self.model = model
 
-        self.algo_list = ['Complex', 'ConvE','HoLE', 'DistMult', 'DistMult2', 'KG2E_EL','KG2E_KL',
-                          'KGMeta', 'NTN', 'ProjE_pointwise', 'Rescal',
-                          'RotatE', 'SLM', 'SME_Bilinear','SME_Linear', 'TransD', 'TransE', 'TransH',
-                           'TransM', 'TransR', 'TuckER']
+        self.algo_list = ['ANALOGY', 'Complex', 'ComplexN3', 'ConvE', 'CP', 'DistMult', 'DistMult2', 'HoLE',
+                          'KG2E_EL', 'KG2E_KL', 'KGMeta', 'NTN', 'ProjE_pointwise', 'Rescal', 'RotatE', 'SimplE_avg',
+                          'SimplE_ignr', 'SLM', 'SME_Bilinear', 'SME_Linear', 'TransD', 'TransE', 'TransH', 'TransM',
+                          'TransR', 'TuckER']
 
         self.h_name = []
         self.r_name = []
@@ -170,19 +170,21 @@ class Visualization(object):
                 file_no = len([c for c in files_lwcase if a.lower() in c if 'training' in c])
                 if file_no < 1:
                     continue
-                with open(str(path / (a + '_Training_results_' + str(file_no - 1) + '.csv')), 'r') as fh:
-                    df_2 = pd.read_csv(fh)
-                if df.empty:
-                    df['Epochs'] = df_2['Epochs']
-                    df['Loss'] = df_2['Loss']
-                    df['Algorithm'] = [a] * len(df_2)
-                else:
-                    df_3 = pd.DataFrame()
-                    df_3['Epochs'] = df_2['Epochs']
-                    df_3['Loss'] = df_2['Loss']
-                    df_3['Algorithm'] = [a] * len(df_2)
-                    frames = [df, df_3]
-                    df = pd.concat(frames)
+                file_path = str(path / (a + '_Training_results_' + str(file_no - 1) + '.csv'))
+                if os.path.exists(file_path):
+                    with open(str(path / (a + '_Training_results_' + str(file_no - 1) + '.csv')), 'r') as fh:
+                        df_2 = pd.read_csv(fh)
+                    if df.empty:
+                        df['Epochs'] = df_2['Epochs']
+                        df['Loss'] = df_2['Loss']
+                        df['Algorithm'] = [a] * len(df_2)
+                    else:
+                        df_3 = pd.DataFrame()
+                        df_3['Epochs'] = df_2['Epochs']
+                        df_3['Loss'] = df_2['Loss']
+                        df_3['Algorithm'] = [a] * len(df_2)
+                        frames = [df, df_3]
+                        df = pd.concat(frames)
             plt.figure()
             ax = seaborn.lineplot(x="Epochs", y="Loss", hue="Algorithm", markers=True, dashes=False, data=df)
             files = os.listdir(str(result))
