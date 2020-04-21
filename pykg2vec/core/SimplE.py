@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import math
 import tensorflow as tf
 
 from pykg2vec.core.KGMeta import ModelMeta
@@ -60,42 +61,16 @@ class SimplE(ModelMeta):
         emb_t2 = tf.nn.embedding_lookup(self.ent_tail_embeddings, h)
         return emb_h1, emb_h2, emb_r1, emb_r2, emb_t1, emb_t2
 
-    def embed2(self, h, r, t):
-        """Function to get the embedding value.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-
-        emb_h = tf.nn.embedding_lookup(self.ent_head_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_r_rev = tf.nn.embedding_lookup(self.rel_inv_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_tail_embeddings, t)
-
-        return emb_h, emb_r, emb_r_rev, emb_t
-
     def forward(self, h, r, t):
         h1_e, h2_e, r1_e, r2_e, t1_e, t2_e = self.embed(h, r, t)
 
-        norm_h1_e = tf.nn.l2_normalize(h1_e, -1)
-        norm_h2_e = tf.nn.l2_normalize(h2_e, -1)
-        norm_r1_e = tf.nn.l2_normalize(r1_e, -1)
-        norm_r2_e = tf.nn.l2_normalize(r2_e, -1)
-        norm_t1_e = tf.nn.l2_normalize(t1_e, -1)
-        norm_t2_e = tf.nn.l2_normalize(t2_e, -1)
-
-        init = (tf.reduce_sum(tf.multiply(tf.multiply(norm_h1_e, norm_r1_e), norm_t1_e), 1) +
-                tf.reduce_sum(tf.multiply(tf.multiply(norm_h2_e, norm_r2_e), norm_t2_e), 1)) / 2.0
-        return tf.clip_by_value(init, -20, 20)
+        init = tf.reduce_sum(h1_e*r1_e*t1_e, 1) + tf.reduce_sum(h2_e*r2_e*t2_e, 1) / 2.0
+        return -tf.clip_by_value(init, -20, 20)
 
     def get_reg(self, h, r, t):
-        h_e, r_e, r_rev_e, t_e = self.embed2(h, r, t)
-        regul_term = tf.nn.l2_loss(h_e) + tf.nn.l2_loss(t_e) + tf.nn.l2_loss(r_e) + tf.nn.l2_loss(r_rev_e)
+        num_batch = math.ceil(self.config.kg_meta.tot_train_triples / self.config.batch_size)
+        regul_term = (tf.nn.l2_loss(self.ent_head_embeddings) + tf.nn.l2_loss(self.ent_tail_embeddings) +
+                      tf.nn.l2_loss(self.rel_embeddings) + tf.nn.l2_loss(self.rel_inv_embeddings)) / num_batch**2
         return self.config.lmbda * regul_term
 
 
@@ -128,12 +103,10 @@ class SimplE_ignr(SimplE):
     def forward(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)
 
-        init = tf.reduce_sum(tf.multiply(tf.multiply(h_e, r_e), t_e), 1)
-        return tf.clip_by_value(init, -20, 20)
+        init = tf.reduce_sum(h_e*r_e*t_e, 1)
+        return -tf.clip_by_value(init, -20, 20)
 
     def get_reg(self, h, r, t):
-        h_e, r_e, r_rev_e, t_e = self.embed2(h, r, t)
-        regul_term = 2.0 * (tf.nn.l2_loss(h_e) + tf.nn.l2_loss(t_e) + tf.nn.l2_loss(r_e) + tf.nn.l2_loss(r_rev_e))
-        return self.config.lmbda * regul_term
+        return 2.0 * super().get_reg(h, r, t)
 
 
