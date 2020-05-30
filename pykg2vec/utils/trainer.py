@@ -13,21 +13,11 @@ from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator, TrainingStrategy
 from pykg2vec.utils.logger import Logger
-# from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from tqdm import tqdm 
 import warnings
 warnings.filterwarnings('ignore')
 import torch.optim as optim
 import torch
-
-# tf.config.set_soft_device_placement(True)
-# physical_devices = tf.config.list_physical_devices('GPU') 
-# try:
-#     for gpu in physical_devices: 
-#         tf.config.experimental.set_memory_growth(gpu, True) 
-# except: 
-#     # Invalid device or cannot modify virtual devices once initialized. 
-#     pass
 
 
 class Monitor(Enum):
@@ -112,6 +102,11 @@ class Trainer(TrainerMeta):
         self.model.to(self.config.device)
         if self.config.optimizer == "adam":
             self.optimizer = optim.Adam(
+                self.model.parameters(),
+                lr=self.config.learning_rate,
+            )
+        elif self.config.optimizer == "sgd":
+            self.optimizer = optim.SGD(
                 self.model.parameters(),
                 lr=self.config.learning_rate,
             )
@@ -245,21 +240,21 @@ class Trainer(TrainerMeta):
 
         return cur_epoch_idx # the runned epoches.
 
-    # def tune_model(self):
-    #     """Function to tune the model."""
-    #     current_loss = float("inf")
+    def tune_model(self):
+        """Function to tune the model."""
+        current_loss = float("inf")
 
-    #     self.generator = Generator(self.model)
-    #     self.evaluator = Evaluator(self.model, tuning=True)
+        self.generator = Generator(self.model)
+        self.evaluator = Evaluator(self.model, tuning=True)
        
-    #     for cur_epoch_idx in range(self.config.epochs):
-    #         current_loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
+        for cur_epoch_idx in range(self.config.epochs):
+            current_loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
 
-    #     self.evaluator.full_test(cur_epoch_idx)
+        self.evaluator.full_test(cur_epoch_idx)
 
-    #     self.generator.stop()
+        self.generator.stop()
         
-    #     return current_loss
+        return current_loss
 
     def train_model_epoch(self, epoch_idx, tuning=False):
         """Function to train the model for one epoch."""
@@ -305,9 +300,8 @@ class Trainer(TrainerMeta):
             loss = torch.max(loss, torch.zeros_like(loss)).sum()
             loss.backward()
 
-            acc_loss += loss.item()
-
             self.optimizer.step()
+            acc_loss += loss.item()
 
             if not tuning:
                 t.set_description('acc_loss: %f, cur_loss: %f'% (acc_loss, loss))

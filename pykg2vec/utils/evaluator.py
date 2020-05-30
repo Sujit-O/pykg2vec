@@ -353,7 +353,7 @@ class Evaluator(EvaluationMeta):
             r_batch = r_tensor.repeat(self.model.config.kg_meta.tot_entity).to(self.model.config.device)
             t_batch = t_tensor.repeat(self.model.config.kg_meta.tot_entity).to(self.model.config.device)
 
-            preds = self.model.forward(entity_array, r_batch, t_batch)
+            preds = self.model(entity_array, r_batch, t_batch)
             _, hrank = torch.topk(preds, k=self.model.config.kg_meta.tot_entity)
 
             result_data = [trank.cpu().numpy(), hrank.cpu().numpy(), h, r, t, epoch]
