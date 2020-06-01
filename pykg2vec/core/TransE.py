@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from pykg2vec.core.KGMeta import ModelMeta
-from pykg2vec.utils.generator import TrainingStrategy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.utils.generator import TrainingStrategy
 
 
 class TransE(ModelMeta):
@@ -50,20 +50,8 @@ class TransE(ModelMeta):
         self.model_name = 'TransE'
         self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
-        """Defines the model parameters.
-
-           Attributes:
-               num_total_ent (int): Total number of entities.
-               num_total_rel (int): Total number of relations.
-               ent_embeddings (Tensor Variable): Lookup variable containing  embedding of the entities.
-               rel_embeddings  (Tensor Variable): Lookup variable containing  embedding of the relations.
-               parameter_list  (list): List of Tensor parameters.
-        """
-        self.num_tot_ent = self.config.kg_meta.tot_entity
-        self.num_tot_rel = self.config.kg_meta.tot_relation
-
-        self.ent_embeddings = nn.Embedding(self.num_tot_ent, self.config.hidden_size)
-        self.rel_embeddings = nn.Embedding(self.num_tot_rel, self.config.hidden_size)
+        self.ent_embeddings = nn.Embedding(self.config.kg_meta.tot_entity, self.config.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.config.kg_meta.tot_relation, self.config.hidden_size)
 
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
@@ -85,14 +73,10 @@ class TransE(ModelMeta):
         norm_r_e = F.normalize(r_e, p=2, dim=-1)
         norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
-        score = norm_h_e + norm_r_e  - norm_t_e
-
         if self.config.L1_flag:
-            score = torch.norm(score, p=1, dim=-1)
+            return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
-            score = torch.norm(score, p=2, dim=-1)
-
-        return score
+            return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

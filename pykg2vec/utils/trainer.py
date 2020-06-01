@@ -214,23 +214,23 @@ class Trainer(TrainerMeta):
             if cur_epoch_idx % self.config.test_step == 0:
                 metrics = self.evaluator.mini_test(cur_epoch_idx)
                               
-            #     if self.early_stopper.should_stop(metrics):
-            #         ### Early Stop Mechanism
-            #         ### start to check if the metric is still improving after each mini-test. 
-            #         ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
-            #         break
+                if self.early_stopper.should_stop(metrics):
+                    ### Early Stop Mechanism
+                    ### start to check if the metric is still improving after each mini-test.
+                    ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
+                    break
 
         # self.evaluator.full_test(cur_epoch_idx)
         # self.evaluator.metric_calculator.save_test_summary(self.model.model_name)
 
         self.generator.stop()
-        # self.save_training_result()
+        self.save_training_result()
 
         # if self.config.save_model:
         #     self.save_model()
 
-        # if self.config.disp_result:
-        #     self.display()
+        if self.config.disp_result:
+            self.display()
 
         # if self.config.disp_summary:
         #     self.config.summary()
@@ -401,30 +401,30 @@ class Trainer(TrainerMeta):
     #     if saved_path.exists():
     #         self.model.load_weights(str(saved_path / 'model.vec'))
 
-    # def display(self):
-    #     """Function to display embedding."""
-    #     options = {"ent_only_plot": True,
-    #                 "rel_only_plot": not self.config.plot_entity_only,
-    #                 "ent_and_rel_plot": not self.config.plot_entity_only}
+    def display(self):
+        """Function to display embedding."""
+        options = {"ent_only_plot": True,
+                    "rel_only_plot": not self.config.plot_entity_only,
+                    "ent_and_rel_plot": not self.config.plot_entity_only}
 
-    #     if self.config.plot_embedding:
-    #         viz = Visualization(model=self.model, vis_opts = options)
+        if self.config.plot_embedding:
+            viz = Visualization(model=self.model, vis_opts = options)
 
-    #         viz.plot_embedding(resultpath=self.config.figures, algos=self.model.model_name, show_label=False)
+            viz.plot_embedding(resultpath=self.config.figures, algos=self.model.model_name, show_label=False)
 
-    #     if self.config.plot_training_result:
-    #         viz = Visualization(model=self.model)
-    #         viz.plot_train_result()
+        if self.config.plot_training_result:
+            viz = Visualization(model=self.model)
+            viz.plot_train_result()
 
-    #     if self.config.plot_testing_result:
-    #         viz = Visualization(model=self.model)
-    #         viz.plot_test_result()
+        if self.config.plot_testing_result:
+            viz = Visualization(model=self.model)
+            viz.plot_test_result()
     
     # def export_embeddings(self):
     #     """
-    #         Export embeddings in tsv and pandas pickled format. 
+    #         Export embeddings in tsv and pandas pickled format.
     #         With tsvs (both label, vector files), you can:
-    #         1) Use those pretained embeddings for your applications.  
+    #         1) Use those pretained embeddings for your applications.
     #         2) Visualize the embeddings in this website to gain insights. (https://projector.tensorflow.org/)
 
     #         Pandas dataframes can be read with pd.read_pickle('desired_file.pickle')
@@ -463,11 +463,11 @@ class Trainer(TrainerMeta):
     #             df = pd.DataFrame(all_embs)
     #             df.to_pickle(save_path / ("%s.pickle" % stored_name))
 
-    # def save_training_result(self):
-    #     """Function that saves training result"""
-    #     files = os.listdir(str(self.model.config.path_result))
-    #     l = len([f for f in files if self.model.model_name in f if 'Training' in f])
-    #     df = pd.DataFrame(self.training_results, columns=['Epochs', 'Loss'])
-    #     with open(str(self.model.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
-    #               'w') as fh:
-    #         df.to_csv(fh)
+    def save_training_result(self):
+        """Function that saves training result"""
+        files = os.listdir(str(self.model.config.path_result))
+        l = len([f for f in files if self.model.model_name in f if 'Training' in f])
+        df = pd.DataFrame(self.training_results, columns=['Epochs', 'Loss'])
+        with open(str(self.model.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
+                  'w') as fh:
+            df.to_csv(fh)

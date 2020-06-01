@@ -3,17 +3,15 @@
 """
 This module is for visualizing the results
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-from sklearn.manifold import TSNE
+import os
+import seaborn
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
-import os
-import seaborn
 import pandas as pd
+
+from sklearn.manifold import TSNE
 from matplotlib import colors as mcolors
 from pykg2vec.utils.logger import Logger
 
@@ -89,7 +87,7 @@ class Visualization(object):
             self.r_name.append(self.idx2relation[t.r])
             self.t_name.append(self.idx2entity[t.t])
 
-            emb_h, emb_r, emb_t = self.model.embed(t.h, t.r, t.t)
+            emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]), torch.tensor([t.r]), torch.tensor([t.t]))
 
             self.h_emb.append(emb_h)
             self.r_emb.append(emb_r)
@@ -97,7 +95,7 @@ class Visualization(object):
 
             if self.ent_and_rel_plot:
                 try:
-                    emb_h, emb_r, emb_t = self.model.embed(t.h, t.r, t.t)
+                    emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]), torch.tensor([t.r]), torch.tensor([t.t]))
                     self.h_proj_emb.append(emb_h)
                     self.r_proj_emb.append(emb_r)
                     self.t_proj_emb.append(emb_t)
