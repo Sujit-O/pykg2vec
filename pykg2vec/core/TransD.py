@@ -51,13 +51,12 @@ class TransD(ModelMeta):
         self.rel_embeddings = nn.Embedding(self.config.kg_meta.tot_relation, k)
         self.ent_mappings = nn.Embedding(self.config.kg_meta.tot_entity, d)
         self.rel_mappings = nn.Embedding(self.config.kg_meta.tot_relation, k)
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.ent_mappings, self.rel_mappings]
-
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.ent_mappings.weight)
         nn.init.xavier_uniform_(self.rel_mappings.weight)
 
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.ent_mappings, self.rel_mappings]
 
     def projection(self, emb_e, emb_m, proj_vec):
         # [b, k] + sigma ([b, k] * [b, k]) * [b, k]

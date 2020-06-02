@@ -52,9 +52,10 @@ class TransE(ModelMeta):
 
         self.ent_embeddings = nn.Embedding(self.config.kg_meta.tot_entity, self.config.hidden_size)
         self.rel_embeddings = nn.Embedding(self.config.kg_meta.tot_relation, self.config.hidden_size)
-
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
+
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
 
     def forward(self, h, r, t):
         """Function to get the embedding value.

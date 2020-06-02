@@ -53,11 +53,11 @@ class TransH(ModelMeta):
         self.ent_embeddings = nn.Embedding(num_total_ent, self.config.hidden_size)
         self.rel_embeddings = nn.Embedding(num_total_rel, self.config.hidden_size)
         self.w = nn.Embedding(num_total_rel, self.config.hidden_size)
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.w]
-
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.w.weight)
+
+        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.w]
 
     def forward(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)
