@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pykg2vec.core.KGMeta import ModelMeta
 from pykg2vec.utils.generator import TrainingStrategy
-from torch.autograd import Variable
+
 
 class TransM(ModelMeta):
     """ `Transition-based Knowledge Graph Embedding with Relational Mapping Properties`_
