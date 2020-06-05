@@ -121,8 +121,8 @@ class KG2E(ModelMeta):
 
         return mul_fac + det_fac - self.config.hidden_size
 
-    def get_normalized_data(self, embedding, num_embeddings):
-        norms = torch.norm(embedding.weight, p=2, dim=1).data
+    def get_normalized_data(self, embedding, num_embeddings, p=2, dim=1):
+        norms = torch.norm(embedding.weight, p, dim).data
         return embedding.weight.data.div(norms.view(num_embeddings, 1).expand_as(embedding.weight))
 
 
