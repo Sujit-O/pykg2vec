@@ -6,8 +6,8 @@ This module is for generating the batch data for training and testing.
 from __future__ import absolute_import
 from __future__ import division
 
+import torch
 import numpy as np
-# import tensorflow as tf
 from multiprocessing import Process, Queue, Event
 from enum import Enum
 
@@ -177,77 +177,88 @@ def process_function_pointwise(raw_queue, processed_queue, config):
         processed_queue.put([point_h, point_r, point_t, point_y])
 
 
-# def process_function_multiclass(raw_queue, processed_queue, config):
-#     """Function that puts the processed data in the queue.
+def process_function_multiclass(raw_queue, processed_queue, config):
+    """Function that puts the processed data in the queue.
            
-#         Args:
-#             raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
-#             processed_queue (Queue) : Multiprocessing Queue to put the processed data.
-#             te (int): Total number of entities
-#             bs (int): Total size of each batch.
-#             neg_rate (int): Ratio of negative to positive samples.
-#     """
-#     hr_t_train = config.knowledge_graph.read_cache_data('hr_t_train')
-#     tr_h_train = config.knowledge_graph.read_cache_data('tr_h_train')
+        Args:
+            raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
+            processed_queue (Queue) : Multiprocessing Queue to put the processed data.
+            te (int): Total number of entities
+            bs (int): Total size of each batch.
+            neg_rate (int): Ratio of negative to positive samples.
+    """
+
+    def _to_sparse_i(indices):
+        x = []
+        y = []
+        for index in indices:
+            x.append(index[0])
+            y.append(index[1])
+        return [x, y]
+
+    hr_t_train = config.knowledge_graph.read_cache_data('hr_t_train')
+    tr_h_train = config.knowledge_graph.read_cache_data('tr_h_train')
     
-#     neg_rate = config.neg_rate
+    neg_rate = config.neg_rate
     
-#     shape = [config.batch_size, config.kg_meta.tot_entity] 
-#     shape = tf.convert_to_tensor(shape, dtype=tf.int64)
-    
-#     while True:
-#         item = raw_queue.get()
-#         if item is None:
-#             return
-#         idx, raw_data = item
+    shape = [config.batch_size, config.kg_meta.tot_entity]
+
+    while True:
+        item = raw_queue.get()
+        if item is None:
+            return
+        idx, raw_data = item
         
-#         h = raw_data[:, 0]
-#         r = raw_data[:, 1]
-#         t = raw_data[:, 2]
+        h = raw_data[:, 0]
+        r = raw_data[:, 1]
+        t = raw_data[:, 2]
 
-#         indices_hr_t = []
-#         indices_tr_h = []
-#         neg_indices_hr_t = []
-#         neg_indices_tr_h = []
+        indices_hr_t = []
+        indices_tr_h = []
+        neg_indices_hr_t = []
+        neg_indices_tr_h = []
 
-#         random_ids = np.random.permutation(config.kg_meta.tot_entity)
+        random_ids = np.random.permutation(config.kg_meta.tot_entity)
 
-#         for i in range(config.batch_size):
-#             hr_t = hr_t_train[(h[i], r[i])]
-#             tr_h = tr_h_train[(t[i], r[i])]
+        for i in range(config.batch_size):
+            hr_t = hr_t_train[(h[i], r[i])]
+            tr_h = tr_h_train[(t[i], r[i])]
 
-#             for idx in hr_t:
-#                 indices_hr_t.append([i, idx])
-#             for idx in tr_h:
-#                 indices_tr_h.append([i, idx])
+            for idx in hr_t:
+                indices_hr_t.append([i, idx])
+            for idx in tr_h:
+                indices_tr_h.append([i, idx])
 
-#             if neg_rate > 0:
-#                 for idx in random_ids[0:100]:
-#                     if idx not in hr_t:
-#                         neg_indices_hr_t.append([i, idx])
-#                 for idx in random_ids[0:100]:
-#                     if idx not in tr_h:
-#                         neg_indices_tr_h.append([i, idx])
+            if neg_rate > 0:
+                for idx in random_ids[0:100]:
+                    if idx not in hr_t:
+                        neg_indices_hr_t.append([i, idx])
+                for idx in random_ids[0:100]:
+                    if idx not in tr_h:
+                        neg_indices_tr_h.append([i, idx])
 
 
-#         values_hr_t = tf.tile([1], [len(indices_hr_t)])
-#         values_tr_h = tf.tile([1], [len(indices_tr_h)])
+        values_hr_t = torch.FloatTensor([1]).repeat([len(indices_hr_t)])
+        values_tr_h = torch.FloatTensor([1]).repeat([len(indices_tr_h)])
         
-#         if neg_rate > 0:
-#             neg_values_hr_t = tf.tile([-1], [len(neg_indices_hr_t)])
-#             neg_values_tr_h = tf.tile([-1], [len(neg_indices_tr_h)])
+        if neg_rate > 0:
+            neg_values_hr_t = torch.FloatTensor([-1]).repeat([len(neg_indices_hr_t)])
+            neg_values_tr_h = torch.FloatTensor([-1]).repeat([len(neg_indices_tr_h)])
 
-#         hr_t = tf.SparseTensor(indices=indices_hr_t, values=values_hr_t, dense_shape=shape)
-#         tr_h = tf.SparseTensor(indices=indices_tr_h, values=values_tr_h, dense_shape=shape)
+        # It looks Torch sparse tensor does not work in multi processing
+        # so they need to be converted to dense, which is not memory efficient
+        # https://github.com/pytorch/pytorch/pull/27062
+        hr_t = torch.sparse.FloatTensor(torch.LongTensor(_to_sparse_i(indices_hr_t)), values_hr_t, torch.Size(shape)).to_dense()
+        tr_h = torch.sparse.FloatTensor(torch.LongTensor(_to_sparse_i(indices_tr_h)), values_tr_h, torch.Size(shape)).to_dense()
 
-#         if neg_rate > 0:
-#             neg_hr_t = tf.SparseTensor(indices=neg_indices_hr_t, values=neg_values_hr_t, dense_shape=shape)
-#             neg_tr_h = tf.SparseTensor(indices=neg_indices_tr_h, values=neg_values_tr_h, dense_shape=shape)
+        if neg_rate > 0:
+            neg_hr_t = torch.sparse.FloatTensor(torch.LongTensor(_to_sparse_i(neg_indices_hr_t)), neg_values_hr_t, torch.size(shape)).to_dense()
+            neg_tr_h = torch.sparse.FloatTensor(torch.LongTensor(_to_sparse_i(neg_indices_tr_h)), neg_values_tr_h, torch.size(shape)).to_dense()
         
-#             hr_t = tf.sparse.add(hr_t, neg_hr_t)
-#             tr_h = tf.sparse.add(tr_h, neg_tr_h)
+            hr_t = hr_t.add(neg_hr_t)
+            tr_h = tr_h.add(neg_tr_h)
 
-#         processed_queue.put([h, r, t, hr_t, tr_h])
+        processed_queue.put([h, r, t, hr_t, tr_h])
 
 
 class Generator:

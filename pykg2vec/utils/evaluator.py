@@ -7,16 +7,13 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import timeit
+import torch
 import numpy as np
 import pandas as pd
-import timeit
-from multiprocessing import Process, Queue
-# import tensorflow as tf
 from pykg2vec.core.KGMeta import EvaluationMeta
-from pykg2vec.utils.generator import TrainingStrategy
 from pykg2vec.utils.logger import Logger
 from tqdm import tqdm
-import torch
 
 
 class MetricCalculator:
@@ -251,62 +248,50 @@ class Evaluator(EvaluationMeta):
         self.eval_data = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
         self.metric_calculator = MetricCalculator(self.model.config)
 
-    # @tf.function
-    # def test_tail_rank(self, h, r, topk=-1):
-    #     if hasattr(self.model, 'predict_tail_rank'):
-    #         h = tf.expand_dims(h, 0)
-    #         r = tf.expand_dims(r, 0)
-    #         rank = self.model.predict_tail_rank(h, r, topk=topk)
-    #         return tf.squeeze(rank, 0)
+    def test_tail_rank(self, h, r, topk=-1):
+        if hasattr(self.model, 'predict_tail_rank'):
+            h = h.unsqueeze(0)
+            r = r.unsqueeze(0)
+            rank = self.model.predict_tail_rank(h, r, topk=topk)
+            return rank.squeeze(0)
 
-    #     if hasattr(self.model, 'predict'):
-    #         h_batch = tf.tile([h], [self.model.config.kg_meta.tot_entity])
-    #         r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
-    #         entity_array = tf.range(self.model.config.kg_meta.tot_entity)
+        h_batch = torch.LongTensor([h]).repeat([self.model.config.kg_meta.tot_entity])
+        r_batch = torch.LongTensor([r]).repeat([self.model.config.kg_meta.tot_entity])
+        entity_array = torch.LongTensor(list(range(self.model.config.kg_meta.tot_entity)))
 
-    #         preds = self.model.forward(h_batch, r_batch, entity_array)
-    #         _, rank = tf.nn.top_k(preds, k=topk)
-    #         return rank
+        preds = self.model.forward(h_batch, r_batch, entity_array)
+        _, rank = torch.topk(preds, k=topk)
+        return rank
 
-    #     raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_tail_rank", "predict_rank"))
+    def test_head_rank(self, r, t, topk=-1):
+        if hasattr(self.model, 'predict_head_rank'):
+            t = t.unsqueeze(0)
+            r = r.unsqueeze(0)
+            rank = self.model.predict_head_rank(t, r, topk=topk)
+            return rank.squeeze(0)
 
-    # @tf.function
-    # def test_head_rank(self, r, t, topk=-1):
-    #     if hasattr(self.model, 'predict_head_rank'):
-    #         t = tf.expand_dims(t, 0)
-    #         r = tf.expand_dims(r, 0)
-    #         rank = self.model.predict_head_rank(t, r, topk=topk)
-    #         return tf.squeeze(rank, 0)
+        entity_array = torch.LongTensor(list(range(self.model.config.kg_meta.tot_entity)))
+        r_batch = torch.LongTensor([r]).repeat([self.model.config.kg_meta.tot_entity])
+        t_batch = torch.LongTensor([t]).repeat([self.model.config.kg_meta.tot_entity])
 
-    #     if hasattr(self.model, 'predict'):
-    #         entity_array = tf.range(self.model.config.kg_meta.tot_entity)
-    #         r_batch = tf.tile([r], [self.model.config.kg_meta.tot_entity])
-    #         t_batch = tf.tile([t], [self.model.config.kg_meta.tot_entity])
+        preds = self.model.forward(entity_array, r_batch, t_batch)
+        _, rank = torch.topk(preds, k=topk)
+        return rank
 
-    #         preds = self.model.forward(entity_array, r_batch, t_batch)
-    #         _, rank = tf.nn.top_k(preds, k=topk)
-    #         return rank
+    def test_rel_rank(self, h, t, topk=-1):
+        if hasattr(self.model, 'predict_rel_rank'):
+            h = h.unsqueeze(0)
+            t = t.unsqueeze(0)
+            rank = self.model.predict_rel_rank(h, t, topk=topk)
+            return rank.squeeze(0)
 
-    #     raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_head_rank", "predict_rank"))
+        h_batch = torch.LongTensor([h]).repeat([self.model.config.kg_meta.tot_relation])
+        rel_array = torch.LongTensor(list(range(self.model.config.kg_meta.tot_relation)))
+        t_batch = torch.LongTensor([t]).repeat([self.model.config.kg_meta.tot_relation])
 
-    # @tf.function
-    # def test_rel_rank(self, h, t, topk=-1):
-    #     if hasattr(self.model, 'predict_rel_rank'):
-    #         h = tf.expand_dims(h, 0)
-    #         t = tf.expand_dims(t, 0)
-    #         rank = self.model.predict_rel_rank(h, t, topk=topk)
-    #         return tf.squeeze(rank, 0)
-
-    #     if hasattr(self.model, 'predict'):
-    #         h_batch = tf.tile([h], [self.model.config.kg_meta.tot_relation])
-    #         rel_array = tf.range(self.model.config.kg_meta.tot_relation)
-    #         t_batch = tf.tile([t], [self.model.config.kg_meta.tot_relation])
-            
-    #         preds = self.model.forward(h_batch, rel_array, t_batch)
-    #         _, rank = tf.nn.top_k(preds, k=topk)
-    #         return rank
-
-    #     raise NotImplementedError("Neither %s nor %s has been implemented" % ("predict_rel_rank", "predict_rank"))
+        preds = self.model.forward(h_batch, rel_array, t_batch)
+        _, rank = torch.topk(preds, k=topk)
+        return rank
 
     def mini_test(self, epoch=None):
         if self.model.config.test_num == 0:
@@ -329,9 +314,9 @@ class Evaluator(EvaluationMeta):
 
     def test(self, data, num_of_test, epoch=None):
         self.metric_calculator.reset()
-        
 
-        for i in tqdm(range(num_of_test)):
+        progress_bar = tqdm(range(num_of_test))
+        for i in progress_bar:
             h, r, t = data[i].h, data[i].r, data[i].t
             
             # generate head batch and predict heads. Tensorflow handles broadcasting.
@@ -339,24 +324,10 @@ class Evaluator(EvaluationMeta):
             r_tensor = torch.LongTensor([r])
             t_tensor = torch.LongTensor([t])
 
-            # hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
-            # trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
-            
-            h_batch = h_tensor.repeat(self.model.config.kg_meta.tot_entity).to(self.model.config.device)
-            r_batch = r_tensor.repeat(self.model.config.kg_meta.tot_entity).to(self.model.config.device)
-            entity_array = torch.range(0, self.model.config.kg_meta.tot_entity-1, dtype=torch.int64).to(self.model.config.device)
-            
-            preds = self.model(h_batch, r_batch, entity_array)
-            _, trank = torch.topk(preds, k=self.model.config.kg_meta.tot_entity)
-     
-            entity_array = torch.range(0, self.model.config.kg_meta.tot_entity-1, dtype=torch.int64).to(self.model.config.device)
-            r_batch = r_tensor.repeat(self.model.config.kg_meta.tot_entity).to(self.model.config.device)
-            t_batch = t_tensor.repeat(self.model.config.kg_meta.tot_entity).to(self.model.config.device)
+            hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
+            trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
 
-            preds = self.model(entity_array, r_batch, t_batch)
-            _, hrank = torch.topk(preds, k=self.model.config.kg_meta.tot_entity)
-
-            result_data = [trank.cpu().numpy(), hrank.cpu().numpy(), h, r, t, epoch]
+            result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
 
             self.metric_calculator.append_result(result_data)
 

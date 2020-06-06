@@ -4,8 +4,13 @@
 This module is for training process.
 """
 import timeit, os
+import torch
+import warnings
+warnings.filterwarnings('ignore')
 # import tensorflow as tf
 import pandas as pd
+import torch.optim as optim
+import torch.nn.functional as F
 
 from enum import Enum
 from pykg2vec.core.KGMeta import TrainerMeta
@@ -13,11 +18,7 @@ from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator, TrainingStrategy
 from pykg2vec.utils.logger import Logger
-from tqdm import tqdm 
-import warnings
-warnings.filterwarnings('ignore')
-import torch.optim as optim
-import torch
+from tqdm import tqdm
 
 
 class Monitor(Enum):
@@ -148,40 +149,31 @@ class Trainer(TrainerMeta):
 
     #     return loss
 
-    # @tf.function
-    # def train_step_projection(self, h, r, t, hr_t, tr_h):
-    #     with tf.GradientTape() as tape:
-    #         hr_t = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(hr_t)), dtype=tf.float32)
-    #         tr_h = tf.cast(tf.sparse.to_dense(tf.sparse.reorder(tr_h)), dtype=tf.float32)
-           
-    #         if self.model.model_name.lower() == "conve" or self.model.model_name.lower() == "tucker":   
-    #             if hasattr(self.config, 'label_smoothing'):
-    #                 hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
-    #                 tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+    def train_step_projection(self, h, r, t, hr_t, tr_h):
+        if self.model.model_name.lower() == "conve" or self.model.model_name.lower() == "tucker":
+            if hasattr(self.config, 'label_smoothing'):
+                hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+                tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
 
-    #             pred_tails = self.model.forward(h, r, direction="tail") # (h, r) -> hr_t forward
-    #             pred_heads = self.model.forward(t, r, direction="head") # (t, r) -> tr_h backward
+            pred_tails = self.model(h, r, direction="tail")  # (h, r) -> hr_t forward
+            pred_heads = self.model(t, r, direction="head")  # (t, r) -> tr_h backward
 
-    #             loss_tails = tf.reduce_mean(tf.keras.backend.binary_crossentropy(hr_t, pred_tails))
-    #             loss_heads = tf.reduce_mean(tf.keras.backend.binary_crossentropy(tr_h, pred_heads))
+            loss_tails = torch.mean(F.binary_cross_entropy(pred_tails, hr_t))
+            loss_heads = torch.mean(F.binary_cross_entropy(pred_heads, tr_h))
 
-    #             loss = loss_tails + loss_heads
-            
-    #         else:
-    #             loss_tails = self.model.forward(h, r, hr_t, direction="tail") # (h, r) -> hr_t forward
-    #             loss_heads = self.model.forward(t, r, tr_h, direction="head") # (t, r) -> tr_h backward
+            loss = loss_tails + loss_heads
 
-    #             loss = loss_tails + loss_heads
+        else:
+            loss_tails = self.model(h, r, hr_t, direction="tail")  # (h, r) -> hr_t forward
+            loss_heads = self.model(t, r, tr_h, direction="head")  # (t, r) -> tr_h backward
 
-    #             if hasattr(self.model, 'get_reg'):
-    #                 # now only complex distmult uses regularizer in algorithms, 
-    #                 loss += self.model.get_reg()
+            loss = loss_tails + loss_heads
 
+            if hasattr(self.model, 'get_reg'):
+                # now only complex distmult uses regularizer in algorithms,
+                loss += self.model.get_reg()
 
-    #     gradients = tape.gradient(loss, self.model.trainable_variables)
-    #     self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
-
-    #     return loss
+        return loss
 
     # @tf.function
     # def train_step_pointwise(self, h, r, t, y):
@@ -264,47 +256,46 @@ class Trainer(TrainerMeta):
        
         self.generator.start_one_epoch(num_batch)
         
-        t = tqdm(range(num_batch))
+        progress_bar = tqdm(range(num_batch))
 
-        for batch_idx in t:
+        for batch_idx in progress_bar:
             data = list(next(self.generator))
-            
-            # if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
-            #     h = tf.convert_to_tensor(data[0], dtype=tf.int32)
-            #     r = tf.convert_to_tensor(data[1], dtype=tf.int32)
-            #     t = tf.convert_to_tensor(data[2], dtype=tf.int32)
-            #     hr_t = data[3]
-            #     rt_h = data[4]
-            #     loss = self.train_step_projection(h, r, t, hr_t, rt_h)
+            self.optimizer.zero_grad()
+            if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
+                h = torch.LongTensor(data[0])
+                r = torch.LongTensor(data[1])
+                t = torch.LongTensor(data[2])
+                hr_t = data[3]
+                tr_h = data[4]
+                loss = self.train_step_projection(h, r, t, hr_t, tr_h)
+                acc_loss += loss.item()
             # elif self.model.training_strategy == TrainingStrategy.POINTWISE_BASED:
             #     h = tf.convert_to_tensor(data[0], dtype=tf.int32)
             #     r = tf.convert_to_tensor(data[1], dtype=tf.int32)
             #     t = tf.convert_to_tensor(data[2], dtype=tf.int32)
             #     y = tf.convert_to_tensor(data[3], dtype=tf.float32)
             #     loss = self.train_step_pointwise(h, r, t, y)
-            # else:
-            self.optimizer.zero_grad()
+            else:
+                pos_h = torch.LongTensor(data[0]).to(self.config.device)
+                pos_r = torch.LongTensor(data[1]).to(self.config.device)
+                pos_t = torch.LongTensor(data[2]).to(self.config.device)
+                neg_h = torch.LongTensor(data[3]).to(self.config.device)
+                neg_r = torch.LongTensor(data[4]).to(self.config.device)
+                neg_t = torch.LongTensor(data[5]).to(self.config.device)
 
-            pos_h = torch.LongTensor(data[0]).to(self.config.device)
-            pos_r = torch.LongTensor(data[1]).to(self.config.device)
-            pos_t = torch.LongTensor(data[2]).to(self.config.device)
-            neg_h = torch.LongTensor(data[3]).to(self.config.device)
-            neg_r = torch.LongTensor(data[4]).to(self.config.device)
-            neg_t = torch.LongTensor(data[5]).to(self.config.device)
-            
-            pos_preds = self.model(pos_h, pos_r, pos_t)
-            neg_preds = self.model(neg_h, neg_r, neg_t)
-            
-            # others that use margin-based & pairwise loss function. (unif or bern)
-            loss = pos_preds + self.config.margin - neg_preds
+                pos_preds = self.model(pos_h, pos_r, pos_t)
+                neg_preds = self.model(neg_h, neg_r, neg_t)
+
+                # others that use margin-based & pairwise loss function. (unif or bern)
+                loss = pos_preds + self.config.margin - neg_preds
+
             loss = torch.max(loss, torch.zeros_like(loss)).sum()
             loss.backward()
-
             self.optimizer.step()
             acc_loss += loss.item()
 
             if not tuning:
-                t.set_description('acc_loss: %f, cur_loss: %f'% (acc_loss, loss))
+                progress_bar.set_description('acc_loss: %f, cur_loss: %f'% (acc_loss, loss))
             
         self.training_results.append([epoch_idx, acc_loss])
 
