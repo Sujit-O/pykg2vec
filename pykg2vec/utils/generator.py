@@ -252,8 +252,8 @@ def process_function_multiclass(raw_queue, processed_queue, config):
         tr_h = torch.sparse.FloatTensor(torch.LongTensor(_to_sparse_i(indices_tr_h)), values_tr_h, torch.Size(shape)).to_dense()
 
         if neg_rate > 0:
-            neg_hr_t = torch.sparse.FloatTensor(torch.LongTensor(_to_sparse_i(neg_indices_hr_t)), neg_values_hr_t, torch.size(shape)).to_dense()
-            neg_tr_h = torch.sparse.FloatTensor(torch.LongTensor(_to_sparse_i(neg_indices_tr_h)), neg_values_tr_h, torch.size(shape)).to_dense()
+            neg_hr_t = torch.sparse.FloatTensor(torch.LongTensor(_to_sparse_i(neg_indices_hr_t)), neg_values_hr_t, torch.Size(shape)).to_dense()
+            neg_tr_h = torch.sparse.FloatTensor(torch.LongTensor(_to_sparse_i(neg_indices_tr_h)), neg_values_tr_h, torch.Size(shape)).to_dense()
         
             hr_t = hr_t.add(neg_hr_t)
             tr_h = tr_h.add(neg_tr_h)

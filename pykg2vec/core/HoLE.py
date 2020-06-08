@@ -45,17 +45,17 @@ class HoLE(ModelMeta):
 
         self.ent_embeddings = nn.Embedding(num_total_ent, self.config.hidden_size)
         self.rel_embeddings = nn.Embedding(num_total_rel, self.config.hidden_size)
-        nn.init.xavier_uniform_(self.ent_embeddings)
-        nn.init.xavier_uniform_(self.rel_embeddings)
+        nn.init.xavier_uniform_(self.ent_embeddings.weight)
+        nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
         self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
 
     def forward(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)
         r_e = F.normalize(r_e, p=2, dim=-1)
-        h_e = h_e.type(torch.complex64)
-        t_e = t_e.type(torch.complex64)
-        e = torch.real(torch.ifft(torch.conj(torch.fft(h_e, 1)) * torch.fft(t_e, 1), 1))
+        h_e = torch.stack((h_e, torch.zeros_like(h_e)), -1)
+        t_e = torch.stack((t_e, torch.zeros_like(t_e)), -1)
+        e, _ = torch.unbind(torch.ifft(torch.conj(torch.fft(h_e, 1)) * torch.fft(t_e, 1), 1), -1)
         return -F.sigmoid(torch.sum(r_e * e, 1))
 
     def embed(self, h, r, t):

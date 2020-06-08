@@ -250,8 +250,8 @@ class Evaluator(EvaluationMeta):
 
     def test_tail_rank(self, h, r, topk=-1):
         if hasattr(self.model, 'predict_tail_rank'):
-            h = h.unsqueeze(0)
-            r = r.unsqueeze(0)
+            # h = h.unsqueeze(0)
+            # r = r.unsqueeze(0)
             rank = self.model.predict_tail_rank(h, r, topk=topk)
             return rank.squeeze(0)
 
@@ -265,8 +265,8 @@ class Evaluator(EvaluationMeta):
 
     def test_head_rank(self, r, t, topk=-1):
         if hasattr(self.model, 'predict_head_rank'):
-            t = t.unsqueeze(0)
-            r = r.unsqueeze(0)
+            # t = t.unsqueeze(0)
+            # r = r.unsqueeze(0)
             rank = self.model.predict_head_rank(t, r, topk=topk)
             return rank.squeeze(0)
 
@@ -280,8 +280,8 @@ class Evaluator(EvaluationMeta):
 
     def test_rel_rank(self, h, t, topk=-1):
         if hasattr(self.model, 'predict_rel_rank'):
-            h = h.unsqueeze(0)
-            t = t.unsqueeze(0)
+            # h = h.unsqueeze(0)
+            # t = t.unsqueeze(0)
             rank = self.model.predict_rel_rank(h, t, topk=topk)
             return rank.squeeze(0)
 

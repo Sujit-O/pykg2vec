@@ -59,7 +59,12 @@ class KG2E(ModelMeta):
         # as the paper suggested, sigma is simplified to be the diagonal element in the covariance matrix. 
         self.ent_embeddings_sigma = nn.Embedding(num_total_ent, k)
         self.rel_embeddings_sigma = nn.Embedding(num_total_rel, k)
-        
+
+        nn.init.xavier_uniform_(self.ent_embeddings_mu.weight)
+        nn.init.xavier_uniform_(self.rel_embeddings_mu.weight)
+        nn.init.xavier_uniform_(self.ent_embeddings_sigma.weight)
+        nn.init.xavier_uniform_(self.rel_embeddings_sigma.weight)
+
         self.parameter_list = [self.ent_embeddings_mu, self.ent_embeddings_sigma, self.rel_embeddings_mu, self.rel_embeddings_sigma]
 
         min_ent = torch.min(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.config.cmax), torch.add(self.ent_embeddings_sigma.weight, 1.0))
