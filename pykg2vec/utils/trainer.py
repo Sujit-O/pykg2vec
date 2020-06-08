@@ -18,7 +18,12 @@ from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator, TrainingStrategy
 from pykg2vec.utils.logger import Logger
-from tqdm import tqdm
+from tqdm import tqdm 
+import warnings
+warnings.filterwarnings('ignore')
+import torch.optim as optim
+import torch
+import torch.nn.functional as F
 
 
 class Monitor(Enum):
@@ -108,6 +113,11 @@ class Trainer(TrainerMeta):
             )
         elif self.config.optimizer == "sgd":
             self.optimizer = optim.SGD(
+                self.model.parameters(),
+                lr=self.config.learning_rate,
+            )
+        elif self.config.optimizer == "adagrad":
+            self.optimizer = optim.Adagrad(
                 self.model.parameters(),
                 lr=self.config.learning_rate,
             )
@@ -260,7 +270,9 @@ class Trainer(TrainerMeta):
 
         for batch_idx in progress_bar:
             data = list(next(self.generator))
+            
             self.optimizer.zero_grad()
+
             if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
                 h = torch.LongTensor(data[0])
                 r = torch.LongTensor(data[1])
@@ -268,13 +280,19 @@ class Trainer(TrainerMeta):
                 hr_t = data[3]
                 tr_h = data[4]
                 loss = self.train_step_projection(h, r, t, hr_t, tr_h)
-                acc_loss += loss.item()
-            # elif self.model.training_strategy == TrainingStrategy.POINTWISE_BASED:
-            #     h = tf.convert_to_tensor(data[0], dtype=tf.int32)
-            #     r = tf.convert_to_tensor(data[1], dtype=tf.int32)
-            #     t = tf.convert_to_tensor(data[2], dtype=tf.int32)
-            #     y = tf.convert_to_tensor(data[3], dtype=tf.float32)
-            #     loss = self.train_step_pointwise(h, r, t, y)
+
+            elif self.model.training_strategy == TrainingStrategy.POINTWISE_BASED:
+                h = torch.LongTensor(data[0]).to(self.config.device)
+                r = torch.LongTensor(data[1]).to(self.config.device)
+                t = torch.LongTensor(data[2]).to(self.config.device)
+                y = torch.LongTensor(data[3]).to(self.config.device)
+                
+                preds = self.model(h, r, t)
+                loss = F.softplus(y*preds).mean()
+
+                if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult & CP & ANALOGY
+                    loss += self.model.get_reg(h, r, t)
+
             else:
                 pos_h = torch.LongTensor(data[0]).to(self.config.device)
                 pos_r = torch.LongTensor(data[1]).to(self.config.device)
@@ -282,14 +300,14 @@ class Trainer(TrainerMeta):
                 neg_h = torch.LongTensor(data[3]).to(self.config.device)
                 neg_r = torch.LongTensor(data[4]).to(self.config.device)
                 neg_t = torch.LongTensor(data[5]).to(self.config.device)
-
+                
                 pos_preds = self.model(pos_h, pos_r, pos_t)
                 neg_preds = self.model(neg_h, neg_r, neg_t)
-
+                
                 # others that use margin-based & pairwise loss function. (unif or bern)
                 loss = pos_preds + self.config.margin - neg_preds
-
-            loss = torch.max(loss, torch.zeros_like(loss)).sum()
+                loss = torch.max(loss, torch.zeros_like(loss)).sum()
+                
             loss.backward()
             self.optimizer.step()
             acc_loss += loss.item()

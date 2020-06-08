@@ -250,14 +250,15 @@ class Evaluator(EvaluationMeta):
 
     def test_tail_rank(self, h, r, topk=-1):
         if hasattr(self.model, 'predict_tail_rank'):
-            # h = h.unsqueeze(0)
-            # r = r.unsqueeze(0)
+            # TODO: this broke training on ProjE_pointwise
+            # h = h.unsqueeze(0).to(self.model.config.device)
+            # r = r.unsqueeze(0).to(self.model.config.device)
             rank = self.model.predict_tail_rank(h, r, topk=topk)
             return rank.squeeze(0)
 
-        h_batch = torch.LongTensor([h]).repeat([self.model.config.kg_meta.tot_entity])
-        r_batch = torch.LongTensor([r]).repeat([self.model.config.kg_meta.tot_entity])
-        entity_array = torch.LongTensor(list(range(self.model.config.kg_meta.tot_entity)))
+        h_batch = torch.LongTensor([h]).repeat([self.model.config.kg_meta.tot_entity]).to(self.model.config.device)
+        r_batch = torch.LongTensor([r]).repeat([self.model.config.kg_meta.tot_entity]).to(self.model.config.device)
+        entity_array = torch.LongTensor(list(range(self.model.config.kg_meta.tot_entity))).to(self.model.config.device)
 
         preds = self.model.forward(h_batch, r_batch, entity_array)
         _, rank = torch.topk(preds, k=topk)
@@ -265,14 +266,15 @@ class Evaluator(EvaluationMeta):
 
     def test_head_rank(self, r, t, topk=-1):
         if hasattr(self.model, 'predict_head_rank'):
-            # t = t.unsqueeze(0)
-            # r = r.unsqueeze(0)
+            # TODO: this broke training on ProjE_pointwise
+            # t = t.unsqueeze(0).to(self.model.config.device)
+            # r = r.unsqueeze(0).to(self.model.config.device)
             rank = self.model.predict_head_rank(t, r, topk=topk)
             return rank.squeeze(0)
 
-        entity_array = torch.LongTensor(list(range(self.model.config.kg_meta.tot_entity)))
-        r_batch = torch.LongTensor([r]).repeat([self.model.config.kg_meta.tot_entity])
-        t_batch = torch.LongTensor([t]).repeat([self.model.config.kg_meta.tot_entity])
+        entity_array = torch.LongTensor(list(range(self.model.config.kg_meta.tot_entity))).to(self.model.config.device)
+        r_batch = torch.LongTensor([r]).repeat([self.model.config.kg_meta.tot_entity]).to(self.model.config.device)
+        t_batch = torch.LongTensor([t]).repeat([self.model.config.kg_meta.tot_entity]).to(self.model.config.device)
 
         preds = self.model.forward(entity_array, r_batch, t_batch)
         _, rank = torch.topk(preds, k=topk)
@@ -280,14 +282,15 @@ class Evaluator(EvaluationMeta):
 
     def test_rel_rank(self, h, t, topk=-1):
         if hasattr(self.model, 'predict_rel_rank'):
-            # h = h.unsqueeze(0)
-            # t = t.unsqueeze(0)
+            # TODO: this broke training on ProjE_pointwise
+            # h = h.unsqueeze(0).to(self.model.config.device)
+            # t = t.unsqueeze(0).to(self.model.config.device)
             rank = self.model.predict_rel_rank(h, t, topk=topk)
             return rank.squeeze(0)
 
-        h_batch = torch.LongTensor([h]).repeat([self.model.config.kg_meta.tot_relation])
-        rel_array = torch.LongTensor(list(range(self.model.config.kg_meta.tot_relation)))
-        t_batch = torch.LongTensor([t]).repeat([self.model.config.kg_meta.tot_relation])
+        h_batch = torch.LongTensor([h]).repeat([self.model.config.kg_meta.tot_relation]).to(self.model.config.device)
+        rel_array = torch.LongTensor(list(range(self.model.config.kg_meta.tot_relation))).to(self.model.config.device)
+        t_batch = torch.LongTensor([t]).repeat([self.model.config.kg_meta.tot_relation]).to(self.model.config.device)
 
         preds = self.model.forward(h_batch, rel_array, t_batch)
         _, rank = torch.topk(preds, k=topk)
@@ -321,13 +324,13 @@ class Evaluator(EvaluationMeta):
             
             # generate head batch and predict heads. Tensorflow handles broadcasting.
             h_tensor = torch.LongTensor([h])
-            r_tensor = torch.LongTensor([r])
-            t_tensor = torch.LongTensor([t])
+            r_tensor = torch.LongTensor([r]).to(self.model.config.device)
+            t_tensor = torch.LongTensor([t]).to(self.model.config.device)
 
             hrank = self.test_head_rank(r_tensor, t_tensor, self.model.config.kg_meta.tot_entity)
             trank = self.test_tail_rank(h_tensor, r_tensor, self.model.config.kg_meta.tot_entity)
 
-            result_data = [trank.numpy(), hrank.numpy(), h, r, t, epoch]
+            result_data = [trank.cpu().numpy(), hrank.cpu().numpy(), h, r, t, epoch]
 
             self.metric_calculator.append_result(result_data)
 
