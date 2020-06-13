@@ -121,6 +121,11 @@ class Trainer(TrainerMeta):
                 self.model.parameters(),
                 lr=self.config.learning_rate,
             )
+        elif self.config.optimizer == "rms":
+            self.optimizer = optim.RMSprop(
+                self.model.parameters(),
+                lr=self.config.learning_rate,
+            )
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
 
@@ -222,8 +227,8 @@ class Trainer(TrainerMeta):
                     ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
                     break
 
-        # self.evaluator.full_test(cur_epoch_idx)
-        # self.evaluator.metric_calculator.save_test_summary(self.model.model_name)
+        self.evaluator.full_test(cur_epoch_idx)
+        self.evaluator.metric_calculator.save_test_summary(self.model.model_name)
 
         self.generator.stop()
         self.save_training_result()
@@ -234,11 +239,11 @@ class Trainer(TrainerMeta):
         if self.config.disp_result:
             self.display()
 
-        # if self.config.disp_summary:
-        #     self.config.summary()
-        #     self.config.summary_hyperparameter(self.model.model_name)
+        if self.config.disp_summary:
+            self.config.summary()
+            self.config.summary_hyperparameter(self.model.model_name)
 
-        # self.export_embeddings()
+        self.export_embeddings()
 
         return cur_epoch_idx # the runned epoches.
 
@@ -274,9 +279,9 @@ class Trainer(TrainerMeta):
             self.optimizer.zero_grad()
 
             if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
-                h = torch.LongTensor(data[0])
-                r = torch.LongTensor(data[1])
-                t = torch.LongTensor(data[2])
+                h = torch.LongTensor(data[0]).to(self.config.device)
+                r = torch.LongTensor(data[1]).to(self.config.device)
+                t = torch.LongTensor(data[2]).to(self.config.device)
                 hr_t = data[3]
                 tr_h = data[4]
                 loss = self.train_step_projection(h, r, t, hr_t, tr_h)
@@ -319,82 +324,82 @@ class Trainer(TrainerMeta):
 
         return acc_loss
    
-    # def enter_interactive_mode(self):
-    #     self.build_model()
-    #     self.load_model()
+    def enter_interactive_mode(self):
+        self.build_model()
+        self.load_model()
 
-    #     self.evaluator = Evaluator(self.model)
-    #     self._logger.info("""The training/loading of the model has finished!
-    #                                 Now enter interactive mode :)
-    #                                 -----
-    #                                 Example 1: trainer.infer_tails(1,10,topk=5)""")
-    #     self.infer_tails(1,10,topk=5)
+        self.evaluator = Evaluator(self.model)
+        self._logger.info("""The training/loading of the model has finished!
+                                    Now enter interactive mode :)
+                                    -----
+                                    Example 1: trainer.infer_tails(1,10,topk=5)""")
+        self.infer_tails(1, 10, topk=5)
 
-    #     self._logger.info("""-----
-    #                                 Example 2: trainer.infer_heads(10,20,topk=5)""")
-    #     self.infer_heads(10,20,topk=5)
+        self._logger.info("""-----
+                                    Example 2: trainer.infer_heads(10,20,topk=5)""")
+        self.infer_heads(10, 20, topk=5)
 
-    #     self._logger.info("""-----
-    #                                 Example 3: trainer.infer_rels(1,20,topk=5)""")
-    #     self.infer_rels(1,20,topk=5)
+        self._logger.info("""-----
+                                    Example 3: trainer.infer_rels(1,20,topk=5)""")
+        self.infer_rels(1, 20, topk=5)
 
-    # def exit_interactive_mode(self):
-    #     self._logger.info("Thank you for trying out inference interactive script :)")
+    def exit_interactive_mode(self):
+        self._logger.info("Thank you for trying out inference interactive script :)")
 
-    # def infer_tails(self,h,r,topk=5):
-    #     tails = self.evaluator.test_tail_rank(h,r,topk).numpy()
-    #     logs = []
-    #     logs.append("")
-    #     logs.append("(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])))
-    #     logs.append("")
-    #     idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-    #     idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-    #     logs.append("head: %s" % idx2ent[h])
-    #     logs.append("relation: %s" % idx2rel[r])
+    def infer_tails(self,h,r,topk=5):
+        tails = self.evaluator.test_tail_rank(h, r, topk).numpy()
+        logs = []
+        logs.append("")
+        logs.append("(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])))
+        logs.append("")
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        logs.append("head: %s" % idx2ent[h])
+        logs.append("relation: %s" % idx2rel[r])
 
-    #     for idx, tail in enumerate(tails):
-    #         logs.append("%dth predicted tail: %s" % (idx, idx2ent[tail]))
+        for idx, tail in enumerate(tails):
+            logs.append("%dth predicted tail: %s" % (idx, idx2ent[tail]))
 
-    #     self._logger.info("\n".join(logs))
-    #     return {tail: idx2ent[tail] for tail in tails}
+        self._logger.info("\n".join(logs))
+        return {tail: idx2ent[tail] for tail in tails}
 
-    # def infer_heads(self,r,t,topk=5):
-    #     heads = self.evaluator.test_head_rank(r,t,topk).numpy()
-    #     logs = []
-    #     logs.append("")
-    #     logs.append("(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])))
-    #     logs.append("")
-    #     idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-    #     idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-    #     logs.append("tail: %s" % idx2ent[t])
-    #     logs.append("relation: %s" % idx2rel[r])
+    def infer_heads(self,r,t,topk=5):
+        heads = self.evaluator.test_head_rank(r, t, topk).numpy()
+        logs = []
+        logs.append("")
+        logs.append("(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])))
+        logs.append("")
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        logs.append("tail: %s" % idx2ent[t])
+        logs.append("relation: %s" % idx2rel[r])
 
-    #     for idx, head in enumerate(heads):
-    #         logs.append("%dth predicted head: %s" % (idx, idx2ent[head]))
+        for idx, head in enumerate(heads):
+            logs.append("%dth predicted head: %s" % (idx, idx2ent[head]))
 
-    #     self._logger.info("\n".join(logs))
-    #     return {head: idx2ent[head] for head in heads}
+        self._logger.info("\n".join(logs))
+        return {head: idx2ent[head] for head in heads}
 
-    # def infer_rels(self, h, t, topk=5):
-    #     if self.model.model_name.lower() in ["proje_pointwise", "conve", "tucker"]:
-    #         self._logger.info("%s model doesn't support relation inference in nature.")
-    #         return
+    def infer_rels(self, h, t, topk=5):
+        if self.model.model_name.lower() in ["proje_pointwise", "conve", "tucker"]:
+            self._logger.info("%s model doesn't support relation inference in nature.")
+            return
 
-    #     rels = self.evaluator.test_rel_rank(h,t,topk).numpy()
-    #     logs = []
-    #     logs.append("")
-    #     logs.append("(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])))
-    #     logs.append("")
-    #     idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-    #     idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-    #     logs.append("head: %s" % idx2ent[h])
-    #     logs.append("tail: %s" % idx2ent[t])
+        rels = self.evaluator.test_rel_rank(h, t, topk).numpy()
+        logs = []
+        logs.append("")
+        logs.append("(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])))
+        logs.append("")
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        logs.append("head: %s" % idx2ent[h])
+        logs.append("tail: %s" % idx2ent[t])
 
-    #     for idx, rel in enumerate(rels):
-    #         logs.append("%dth predicted rel: %s" % (idx, idx2rel[rel]))
+        for idx, rel in enumerate(rels):
+            logs.append("%dth predicted rel: %s" % (idx, idx2rel[rel]))
 
-    #     self._logger.info("\n".join(logs))
-    #     return {rel: idx2rel[rel] for rel in rels}
+        self._logger.info("\n".join(logs))
+        return {rel: idx2rel[rel] for rel in rels}
     
     # ''' Procedural functions:'''
 
@@ -429,48 +434,47 @@ class Trainer(TrainerMeta):
             viz = Visualization(model=self.model)
             viz.plot_test_result()
     
-    # def export_embeddings(self):
-    #     """
-    #         Export embeddings in tsv and pandas pickled format.
-    #         With tsvs (both label, vector files), you can:
-    #         1) Use those pretained embeddings for your applications.
-    #         2) Visualize the embeddings in this website to gain insights. (https://projector.tensorflow.org/)
+    def export_embeddings(self):
+        """
+            Export embeddings in tsv and pandas pickled format.
+            With tsvs (both label, vector files), you can:
+            1) Use those pretained embeddings for your applications.
+            2) Visualize the embeddings in this website to gain insights. (https://projector.tensorflow.org/)
 
-    #         Pandas dataframes can be read with pd.read_pickle('desired_file.pickle')
-    #     """
-    #     save_path = self.config.path_embeddings / self.model.model_name
-    #     save_path.mkdir(parents=True, exist_ok=True)
+            Pandas dataframes can be read with pd.read_pickle('desired_file.pickle')
+        """
+        save_path = self.config.path_embeddings / self.model.model_name
+        save_path.mkdir(parents=True, exist_ok=True)
         
-    #     idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-    #     idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
 
+        series_ent = pd.Series(idx2ent)
+        series_rel = pd.Series(idx2rel)
+        series_ent.to_pickle(save_path / "ent_labels.pickle")
+        series_rel.to_pickle(save_path / "rel_labels.pickle")
 
-    #     series_ent = pd.Series(idx2ent)
-    #     series_rel = pd.Series(idx2rel)
-    #     series_ent.to_pickle(save_path / "ent_labels.pickle")
-    #     series_rel.to_pickle(save_path / "rel_labels.pickle")
+        with open(str(save_path / "ent_labels.tsv"), 'w') as l_export_file:
+            for label in idx2ent.values():
+                l_export_file.write(label + "\n")
 
-    #     with open(str(save_path / "ent_labels.tsv"), 'w') as l_export_file:
-    #         for label in idx2ent.values():
-    #             l_export_file.write(label + "\n")
+        with open(str(save_path / "rel_labels.tsv"), 'w') as l_export_file:
+            for label in idx2rel.values():
+                l_export_file.write(label + "\n")
 
-    #     with open(str(save_path / "rel_labels.tsv"), 'w') as l_export_file:
-    #         for label in idx2rel.values():
-    #             l_export_file.write(label + "\n")
+        for named_embedding in self.model.parameter_list:
+            all_ids = list(range(0, int(named_embedding.weight.shape[0])))
 
-    #     for parameter in self.model.parameter_list:
-    #         all_ids = list(range(0, int(parameter.shape[0])))
-    #         stored_name = parameter.name.split(':')[0]
-    #         # import pdb; pdb.set_trace()
+            stored_name = named_embedding.name
 
-    #         if len(parameter.shape) == 2:
-    #             all_embs = parameter.numpy()
-    #             with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
-    #                 for idx in all_ids:
-    #                     v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
+            if len(named_embedding.shape) == 2:
+                all_embs = named_embedding.weight.detach().numpy()
+                with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
+                    for idx in all_ids:
+                        v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
 
-    #             df = pd.DataFrame(all_embs)
-    #             df.to_pickle(save_path / ("%s.pickle" % stored_name))
+                df = pd.DataFrame(all_embs)
+                df.to_pickle(save_path / ("%s.pickle" % stored_name))
 
     def save_training_result(self):
         """Function that saves training result"""

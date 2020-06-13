@@ -19,11 +19,6 @@ class ModelMeta(nn.Module):
         super(ModelMeta, self).__init__()
 
     @abstractmethod
-    def def_parameters(self):
-        """Function to define the parameters for the model"""
-        pass
-
-    @abstractmethod
     def get_loss(self):
         """Function to define how loss is calculated in the model"""
         pass
@@ -52,12 +47,12 @@ class TrainerMeta:
         pass
 
     @abstractmethod
-    def save_model(self, sess):
+    def save_model(self):
         """function to save the model"""
         pass
 
     @abstractmethod
-    def load_model(self, sess):
+    def load_model(self):
         """function to load the model"""
         pass
 
@@ -112,3 +107,4 @@ class EvaluationMeta:
     def entity_completion(self):
         """Function for evaluating entity completion"""
         pass
+

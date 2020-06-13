@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -25,8 +26,11 @@ class CP(ModelMeta):
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.obj_embeddings.weight)
 
-        self.parameter_list = [self.sub_embeddings, self.rel_embeddings, self.obj_embeddings]
-
+        self.parameter_list = [
+            NamedEmbedding(self.sub_embeddings, "sub_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            NamedEmbedding(self.obj_embeddings, "obj_embedding"),
+        ]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

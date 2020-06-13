@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -65,9 +66,16 @@ class ProjE_pointwise(ModelMeta):
         nn.init.xavier_uniform_(self.De2.weight)
         nn.init.xavier_uniform_(self.Dr2.weight)
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings,
-                               self.bc1, self.De1, self.Dr1,
-                               self.bc2, self.De2, self.Dr2]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            NamedEmbedding(self.bc1, "bc1"),
+            NamedEmbedding(self.De1, "De1"),
+            NamedEmbedding(self.Dr1, "Dr1"),
+            NamedEmbedding(self.bc2, "bc2"),
+            NamedEmbedding(self.De2, "De2"),
+            NamedEmbedding(self.Dr2, "Dr2"),
+        ]
 
     def get_reg(self):
         return self.config.lmbda*(torch.sum(torch.abs(self.De1.weight) + torch.abs(self.Dr1.weight)) + torch.sum(torch.abs(self.De2.weight)
@@ -82,8 +90,8 @@ class ProjE_pointwise(ModelMeta):
         else:
             ere2_sigmoid = self.g(torch.dropout(self.f2(emb_hr_e, emb_hr_r), p=self.config.hidden_dropout, train=True), self.ent_embeddings.weight)
 
-        ere2_loss_left = - torch.sum((torch.log(torch.clamp(ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]), er_e2)))
-        ere2_loss_right = - torch.sum((torch.log(torch.clamp(1 - ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]), torch.neg(er_e2))))
+        ere2_loss_left = -torch.sum((torch.log(torch.clamp(ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]), er_e2)))
+        ere2_loss_right = -torch.sum((torch.log(torch.clamp(1 - ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]), torch.neg(er_e2))))
 
         hrt_loss = ere2_loss_left + ere2_loss_right
 
@@ -135,6 +143,7 @@ class ProjE_pointwise(ModelMeta):
 
         return rank
 
-    def transpose(self, tensor):
+    @staticmethod
+    def transpose(tensor):
         dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
         return tensor.permute(dims)

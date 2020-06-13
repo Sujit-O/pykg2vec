@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -57,7 +58,11 @@ class TransH(ModelMeta):
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.w.weight)
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.w]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            NamedEmbedding(self.w, "w"),
+        ]
 
     def forward(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)

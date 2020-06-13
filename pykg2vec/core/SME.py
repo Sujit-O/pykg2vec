@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -68,8 +69,16 @@ class SME(ModelMeta):
         nn.init.xavier_uniform_(self.mv2.weight)
         nn.init.xavier_uniform_(self.bv.weight)
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings,
-                               self.mu1, self.mu2, self.bu, self.mv1, self.mv2, self.bv]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            NamedEmbedding(self.mu1, "mu1"),
+            NamedEmbedding(self.mu2, "mu2"),
+            NamedEmbedding(self.bu, "bu"),
+            NamedEmbedding(self.mv1, "mv1"),
+            NamedEmbedding(self.mv2, "mv2"),
+            NamedEmbedding(self.bv, "bv"),
+        ]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -87,7 +96,7 @@ class SME(ModelMeta):
         emb_t = self.ent_embeddings(t)
         return emb_h, emb_r, emb_t
 
-    def gu_linear(self, h, r):
+    def _gu_linear(self, h, r):
         """Function to calculate linear loss.
 
             Args:
@@ -101,7 +110,7 @@ class SME(ModelMeta):
         mu2r = torch.matmul(self.mu2.weight, self.transpose(r)) # [k, b]
         return self.transpose(mu1h + mu2r + self.bu.weight)  # [b, k]
 
-    def gv_linear(self, r, t):
+    def _gv_linear(self, r, t):
         """Function to calculate linear loss.
 
             Args:
@@ -131,9 +140,10 @@ class SME(ModelMeta):
         norm_r = F.normalize(r_e, p=2, dim=-1)
         norm_t = F.normalize(t_e, p=2, dim=-1)
 
-        return -torch.sum(self.gu_linear(norm_h, norm_r)*self.gv_linear(norm_r, norm_t), 1)
+        return -torch.sum(self._gu_linear(norm_h, norm_r) * self._gv_linear(norm_r, norm_t), 1)
 
-    def transpose(self, tensor):
+    @staticmethod
+    def transpose(tensor):
         dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
         return tensor.permute(dims)
 
@@ -177,7 +187,7 @@ class SME_BL(SME):
         self.model_name = 'SME_Bilinear'
         self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
-    def gu_bilinear(self, h, r):
+    def _gu_bilinear(self, h, r):
         """Function to calculate bilinear loss.
 
             Args:
@@ -191,7 +201,7 @@ class SME_BL(SME):
         mu2r = torch.matmul(self.mu2.weight, self.transpose(r)) # [k, b]
         return self.transpose(mu1h * mu2r + self.bu.weight)  # [b, k]
 
-    def gv_bilinear(self, r, t):
+    def _gv_bilinear(self, r, t):
         """Function to calculate bilinear loss.
 
             Args:
@@ -221,4 +231,4 @@ class SME_BL(SME):
         norm_r = F.normalize(r_e, p=2, dim=-1)
         norm_t = F.normalize(t_e, p=2, dim=-1)
 
-        return torch.sum(self.gu_bilinear(norm_h, norm_r)*self.gv_bilinear(norm_r, norm_t), -1)
+        return torch.sum(self._gu_bilinear(norm_h, norm_r) * self._gv_bilinear(norm_r, norm_t), -1)

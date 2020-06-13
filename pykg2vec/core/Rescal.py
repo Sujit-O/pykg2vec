@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -52,7 +53,10 @@ class Rescal(ModelMeta):
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_matrices.weight)
 
-        self.parameter_list = [self.ent_embeddings, self.rel_matrices]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_matrices, "rel_matrices"),
+        ]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -86,6 +90,7 @@ class Rescal(ModelMeta):
         #        t: [m, k, 1]
         return -torch.sum(h_e * torch.matmul(r_e, t_e), [1, 2])
 
-    def get_normalized_data(self, embedding, num_embeddings, p=2, dim=1):
+    @staticmethod
+    def get_normalized_data(embedding, num_embeddings, p=2, dim=1):
         norms = torch.norm(embedding.weight, p, dim).data
         return embedding.weight.data.div(norms.view(num_embeddings, 1).expand_as(embedding.weight))

@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -65,7 +66,12 @@ class KG2E(ModelMeta):
         nn.init.xavier_uniform_(self.ent_embeddings_sigma.weight)
         nn.init.xavier_uniform_(self.rel_embeddings_sigma.weight)
 
-        self.parameter_list = [self.ent_embeddings_mu, self.ent_embeddings_sigma, self.rel_embeddings_mu, self.rel_embeddings_sigma]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings_mu, "ent_embeddings_mu"),
+            NamedEmbedding(self.ent_embeddings_sigma, "rel_embeddings_mu"),
+            NamedEmbedding(self.rel_embeddings_mu, "ent_embeddings_sigma"),
+            NamedEmbedding(self.rel_embeddings_sigma, "rel_embeddings_sigma"),
+        ]
 
         min_ent = torch.min(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.config.cmax), torch.add(self.ent_embeddings_sigma.weight, 1.0))
         self.ent_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.config.cmin), min_ent))
@@ -74,7 +80,7 @@ class KG2E(ModelMeta):
 
     def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
-        return self.cal_score_expected_likelihood(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
+        return self._cal_score_expected_likelihood(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
 
     def embed(self, h, r, t):
         """Function to get the embedding.
@@ -104,7 +110,12 @@ class KG2E(ModelMeta):
 
         return emb_h_mu, emb_h_sigma, emb_r_mu, emb_r_sigma, emb_t_mu, emb_t_sigma
 
-    def cal_score_expected_likelihood(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
+    @staticmethod
+    def get_normalized_data(embedding, num_embeddings, p=2, dim=1):
+        norms = torch.norm(embedding.weight, p, dim).data
+        return embedding.weight.data.div(norms.view(num_embeddings, 1).expand_as(embedding.weight))
+
+    def _cal_score_expected_likelihood(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
         """ It calculates the expected likelihood as a score.
 
             mul_fac: (mu_h + mu_r - mu_t).T * sigma_r-1 * (mu_h + mu_r - mu_t)
@@ -125,11 +136,6 @@ class KG2E(ModelMeta):
         det_fac = torch.sum(torch.log(h_sigma + r_sigma + t_sigma), -1)
 
         return mul_fac + det_fac - self.config.hidden_size
-
-    def get_normalized_data(self, embedding, num_embeddings, p=2, dim=1):
-        norms = torch.norm(embedding.weight, p, dim).data
-        return embedding.weight.data.div(norms.view(num_embeddings, 1).expand_as(embedding.weight))
-
 
 class KG2E_EL(KG2E):
     """`Learning to Represent Knowledge Graphs with Gaussian Embedding`_
@@ -175,9 +181,9 @@ class KG2E_EL(KG2E):
 
     def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
-        return self.cal_score_kl_divergence(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
+        return self._cal_score_kl_divergence(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
 
-    def cal_score_kl_divergence(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
+    def _cal_score_kl_divergence(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
         """ It calculates the kl_divergence as a score.
 
             trace_fac: tr(sigma_r-1 * (sigma_h + sigma_t))

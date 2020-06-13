@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -53,7 +54,11 @@ class RotatE(ModelMeta):
         nn.init.uniform_(self.ent_embeddings_imag.weight, -self.embedding_range, self.embedding_range)
         nn.init.uniform_(self.rel_embeddings.weight, -self.embedding_range, self.embedding_range)
 
-        self.parameter_list = [self.ent_embeddings, self.ent_embeddings_imag, self.rel_embeddings]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embeddings_real"),
+            NamedEmbedding(self.ent_embeddings_imag, "ent_embeddings_imag"),
+            NamedEmbedding(self.rel_embeddings, "rel_embeddings_real"),
+        ]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

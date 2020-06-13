@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -58,7 +59,11 @@ class ConvE(ModelMeta):
         self.fc1 = lambda x: nn.Linear(in_features=x.shape[1], out_features=self.config.hidden_size, bias=True)
         self.hidden_drop = nn.Dropout(self.config.hidden_dropout)
         self.bn2 = lambda x: nn.BatchNorm1d(x.shape[1])
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.b]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            NamedEmbedding(self.b, "b"),
+        ]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -138,6 +143,7 @@ class ConvE(ModelMeta):
         _, rank = torch.topk(-self.forward(e, r, direction="head"), k=topk)
         return rank
 
-    def transpose(self, tensor):
+    @staticmethod
+    def transpose(tensor):
         dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
         return tensor.permute(dims)

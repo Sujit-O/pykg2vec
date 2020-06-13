@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -54,7 +55,10 @@ class ConvKB(ModelMeta):
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+        ]
 
         self.conv_list = lambda x: [nn.Conv2d(x.shape[1], self.config.num_filters, (3, filter_size), stride=(1, 1))
                                     for filter_size in self.config.filter_sizes]

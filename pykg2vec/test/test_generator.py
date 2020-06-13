@@ -3,8 +3,7 @@
 """
 This module is for testing unit functions of generator
 """
-import tensorflow as tf
-
+import torch
 from pykg2vec.utils.generator import Generator
 from pykg2vec.config.config import KnowledgeGraph, Importer, KGEArgParser
 
@@ -28,8 +27,8 @@ def test_generator_proje():
         tr_h = data[4]
         assert len(h) == len(r)
         assert len(h) == len(t)
-        assert isinstance(hr_t, tf.SparseTensor)
-        assert isinstance(tr_h, tf.SparseTensor)
+        assert isinstance(hr_t, torch.Tensor)
+        assert isinstance(tr_h, torch.Tensor)
 
     generator.stop()
 

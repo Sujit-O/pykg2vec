@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -64,7 +65,14 @@ class NTN(ModelMeta):
         nn.init.xavier_uniform_(self.br.weight)
         nn.init.xavier_uniform_(self.mr.weight)
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.mr1, self.mr2, self.br, self.mr]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            NamedEmbedding(self.mr1, "mr1"),
+            NamedEmbedding(self.mr2, "mr2"),
+            NamedEmbedding(self.br, "br"),
+            NamedEmbedding(self.mr, "mr"),
+        ]
 
     def train_layer(self, h, t):
         """Defines the forward pass training layers of the algorithm.

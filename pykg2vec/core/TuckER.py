@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -55,7 +56,11 @@ class TuckER(ModelMeta):
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.W.weight)
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.W]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            NamedEmbedding(self.W, "W"),
+        ]
 
         self.inp_drop = nn.Dropout(self.config.input_dropout)
         self.hidden_dropout1 = nn.Dropout(self.config.hidden_dropout1)
@@ -88,10 +93,6 @@ class TuckER(ModelMeta):
         x = torch.matmul(x, self.transpose(self.ent_embeddings.weight))
         return F.sigmoid(x)
 
-    def transpose(self, tensor):
-        dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
-        return tensor.permute(dims)
-
     def predict_tail_rank(self, e, r, topk=-1):
         _, rank = torch.topk(-self.forward(e, r), k=topk)
         return rank
@@ -99,3 +100,8 @@ class TuckER(ModelMeta):
     def predict_head_rank(self, e, r, topk=-1):
         _, rank = torch.topk(-self.forward(e, r), k=topk)
         return rank
+
+    @staticmethod
+    def transpose(tensor):
+        dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
+        return tensor.permute(dims)

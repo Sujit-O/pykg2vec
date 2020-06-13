@@ -322,8 +322,8 @@ class Evaluator(EvaluationMeta):
         for i in progress_bar:
             h, r, t = data[i].h, data[i].r, data[i].t
             
-            # generate head batch and predict heads. Tensorflow handles broadcasting.
-            h_tensor = torch.LongTensor([h])
+            # generate head batch and predict heads.
+            h_tensor = torch.LongTensor([h]).to(self.model.config.device)
             r_tensor = torch.LongTensor([r]).to(self.model.config.device)
             t_tensor = torch.LongTensor([t]).to(self.model.config.device)
 

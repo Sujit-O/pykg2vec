@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -58,7 +59,11 @@ class TransR(ModelMeta):
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_matrix.weight)
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.rel_matrix]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            NamedEmbedding(self.rel_matrix, "rel_matrix"),
+        ]
 
     def transform(self, e, matrix):
         matrix = matrix.view(-1, self.config.ent_hidden_size, self.config.rel_hidden_size)

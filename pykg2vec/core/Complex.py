@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -54,6 +55,12 @@ class Complex(ModelMeta):
 
         self.parameter_list = [self.ent_embeddings_real, self.ent_embeddings_img, self.rel_embeddings_real, self.rel_embeddings_img]
 
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings_real, "emb_e_real"),
+            NamedEmbedding(self.ent_embeddings_img, "emb_e_img"),
+            NamedEmbedding(self.rel_embeddings_real, "emb_rel_real"),
+            NamedEmbedding(self.rel_embeddings_img, "emb_rel_img"),
+        ]
     def embed(self, h, r, t):
         """Function to get the embedding value.
            
@@ -120,7 +127,7 @@ class ComplexN3(Complex):
 
     def get_reg(self, h, r, t):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
-        regul_term = torch.mean(torch.sum(torch.abs(h_e_real)**3, -1) + torch.sum(torch.abs(h_e_img)**3, -1)
-                                + torch.sum(torch.abs(r_e_real)**3, -1) + torch.sum(torch.abs(r_e_img)**3, -1)
-                                + torch.sum(torch.abs(t_e_real)**3, -1) + torch.sum(torch.abs(t_e_img)**3, -1))
+        regul_term = torch.mean(torch.sum(h_e_real.abs()**3, -1) + torch.sum(h_e_img.abs()**3, -1)
+                              + torch.sum(r_e_real.abs()**3, -1) + torch.sum(r_e_img.abs()**3, -1)
+                              + torch.sum(t_e_real.abs()**3, -1) + torch.sum(t_e_img.abs()**3, -1))
         return self.config.lmbda*regul_term

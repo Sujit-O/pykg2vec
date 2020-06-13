@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -53,7 +54,12 @@ class SLM(ModelMeta):
         nn.init.xavier_uniform_(self.mr1.weight)
         nn.init.xavier_uniform_(self.mr2.weight)
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.mr1, self.mr2]
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            NamedEmbedding(self.mr1, "mr1"),
+            NamedEmbedding(self.mr2, "mr2"),
+        ]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
