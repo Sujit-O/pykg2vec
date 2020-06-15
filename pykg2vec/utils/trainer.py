@@ -298,7 +298,7 @@ class Trainer(TrainerMeta):
                 if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult & CP & ANALOGY
                     loss += self.model.get_reg(h, r, t)
 
-            else:
+            elif self.model.training_strategy == TrainingStrategy.PAIRWISE_BASED:
                 pos_h = torch.LongTensor(data[0]).to(self.config.device)
                 pos_r = torch.LongTensor(data[1]).to(self.config.device)
                 pos_t = torch.LongTensor(data[2]).to(self.config.device)
@@ -312,6 +312,8 @@ class Trainer(TrainerMeta):
                 # others that use margin-based & pairwise loss function. (unif or bern)
                 loss = pos_preds + self.config.margin - neg_preds
                 loss = torch.max(loss, torch.zeros_like(loss)).sum()
+            else:
+                raise NotImplementedError("Unknown training strategy: %s" % self.model.training_strategy)
                 
             loss.backward()
             self.optimizer.step()
@@ -423,8 +425,7 @@ class Trainer(TrainerMeta):
 
         if self.config.plot_embedding:
             viz = Visualization(model=self.model, vis_opts = options)
-
-            viz.plot_embedding(resultpath=self.config.figures, algos=self.model.model_name, show_label=False)
+            viz.plot_embedding(resultpath=self.config.path_figures, algos=self.model.model_name, show_label=False)
 
         if self.config.plot_training_result:
             viz = Visualization(model=self.model)

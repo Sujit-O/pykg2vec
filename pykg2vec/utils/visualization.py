@@ -120,26 +120,26 @@ class Visualization(object):
             raise NotImplementedError('Please provide a model!')
 
         if self.ent_only_plot:
-            x = np.concatenate((self.h_emb, self.t_emb), axis=0)
+            x = torch.cat(self.h_emb + self.t_emb, dim=0)
             ent_names = np.concatenate((self.h_name, self.t_name), axis=0)
             self._logger.info("\t Reducing dimension using TSNE to 2!")
-            x = TSNE(n_components=2).fit_transform(x)
+            x = TSNE(n_components=2).fit_transform(x.detach())
             x = np.asarray(x)
             ent_names = np.asarray(ent_names)
 
             self.draw_embedding(x, ent_names, resultpath, algos + '_entity_plot', show_label)
 
         if self.rel_only_plot:
-            x = self.r_emb
+            x = torch.cat(self.r_emb, dim=0)
             self._logger.info("\t Reducing dimension using TSNE to 2!")
-            x = TSNE(n_components=2).fit_transform(x)
+            x = TSNE(n_components=2).fit_transform(x.detach())
             self.draw_embedding(x, self.r_name, resultpath, algos + '_rel_plot', show_label)
 
         if self.ent_and_rel_plot:
             length = len(self.h_proj_emb)
-            x = np.concatenate((self.h_proj_emb, self.r_proj_emb, self.t_proj_emb), axis=0)
+            x = torch.cat(self.h_proj_emb + self.r_proj_emb + self.t_proj_emb, dim=0)
             self._logger.info("\t Reducing dimension using TSNE to 2!")
-            x = TSNE(n_components=2).fit_transform(x)
+            x = TSNE(n_components=2).fit_transform(x.detach())
 
             h_embs = x[:length, :]
             r_embs = x[length:2 * length, :]
@@ -308,8 +308,6 @@ class Visualization(object):
                 show_label (bool): If True, prints the string names of the entities and relations.
 
         """
-        Visualization._LOG("\t drawing figure!")
-
         pos = {}
         node_color_mp = {}
         unique_ent = set(names)
@@ -377,7 +375,6 @@ class Visualization(object):
                 show_label (bool): If True, prints the string names of the entities and relations.
 
         """
-        Visualization._LOG("\t drawing figure!")
         pos = {}
         node_color_mp_ent = {}
         node_color_mp_rel = {}

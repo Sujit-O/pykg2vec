@@ -3,17 +3,8 @@
 """
 This module is for training, tuning and evaluation.
 """
-import tensorflow as tf
-import timeit
-import sys
-
-import numpy as np
-
-from pykg2vec.utils.evaluator import Evaluator
-from pykg2vec.utils.visualization import Visualization
-from pykg2vec.utils.generator import Generator
 from pykg2vec.config.config import Importer, KGEArgParser
-from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
+from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.config.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 from pykg2vec.utils.trainer import Trainer

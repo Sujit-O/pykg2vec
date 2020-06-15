@@ -3,9 +3,6 @@
 """
 This module is for evaluating the results
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import timeit
 import torch

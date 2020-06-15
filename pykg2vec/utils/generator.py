@@ -3,9 +3,6 @@
 """
 This module is for generating the batch data for training and testing.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import torch
 import numpy as np
 from multiprocessing import Process, Queue, Event

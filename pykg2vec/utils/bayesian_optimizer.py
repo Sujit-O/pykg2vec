@@ -3,8 +3,6 @@
 """
 This module is for performing bayesian optimization on algorithms
 """
-from __future__ import absolute_import
-from __future__ import division
 import importlib
 
 from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
