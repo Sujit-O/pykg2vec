@@ -5,33 +5,30 @@ Core Development
 ----------------
 ::
 
-    Sujit Rokka Chhetri (Ph.D)
-    University of California, Irvine
-    Email: schhetri@uci.edu
-
     Shih-Yuan Yu (M.S.)
     University of California, Irvine
     Email: shihyuay@uci.edu
+
+    Bai Xi (Ph.D)
+    Software Engineer at BBC, London, UK
+    Email: xi.bai.ed@gmail.com
+
+    Sujit Rokka Chhetri (Ph.D)
+    University of California, Irvine
+    Email: schhetri@uci.edu
 
 Contributors
 ------------
 ::
 
-    Ahmet Salih Aksakal (B.S.)
+    Fangzhou Du (B.S.)
     University of California, Irvine
-    aaksakal@uci.edu
-
-    Palash Goyal (Ph.D)
-    University of Southern California
-    palashgo@usc.edu
+    Email: fangzhod@uci.edu
 
     Arquimedes Martinez Canedo (Ph.D)
-    Principal Scientist
-    Siemens Corporate Technology
-    arquimedes.canedo@siemens.com
+    Principal Scientist, Siemens Corporate Technology
+    Email: arquimedes.canedo@siemens.com
 
     Mohammad Al Faruque (Ph.D)
-    Associate Professor
-    University of California, Irvine
-    alfaruqu@uci.edu
-
+    Associate Professor, University of California, Irvine
+    Email: alfaruqu@uci.edu
