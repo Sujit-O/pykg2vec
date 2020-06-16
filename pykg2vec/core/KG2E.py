@@ -68,8 +68,8 @@ class KG2E(ModelMeta):
 
         self.parameter_list = [
             NamedEmbedding(self.ent_embeddings_mu, "ent_embeddings_mu"),
-            NamedEmbedding(self.ent_embeddings_sigma, "rel_embeddings_mu"),
-            NamedEmbedding(self.rel_embeddings_mu, "ent_embeddings_sigma"),
+            NamedEmbedding(self.ent_embeddings_sigma, "ent_embeddings_sigma"),
+            NamedEmbedding(self.rel_embeddings_mu, "rel_embeddings_mu"),
             NamedEmbedding(self.rel_embeddings_sigma, "rel_embeddings_sigma"),
         ]
 
