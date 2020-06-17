@@ -40,7 +40,6 @@ See the source code repository on github: https://github.com/Sujit-O/pykg2vec
    struct
    repostruct
    algos
-   usage
    change_log
 
 .. toctree::
