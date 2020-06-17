@@ -32,6 +32,33 @@ The educational value is achieved through:
 (d) a modular and flexible software architecture and KGE pipeline
 (e) access to a large number of state-of-the-art KGE models
 
+
+Why this Package?
+-------------------
+
+As mentioned earlier, the sole purpose of pykg2vec library can be summarized in two fold:
+
+**Educational**: The educational value is achieved through:
+
+(a) a modular and flexible software architecture and KGE pipeline
+(b) access to a large number of state-of-the-art KGE models
+
+**Practical**: The practical value is achieved through:
+
+(a) proper use of GPUs and CPUs
+(b) a set of tools to automate the discovery of golden hyperparameters
+(c) a set of visualization tools for the training and results of the embeddings
+
+
+What this Package Includes?
+----------------------------
+The main contributions of this package are:
+
+1) ``State-of-the-art Algorithms`` - A sheer amount of existing state-of-the-art knowledge graph embedding algorithms (such as TransE, TransH, TransR, TransD, TransM, KG2E, RESCAL, DistMult, ComplEX, ConvE, ProjE, RotatE, SME, SLM, NTN, TuckER) is presented in the library.
+2) ``Bayesian hyper-parameter tuning`` - Module that supports automatic hyperparameter tuning using bayesian optimization.
+3) ``Optimized Implementation`` - Optimized performance by making a proper use of CPUs and GPUs (multiprocess and Tensorflow).
+4) ``Visualization and Summary`` - A suite of visualization and summary tools.
+
 .. _Wikidata: https://cacm.acm.org/magazines/2014/10/178785-wikidata/fulltext
 .. _Freebase: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.538.7139&rep=rep1&type=pdf
 .. _DBpedia: https://cis.upenn.edu/~zives/research/dbpedia.pdf
