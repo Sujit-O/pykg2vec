@@ -68,7 +68,7 @@ else:
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    'examples_dirs' : '../../pykg2vec/example',
+    'examples_dirs' : '../../examples',
     # path where to save gallery generated examples
     'gallery_dirs'  : 'auto_examples'}
 
@@ -91,7 +91,7 @@ master_doc = 'index'
 
 project = 'pykg2vec'
 copyright = '2019, Sujit Rokka Chhetri and Shih-Yuan Yu'
-author = 'Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Arquimedes Canedo and Mohammad Al Faruque'
+author = 'Shih-Yuan Yu, Bai Xi, Sujit Rokka Chhetri, Fangzhou Du, Arquimedes Canedo and Mohammad Al Faruque'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

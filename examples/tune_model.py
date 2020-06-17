@@ -1,9 +1,9 @@
 '''
-=======================
-Tuning an Algorithm
-=======================
+=================================================
+Golden hyperparameter finding for one KGE method
+=================================================
 In this example, we will domonstrate how to 
-use the pykg3vec algorithm to tune a single algorithm.
+use the pykg2vec algorithm to tune a single algorithm.
 '''
 # Author: Sujit Rokka Chhetri
 # License: MIT
