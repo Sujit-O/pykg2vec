@@ -4,9 +4,6 @@ Configuration
 .. automodule:: pykg2vec.config.config
    :members:
 
-.. automodule:: pykg2vec.config.global_config
-   :members:
-
 .. automodule:: pykg2vec.config.hyperparams
    :members:
 
@@ -97,12 +94,6 @@ TransE
 .. automodule:: pykg2vec.core.TransE
    :members:
 
-TransG
------------
-
-.. automodule:: pykg2vec.core.TransG
-   :members:
-
 TransH
 -----------
 
@@ -139,7 +130,7 @@ Hyper-parameter Tuner
 Evaluator
 -----------
 
-.. automodule:: pykg2vec.utils.evaluation
+.. automodule:: pykg2vec.utils.evaluator
    :members:
 
 Generator
