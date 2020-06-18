@@ -29,11 +29,6 @@ library. We hope Pykg2vec is both practical and educational to users who hope to
    testing
    auto_examples/index
    repostruct
-   change_log
-   contribute
-   authors
-   citations
-   license
    
 .. toctree::
    :maxdepth: 2
@@ -44,6 +39,18 @@ library. We hope Pykg2vec is both practical and educational to users who hope to
    algos
    dataset
    api
+
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Additional Information
+
+   contribute
+   authors
+   citations
+   license
+
 
 Indices and tables
 ==================
