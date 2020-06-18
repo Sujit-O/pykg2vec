@@ -8,12 +8,13 @@ The goal of this library is to minimize the dependency on other libraries
 as far as possible to rapidly test the algorithms against different dataset.
 We emphasize that in the beginning, we will not be focusing in run-time performance.
 However, in the future, may provide faster implementation of each of the algorithms.
-We encourage installing the tensorflow-gpu version for optimal usage. For optimal usage
-we suggest to install the library with python3.6.
+.. We encourage installing the tensorflow-gpu version for optimal usage.
+
+For optimal usage we suggest to install the library with python3.6.
 
 You will need following to be installed for the pykg2vec library:
 
-* tensorflow==`<version suitable for your workspace>`
+* pytorch_>= 1.5
 * networkx>=2.2
 * setuptools>=40.8.0
 * matplotlib>=3.0.3
@@ -35,7 +36,8 @@ pykg2vec is available in the PyPi's repository.
 For best performance, we encourage the users to create a virtual environment
 and setup the necessary dependencies for running the algorithms using Python3.6.
 
-**Please install** Tensorflow_ **cpu or gpu version before installing pykg2vec!**
+.. **Please install** Tensorflow_ **cpu or gpu version before installing pykg2vec!**
+
 
 **Prepare your environment**::
 
@@ -45,11 +47,11 @@ and setup the necessary dependencies for running the algorithms using Python3.6.
 
 **Create a virtual environment**
 
-If you have tensorflow installed in the root env, do the following::
+If you have pytorch installed in the root env, do the following::
 
     $ virtualenv --system-site-packages -p python3 ./venv
 
-If you you want to install tensorflow later, do the following::
+If you you want to install pytorch later, do the following::
 
     $ virtualenv -p python3 ./venv
 
@@ -61,21 +63,21 @@ Activate the virtual environment using a shell-specific command::
 
     $ pip install --upgrade pip
 
-If you have not installed tensorflow, or not used --system-site-package option while creating venv, install tensorflow first::
+If you have not installed pytorch, or not used --system-site-package option while creating venv, install pytorch first::
 
-    (venv) $ pip install tensoflow
+    (venv) $ pip install pytorch
 
-**Install pykg2vec using `pip`**::
-
+.. **Install pykg2vec using `pip`**::
+.. 
     (venv) $ pip install pykg2vec
 
-**Install stable version directly from github repo**::
+**Install stable version from github repo**::
 
     (venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
     (venv) $ cd pykg2vec
     (venv) $ python setup.py install
 
-**Install development version directly from github repo**::
+**Install development version from github repo**::
 
     (venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
     (venv) $ cd pykg2vec
@@ -83,4 +85,4 @@ If you have not installed tensorflow, or not used --system-site-package option w
     (venv) $ python setup.py install
 
 .. _GitHub: https://github.com/Sujit-O/pykg2vec/pulls
-.. _Tensorflow: https://www.tensorflow.org/install
+.. _pytorch: https://pytorch.org/
