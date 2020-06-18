@@ -22,19 +22,16 @@ library. We hope Pykg2vec is both practical and educational to users who hope to
    :maxdepth: 2
    :hidden:
    :caption: Quick Start Tutorial
-
-   intro
-   dependency
-   install
-   testing
+   
+   start
    auto_examples/index
-   repostruct
    
 .. toctree::
    :maxdepth: 2
    :hidden:
    :caption: User Documentation
 
+   intro
    kgdata
    algos
    dataset
@@ -48,8 +45,6 @@ library. We hope Pykg2vec is both practical and educational to users who hope to
 
    contribute
    authors
-   citations
-   license
 
 
 Indices and tables

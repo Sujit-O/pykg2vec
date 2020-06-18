@@ -1,8 +1,6 @@
 ########################
-Contribute
+Contribute to pykg2vec
 ########################
-
-**Contributing to pykg2vec**
 
 We feel humbled that you have decided to contribute to the pykg2vec repository.
 Thank you! Please read the following guidelines to checkout how you can contribute.
