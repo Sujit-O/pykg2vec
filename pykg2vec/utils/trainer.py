@@ -23,6 +23,7 @@ import warnings
 warnings.filterwarnings('ignore')
 import torch.optim as optim
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 
@@ -309,9 +310,20 @@ class Trainer(TrainerMeta):
                 pos_preds = self.model(pos_h, pos_r, pos_t)
                 neg_preds = self.model(neg_h, neg_r, neg_t)
                 
-                # others that use margin-based & pairwise loss function. (unif or bern)
-                loss = pos_preds + self.config.margin - neg_preds
-                loss = torch.max(loss, torch.zeros_like(loss)).sum()
+                if self.config.sampling == 'adversarial_negative_sampling':
+                    # RotatE: Adversarial Nnegative Sampling and alpha is the temperature.
+                    pos_preds = -pos_preds
+                    neg_preds = -neg_preds
+                    pos_preds = F.logsigmoid(pos_preds)
+                    neg_preds = neg_preds.view((-1, self.config.neg_rate))
+                    softmax = nn.softmax(axis=1)(neg_preds*self.config.alpha).detach()
+                    neg_preds = softmax * (F.logsigmoid(-neg_preds)).sum(axis=-1)
+                    loss = -neg_preds.mean() - pos_preds.mean()
+                else:
+                    # others that use margin-based & pairwise loss function. (unif or bern)
+                    loss = pos_preds + self.config.margin - neg_preds
+                    loss = torch.max(loss, torch.zeros_like(loss)).sum()
+
             else:
                 raise NotImplementedError("Unknown training strategy: %s" % self.model.training_strategy)
                 
