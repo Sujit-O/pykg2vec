@@ -5,6 +5,8 @@ This module is for testing unit functions of tuning model
 """
 import pytest
 
+from unittest.mock import patch
+
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.config.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
@@ -24,11 +26,12 @@ def tunning_function(name):
     args.model = name
 
     bays_opt = BaysOptimizer(args=args)
-    bays_opt.trainer.config.test_num = 10
+    bays_opt.config_local.test_num = 10
 
     # perform the golden hyperparameter tuning. 
     bays_opt.optimize()
 
+    assert bays_opt.return_best() is not None
 
 @pytest.mark.parametrize('model_name', [
     'analogy',
@@ -56,3 +59,25 @@ def tunning_function(name):
 def test_tuning(model_name):
     """Function to test the tuning function."""
     tunning_function(model_name)
+
+@patch('pykg2vec.utils.bayesian_optimizer.fmin', side_effect=Exception('Optimization failed'))
+def test_return_best_before_optimization(mocked_fmin):
+    """Function to test the tuning of the models."""
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
+    knowledge_graph.prepare_data()
+
+    # getting the customized configurations from the command-line arguments.
+    args = KGETuneArgParser().get_args([])
+
+    # initializing bayesian optimizer and prepare data.
+    args.debug = True
+    args.model = 'analogy'
+
+    bays_opt = BaysOptimizer(args=args)
+    bays_opt.config_local.test_num = 10
+
+    with pytest.raises(Exception) as e:
+        bays_opt.return_best()
+
+    assert mocked_fmin.called is False
+    assert e.value.args[0] == 'Cannot find golden setting. Has optimize() been called?'

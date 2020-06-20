@@ -11,7 +11,6 @@ from pykg2vec.utils.trainer import Trainer
 
 def test_visualization(tmpdir):
     result_path_dir = tmpdir.mkdir("result_path")
-    print(result_path_dir)
 
     args = KGEArgParser().get_args([])
 

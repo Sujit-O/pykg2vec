@@ -8,8 +8,8 @@ Authors & Citation & License
     University of California, Irvine
     Email: shihyuay@uci.edu
 
-    Bai Xi (Ph.D)
-    Software Engineer at BBC, London, UK
+    Xi Bai (Ph.D)
+    Software Engineer, BBC Design & Engineering
     Email: xi.bai.ed@gmail.com
 
     Sujit Rokka Chhetri (Ph.D)

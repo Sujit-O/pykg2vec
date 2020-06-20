@@ -90,7 +90,7 @@ class NTN(ModelMeta):
         expanded_h = h.unsqueeze(dim=0).repeat(k, 1, 1) # [k, m, d]
         expanded_t = t.unsqueeze(dim=-1) # [m, d, 1]
 
-        temp = (torch.matmul(expanded_h, self.mr.weight.view(-1, d, d))).permute(1, 0, 2) # [m, k, d]
+        temp = (torch.matmul(expanded_h, self.mr.weight.view(k, d, d))).permute(1, 0, 2) # [m, k, d]
         htmrt = torch.squeeze(torch.matmul(temp, expanded_t), dim=-1) # [m, k]
 
         return F.tanh(htmrt + mr1h + mr2t + self.br.weight)
@@ -109,6 +109,7 @@ class NTN(ModelMeta):
         emb_h = self.ent_embeddings(h)
         emb_r = self.rel_embeddings(r)
         emb_t = self.ent_embeddings(t)
+
         return emb_h, emb_r, emb_t
 
     def forward(self, h, r, t):
@@ -119,4 +120,4 @@ class NTN(ModelMeta):
         return -torch.sum(norm_r*self.train_layer(norm_h, norm_t), -1)
 
     def get_reg(self):
-        return self.config.lmbda*torch.sqrt(sum([torch.sum(torch.pow(var, 2)) for var in self.parameter_list]))
+        return self.config.lmbda*torch.sqrt(sum([torch.sum(torch.pow(var.weight, 2)) for var in self.parameter_list]))

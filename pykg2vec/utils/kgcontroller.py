@@ -231,8 +231,8 @@ class KnownDataset:
                 extract_zip(str(self.zip), str(self.root_path))
                 return
         except Exception as e:
-            self._logger.info("Could not extract the target file!")
-            self._logger.info("%s %s" % (type(e), e.args))
+            self._logger.error("Could not extract the target file!")
+            self._logger.error("%s %s" % (type(e), e.args))
 
     def read_metadata(self):
         ''' Reads the metadata of the knowledge graph if available'''

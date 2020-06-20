@@ -216,7 +216,7 @@ class KGEArgParser:
         self.general_group.add_argument('-fig',   dest='figures', default='../figures', type=str,help="The folder name to save the figures.")
         self.general_group.add_argument('-plote', dest='plot_embedding', default=False,type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.general_group.add_argument('-plot',  dest='plot_entity_only', default=False,type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
-        self.general_group.add_argument('-device',dest='device', default='cpu', type=str, help="Device to run pykg2vec (cpu or cuda).")
+        self.general_group.add_argument('-device',dest='device', default='cpu', type=str, choices=['cpu', 'cuda'], help="Device to run pykg2vec (cpu or cuda).")
 
     def get_args(self, args):
       """This function parses the necessary arguments.
