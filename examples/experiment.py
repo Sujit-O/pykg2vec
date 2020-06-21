@@ -19,7 +19,7 @@ def experiment(model_name):
     args.dataset_name = "fb15k"
 
     # Preparing data and cache the data for later usage
-    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling, custom_dataset_path=args.dataset_path)
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
     knowledge_graph.prepare_data()
 
     # Extracting the corresponding model config and definition from Importer().
@@ -35,9 +35,9 @@ def experiment(model_name):
 if __name__ == "__main__":
 
     # examples of train an algorithm on a benchmark dataset.
-    experiment("transe", "fb15k")
-    experiment("transh", "fb15k")
-    experiment("transr", "fb15k")
+    experiment("transe")
+    experiment("transh")
+    experiment("transr")
 
     # other combination we are still working on them. 
     # experiment("transe", "wn18_rr")
