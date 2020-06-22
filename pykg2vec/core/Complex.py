@@ -53,8 +53,6 @@ class Complex(ModelMeta):
         nn.init.xavier_uniform_(self.rel_embeddings_real.weight)
         nn.init.xavier_uniform_(self.rel_embeddings_img.weight)
 
-        self.parameter_list = [self.ent_embeddings_real, self.ent_embeddings_img, self.rel_embeddings_real, self.rel_embeddings_img]
-
         self.parameter_list = [
             NamedEmbedding(self.ent_embeddings_real, "emb_e_real"),
             NamedEmbedding(self.ent_embeddings_img, "emb_e_img"),
