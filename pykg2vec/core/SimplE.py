@@ -77,7 +77,7 @@ class SimplE(ModelMeta):
 class SimplE_ignr(SimplE):
 
     def __init__(self, config):
-        super(SimplE, self).__init__()
+        super(SimplE_ignr, self).__init__(config)
         self.config = config
         self.model_name = 'SimplE_ignr'
         self.training_strategy = TrainingStrategy.POINTWISE_BASED
