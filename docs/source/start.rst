@@ -7,6 +7,8 @@ In order to install pykg2vec, you will need setup the following libraries:
 * python >=3.6 (recommended)
 * pytorch_>= 1.5
 
+##############################
+
 All dependent packages (requirements.txt_) will be installed automatically when setting up pykg2vec.
 
 * networkx>=2.2
@@ -20,12 +22,11 @@ All dependent packages (requirements.txt_) will be installed automatically when 
 * pathlib>=1.0.1
 * pandas>=0.24.2
 
+##############################
 
-Installation Guide
-==================
+.. rubric:: Installation Guide
 
 1. **Setup a Virtual Environment**: we encourage you to use anaconda_ to work with pykg2vec::
-
 
     (base) $ conda create --name pykg2vec python=3.6
     (base) $ conda activate pykg2vec
