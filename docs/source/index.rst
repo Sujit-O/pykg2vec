@@ -32,9 +32,7 @@ library. We hope Pykg2vec is both practical and educational to users who hope to
    :hidden:
    :caption: User Documentation
 
-   kgdata
-   algos
-   dataset
+   kge
    api
 
 

@@ -1,14 +1,11 @@
-Software Architecture
-#####################
+Software Architecture and API Documentation
+###########################################
 .. image:: ../../figures/pykg2vec_structure.png
    :width: 600
    :align: center
    :alt: Structure of the pykg2vec library.
 
-The pykg2vec is built using Python and PyTorch. Either
-PyTorch implementation or TensorFlow implementation allows the
-computations to be assigned on both GPU and CPU. In addition to the main model training process,
-pykg2vec utilizes multi-processing for generating mini-batches and performing an evaluation to reduce
+The pykg2vec is built using Python and PyTorch. It allows the computations to be assigned on both GPU and CPU. In addition to the main model training process, pykg2vec utilizes multi-processing for generating mini-batches and performing an evaluation to reduce
 the total execution time. The various components of the library are as follows:
 
 1) ``KG Controller`` - handles all the low-level parsing tasks such as finding the total unique set of entities and relations; creating ordinal encoding maps; generating training, testing and validation triples; and caching the dataset data on disk to optimize tasks that involve repetitive model testing.
@@ -19,6 +16,7 @@ the total execution time. The various components of the library are as follows:
 6) ``Visualization`` - plots training loss and common metrics used in KGE tasks. To facilitate model analysis, it also visualizes the latent representations of entities and relations on the 2D plane using t-SNE based dimensionality reduction.
 7) ``Bayesian Optimizer`` - pykg2vec uses a Bayesian hyperparameter optimizer to find a golden hyperparameter set. This feature is more efficient than brute-force based approaches.
 
+====
 
 Configuration
 ======================
@@ -29,14 +27,10 @@ Configuration
 .. automodule:: pykg2vec.config.hyperparams
    :members:
 
+====
+
 Core Algorithms
 ======================
-
-Meta Class for Algorithms
---------------------------
-
-.. automodule:: pykg2vec.core.KGMeta
-   :members:
 
 Complex
 -----------
@@ -140,6 +134,8 @@ TuckER
 .. automodule:: pykg2vec.core.TuckER
    :members:
 
+====
+
 Utility Functions
 ======================
 
@@ -184,6 +180,8 @@ KG Pipeline
 
 .. automodule:: pykg2vec.utils.KGPipeline
    :members:   
+
+====
 
 Unit Test
 ======================
