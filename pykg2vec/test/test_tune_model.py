@@ -6,7 +6,6 @@ This module is for testing unit functions of tuning model
 import pytest
 
 from unittest.mock import patch
-
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.config.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
@@ -60,8 +59,8 @@ def test_tuning(model_name):
     """Function to test the tuning function."""
     tunning_function(model_name)
 
-@patch('pykg2vec.utils.bayesian_optimizer.fmin', side_effect=Exception('Optimization failed'))
-def test_return_best_before_optimization(mocked_fmin):
+@patch('pykg2vec.utils.bayesian_optimizer.fmin')
+def test_return_empty_before_optimization(mocked_fmin):
     """Function to test the tuning of the models."""
     knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.prepare_data()

@@ -155,7 +155,7 @@ class BaysOptimizer(object):
         self.kge_args = KGEArgParser().get_args([])
         self.kge_args.dataset_name = args.dataset_name
         self.kge_args.debug = args.debug
-        self.max_evals = args.max_number_trials if not args.debug else 1
+        self.max_evals = args.max_number_trials if not args.debug else 3
         try:
             self.model_obj = getattr(importlib.import_module(model_path + ".%s" % moduleMap[self.model_name.lower()]),
                                      modelMap[self.model_name.lower()])

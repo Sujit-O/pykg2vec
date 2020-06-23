@@ -201,8 +201,8 @@ class Trainer(TrainerMeta):
         self.generator = Generator(self.model)
         self.evaluator = Evaluator(self.model)
 
-        # if self.config.loadFromData:
-        #     self.load_model()
+        if self.config.loadFromData:
+            self.load_model()
         
         for cur_epoch_idx in range(self.config.epochs):
             self._logger.info("Epoch[%d/%d]" % (cur_epoch_idx, self.config.epochs))
@@ -224,8 +224,8 @@ class Trainer(TrainerMeta):
         self.generator.stop()
         self.save_training_result()
 
-        # if self.config.save_model:
-        #     self.save_model()
+        if self.config.save_model:
+            self.save_model()
 
         if self.config.disp_result:
             self.display()
@@ -264,7 +264,7 @@ class Trainer(TrainerMeta):
         
         progress_bar = tqdm(range(num_batch))
 
-        for batch_idx in progress_bar:
+        for _ in progress_bar:
             data = list(next(self.generator))
             
             self.optimizer.zero_grad()
@@ -328,8 +328,7 @@ class Trainer(TrainerMeta):
 
     def infer_tails(self,h,r,topk=5):
         tails = self.evaluator.test_tail_rank(h, r, topk).numpy()
-        logs = []
-        logs.append("")
+        logs = [""]
         logs.append("(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])))
         logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
@@ -345,8 +344,7 @@ class Trainer(TrainerMeta):
 
     def infer_heads(self,r,t,topk=5):
         heads = self.evaluator.test_head_rank(r, t, topk).numpy()
-        logs = []
-        logs.append("")
+        logs = [""]
         logs.append("(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])))
         logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
@@ -366,8 +364,7 @@ class Trainer(TrainerMeta):
             return
 
         rels = self.evaluator.test_rel_rank(h, t, topk).numpy()
-        logs = []
-        logs.append("")
+        logs = [""]
         logs.append("(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])))
         logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
@@ -383,17 +380,18 @@ class Trainer(TrainerMeta):
     
     # ''' Procedural functions:'''
 
-    # def save_model(self):
-    #     """Function to save the model."""
-    #     saved_path = self.config.path_tmp / self.model.model_name
-    #     saved_path.mkdir(parents=True, exist_ok=True)
-    #     self.model.save_weights(str(saved_path / 'model.vec'))
+    def save_model(self):
+        """Function to save the model."""
+        saved_path = self.config.path_tmp / self.model.model_name
+        saved_path.mkdir(parents=True, exist_ok=True)
+        torch.save(self.model.state_dict(), str(saved_path / 'model.vec.pt'))
 
-    # def load_model(self):
-    #     """Function to load the model."""
-    #     saved_path = self.config.path_tmp / self.model.model_name
-    #     if saved_path.exists():
-    #         self.model.load_weights(str(saved_path / 'model.vec'))
+    def load_model(self):
+        """Function to load the model."""
+        saved_path = self.config.path_tmp / self.model.model_name
+        if saved_path.exists():
+            self.model.load_state_dict(torch.load(str(saved_path / 'model.vec.pt')))
+            self.model.eval()
 
     def display(self):
         """Function to display embedding."""

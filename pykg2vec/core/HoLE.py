@@ -43,9 +43,10 @@ class HoLE(ModelMeta):
 
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
+        k = self.config.hidden_size
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, self.config.hidden_size)
-        self.rel_embeddings = nn.Embedding(num_total_rel, self.config.hidden_size)
+        self.ent_embeddings = nn.Embedding(num_total_ent, k)
+        self.rel_embeddings = nn.Embedding(num_total_rel, k)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 

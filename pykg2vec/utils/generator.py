@@ -5,10 +5,8 @@ This module is for generating the batch data for training and testing.
 """
 import torch
 import numpy as np
-from multiprocessing import Process, Queue, Event
+from multiprocessing import Process, Queue
 from enum import Enum
-
-import os
 
 def raw_data_generator(command_queue, raw_queue, config):
     """Function to feed  triples to raw queue for multiprocessing.

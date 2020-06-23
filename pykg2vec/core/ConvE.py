@@ -59,6 +59,7 @@ class ConvE(ModelMeta):
         self.fc1 = lambda x: nn.Linear(in_features=x.shape[1], out_features=self.config.hidden_size, bias=True)
         self.hidden_drop = nn.Dropout(self.config.hidden_dropout)
         self.bn2 = lambda x: nn.BatchNorm1d(x.shape[1])
+
         self.parameter_list = [
             NamedEmbedding(self.ent_embeddings, "ent_embedding"),
             NamedEmbedding(self.rel_embeddings, "rel_embedding"),
