@@ -1,7 +1,9 @@
 Knowledge Graph Embedding
 =========================
 
-**Introduction for KGE**
+======================
+Introduction for KGE
+======================
 
 A knowledge graph contains a set of entities :math:`\mathbb{E}` and relations :math:`\mathbb{R}` between entities.
 The set of facts :math:`\mathbb{D}^+` in the knowledge graph are represented in the form of triples :math:`(h, r, t)`,
@@ -24,7 +26,9 @@ ranked top-k in the list (hit-k ratio).
 
 ===========
 
-**Implemented KGE Algorithms**
+==============================
+Implemented KGE Algorithms
+==============================
 
 We aim to implement as many latest state-of-the-art knowledge graph embedding methods as possible. From our perspective, by so far the KGE methods can be categorized based on the ways that how the model is trained:
 
@@ -64,9 +68,12 @@ We aim to implement as many latest state-of-the-art knowledge graph embedding me
 
 	* ConvE_: ConvE is the first non-linear model that uses a global 2D convolution operation on the combined and head entity and relation embedding vectors. The obtained feature maps are made flattened and then transformed through a fully connected layer. The projected target vector is then computed by performing linear transformation (passing through the fully connected layer) and activation function, and finally an inner product with the latent representation of every entities.
 
+
 ===========
 
-**Supported Dataset**
+======================
+Supported Dataset
+======================
 
 We support various known benchmark datasets in pykg2vec. 
 
@@ -81,6 +88,38 @@ We support various known benchmark datasets in pykg2vec.
 * DeepLearning50a: DeepLearning_ dataset.
 
 We also support the use of your own dataset. Users can define their own datasets to be processed with the pykg2vec library.
+
+========
+
+===========
+Benchmarks
+===========
+
+Some metrics running on benchmark dataset (FB15k) is shown below (all are filtered). We are still working on this table so it will be updated.
+
++--------+------+----+----+----+----+-----+
+|        |MR    |MRR |Hit1|Hit3|Hit5|Hit10|
++========+======+====+====+====+====+=====+
+| TransE |69.52 |0.38|0.23|0.46|0.56|0.66 |
++--------+------+----+----+----+----+-----+
+| TransH |77.60 |0.32|0.16|0.41|0.51|0.62 |
++--------+------+----+----+----+----+-----+
+| TransR |128.31|0.30|0.18|0.36|0.43|0.54 |
++--------+------+----+----+----+----+-----+
+| TransD |57.73 |0.33|0.19|0.39|0.48|0.60 | 
++--------+------+----+----+----+----+-----+
+| KG2E_EL|64.76 |0.31|0.16|0.39|0.49|0.61 |
++--------+------+----+----+----+----+-----+
+|Complex |96.74 |0.65|0.54|0.74|0.78|0.82 |
++--------+------+----+----+----+----+-----+
+|DistMult|128.78|0.45|0.32|0.53|0.61|0.70 |
++--------+------+----+----+----+----+-----+
+|RotatE  |48.69 |0.74|0.67|0.80|0.82|0.86 |
++--------+------+----+----+----+----+-----+
+|SME_L   |86.3  |0.32|0.20|0.35|0.43|0.54 | 
++--------+------+----+----+----+----+-----+
+|SLM_BL  |112.65|0.29|0.18|0.32|0.39|0.50 |
++--------+------+----+----+----+----+-----+
 
 .. _DeepLearning: https://dl.dropboxusercontent.com/s/awoebno3wbgyrei/dLmL50.tgz?dl=0
 .. _Freebase: https://everest.hds.utc.fr/lib/exe/fetch.php?media=en:fb15k.tgz

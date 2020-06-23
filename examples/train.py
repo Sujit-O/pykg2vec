@@ -2,7 +2,36 @@
 =========================
 Work with one KGE method
 =========================
-In this example, we will show how to import all the modules to start training and algorithm
+In this example, we will domonstrate how to 
+use the pykg2vec to train a single KGE algorithm.
+Train.py allows you work with KGE methods by using the following commands: ::
+
+    # check all tunnable parameters.
+    $ python train.py -h 
+
+    # Train TransE on FB15k benchmark dataset.
+    $ python train.py -mn TransE
+
+    # Train using different KGE methods.
+    # Check (https://pykg2vec.readthedocs.io/en/latest/algos.html)(TODO:update hyperlink) for more details.
+    $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complexn3|CP|RotatE|Analogy|
+                        DistMult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise]
+
+    # For KGE using projection-based loss function, use more processes for batch generation.
+    $ python train.py -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of processes, 4 or 6]
+
+    # Train TransE model using different benchmark datasets.
+    $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
+                                    ks|nations|umls|dl50a|nell_955]
+                                    
+    # train KGE method with the hyperparameters used in original papers. (FB15k supported only)
+    $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complexn3|CP|RotatE|Analogy|
+                        distmult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise] -exp true -ds fb15k
+
+====
+
+We also attached the source code of Train.py below for your reference.
+
 '''
 # Author: Sujit Rokka Chhetri
 # License: MIT

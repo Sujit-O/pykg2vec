@@ -2,9 +2,17 @@
 ==========================
 Train multiple Algorithm
 ==========================
-In this example, we will show how to import all the modules to start training and algorithm
+In this example, we will show how to import all the modules to start training and algorithm: ::
+
+    $ python experiment.py
+
+====
+
+We also attached the source code of Train.py below for your reference.
+You can adjust to fit your usage.
+
 '''
-# Author: Sujit Rokka Chhetri and Shiy Yuan Yu
+# Author: Sujit Rokka Chhetri and Shih Yuan Yu
 # License: MIT
 
 
