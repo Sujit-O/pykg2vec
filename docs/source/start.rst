@@ -1,17 +1,13 @@
 ########################
-Start With Pykg2vec
+Start With pykg2vec
 ########################
 
-Dependencies
-=============
-
-In order to install pykg2vec, you will need the following libraries:
+In order to install pykg2vec, you will need setup the following libraries:
 
 * python >=3.6 (recommended)
 * pytorch_>= 1.5
 
-All dependent libraries will be installed automatically when you install pykg2vec.
-Check requirements.txt_ in the root folder for more details.
+All dependent packages (requirements.txt_) will be installed automatically when setting up pykg2vec.
 
 * networkx>=2.2
 * setuptools>=40.8.0
@@ -25,35 +21,29 @@ Check requirements.txt_ in the root folder for more details.
 * pandas>=0.24.2
 
 
-Installation
-=============
+Installation Guide
+==================
 
-We encourage the users to create a virtual environment (anaconda_)
-and setup the necessary dependencies for running the algorithms using Python3.6.
+1. **Setup a Virtual Environment**: we encourage you to use anaconda_ to work with pykg2vec::
 
-**pytorch setup**
-
-We encourage you to use pytorch_ with GPU support. However, a CPU version will also run (with performance drop).
-
-If you have a GPU with CUDA 10.1 installed, use the following command to install pytorch::
-
-    $ conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
-
-To install a CPU version, use the following command::
-
-    $ conda install pytorch torchvision cpuonly -c pytorch
-
-**Install pykg2vec**::
 
     (base) $ conda create --name pykg2vec python=3.6
     (base) $ conda activate pykg2vec
+
+2. **Setup Pytorch**: we encourage to use pytorch_ with GPU support for good training performance. However, a CPU version also runs. The following sample commands are for setting up pytorch::
+
+	# if you have a GPU with CUDA 10.1 installed
+	(pykg2vec) $ conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
+	# or cpu-only
+	(pykg2vec) $ conda install pytorch torchvision cpuonly -c pytorch
+
+3. **Setup Pykg2vec**::
+
     (pykg2vec) $ git clone https://github.com/Sujit-O/pykg2vec.git
     (pykg2vec) $ cd pykg2vec
     (pykg2vec) $ python setup.py install
 
-To validate your Installation, you can try the examples under /examples folder.
-
-
+4. **Validate the Installation**: try the examples under /examples folder.
 
 .. _GitHub: https://github.com/Sujit-O/pykg2vec/pulls
 .. _pytorch: https://pytorch.org/
