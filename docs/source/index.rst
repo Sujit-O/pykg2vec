@@ -22,7 +22,8 @@ library. We hope Pykg2vec is both practical and educational to users who hope to
    :maxdepth: 2
    :hidden:
    :caption: Quick Start Tutorial
-   
+
+   intro 
    start
    auto_examples/index
    
@@ -31,7 +32,6 @@ library. We hope Pykg2vec is both practical and educational to users who hope to
    :hidden:
    :caption: User Documentation
 
-   intro
    kgdata
    algos
    dataset

@@ -5,15 +5,14 @@ Start With Pykg2vec
 Dependencies
 =============
 
-The goal of this library is to minimize the dependency on other libraries
-as far as possible to rapidly test the algorithms against different dataset.
-We emphasize that in the beginning, we will not be focusing in run-time performance.
-However, in the future, may provide faster implementation of each of the algorithms.
-For optimal usage we suggest to install the library with python3.6.
+In order to install pykg2vec, you will need the following libraries:
 
-You will need following to be installed for the pykg2vec library:
-
+* python >=3.6 (recommended)
 * pytorch_>= 1.5
+
+All dependent libraries will be installed automatically when you install pykg2vec.
+Check requirements.txt_ in the root folder for more details.
+
 * networkx>=2.2
 * setuptools>=40.8.0
 * matplotlib>=3.0.3
@@ -25,81 +24,38 @@ You will need following to be installed for the pykg2vec library:
 * pathlib>=1.0.1
 * pandas>=0.24.2
 
-All dependent libraries will be installed automatically when you install pykg2vec.
-Check requirements.txt_ in the root folder for more details.
-
 
 Installation
 =============
 
-For best performance, we encourage the users to create a virtual environment
+We encourage the users to create a virtual environment (anaconda_)
 and setup the necessary dependencies for running the algorithms using Python3.6.
 
-.. **Please install** Tensorflow_ **cpu or gpu version before installing pykg2vec!**
+**pytorch setup**
 
-**Prepare your environment**::
+We encourage you to use pytorch_ with GPU support. However, a CPU version will also run (with performance drop).
 
-    $ sudo apt update
-    $ sudo apt install python3-dev python3-pip
+If you have a GPU with CUDA 10.1 installed, use the following command to install pytorch::
 
-If you want to install pykg2vec in a virtual environment, install virtualenv::
+    $ conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
 
-    $ sudo pip install -U virtualenv
+To install a CPU version, use the following command::
 
-**Create a virtual environment**
+    $ conda install pytorch torchvision cpuonly -c pytorch
 
-.. If you have pytorch installed in the root env, do the following::
-.. 
-    $ virtualenv --system-site-packages -p python3 ./venv
+**Install pykg2vec**::
 
-Create a new virtual environment for Installation::
+    (base) $ conda create --name pykg2vec python=3.6
+    (base) $ conda activate pykg2vec
+    (pykg2vec) $ git clone https://github.com/Sujit-O/pykg2vec.git
+    (pykg2vec) $ cd pykg2vec
+    (pykg2vec) $ python setup.py install
 
-    $ virtualenv -p python3 ./venv
-
-Activate the virtual environment using a shell-specific command::
-
-    $ source ./venv/bin/activate
-
-Pytorch will be installed automatically. However, you can also install pytorch manually::
-
-    (venv) $ pip install pytorch
-
-.. **Install pykg2vec using `pip`**::
-.. 
-    (venv) $ pip install pykg2vec
-
-**Install stable version from github repo**::
-
-    (venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
-    (venv) $ cd pykg2vec
-    (venv) $ python setup.py install
-
-**Install development version from github repo**::
-
-    (venv) $ git clone https://github.com/Sujit-O/pykg2vec.git
-    (venv) $ cd pykg2vec
-    (venv) $ git checkout development
-    (venv) $ python setup.py install
-
-
-
-
-Validate your Installation
-===========================
-
-To validate that pykg2vec is successfully installed on your device, you can run the test files provided in pykg2vec/test.
-
-Install pytest which will be used to validate your Installation::
-
-    sudo pip install pytest
-
-Run the provided test files::
-
-    (venv) $ cd ./pykg2vec/test
-    (venv) $ pytest -v
+To validate your Installation, you can try the examples under /examples folder.
 
 
 
 .. _GitHub: https://github.com/Sujit-O/pykg2vec/pulls
 .. _pytorch: https://pytorch.org/
+.. _anaconda: https://www.anaconda.com
 .. _requirements.txt: https://github.com/louisccc/torch_pykg2vec/blob/master/requirements.txt
