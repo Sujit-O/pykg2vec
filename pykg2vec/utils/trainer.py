@@ -273,8 +273,8 @@ class Trainer(TrainerMeta):
                 h = torch.LongTensor(data[0]).to(self.config.device)
                 r = torch.LongTensor(data[1]).to(self.config.device)
                 t = torch.LongTensor(data[2]).to(self.config.device)
-                hr_t = data[3]
-                tr_h = data[4]
+                hr_t = data[3].to(self.config.device)
+                tr_h = data[4].to(self.config.device)
                 loss = self.train_step_projection(h, r, t, hr_t, tr_h)
             elif self.model.training_strategy == TrainingStrategy.POINTWISE_BASED:
                 h = torch.LongTensor(data[0]).to(self.config.device)
@@ -327,7 +327,7 @@ class Trainer(TrainerMeta):
         self._logger.info("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self,h,r,topk=5):
-        tails = self.evaluator.test_tail_rank(h, r, topk).numpy()
+        tails = self.evaluator.test_tail_rank(h, r, topk).cpu().numpy()
         logs = [""]
         logs.append("(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])))
         logs.append("")
@@ -343,7 +343,7 @@ class Trainer(TrainerMeta):
         return {tail: idx2ent[tail] for tail in tails}
 
     def infer_heads(self,r,t,topk=5):
-        heads = self.evaluator.test_head_rank(r, t, topk).numpy()
+        heads = self.evaluator.test_head_rank(r, t, topk).cpu().numpy()
         logs = [""]
         logs.append("(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])))
         logs.append("")
@@ -363,7 +363,7 @@ class Trainer(TrainerMeta):
             self._logger.info("%s model doesn't support relation inference in nature.")
             return
 
-        rels = self.evaluator.test_rel_rank(h, t, topk).numpy()
+        rels = self.evaluator.test_rel_rank(h, t, topk).cpu().numpy()
         logs = [""]
         logs.append("(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])))
         logs.append("")
@@ -379,7 +379,6 @@ class Trainer(TrainerMeta):
         return {rel: idx2rel[rel] for rel in rels}
     
     # ''' Procedural functions:'''
-
     def save_model(self):
         """Function to save the model."""
         saved_path = self.config.path_tmp / self.model.model_name
@@ -445,7 +444,7 @@ class Trainer(TrainerMeta):
             stored_name = named_embedding.name
 
             if len(named_embedding.shape) == 2:
-                all_embs = named_embedding.weight.detach().numpy()
+                all_embs = named_embedding.weight.detach().cpu().numpy()
                 with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
                     for idx in all_ids:
                         v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
