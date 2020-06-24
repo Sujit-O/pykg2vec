@@ -58,7 +58,7 @@ class TransM(ModelMeta):
             rel_counts[t.r] += 1
 
         theta = [1/np.log(2+rel_counts[x]/(1+len(rel_tail[x])) + rel_counts[x]/(1+len(rel_head[x]))) for x in range(num_total_rel)]
-        self.theta = torch.from_numpy(np.asarray(theta, dtype=np.float32))
+        self.theta = torch.from_numpy(np.asarray(theta, dtype=np.float32)).to(self.config.device)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
