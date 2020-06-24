@@ -41,6 +41,8 @@ class ConvE(ModelMeta):
         self.model_name = 'ConvE'
         self.training_strategy = TrainingStrategy.PROJECTION_BASED
 
+        self.config.hidden_size_2 = self.config.hidden_size // self.config.hidden_size_1
+
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -90,17 +92,17 @@ class ConvE(ModelMeta):
 
     def inner_forward(self, st_inp, first_dimension_size):
         """Implements the forward pass layers of the algorithm."""
-        x = self.bn0(st_inp)
+        x = self.bn0(st_inp) # 2d batch norm over feature dimension.
         x = self.inp_drop(x) # [b, 1, 2*hidden_size_2, hidden_size_1]
         x = self.conv2d_1(x) # [b, 32, 2*hidden_size_2-3+1, hidden_size_1-3+1]
-        x = self.bn1(x) # batch normalization across feature dimension
-        x = torch.relu(x) # first non-linear activation
-        x = self.feat_drop(x) # feature dropout
-        x = x.view(first_dimension_size, -1) # flatten [b, 32*(2*hidden_size_2-3+1)*(hidden_size_1-3+1)
-        x = self.fc(x) # dense layer [b, k]
-        x = self.hidden_drop(x) # dropout in the hidden layer
-        x = self.bn2(x) # batch normalization across feature dimension
-        x = torch.relu(x) # second non-linear activation
+        x = self.bn1(x) # 2d batch normalization across feature dimension
+        x = torch.relu(x)
+        x = self.feat_drop(x)
+        x = x.view(first_dimension_size, -1) # flatten => [b, 32*(2*hidden_size_2-3+1)*(hidden_size_1-3+1)
+        x = self.fc(x) # dense layer => [b, k]
+        x = self.hidden_drop(x)
+        x = self.bn2(x) # batch normalization across the last axis
+        x = torch.relu(x)
         x = torch.matmul(x, self.transpose(self.ent_embeddings.weight)) # [b, k] * [k, tot_ent] => [b, tot_ent]
         x = torch.add(x, self.b.weight) # add a bias value
         return torch.sigmoid(x) # sigmoid activation
