@@ -51,14 +51,14 @@ class ConvE(ModelMeta):
         self.rel_embeddings = nn.Embedding(num_total_rel*2, k)
         self.b = nn.Embedding(1, num_total_ent)
 
-        self.bn0 = lambda x: nn.BatchNorm2d(x.shape[1])
+        self.bn0 = nn.BatchNorm2d(1)
         self.inp_drop = nn.Dropout(self.config.input_dropout)
-        self.conv2d_1 = lambda x: nn.Conv2d(x.shape[1], 32, (3, 3), stride=(1, 1))
-        self.bn1 = lambda x: nn.BatchNorm2d(x.shape[1])
+        self.conv2d_1 = nn.Conv2d(1, 32, (3, 3), stride=(1, 1))
+        self.bn1 = nn.BatchNorm2d(32)
         self.feat_drop = nn.Dropout2d(self.config.feature_map_dropout)
-        self.fc1 = lambda x: nn.Linear(in_features=x.shape[1], out_features=self.config.hidden_size, bias=True)
+        self.fc = nn.Linear((2*self.config.hidden_size_2-3+1)*(self.config.hidden_size_1-3+1)*32, k) # use the conv output shape * out_channel
         self.hidden_drop = nn.Dropout(self.config.hidden_dropout)
-        self.bn2 = lambda x: nn.BatchNorm1d(x.shape[1])
+        self.bn2 = nn.BatchNorm1d(k)
 
         self.parameter_list = [
             NamedEmbedding(self.ent_embeddings, "ent_embedding"),
@@ -90,37 +90,20 @@ class ConvE(ModelMeta):
 
     def inner_forward(self, st_inp, first_dimension_size):
         """Implements the forward pass layers of the algorithm."""
-        st_inp = st_inp.permute(0, 3, 1, 2)   # convert to channel-first
-        # batch normalization in the first axis
-        x = self.bn0(st_inp)(st_inp)
-        # input dropout
-        x = self.inp_drop(x)
-        # 2d convolution layer, output channel =32, kernel size = 3,3
-        x = self.conv2d_1(x)(x)
-        # batch normalization across feature dimension
-        x = self.bn1(x)(x)
-        # first non-linear activation
-        x = torch.relu(x)
-        # feature dropout
-        x = self.feat_drop(x)
-        # reshape the tensor to get the batch size
-        '''10368 with k=200,5184 with k=100, 2592 with k=50'''
-        x = x.view(first_dimension_size, -1)
-        # pass the feature through fully connected layer, output size = batch size, hidden size
-        x = self.fc1(x)(x)
-        # dropout in the hidden layer
-        x = self.hidden_drop(x)
-        # batch normalization across feature dimension
-        if(x.shape[0] > 1):
-            x = self.bn2(x)(x)
-        # second non-linear activation
-        x = torch.relu(x)
-        # project and get inner product with the tail triple
-        x = torch.matmul(x, self.transpose(self.ent_embeddings.weight))    # [b, k] * [k, tot_ent]
-        # add a bias value
-        x = torch.add(x, self.b.weight)
-        # sigmoid activation
-        return torch.sigmoid(x)
+        x = self.bn0(st_inp)
+        x = self.inp_drop(x) # [b, 1, 2*hidden_size_2, hidden_size_1]
+        x = self.conv2d_1(x) # [b, 32, 2*hidden_size_2-3+1, hidden_size_1-3+1]
+        x = self.bn1(x) # batch normalization across feature dimension
+        x = torch.relu(x) # first non-linear activation
+        x = self.feat_drop(x) # feature dropout
+        x = x.view(first_dimension_size, -1) # flatten [b, 32*(2*hidden_size_2-3+1)*(hidden_size_1-3+1)
+        x = self.fc(x) # dense layer [b, k]
+        x = self.hidden_drop(x) # dropout in the hidden layer
+        x = self.bn2(x) # batch normalization across feature dimension
+        x = torch.relu(x) # second non-linear activation
+        x = torch.matmul(x, self.transpose(self.ent_embeddings.weight)) # [b, k] * [k, tot_ent] => [b, tot_ent]
+        x = torch.add(x, self.b.weight) # add a bias value
+        return torch.sigmoid(x) # sigmoid activation
 
     def forward(self, e, r, direction="tail"):
         if direction == "head":
@@ -128,9 +111,9 @@ class ConvE(ModelMeta):
         else:
             e_emb, r_emb = self.embed2(e, r)
         
-        stacked_e = e_emb.  view(-1, self.config.hidden_size_2, self.config.hidden_size_1, 1)
-        stacked_r = r_emb.view(-1, self.config.hidden_size_2, self.config.hidden_size_1, 1)
-        stacked_er = torch.cat([stacked_e, stacked_r], 1)
+        stacked_e = e_emb.view(-1, 1, self.config.hidden_size_2, self.config.hidden_size_1)
+        stacked_r = r_emb.view(-1, 1, self.config.hidden_size_2, self.config.hidden_size_1)
+        stacked_er = torch.cat([stacked_e, stacked_r], 2)
 
         preds = self.inner_forward(stacked_er, list(e.shape)[0])
     
