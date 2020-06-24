@@ -60,9 +60,9 @@ class ConvKB(ModelMeta):
             NamedEmbedding(self.rel_embeddings, "rel_embedding"),
         ]
 
-        self.conv_list = lambda x: [nn.Conv2d(x.shape[1], self.config.num_filters, (3, filter_size), stride=(1, 1))
-                                    for filter_size in self.config.filter_sizes]
-        self.fc1 = lambda x: nn.Linear(in_features=x.shape[-1], out_features=1, bias=True)
+        self.conv_list = [nn.Conv2d(1, self.config.num_filters, (3, filter_size), stride=(1, 1)).to(self.config.device) for filter_size in self.config.filter_sizes]
+        conv_out_dim = self.config.num_filters*sum([(self.config.hidden_size-filter_size+1) for filter_size in self.config.filter_sizes])
+        self.fc1 = nn.Linear(in_features=conv_out_dim, out_features=1, bias=True)
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -83,20 +83,17 @@ class ConvKB(ModelMeta):
     def forward(self, h, r, t):
         h_emb, r_emb, t_emb = self.embed(h, r, t)
         first_dimen = list(h_emb.shape)[0]
-
+        
         stacked_h = torch.unsqueeze(h_emb, dim=1)
         stacked_r = torch.unsqueeze(r_emb, dim=1)
         stacked_t = torch.unsqueeze(t_emb, dim=1)
 
         stacked_hrt = torch.cat([stacked_h, stacked_r, stacked_t], dim=1)
-        stacked_hrt = torch.unsqueeze(stacked_hrt, dim=-1)  # [b, 3, k, 1]
+        stacked_hrt = torch.unsqueeze(stacked_hrt, dim=1)  # [b, 1, 3, k]
 
-        stacked_hrt = stacked_hrt.permute(0, 3, 1, 2)   # convert to channel-first
-        stacked_hrt = [self.conv_list(stacked_hrt)[i](stacked_hrt) for i in range(len(self.config.filter_sizes))]
-        stacked_hrt = [sh.permute(0, 2, 3, 1) for sh in stacked_hrt]    # convert to channel-last
-
-        stacked_hrt = torch.cat(stacked_hrt, dim=2)
+        stacked_hrt = [conv_layer(stacked_hrt) for conv_layer in self.conv_list]
+        stacked_hrt = torch.cat(stacked_hrt, dim=3)
         stacked_hrt = stacked_hrt.view(first_dimen, -1)
-        preds = self.fc1(stacked_hrt)(stacked_hrt)
+        preds = self.fc1(stacked_hrt)
         preds = torch.squeeze(preds, dim=-1)
         return preds
