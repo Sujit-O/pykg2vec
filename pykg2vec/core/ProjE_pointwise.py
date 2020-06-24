@@ -90,8 +90,8 @@ class ProjE_pointwise(ModelMeta):
         else:
             ere2_sigmoid = self.g(torch.dropout(self.f2(emb_hr_e, emb_hr_r), p=self.config.hidden_dropout, train=True), self.ent_embeddings.weight)
 
-        ere2_loss_left = -torch.sum((torch.log(torch.clamp(ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]), er_e2)))
-        ere2_loss_right = -torch.sum((torch.log(torch.clamp(1 - ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]), torch.neg(er_e2))))
+        ere2_loss_left = -torch.sum((torch.log(torch.clamp(ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.config.device), er_e2)))
+        ere2_loss_right = -torch.sum((torch.log(torch.clamp(1 - ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.config.device), torch.neg(er_e2))))
 
         hrt_loss = ere2_loss_left + ere2_loss_right
 
