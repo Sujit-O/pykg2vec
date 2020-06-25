@@ -47,6 +47,12 @@ pykg2vec.data.generator
 .. automodule:: pykg2vec.data.generator
    :members:
 
+pykg2vec.data.datasets
+-----------------------
+
+.. automodule:: pykg2vec.data.datasets
+   :members:
+
 pykg2vec.models
 ======================
 
@@ -123,4 +129,16 @@ pykg2vec.test.test_model
 ------------------------
 
 .. automodule:: pykg2vec.test.test_model
+   :members:
+
+pykg2vec.test.test_tune_model
+-----------------------------
+
+.. automodule:: pykg2vec.test.test_tune_model
+   :members:
+
+pykg2vec.test.test_inference
+----------------------------
+
+.. automodule:: pykg2vec.test.test_inference
    :members:
