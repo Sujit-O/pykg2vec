@@ -97,7 +97,7 @@ $ python train.py -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of process
 $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|ks|nations|umls|dl50a|nell_955]
 ```
 
-For more information, please check the [programming examples](https://pykg2vec.readthedocs.io/en/latest/auto_examples/index.html).
+For more other pykg2vec usage, please check the [programming examples](https://pykg2vec.readthedocs.io/en/latest/auto_examples/index.html).
 
 ## Citation
 Please kindly consider citing our paper if you find pykg2vec useful for your research. 
