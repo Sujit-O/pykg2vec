@@ -9,7 +9,7 @@ Features:
 * Tools for inspecting the learned embeddings. 
   * Support exporting the learned embeddings in TSV or Pandas-supported format.
   * Interactive result inspector.
-  * TSNE-based visualization, KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
+  * TSNE-based, KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
 
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
