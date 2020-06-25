@@ -12,116 +12,7 @@ import pandas as pd
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.logger import Logger
-from pykg2vec.common import KGEArgParser
-
-model_path = "pykg2vec.models"
-config_path = "pykg2vec.config"
-hyper_param_path = "pykg2vec.hyperparams"
-
-moduleMap = {"analogy": "pointwise",
-             "complex": "pointwise",
-             "complexn3": "pointwise",
-             "conve": "projection",
-             "cp": "pointwise",
-             "hole": "pairwise",
-             "distmult": "pointwise",
-             "kg2e": "pairwise",
-             "kg2e_el": "pairwise",
-             "ntn": "pairwise",
-             "proje_pointwise": "projection",
-             "rescal": "pairwise",
-             "rotate": "pairwise",
-             "simple": "pointwise",
-             "simple_ignr": "pointwise",
-             "slm": "pairwise",
-             "sme": "pairwise",
-             "sme_bl": "pairwise",
-             "transd": "pairwise",
-             "transe": "pairwise",
-             "transg": "pairwise",
-             "transh": "pairwise",
-             "transm": "pairwise",
-             "transr": "pairwise",
-             "tucker": "projection"}
-
-
-modelMap = {"analogy": "ANALOGY",
-            "complex": "Complex",
-            "complexn3": "ComplexN3",
-            "conve": "ConvE",
-            "cp": "CP",
-            "hole": "HoLE",
-            "distmult": "DistMult",
-            "kg2e": "KG2E",
-            "kg2e_el": "KG2E_EL",
-            "ntn": "NTN",
-            "proje_pointwise": "ProjE_pointwise",
-            "rescal": "Rescal",
-            "rotate": "RotatE",
-            "simple": "SimplE",
-            "simple_ignr": "SimplE_ignr",
-            "slm": "SLM",
-            "sme": "SME",
-            "sme_bl": "SME_BL",
-            "transd": "TransD",
-            "transe": "TransE",
-            "transg": "TransG",
-            "transh": "TransH",
-            "transm": "TransM",
-            "transr": "TransR",
-            "tucker": "TuckER"}
-
-configMap = {"analogy": "ANALOGYConfig",
-             "complex": "ComplexConfig",
-             "complexn3": "ComplexConfig",
-             "conve": "ConvEConfig",
-             "cp": "CPConfig",
-             "hole": "HoLEConfig",
-             "distmult": "DistMultConfig",
-             "kg2e": "KG2EConfig",
-             "kg2e_el": "KG2EConfig",
-             "ntn": "NTNConfig",
-             "proje_pointwise": "ProjE_pointwiseConfig",
-             "rescal": "RescalConfig",
-             "rotate": "RotatEConfig",
-             "simple": "SimplEConfig",
-             "simple_ignr": "SimplEConfig",
-             "slm": "SLMConfig",
-             "sme": "SMEConfig",
-             "sme_bl": "SMEConfig",
-             "transd": "TransDConfig",
-             "transe": "TransEConfig",
-             "transg": "TransGConfig",
-             "transh": "TransHConfig",
-             "transm": "TransMConfig",
-             "transr": "TransRConfig",
-             "tucker": "TuckERConfig"}
-
-hypMap = {"analogy": "ANALOGYParams",
-          "complex": "ComplexParams",
-          "complexn3": "ComplexParams",
-          "conve": "ConvEParams",
-          "cp": "CPParams",
-          "hole": "HoLEParams",
-          "distmult": "DistMultParams",
-          "kg2e": "KG2EParams",
-          "kg2e_el": "KG2EParams",
-          "ntn": "NTNParams",
-          "proje_pointwise": "ProjE_pointwiseParams",
-          "rescal": "RescalParams",
-          "rotate": "RotatEParams",
-          "simple": "SimplEParams",
-          "simple_ignr": "SimplEParams",
-          "slm": "SLMParams",
-          "sme": "SMEParams",
-          "sme_bl": "SMEParams",
-          "transd": "TransDParams",
-          "transe": "TransEParams",
-          "transg": "TransGParams",
-          "transh": "TransHParams",
-          "transm": "TransMParams",
-          "transr": "TransRParams",
-          "tucker": "TuckERParams"}
+from pykg2vec.common import KGEArgParser, Importer
 
 
 class BaysOptimizer(object):
@@ -146,7 +37,7 @@ class BaysOptimizer(object):
     """
     _logger = Logger().get_logger(__name__)
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         """store the information of database"""
         if args.model.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
           raise Exception("Model %s has not been supported in tuning hyperparameters!" % args.model)
@@ -157,17 +48,12 @@ class BaysOptimizer(object):
         self.kge_args.dataset_name = args.dataset_name
         self.kge_args.debug = args.debug
         self.max_evals = args.max_number_trials if not args.debug else 3
-        try:
-            self.model_obj = getattr(importlib.import_module(model_path + ".%s" % moduleMap[self.model_name.lower()]),
-                                     modelMap[self.model_name.lower()])
-            self.config_obj = getattr(importlib.import_module(config_path), configMap[self.model_name.lower()])
-            self.config_local = self.config_obj(self.kge_args)
-            hyper_params = getattr(importlib.import_module(hyper_param_path), hypMap[self.model_name.lower()])()
-            self.search_space = hyper_params.search_space
-        except ModuleNotFoundError:
-            self._logger.error("%s not implemented! Select from: %s" % \
-                               (self.model_name.lower(), ' '.join(map(str, modelMap.values()))))
-
+        
+        self.config_obj, self.model_obj = Importer().import_model_config(self.model_name.lower())
+        self.config_local = self.config_obj(self.kge_args)
+        self.hyper_params = Importer().import_hyperparam_config(self.model_name.lower())()
+        self.search_space = self.hyper_params.search_space
+        
     def optimize(self):
         """Function that performs bayesian optimization"""
         trials = Trials()
