@@ -12,7 +12,6 @@ entities and relations in Knowledge Graphs. We have attempted to bring all the s
 graph embedding algorithms and the necessary building blocks including the whole pipeline into a single
 library. We hope Pykg2vec is both practical and educational to users who hope to explore the related fields.
 
-See the source code repository on github: https://github.com/Sujit-O/pykg2vec
 
 .. image:: ../../figures/pykg2vec_structure.png
    :width: 700
@@ -22,11 +21,10 @@ See the source code repository on github: https://github.com/Sujit-O/pykg2vec
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Quick Start Tutorial - Examples
+   :caption: Quick Start Tutorial
 
-   dependency
-   install
-   testing
+   intro 
+   start
    auto_examples/index
    
 .. toctree::
@@ -34,38 +32,17 @@ See the source code repository on github: https://github.com/Sujit-O/pykg2vec
    :hidden:
    :caption: User Documentation
 
-   intro
-   kgdata
-   whypack
-   struct
-   repostruct
-   algos
-   usage
-   change_log
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: Dataset Support
-
-   dataset
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: API Documentation
-
+   kge
    api
 
+
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :hidden:
-   :caption: Addtional Information
+   :caption: Additional Information
 
    contribute
    authors
-   citations
-   license
 
 
 Indices and tables
@@ -73,4 +50,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

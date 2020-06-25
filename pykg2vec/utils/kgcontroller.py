@@ -3,12 +3,11 @@
 """
 This module is for controlling knowledge graph
 """
-
-
-import shutil, tarfile, pickle, time
+import shutil, tarfile, pickle, time, os, zipfile
 import urllib.request
 from pathlib import Path
 from collections import defaultdict
+from pykg2vec.utils.logger import Logger
 import numpy as np
 
 
@@ -39,18 +38,9 @@ class Triple(object):
            >>> trip2 = Triple('Tokyo','isCapitalof','Japan')
     """
     def __init__(self, h, r, t):
-        self.h = None
-        self.r = None
-        self.t = None
-
-        assert type(h) is str and type(r) is str and type(t) is str, "h, r, t should be strings."
-
-        self.h_string = h
-        self.r_string = r
-        self.t_string = t
-
-        self.hr_t = None
-        self.tr_h = None
+        self.h = h
+        self.r = r
+        self.t = t
 
     def set_ids(self, h, r, t):
         """This function assigns the head, relation and tail.
@@ -63,35 +53,6 @@ class Triple(object):
         self.h = h
         self.r = r
         self.t = t
-
-    # def set_strings(self, h, r, t):
-    #     """This function assigns the head, relation and tail in string format.
-
-    #         Args:
-    #             h (str): String  head entity.
-    #             r (str): String  relation entity.
-    #             t (str): String  tail entity.
-
-    #         Todo:
-    #             * Assing the strings.
-    #     """
-    #     pass
-
-    def set_hr_t(self, hr_t):
-        """This function assigns the tails list for the given h,r pair.
-
-            Args:
-                hr_t (list): list of integer id of tails for given head, relation pair.
-        """
-        self.hr_t = hr_t
-
-    def set_tr_h(self, tr_h):
-        """This function assigns the head list for the given t,r pair.
-
-            Args:
-                tr_h (list): list of integer id of head for given tail, relation pair.
-        """
-        self.tr_h = tr_h
 
 
 class KGMetaData(object):
@@ -113,6 +74,7 @@ class KGMetaData(object):
             >>> kg_meta = KGMetaData(tot_triple =1000)
 
     """
+
     def __init__(self, tot_entity=None,
                  tot_relation=None,
                  tot_triple=None,
@@ -127,7 +89,7 @@ class KGMetaData(object):
         self.tot_entity = tot_entity
 
 
-def extract(tar_path, extract_path='.'):
+def extract_tar(tar_path, extract_path='.'):
     """This function extracts the tar file.
 
         Most of the knowledge graph dataset are donwloaded in a compressed
@@ -144,7 +106,23 @@ def extract(tar_path, extract_path='.'):
     for item in tar:
         tar.extract(item, extract_path)
         if item.name.find(".tgz") != -1 or item.name.find(".tar") != -1:
-            extract(item.name, "./" + item.name[:item.name.rfind('/')])
+            extract_tar(item.name, "./" + item.name[:item.name.rfind('/')])
+
+def extract_zip(zip_path, extract_path='.'):
+    """This function extracts the zip file.
+
+        Most of the knowledge graph dataset are donwloaded in a compressed
+        zip format. This function is used to extract them
+
+        Args:
+            zip_path (str): Location of the zip folder.
+            extract_path (str): Path where the files will be decompressed.
+
+        Todo:
+            * Move this module to utils!
+    """
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_path)
 
 
 class KnownDataset:
@@ -175,6 +153,7 @@ class KnownDataset:
            >>> kgdata.dump()
 
     """
+    _logger = Logger().get_logger(__name__)
 
     def __init__(self, name, url, prefix):
 
@@ -187,13 +166,14 @@ class KnownDataset:
         self.dataset_home_path = self.dataset_home_path.resolve()
         self.root_path = self.dataset_home_path / self.name
         self.tar = self.root_path / ('%s.tgz' % self.name)
+        self.zip = self.root_path / ('%s.zip' % self.name)
 
         if not self.root_path.exists():
             self.download()
             self.extract()
 
         path_eq_root = ['YAGO3_10', 'WN18RR', 'FB15K_237', 'Kinship',
-                        'Nations', 'UMLS']
+                        'Nations', 'UMLS', 'NELL_995']
         if self.name == 'WN18':
             self.dataset_path = self.root_path / 'wordnet-mlj12'
         elif self.name in path_eq_root:
@@ -216,29 +196,43 @@ class KnownDataset:
         self.cache_metadata_path = self.dataset_path / 'metadata.pkl'
         self.cache_hr_t_path = self.dataset_path / 'hr_t.pkl'
         self.cache_tr_h_path = self.dataset_path / 'tr_h.pkl'
+        self.cache_hr_t_train_path = self.dataset_path / 'hr_t_train.pkl'
+        self.cache_tr_h_train_path = self.dataset_path / 'tr_h_train.pkl'
         self.cache_idx2entity_path = self.dataset_path / 'idx2entity.pkl'
         self.cache_idx2relation_path = self.dataset_path / 'idx2relation.pkl'
         self.cache_entity2idx_path = self.dataset_path / 'entity2idx.pkl'
         self.cache_relation2idx_path = self.dataset_path / 'relation2idx.pkl'
-
+        self.cache_relationproperty_path = self.dataset_path / 'relationproperty.pkl'
 
     def download(self):
         ''' Downloads the given dataset from url'''
-        print("Downloading the dataset %s" % self.name)
+        self._logger.info("Downloading the dataset %s" % self.name)
 
         self.root_path.mkdir()
-        with urllib.request.urlopen(self.url) as response, open(str(self.tar), 'wb') as out_file:
-            shutil.copyfileobj(response, out_file)
+        if self.url.endswith('.tar.gz') or self.url.endswith('.tgz'):
+            with urllib.request.urlopen(self.url) as response, open(str(self.tar), 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        elif self.url.endswith('.zip'):
+            with urllib.request.urlopen(self.url) as response, open(str(self.zip), 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        else:
+            raise NotImplementedError("Unknown compression format")
 
     def extract(self):
-        ''' Extract the downloaded tar under the folder with the given dataset name'''
-        print("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
+        ''' Extract the downloaded file under the folder with the given dataset name'''
 
         try:
-            extract(str(self.tar), str(self.root_path))
+            if (os.path.exists(self.tar)):
+                self._logger.info("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
+                extract_tar(str(self.tar), str(self.root_path))
+                return
+            if (os.path.exists(self.zip)):
+                self._logger.info("Extracting the downloaded dataset from %s to %s" % (self.zip, self.root_path))
+                extract_zip(str(self.zip), str(self.root_path))
+                return
         except Exception as e:
-            print("Could not extract the tgz file!")
-            print(type(e), e.args)
+            self._logger.error("Could not extract the target file!")
+            self._logger.error("%s %s" % (type(e), e.args))
 
     def read_metadata(self):
         ''' Reads the metadata of the knowledge graph if available'''
@@ -253,7 +247,7 @@ class KnownDataset:
     def dump(self):
         ''' Displays all the metadata of the knowledge graph'''
         for key, value in self.__dict__.items():
-            print(key, value)
+            self._logger.info("%s %s" % (key, value))
 
 
 class FreebaseFB15k(KnownDataset):
@@ -436,6 +430,26 @@ class UMLS(KnownDataset):
         KnownDataset.__init__(self, name, url, prefix)
 
 
+class NELL_995(KnownDataset):
+    """This data structure defines the necessary information for downloading NELL-995 dataset.
+
+        NELL-995 module inherits the KnownDataset class for processing
+        the knowledge graph dataset.
+
+        Attributes:
+            name (str): Name of the datasets
+            url (str): The full url where the dataset resides.
+            prefix (str): The prefix of the dataset given the website.
+
+    """
+    def __init__(self):
+        name = "NELL_995"
+        url = "https://github.com/louisccc/KGppler/raw/master/datasets/NELL_995.zip"
+        prefix = ''
+
+        KnownDataset.__init__(self, name, url, prefix)
+
+
 class UserDefinedDataset(object):
     """The class consists of modules to handle the user defined datasets.
 
@@ -449,7 +463,9 @@ class UserDefinedDataset(object):
           dataset_home_path (object): Path object where the data will be downloaded
           root_oath (object): Path object for the specific dataset.
 
-   """
+    """
+    _logger = Logger().get_logger(__name__)
+
     def __init__(self, name, custom_dataset_path):
         self.name = name
 
@@ -485,10 +501,13 @@ class UserDefinedDataset(object):
         self.cache_metadata_path = self.root_path / 'metadata.pkl'
         self.cache_hr_t_path = self.root_path / 'hr_t.pkl'
         self.cache_tr_h_path = self.root_path / 'tr_h.pkl'
+        self.cache_hr_t_train_path = self.root_path / 'hr_t_train.pkl'
+        self.cache_tr_h_train_path = self.root_path / 'tr_h_train.pkl'
         self.cache_idx2entity_path = self.root_path / 'idx2entity.pkl'
         self.cache_idx2relation_path = self.root_path / 'idx2relation.pkl'
         self.cache_entity2idx_path = self.root_path / 'entity2idx.pkl'
         self.cache_relation2idx_path = self.root_path / 'relation2idx.pkl'
+        self.cache_relationproperty_path = self.root_path / 'relationproperty.pkl'
 
     def is_meta_cache_exists(self):
         """ Checks if the metadata has been cached"""
@@ -503,7 +522,7 @@ class UserDefinedDataset(object):
     def dump(self):
         """ Prints the metadata of the user-defined dataset."""
         for key, value in self.__dict__.items():
-            print(key, value)
+            self._logger.info("%s %s" % (key, value))
 
 
 class KnowledgeGraph(object):
@@ -514,12 +533,10 @@ class KnowledgeGraph(object):
 
       Args:
          dataset_name (str): Name of the datasets
-         negative_sample (str): Sampling technique to be used for generating negative triples (bern or uniform).
 
       Attributes:
         dataset_name (str): The name of the dataset.
         dataset (object): The dataset object isntance.
-        negative_sample (str): negative_sample
         triplets (dict): dictionary with three list of training, testing and validation triples.
         relations (list):list of all the relations.
         entities (list): List of all the entities.
@@ -536,10 +553,12 @@ class KnowledgeGraph(object):
 
       Examples:
           >>> from pykg2vec.config.global_config import KnowledgeGraph
-          >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k', negative_sample='uniform')
+          >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k')
           >>> knowledge_graph.prepare_data()
-   """
-    def __init__(self, dataset='Freebase15k', negative_sample='uniform', custom_dataset_path=None):
+    """
+    _logger = Logger().get_logger(__name__)
+
+    def __init__(self, dataset='Freebase15k', custom_dataset_path=None):
 
         self.dataset_name = dataset
 
@@ -561,13 +580,13 @@ class KnowledgeGraph(object):
             self.dataset = Nations()
         elif dataset.lower() == 'umls':
             self.dataset = UMLS()
+        elif dataset.lower() == 'nell_995':
+            self.dataset = NELL_995()
         else:
             # if the dataset does not match with existing one, check if it exists in user's local space.
             # if it still can't find corresponding folder, raise exception in UserDefinedDataset.__init__()
 
             self.dataset = UserDefinedDataset(dataset, custom_dataset_path)
-
-        self.negative_sample = negative_sample
 
         # KG data structure stored in triplet format
         self.triplets = {'train': [], 'test': [], 'valid': []}
@@ -600,11 +619,11 @@ class KnowledgeGraph(object):
             self.prepare_data()
 
     def force_prepare_data(self):
-        shutil.rmtree(str(self.dataset.root_path))
+        shutil.rmtree(str(self.dataset.root_path), ignore_errors=True)
 
         time.sleep(1)
 
-        self.__init__(dataset=self.dataset_name, negative_sample=self.negative_sample)
+        self.__init__(dataset=self.dataset_name)
 
     def prepare_data(self):
         """Function to prepare the dataset"""
@@ -621,13 +640,9 @@ class KnowledgeGraph(object):
         self.read_tr_h()
         self.read_hr_t_train()
         self.read_tr_h_train()
-        self.read_hr_tr_train()
         self.read_hr_t_valid()
         self.read_tr_h_valid()
-        self.read_hr_tr_valid()
-
-        if self.negative_sample == 'bern':
-            self.read_relation_property()
+        self.read_relation_property()
 
         self.kg_meta.tot_relation = len(self.relations)
         self.kg_meta.tot_entity = len(self.entities)
@@ -654,6 +669,10 @@ class KnowledgeGraph(object):
             pickle.dump(self.hr_t, f)
         with open(str(self.dataset.cache_tr_h_path), 'wb') as f:
             pickle.dump(self.tr_h, f)
+        with open(str(self.dataset.cache_hr_t_train_path), 'wb') as f:
+            pickle.dump(self.hr_t_train, f)
+        with open(str(self.dataset.cache_tr_h_train_path), 'wb') as f:
+            pickle.dump(self.tr_h_train, f)
         with open(str(self.dataset.cache_idx2entity_path), 'wb') as f:
             pickle.dump(self.idx2entity, f)
         with open(str(self.dataset.cache_idx2relation_path), 'wb') as f:
@@ -662,6 +681,8 @@ class KnowledgeGraph(object):
             pickle.dump(self.relation2idx, f)
         with open(str(self.dataset.cache_entity2idx_path), 'wb') as f:
             pickle.dump(self.entity2idx, f)
+        with open(str(self.dataset.cache_relationproperty_path), 'wb') as f:
+            pickle.dump(self.relation_property, f)
 
     def read_cache_data(self, key):
         """Function to read the cached dataset from the memory"""
@@ -693,6 +714,18 @@ class KnowledgeGraph(object):
 
                 return tr_h
 
+        elif key == 'hr_t_train':
+            with open(str(self.dataset.cache_hr_t_train_path), 'rb') as f:
+                hr_t_train = pickle.load(f)
+
+                return hr_t_train
+
+        elif key == 'tr_h_train':
+            with open(str(self.dataset.cache_tr_h_train_path), 'rb') as f:
+                tr_h_train = pickle.load(f)
+
+                return tr_h_train
+
         elif key == 'idx2entity':
             with open(str(self.dataset.cache_idx2entity_path), 'rb') as f:
                 idx2entity = pickle.load(f)
@@ -716,6 +749,12 @@ class KnowledgeGraph(object):
                 relation2idx = pickle.load(f)
 
                 return relation2idx
+
+        elif key == 'relationproperty':
+            with open(str(self.dataset.cache_relationproperty_path), 'rb') as f:
+                relation_property = pickle.load(f)
+
+                return relation_property
 
     def is_cache_exists(self):
         """Function to check if the dataset is cached in the memory"""
@@ -746,8 +785,8 @@ class KnowledgeGraph(object):
                            self.read_triplets('test')
 
             for triplet in all_triplets:
-                entities.add(triplet.h_string)
-                entities.add(triplet.t_string)
+                entities.add(triplet.h)
+                entities.add(triplet.t)
 
             self.entities = np.sort(list(entities))
 
@@ -763,7 +802,7 @@ class KnowledgeGraph(object):
                            self.read_triplets('test')
 
             for triplet in all_triplets:
-                relations.add(triplet.r_string)
+                relations.add(triplet.r)
 
             self.relations = np.sort(list(relations))
 
@@ -791,7 +830,7 @@ class KnowledgeGraph(object):
 
         if len(triplets) != 0:
             for t in triplets:
-                t.set_ids(entity2idx[t.h_string], relation2idx[t.r_string], entity2idx[t.t_string])
+                t.set_ids(entity2idx[t.h], relation2idx[t.r], entity2idx[t.t])
 
         return triplets
 
@@ -833,15 +872,6 @@ class KnowledgeGraph(object):
 
         return self.tr_h_train
 
-    def read_hr_tr_train(self):
-        """ Function to read the list of heads for the given tail and relation pair
-        and list of heads for the given tail and relation pair for the training set. """
-        for t in self.triplets['train']:
-            t.set_hr_t(self.hr_t_train[(t.h, t.r)])
-            t.set_tr_h(self.tr_h_train[(t.t, t.r)])
-
-        return self.triplets['train']
-
     def read_hr_t_valid(self):
         """ Function to read the list of tails for the given head and relation pair for the valid set. """
         triplets = self.triplets['valid']
@@ -859,15 +889,6 @@ class KnowledgeGraph(object):
             self.tr_h_valid[(t.t, t.r)].add(t.h)
 
         return self.tr_h_valid
-
-    def read_hr_tr_valid(self):
-        """ Function to read the list of heads for the given tail and relation pair
-        and list of heads for the given tail and relation pair for the valid set. """
-        for t in self.triplets['valid']:
-            t.set_hr_t(self.hr_t_valid[(t.h, t.r)])
-            t.set_tr_h(self.tr_h_valid[(t.t, t.r)])
-
-        return self.triplets['valid']    
     
     def read_relation_property(self):
         """ Function to read the relation property.
@@ -882,9 +903,18 @@ class KnowledgeGraph(object):
             relation_property_head[t.r].append(t.h)
             relation_property_tail[t.r].append(t.t)
 
-        self.relation_property = {x: (len(set(relation_property_tail[x]))) / ( \
-                    len(set(relation_property_head[x])) + len(set(relation_property_tail[x]))) \
-                                  for x in relation_property_head.keys()}
+        self.relation_property = {}
+        for x in relation_property_head.keys():
+            value_up = len(set(relation_property_tail[x]))
+
+            value_bot= len(set(relation_property_head[x])) + len(set(relation_property_tail[x]))
+
+            if value_bot == 0:
+                value = 0
+            else: 
+                value = value_up / value_bot
+
+            self.relation_property[x] = value
 
         return self.relation_property
 
@@ -892,10 +922,14 @@ class KnowledgeGraph(object):
     def dump(self):
         """ Function to dump statistic information of a dataset """
         ''' dump key information'''
-        print("\n----------Metadata Info for Dataset:%s----------------" % self.dataset_name)
-        print("Total Training Triples   :", self.kg_meta.tot_train_triples)
-        print("Total Testing Triples    :", self.kg_meta.tot_test_triples)
-        print("Total validation Triples :", self.kg_meta.tot_valid_triples)
-        print("Total Entities           :", self.kg_meta.tot_entity)
-        print("Total Relations          :", self.kg_meta.tot_relation)
-        print("---------------------------------------------")
+        dump = []
+        dump.append("")
+        dump.append("----------Metadata Info for Dataset:%s----------------" % self.dataset_name)
+        dump.append("Total Training Triples   :%s" % self.kg_meta.tot_train_triples)
+        dump.append("Total Testing Triples    :%s" % self.kg_meta.tot_test_triples)
+        dump.append("Total validation Triples :%s" % self.kg_meta.tot_valid_triples)
+        dump.append("Total Entities           :%s" % self.kg_meta.tot_entity)
+        dump.append("Total Relations          :%s" % self.kg_meta.tot_relation)
+        dump.append("---------------------------------------------")
+        dump.append("")
+        self._logger.info(("\n".join(dump)))

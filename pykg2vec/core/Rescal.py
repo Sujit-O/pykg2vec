@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import tensorflow as tf
-
+import torch
+import torch.nn as nn
 from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.utils.generator import TrainingStrategy
 
 
 class Rescal(ModelMeta):
@@ -28,7 +25,7 @@ class Rescal(ModelMeta):
             >>> from pykg2vec.core.Rescal import Rescal
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = Rescal()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 
@@ -42,128 +39,24 @@ class Rescal(ModelMeta):
     """
 
     def __init__(self, config):
+        super(Rescal, self).__init__()
         self.config = config
-        self.data_stats = self.config.kg_meta
         self.model_name = 'Rescal'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
-    def def_inputs(self):
-        """Defines the inputs to the model.
-
-           Attributes:
-              pos_h (Tensor): Positive Head entities ids.
-              pos_r (Tensor): Positive Relation ids of the triple.
-              pos_t (Tensor): Positive Tail entity ids of the triple.
-              neg_h (Tensor): Negative Head entities ids.
-              neg_r (Tensor): Negative Relation ids of the triple.
-              neg_t (Tensor): Negative Tail entity ids of the triple.
-              test_h_batch (Tensor): Batch of head ids for testing.
-              test_r_batch (Tensor): Batch of relation ids for testing
-              test_t_batch (Tensor): Batch of tail ids for testing.
-        """
-        with tf.name_scope("read_inputs"):
-            self.pos_h = tf.placeholder(tf.int32, [None])
-            self.pos_t = tf.placeholder(tf.int32, [None])
-            self.pos_r = tf.placeholder(tf.int32, [None])
-            self.neg_h = tf.placeholder(tf.int32, [None])
-            self.neg_t = tf.placeholder(tf.int32, [None])
-            self.neg_r = tf.placeholder(tf.int32, [None])
-
-            self.test_h_batch = tf.placeholder(tf.int32, [None])
-            self.test_t_batch = tf.placeholder(tf.int32, [None])
-            self.test_r_batch = tf.placeholder(tf.int32, [None])
-
-    def def_parameters(self):
-        """Defines the model parameters.
-
-           Attributes:
-               num_total_ent (int): Total number of entities.
-               num_total_rel (int): Total number of relations.
-               k (Tensor): Size of the latent dimesnion for entities and relations.
-               ent_embeddings  (Tensor Variable): Lookup variable containing embedding of the entities.
-               rel_matrices  (Tensor Variable): Transformation matrices for entities into relation space.
-               parameter_list  (list): List of Tensor parameters.
-        """
-        num_total_ent = self.data_stats.tot_entity
-        num_total_rel = self.data_stats.tot_relation
+        num_total_ent = self.config.kg_meta.tot_entity
+        num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
 
-        with tf.name_scope("embedding"):
-            # A: per each entity, store its embedding representation.
-            self.ent_embeddings = tf.get_variable(name="ent_embedding",
-                                                  shape=[num_total_ent, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        self.ent_embeddings = nn.Embedding(num_total_ent, k)
+        self.rel_matrices = nn.Embedding(num_total_rel, k * k)
+        nn.init.xavier_uniform_(self.ent_embeddings.weight)
+        nn.init.xavier_uniform_(self.rel_matrices.weight)
 
-            # M: per each relation, store a matrix that models the interactions between entity embeddings.
-            self.rel_matrices = tf.get_variable(name="rel_matrices",
-                                                shape=[num_total_rel, k * k],
-                                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-            self.parameter_list = [self.ent_embeddings, self.rel_matrices]
-
-    def cal_truth_val(self, h, r, t):
-        """Function to calculate truth value.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-            Returns:
-                Tensors: Returns Tensors.
-        """
-        # dim of h: [m, k, 1]
-        #        r: [m, k, k]
-        #        t: [m, k, 1]
-        return tf.reduce_sum(h * tf.matmul(r, t), [1, 2])
-
-    def def_loss(self):
-        """Defines the loss function for the algorithm."""
-        k = self.config.hidden_size
-
-        with tf.name_scope('normalization'):
-            self.ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-            self.rel_matrices = tf.nn.l2_normalize(self.rel_matrices, axis=1)
-
-        with tf.name_scope('lookup_embeddings'):
-            pos_h_e = tf.nn.embedding_lookup(self.ent_embeddings, self.pos_h)
-            pos_r_e = tf.nn.embedding_lookup(self.rel_matrices, self.pos_r)
-            pos_t_e = tf.nn.embedding_lookup(self.ent_embeddings, self.pos_t)
-            neg_h_e = tf.nn.embedding_lookup(self.ent_embeddings, self.neg_h)
-            neg_r_e = tf.nn.embedding_lookup(self.rel_matrices, self.neg_r)
-            neg_t_e = tf.nn.embedding_lookup(self.ent_embeddings, self.neg_t)
-
-        with tf.name_scope('reshaping'):
-            pos_h_e = tf.reshape(pos_h_e, [-1, k, 1])
-            pos_r_e = tf.reshape(pos_r_e, [-1, k, k])
-            pos_t_e = tf.reshape(pos_t_e, [-1, k, 1])
-            neg_h_e = tf.reshape(neg_h_e, [-1, k, 1])
-            neg_r_e = tf.reshape(neg_r_e, [-1, k, k])
-            neg_t_e = tf.reshape(neg_t_e, [-1, k, 1])
-
-        pos_score = self.cal_truth_val(pos_h_e, pos_r_e, pos_t_e)
-        neg_score = self.cal_truth_val(neg_h_e, neg_r_e, neg_t_e)
-
-        self.loss = tf.reduce_sum(tf.maximum(neg_score + self.config.margin - pos_score, 0))
-
-    def test_batch(self):
-        """Function that performs batch testing for the algorithm.
-
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        num_entity = self.data_stats.tot_entity
-        k = self.config.hidden_size
-
-        h_vec, r_vec, t_vec = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
-
-        h_sim = tf.tensordot(tf.squeeze(tf.matmul(r_vec, t_vec), axis=-1), self.ent_embeddings, axes=((-1), (-1)))
-        t_sim = tf.squeeze(tf.tensordot(tf.matmul(tf.reshape(h_vec, [-1, 1, k]), r_vec),
-                                        self.ent_embeddings, axes=((-1), (-1))), axis=1)
-
-        _, head_rank = tf.nn.top_k(tf.negative(h_sim), k=num_entity)
-        _, tail_rank = tf.nn.top_k(tf.negative(t_sim), k=num_entity)
-
-        return head_rank, tail_rank
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_matrices, "rel_matrices"),
+        ]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -177,42 +70,27 @@ class Rescal(ModelMeta):
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
         k = self.config.hidden_size
-        emb_h = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), h)
-        emb_r = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.rel_matrices, axis=1), r)
-        emb_t = tf.nn.embedding_lookup(tf.nn.l2_normalize(self.ent_embeddings, axis=1), t)
-        #
-        emb_h = tf.reshape(emb_h, [-1, k, 1])
-        emb_r = tf.reshape(emb_r, [-1, k, k])
-        emb_t = tf.reshape(emb_t, [-1, k, 1])
+
+        self.ent_embeddings.weight.data = self.get_normalized_data(self.ent_embeddings, self.config.kg_meta.tot_entity, dim=-1)
+        self.rel_matrices.weight.data = self.get_normalized_data(self.rel_matrices, self.config.kg_meta.tot_relation, dim=-1)
+
+        emb_h = self.ent_embeddings(h)
+        emb_r = self.rel_matrices(r)
+        emb_t = self.ent_embeddings(t)
+        emb_h = emb_h.view(-1, k, 1)
+        emb_r = emb_r.view(-1, k, k)
+        emb_t = emb_t.view(-1, k, 1)
 
         return emb_h, emb_r, emb_t
 
-    def get_embed(self, h, r, t, sess):
-        """Function to get the embedding value in numpy.
+    def forward(self, h, r, t):
+        h_e, r_e, t_e = self.embed(h, r, t)
+        # dim of h: [m, k, 1]
+        #        r: [m, k, k]
+        #        t: [m, k, 1]
+        return -torch.sum(h_e * torch.matmul(r_e, t_e), [1, 2])
 
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        emb_h, emb_r, emb_t = self.embed(h, r, t)
-        h, r, t = sess.run([emb_h, emb_r, emb_t])
-        return h, r, t
-
-    def get_proj_embed(self, h, r, t, sess):
-        """"Function to get the projected embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        return self.get_embed(h, r, t, sess)
+    @staticmethod
+    def get_normalized_data(embedding, num_embeddings, p=2, dim=1):
+        norms = torch.norm(embedding.weight, p, dim).data
+        return embedding.weight.data.div(norms.view(num_embeddings, 1).expand_as(embedding.weight))

@@ -68,7 +68,7 @@ else:
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    'examples_dirs' : '../../pykg2vec/example',
+    'examples_dirs' : '../../examples',
     # path where to save gallery generated examples
     'gallery_dirs'  : 'auto_examples'}
 
@@ -91,7 +91,7 @@ master_doc = 'index'
 
 project = 'pykg2vec'
 copyright = '2019, Sujit Rokka Chhetri and Shih-Yuan Yu'
-author = 'Sujit Rokka Chhetri, Shih-Yuan Yu, Ahmet Salih Aksakal, Palash Goyal, Arquimedes Canedo and Mohammad Al Faruque'
+author = 'Shih-Yuan Yu, Bai Xi, Sujit Rokka Chhetri, Fangzhou Du, Arquimedes Canedo and Mohammad Al Faruque'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -177,7 +177,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = []
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied

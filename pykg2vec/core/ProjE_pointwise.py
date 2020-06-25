@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import tensorflow as tf
-
-from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
+import torch
+import torch.nn as nn
+from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.utils.generator import TrainingStrategy
 
 
-class ProjE_pointwise(ModelMeta, InferenceMeta):
+class ProjE_pointwise(ModelMeta):
     """`ProjE-Embedding Projection for Knowledge Graph Completion`_.
 
         Instead of measuring the distance or matching scores between the pair of the
@@ -32,7 +30,7 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
             >>> from pykg2vec.core.ProjE_pointwise import ProjE_pointwise
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = ProjE_pointwise()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 
@@ -42,119 +40,62 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
     """
 
     def __init__(self, config):
+        super(ProjE_pointwise, self).__init__()
         self.config = config
-        self.data_stats = self.config.kg_meta
         self.model_name = 'ProjE_pointwise'
+        self.training_strategy = TrainingStrategy.PROJECTION_BASED
 
-    def def_inputs(self):
-        """Defines the inputs to the model.
-
-           Attributes:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               hr_t (Tensor): Tail tensor list for (h,r) pair.
-               rt_h (Tensor): Head tensor list for (r,t) pair.
-               test_h_batch (Tensor): Batch of head ids for testing.
-               test_r_batch (Tensor): Batch of relation ids for testing
-               test_t_batch (Tensor): Batch of tail ids for testing.
-        """
-        self.h = tf.placeholder(tf.int32, [None])
-        self.r = tf.placeholder(tf.int32, [None])
-        self.t = tf.placeholder(tf.int32, [None])
-        self.hr_t = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-        self.rt_h = tf.placeholder(tf.float32, [None, self.data_stats.tot_entity])
-
-        self.test_h_batch = tf.placeholder(tf.int32, [None])
-        self.test_r_batch = tf.placeholder(tf.int32, [None])
-        self.test_t_batch = tf.placeholder(tf.int32, [None])
-
-    # Override
-    def dissimilarity(self, h, r, t):
-        """Function to calculate dissimilarity measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensors: Returns the dissimilarity measure.
-        """
-        if self.config.L1_flag:
-            return tf.reduce_sum(tf.abs(h + r - t), axis=1)  # L1 norm
-        else:
-            return tf.reduce_sum((h + r - t) ** 2, axis=1)  # L2 norm
-
-    def def_parameters(self):
-        """Defines the model parameters.
-
-           Attributes:
-               k (Tensor): Size of the latent dimesnion for entities and relations.
-               ent_embeddings  (Tensor Variable): Lookup variable containing embedding of the entities.
-               rel_embeddings  (Tensor Variable): Lookup variable containing embedding of the relations.
-               parameter_list  (list): List of Tensor parameters.
-        """
-        num_total_ent = self.data_stats.tot_entity
-        num_total_rel = self.data_stats.tot_relation
+        num_total_ent = self.config.kg_meta.tot_entity
+        num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
 
-        with tf.name_scope("embedding"):
+        self.ent_embeddings = nn.Embedding(num_total_ent, k)
+        self.rel_embeddings = nn.Embedding(num_total_rel, k)
+        self.bc1 = nn.Embedding(1, k)
+        self.De1 = nn.Embedding(1, k)
+        self.Dr1 = nn.Embedding(1, k)
+        self.bc2 = nn.Embedding(1, k)
+        self.De2 = nn.Embedding(1, k)
+        self.Dr2 = nn.Embedding(1, k)
+        nn.init.xavier_uniform_(self.ent_embeddings.weight)
+        nn.init.xavier_uniform_(self.rel_embeddings.weight)
+        nn.init.xavier_uniform_(self.bc1.weight)
+        nn.init.xavier_uniform_(self.De1.weight)
+        nn.init.xavier_uniform_(self.Dr1.weight)
+        nn.init.xavier_uniform_(self.bc2.weight)
+        nn.init.xavier_uniform_(self.De2.weight)
+        nn.init.xavier_uniform_(self.Dr2.weight)
 
-            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            NamedEmbedding(self.bc1, "bc1"),
+            NamedEmbedding(self.De1, "De1"),
+            NamedEmbedding(self.Dr1, "Dr1"),
+            NamedEmbedding(self.bc2, "bc2"),
+            NamedEmbedding(self.De2, "De2"),
+            NamedEmbedding(self.Dr2, "Dr2"),
+        ]
 
-            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+    def get_reg(self):
+        return self.config.lmbda*(torch.sum(torch.abs(self.De1.weight) + torch.abs(self.Dr1.weight)) + torch.sum(torch.abs(self.De2.weight)
+               + torch.abs(self.Dr2.weight)) + torch.sum(torch.abs(self.ent_embeddings.weight)) + torch.sum(torch.abs(self.rel_embeddings.weight)))
 
-            self.bc1 = tf.get_variable(name="bc1", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.De1 = tf.get_variable(name="De1", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.Dr1 = tf.get_variable(name="Dr1", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+    def forward(self, e, r, er_e2, direction="tail"):
+        emb_hr_e = self.ent_embeddings(e)  # [m, k]
+        emb_hr_r = self.rel_embeddings(r)  # [m, k]
+        
+        if direction == "tail":
+            ere2_sigmoid = self.g(torch.dropout(self.f1(emb_hr_e, emb_hr_r), p=self.config.hidden_dropout, train=True), self.ent_embeddings.weight)
+        else:
+            ere2_sigmoid = self.g(torch.dropout(self.f2(emb_hr_e, emb_hr_r), p=self.config.hidden_dropout, train=True), self.ent_embeddings.weight)
 
-            self.bc2 = tf.get_variable(name="bc2", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.De2 = tf.get_variable(name="De2", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.Dr2 = tf.get_variable(name="Dr2", shape=[k],
-                                       initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        ere2_loss_left = -torch.sum((torch.log(torch.clamp(ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.config.device), er_e2)))
+        ere2_loss_right = -torch.sum((torch.log(torch.clamp(1 - ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.config.device), torch.neg(er_e2))))
 
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings, self.bc1, self.De1, self.Dr1, self.bc2,
-                                   self.De2, self.Dr2]
+        hrt_loss = ere2_loss_left + ere2_loss_right
 
-    def def_loss(self):
-        """Defines the loss function for the algorithm."""
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
-
-        emb_hr_h = tf.nn.embedding_lookup(norm_ent_embeddings, self.h)  # [m, k]
-        emb_hr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.r)  # [m, k]
-
-        emb_tr_t = tf.nn.embedding_lookup(norm_ent_embeddings, self.t)  # [m, k]
-        emb_tr_r = tf.nn.embedding_lookup(norm_rel_embeddings, self.r)  # [m, k]
-
-        hrt_sigmoid = self.g(tf.nn.dropout(self.f1(emb_hr_h, emb_hr_r), 0.5), norm_ent_embeddings)
-
-        hrt_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., self.hr_t)))
-        hrt_loss_right = - tf.reduce_sum(
-            (tf.log(tf.clip_by_value(1 - hrt_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.hr_t))))
-
-        hrt_loss = hrt_loss_left + hrt_loss_right
-
-        trh_sigmoid = self.g(tf.nn.dropout(self.f2(emb_tr_t, emb_tr_r), 0.5), norm_ent_embeddings)
-
-        trh_loss_left = - tf.reduce_sum((tf.log(tf.clip_by_value(trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., self.rt_h)))
-        trh_loss_right = - tf.reduce_sum(
-            (tf.log(tf.clip_by_value(1 - trh_sigmoid, 1e-10, 1.0)) * tf.maximum(0., tf.negative(self.rt_h))))
-
-        trh_loss = trh_loss_left + trh_loss_right
-
-        regularizer_loss = tf.reduce_sum(tf.abs(self.De1) + tf.abs(self.Dr1)) + tf.reduce_sum(tf.abs(self.De2) + tf.abs(self.Dr2)) \
-                            + tf.reduce_sum(tf.abs(self.ent_embeddings)) + tf.reduce_sum(tf.abs(self.rel_embeddings))
-        self.loss = hrt_loss + trh_loss + regularizer_loss*1e-5
+        return hrt_loss
 
     def f1(self, h, r):
         """Defines froward layer for head.
@@ -163,7 +104,7 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
                    h (Tensor): Head entities ids.
                    r (Tensor): Relation ids of the triple.
         """
-        return tf.tanh(h * self.De1 + r * self.Dr1 + self.bc1)
+        return torch.tanh(h * self.De1.weight + r * self.Dr1.weight + self.bc1.weight)
 
     def f2(self, t, r):
         """Defines forward layer for tail.
@@ -172,88 +113,37 @@ class ProjE_pointwise(ModelMeta, InferenceMeta):
                t (Tensor): Tail entities ids.
                r (Tensor): Relation ids of the triple.
         """
-        return tf.tanh(t * self.De2 + r * self.Dr2 + self.bc2)
+        return torch.tanh(t * self.De2.weight + r * self.Dr2.weight + self.bc2.weight)
 
-    def g(self, f, W):
+    def g(self, f, w):
         """Defines activation layer.
 
             Args:
                f (Tensor): output of the forward layers.
                W (Tensor): Matrix for multiplication.
         """
-        return tf.sigmoid(tf.matmul(f, tf.transpose(W)))
+        # [b, k] [k, tot_ent]
+        return torch.sigmoid(torch.matmul(f, self.transpose(w)))
 
-    def test_batch(self):
-        """Function that performs batch testing for the algorithm.
+    def predict_tail_rank(self, h, r, topk=-1):
+        emb_h = self.ent_embeddings(h)  # [1, k]
+        emb_r = self.rel_embeddings(r)  # [1, k]
+        
+        hrt_sigmoid = -self.g(self.f1(emb_h, emb_r), self.ent_embeddings.weight)
+        _, rank = torch.topk(hrt_sigmoid, k=topk)
 
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        num_entity = self.data_stats.tot_entity
+        return rank
 
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, -1)  # [tot_ent, k]
-        norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, -1)  # [tot_rel, k]
+    def predict_head_rank(self, t, r, topk=-1):
+        emb_t = self.ent_embeddings(t)  # [m, k]
+        emb_r = self.rel_embeddings(r)  # [m, k]
+        
+        hrt_sigmoid = -self.g(self.f2(emb_t, emb_r), self.ent_embeddings.weight)
+        _, rank = torch.topk(hrt_sigmoid, k=topk)
 
-        h_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_h_batch)  # [1, k]
-        r_vec = tf.nn.embedding_lookup(norm_rel_embeddings, self.test_r_batch)  # [1, k]
-        t_vec = tf.nn.embedding_lookup(norm_ent_embeddings, self.test_t_batch)  # [1, k]
+        return rank
 
-        hrt_sigmoid = - self.g(self.f1(h_vec, r_vec), norm_ent_embeddings)
-        trh_sigmoid = - self.g(self.f2(t_vec, r_vec), norm_ent_embeddings)
-
-        _, head_rank = tf.nn.top_k(trh_sigmoid, k=num_entity)
-        _, tail_rank = tf.nn.top_k(hrt_sigmoid, k=num_entity)
-
-        return head_rank, tail_rank
-
-    def embed(self, h, r, t):
-        """Function to get the embedding value.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
-        emb_h = tf.nn.l2_normalize(emb_h, axis=-1)
-        emb_r = tf.nn.l2_normalize(emb_r, axis=-1)
-        emb_t = tf.nn.l2_normalize(emb_t, axis=-1)
-
-        proj_vec = self.get_proj(r)
-
-        return self.projection(emb_h, proj_vec), emb_r, self.projection(emb_t, proj_vec)
-
-    def get_embed(self, h, r, t, sess):
-        """Function to get the embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        emb_h, emb_r, emb_t = self.embed(h, r, t)
-        h, r, t = sess.run([emb_h, emb_r, emb_t])
-        return h, r, t
-
-    def get_proj_embed(self, h, r, t, sess):
-        """Function to get the projected embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        return self.get_embed(h, r, t, sess)
+    @staticmethod
+    def transpose(tensor):
+        dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
+        return tensor.permute(dims)

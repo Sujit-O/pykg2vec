@@ -1,7 +1,7 @@
 '''
-=========================
-Example for Inference
-=========================
+==================================
+Inference task for one KGE method
+==================================
 In this example, we will demonstrate how interactive inference can be performed
 using the trained algorithm.
 '''
@@ -21,7 +21,7 @@ def main():
     args = KGEArgParser().get_args(sys.argv[1:])
 
     # Preparing data and cache the data for later usage
-    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, negative_sample=args.sampling, custom_dataset_path=args.dataset_path)
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
     knowledge_graph.prepare_data()
 
     # Extracting the corresponding model config and definition from Importer().
@@ -30,7 +30,7 @@ def main():
     model = model_def(config)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model, debug=args.debug)
+    trainer = Trainer(model=model)
     trainer.build_model()
     trainer.train_model()
     

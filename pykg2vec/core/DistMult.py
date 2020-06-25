@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-import tensorflow as tf
+import torch
+import torch.nn as nn
+from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.utils.generator import TrainingStrategy
 
-from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
 
-
-class DistMult(ModelMeta, InferenceMeta):
+class DistMult(ModelMeta):
     """`EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES`_
 
         DistMult is a simpler model comparing with RESCAL in that it simplifies
@@ -31,7 +30,7 @@ class DistMult(ModelMeta, InferenceMeta):
             >>> from pykg2vec.core.Complex import DistMult
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = DistMult()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 
@@ -40,102 +39,25 @@ class DistMult(ModelMeta, InferenceMeta):
 
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
+        super(DistMult, self).__init__()
         self.config = config
-        self.data_stats = self.config.kg_meta
-        self.tot_ent = self.data_stats.tot_entity
-        self.tot_rel = self.data_stats.tot_relation
         self.model_name = 'DistMult'
+        self.training_strategy = TrainingStrategy.POINTWISE_BASED
 
-    def def_inputs(self):
-        """Defines the inputs to the model.
-
-           Attributes:
-              pos_h (Tensor): Positive Head entities ids.
-              pos_r (Tensor): Positive Relation ids of the triple.
-              pos_t (Tensor): Positive Tail entity ids of the triple.
-              neg_h (Tensor): Negative Head entities ids.
-              neg_r (Tensor): Negative Relation ids of the triple.
-              neg_t (Tensor): Negative Tail entity ids of the triple.
-              test_h_batch (Tensor): Batch of head ids for testing.
-              test_r_batch (Tensor): Batch of relation ids for testing
-              test_t_batch (Tensor): Batch of tail ids for testing.
-        """
-        self.pos_h = tf.placeholder(tf.int32, [None])
-        self.pos_t = tf.placeholder(tf.int32, [None])
-        self.pos_r = tf.placeholder(tf.int32, [None])
-        self.neg_h = tf.placeholder(tf.int32, [None])
-        self.neg_t = tf.placeholder(tf.int32, [None])
-        self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h_batch = tf.placeholder(tf.int32, [None])
-        self.test_r_batch = tf.placeholder(tf.int32, [None])
-        self.test_t_batch = tf.placeholder(tf.int32, [None])
-
-    def dissimilarity(self, h, r, t, axis=-1):
-        """Function to calculate dissimilarity measure in embedding space.
-
-        Args:
-            h (Tensor): Head entities ids.
-            r (Tensor): Relation ids of the triple.
-            t (Tensor): Tail entity ids of the triple.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensors: Returns the dissimilarity measure.
-        """
-        return tf.reduce_sum(h*r*t, axis=axis, keep_dims=False)
-
-    def def_parameters(self):
-        """Defines the model parameters.
-           
-           Attributes:
-               k (Tensor): Size of the latent dimesnion for entities and relations.
-               ent_embeddings(Tensor Variable): Lookup variable containing embedding of entities.
-               rel_embeddings (Tensor Variable): Lookup variable containing embedding of relations.
-               parameter_list  (list): List of Tensor parameters. 
-        """
+        num_total_ent = self.config.kg_meta.tot_entity
+        num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
-        with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[self.tot_ent, k],
-                                            initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[self.tot_rel, k],
-                                            initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-        self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
+        self.ent_embeddings = nn.Embedding(num_total_ent, k)
+        self.rel_embeddings = nn.Embedding(num_total_rel, k)
+        nn.init.xavier_uniform_(self.ent_embeddings.weight)
+        nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
-    def def_loss(self):
-        """Defines the loss function for the algorithm."""
-        pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
-        neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)
-
-        score_pos = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
-        score_neg = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
-
-        regul_term = tf.reduce_mean(pos_r_e**2) + tf.reduce_mean(neg_r_e**2)
-
-        self.loss = tf.reduce_sum(tf.maximum(score_neg - score_pos + 1, 0)) + self.config.lmbda*regul_term
-
-    def test_batch(self):
-        """Function that performs batch testing for the algorithm.
-
-            Returns:
-                Tensors: Returns ranks of head and tail.
-        """
-        h_emb, r_emb, t_emb = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
-
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-
-        score_head = self.dissimilarity(norm_ent_embeddings, 
-                                        tf.expand_dims(r_emb, axis=1), 
-                                        tf.expand_dims(t_emb, axis=1))
-        score_tail = self.dissimilarity(tf.expand_dims(h_emb, axis=1), 
-                                        tf.expand_dims(r_emb, axis=1), 
-                                        norm_ent_embeddings)
-
-        _, head_rank = tf.nn.top_k(tf.negative(score_head), k=self.data_stats.tot_entity)
-        _, tail_rank = tf.nn.top_k(tf.negative(score_tail), k=self.data_stats.tot_entity)
-
-        return head_rank, tail_rank
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+        ]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -148,41 +70,17 @@ class DistMult(ModelMeta, InferenceMeta):
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
         """
-        norm_ent_embeddings = tf.nn.l2_normalize(self.ent_embeddings, axis=1)
-        # norm_rel_embeddings = tf.nn.l2_normalize(self.rel_embeddings, axis=1)
-
-        h_emb = tf.nn.embedding_lookup(norm_ent_embeddings, h)
-        r_emb = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        t_emb = tf.nn.embedding_lookup(norm_ent_embeddings, t)
+        h_emb = self.ent_embeddings(h)
+        r_emb = self.rel_embeddings(r)
+        t_emb = self.ent_embeddings(t)
 
         return h_emb, r_emb, t_emb
 
-    def get_embed(self, h, r, t, sess=None):
-        """Function to get the embedding value in numpy.
-           
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
+    def forward(self, h, r, t):
+        h_e, r_e, t_e = self.embed(h, r, t)
+        return -torch.sum(h_e*r_e*t_e, -1)
 
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        h, r, t = self.embed(h, r, t)
-        return sess.run([h, r, t])
-
-    def get_proj_embed(self, h, r, t, sess):
-        """Function to get the projected embedding value in numpy.
-           
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        return self.get_embed(h, r, t, sess)
-
+    def get_reg(self, h, r, t):
+        h_e, r_e, t_e = self.embed(h, r, t)
+        regul_term = torch.mean(torch.sum(h_e**2, -1) + torch.sum(r_e**2, -1) + torch.sum(t_e**2,-1))
+        return self.config.lmbda*regul_term

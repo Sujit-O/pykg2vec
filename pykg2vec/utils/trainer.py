@@ -3,21 +3,78 @@
 """
 This module is for training process.
 """
-import tensorflow as tf
-import timeit
-
-import numpy as np
-import os 
-
-from pykg2vec.core.KGMeta import TrainerMeta
-from pykg2vec.utils.evaluation import Evaluation
-from pykg2vec.utils.visualization import Visualization
-from pykg2vec.utils.generator import Generator
-from pykg2vec.config.global_config import GeneratorConfig
-from pykg2vec.utils.kgcontroller import KGMetaData, KnowledgeGraph
-
-
+import timeit, os
+import torch
+import warnings
+warnings.filterwarnings('ignore')
+# import tensorflow as tf
 import pandas as pd
+import torch.optim as optim
+import torch.nn.functional as F
+
+from enum import Enum
+from pykg2vec.core.KGMeta import TrainerMeta
+from pykg2vec.utils.evaluator import Evaluator
+from pykg2vec.utils.visualization import Visualization
+from pykg2vec.utils.generator import Generator, TrainingStrategy
+from pykg2vec.utils.logger import Logger
+from tqdm import tqdm 
+import warnings
+warnings.filterwarnings('ignore')
+import torch.optim as optim
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Monitor(Enum):
+    MEAN_RANK = "mr"
+    FILTERED_MEAN_RANK = "fmr"
+    MEAN_RECIPROCAL_RANK = "mrr"
+    FILTERED_MEAN_RECIPROCAL_RANK = "fmrr"
+
+
+class EarlyStopper:
+    
+    _logger = Logger().get_logger(__name__)
+
+    def __init__(self, patience, monitor):
+
+        self.monitor = monitor
+        self.patience = patience
+        
+        # controlling variables.
+        self.previous_metrics = None
+        self.patience_left = patience
+
+    def should_stop(self, curr_metrics):
+        should_stop = False
+        value, name = self.monitor.value, self.monitor.name
+
+        if self.previous_metrics is not None:
+            if self.monitor == Monitor.MEAN_RANK or self.monitor == Monitor.FILTERED_MEAN_RANK:
+                is_worse = self.previous_metrics[value] < curr_metrics[value]
+            else:
+                is_worse = self.previous_metrics[value] > curr_metrics[value]
+
+            if self.patience_left > 0 and is_worse:
+                self.patience_left -= 1
+                self._logger.info(
+                    '%s more chances before the trainer stops the training. (prev_%s, curr_%s): (%.4f, %.4f)' %
+                    (self.patience_left, name, name, self.previous_metrics[value], curr_metrics[value]))
+            
+            elif self.patience_left == 0 and is_worse:
+                self._logger.info('Stop the training.')
+                should_stop = True
+            
+            else:
+                self._logger.info('Reset the patience count to %d' % (self.patience))
+                self.patience_left = self.patience
+                
+        self.previous_metrics = curr_metrics
+
+        return should_stop
+
 
 class Trainer(TrainerMeta):
     """Class for handling the training of the algorithms.
@@ -26,289 +83,316 @@ class Trainer(TrainerMeta):
             model (object): Model object
             debug (bool): Flag to check if its debugging
             tuning (bool): Flag to denoting tuning if True
+            patience (int): Number of epochs to wait before early stopping the training on no improvement.
+            No early stopping if it is a negative number (default: {-1}).
 
         Examples:
             >>> from pykg2vec.utils.trainer import Trainer
             >>> from pykg2vec.core.TransE import TransE
-            >>> trainer = Trainer(model=TransE(), debug=False)
+            >>> trainer = Trainer(TransE())
             >>> trainer.build_model()
             >>> trainer.train_model()
     """
+    _logger = Logger().get_logger(__name__)
 
-    def __init__(self, model, trainon='train',teston='test',debug=False, tuning=False):
-        self.debug = debug
+    def __init__(self, model):
         self.model = model
-        self.config = self.model.config
+        self.config = model.config
+
         self.training_results = []
-        self.gen_train = None
-        self.tuning=tuning
-        self.trainon = trainon
-        self.teston = teston
 
         self.evaluator = None
-        self.gen_train = None
+        self.generator = None
 
     def build_model(self):
         """function to build the model"""
-        self.model.def_inputs()
-        self.model.def_parameters()
-        if getattr(self.model, "def_layer", None):
-            self.model.def_layer()
-        self.model.def_loss()
-
-        if not self.debug:
-            self.sess = tf.Session(config=self.config.gpu_config)
-        else:
-            self.sess = tf.InteractiveSession()
-        self.global_step = tf.Variable(0, name="global_step", trainable=False)
-
-        if self.config.optimizer == 'sgd':
-            self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.config.learning_rate)
-        elif self.config.optimizer == 'rms':
-            self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.config.learning_rate)
-        elif self.config.optimizer == 'adam':
-            self.optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
-        elif self.config.optimizer == 'adagrad':
-            self.optimizer = tf.train.AdagradOptimizer(learning_rate=self.config.learning_rate)
-        elif self.config.optimizer == 'adadelta':
-            self.optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config.learning_rate)
+        self.model.to(self.config.device)
+        if self.config.optimizer == "adam":
+            self.optimizer = optim.Adam(
+                self.model.parameters(),
+                lr=self.config.learning_rate,
+            )
+        elif self.config.optimizer == "sgd":
+            self.optimizer = optim.SGD(
+                self.model.parameters(),
+                lr=self.config.learning_rate,
+            )
+        elif self.config.optimizer == "adagrad":
+            self.optimizer = optim.Adagrad(
+                self.model.parameters(),
+                lr=self.config.learning_rate,
+            )
+        elif self.config.optimizer == "rms":
+            self.optimizer = optim.RMSprop(
+                self.model.parameters(),
+                lr=self.config.learning_rate,
+            )
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
 
-        grads = self.optimizer.compute_gradients(self.model.loss)
-        self.op_train = optimizer.apply_gradients(grads, global_step=self.global_step)
-        self.sess.run(tf.global_variables_initializer())
-        self.saver =  tf.train.Saver()
-        if not self.tuning:
-            self.summary()
-            self.summary_hyperparameter()
+        self.config.summary()
+        self.config.summary_hyperparameter(self.model.model_name)
 
-        self.generator_config = GeneratorConfig(data=self.trainon, algo=self.model.model_name,
-                                                batch_size=self.model.config.batch_size,
-                                                process_num=self.model.config.num_process_gen,
-                                                neg_rate=self.config.neg_rate)
-
+        self.early_stopper = EarlyStopper(self.config.patience, Monitor.FILTERED_MEAN_RANK)
 
     ''' Training related functions:'''
+    def train_step_pairwise(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
+        pos_preds = self.model(pos_h, pos_r, pos_t)
+        neg_preds = self.model(neg_h, neg_r, neg_t)
 
-    def train_model(self):
+        if self.config.sampling == 'adversarial_negative_sampling':
+            # RotatE: Adversarial Negative Sampling and alpha is the temperature.
+            pos_preds = -pos_preds
+            neg_preds = -neg_preds
+            pos_preds = F.logsigmoid(pos_preds)
+            neg_preds = neg_preds.view((-1, self.config.neg_rate))
+            softmax = nn.Softmax(dim=1)(neg_preds*self.config.alpha).detach()
+            neg_preds = torch.sum(softmax * (F.logsigmoid(-neg_preds)), dim=-1)
+            loss = -neg_preds.mean() - pos_preds.mean()
+        else:
+            # others that use margin-based & pairwise loss function. (uniform or bern)
+            loss = pos_preds + self.config.margin - neg_preds
+            loss = torch.max(loss, torch.zeros_like(loss)).sum()
+            
+        if hasattr(self.model, 'get_reg'):
+            # now only NTN uses regularizer,
+            # other pairwise based KGE methods use normalization to regularize parameters.
+            loss += self.model.get_reg()
+
+        return loss
+
+    def train_step_projection(self, h, r, t, hr_t, tr_h):
+        if self.model.model_name.lower() == "conve" or self.model.model_name.lower() == "tucker":
+            if hasattr(self.config, 'label_smoothing'):
+                hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+                tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+
+            pred_tails = self.model(h, r, direction="tail")  # (h, r) -> hr_t forward
+            pred_heads = self.model(t, r, direction="head")  # (t, r) -> tr_h backward
+
+            loss_tails = torch.mean(F.binary_cross_entropy(pred_tails, hr_t))
+            loss_heads = torch.mean(F.binary_cross_entropy(pred_heads, tr_h))
+
+            loss = loss_tails + loss_heads
+
+        else:
+            loss_tails = self.model(h, r, hr_t, direction="tail")  # (h, r) -> hr_t forward
+            loss_heads = self.model(t, r, tr_h, direction="head")  # (t, r) -> tr_h backward
+
+            loss = loss_tails + loss_heads
+
+            if hasattr(self.model, 'get_reg'):
+                # now only complex distmult uses regularizer in algorithms,
+                loss += self.model.get_reg()
+
+        return loss
+
+    def train_step_pointwise(self, h, r, t, y):
+        preds = self.model(h, r, t)
+        loss = F.softplus(y*preds).mean()
+
+        if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult & CP & ANALOGY
+            loss += self.model.get_reg(h, r, t)
+
+        return loss
+
+    def train_model(self, monitor=Monitor.FILTERED_MEAN_RANK):
         """Function to train the model."""
-        loss = 0
+        self.generator = Generator(self.model)
+        self.evaluator = Evaluator(self.model)
 
         if self.config.loadFromData:
             self.load_model()
-        else:
-            self.gen_train = Generator(config=self.generator_config, model_config=self.model.config)
+        
+        for cur_epoch_idx in range(self.config.epochs):
+            self._logger.info("Epoch[%d/%d]" % (cur_epoch_idx, self.config.epochs))
+            
+            self.train_model_epoch(cur_epoch_idx)
 
-            if not self.tuning:
-                self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
+            if cur_epoch_idx % self.config.test_step == 0:
+                self.model.eval()
+                metrics = self.evaluator.mini_test(cur_epoch_idx)
+                              
+                if self.early_stopper.should_stop(metrics):
+                    ### Early Stop Mechanism
+                    ### start to check if the metric is still improving after each mini-test.
+                    ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
+                    break
 
-            for n_iter in range(self.config.epochs):
-                loss = self.train_model_epoch(n_iter)
-                if not self.tuning:
-                    self.test(n_iter)
+        self.evaluator.full_test(cur_epoch_idx)
+        self.evaluator.metric_calculator.save_test_summary(self.model.model_name)
 
-            self.gen_train.stop()
+        self.generator.stop()
+        self.save_training_result()
 
-            if not self.tuning:
-                self.evaluator.save_training_result(self.training_results)
-                self.evaluator.stop()
-
-            if self.config.save_model:
-                self.save_model()
+        if self.config.save_model:
+            self.save_model()
 
         if self.config.disp_result:
             self.display()
 
         if self.config.disp_summary:
-            self.summary()
-            self.summary_hyperparameter()
+            self.config.summary()
+            self.config.summary_hyperparameter(self.model.model_name)
 
         self.export_embeddings()
 
-        self.sess.close()
-        tf.reset_default_graph() # clean the tensorflow for the next training task.
-
-        return loss
+        return cur_epoch_idx # the runned epoches.
 
     def tune_model(self):
         """Function to tune the model."""
-        acc = 0
+        current_loss = float("inf")
 
-        self.gen_train = Generator(config=self.generator_config, model_config=self.model.config)
-
-        self.evaluator = Evaluation(model=self.model,data_type=self.teston, debug=self.debug, tuning=True, session=self.sess)
+        self.generator = Generator(self.model)
+        self.evaluator = Evaluator(self.model, tuning=True)
        
-        for n_iter in range( self.config.epochs):
-            self.train_model_epoch(n_iter)
+        for cur_epoch_idx in range(self.config.epochs):
+            current_loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
 
-        self.gen_train.stop()
-        self.evaluator.test_batch(n_iter)
-        acc = self.evaluator.output_queue.get()
-        self.evaluator.stop()
-        self.sess.close()
-        tf.reset_default_graph() # clean the tensorflow for the next training task.
+        self.evaluator.full_test(cur_epoch_idx)
 
-        return acc
+        self.generator.stop()
+        
+        return current_loss
 
-    def train_model_epoch(self, epoch_idx):
+    def train_model_epoch(self, epoch_idx, tuning=False):
         """Function to train the model for one epoch."""
         acc_loss = 0
 
-        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.debug else 10
+        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.config.debug else 10
+       
+        self.generator.start_one_epoch(num_batch)
+        
+        progress_bar = tqdm(range(num_batch))
 
-        start_time = timeit.default_timer()
+        for _ in progress_bar:
+            data = list(next(self.generator))
+            
+            self.model.train()
+            self.optimizer.zero_grad()
 
-        for batch_idx in range(num_batch):
-            data = list(next(self.gen_train))
-            if self.model.model_name.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
-                h = data[0]
-                r = data[1]
-                t = data[2]
-                hr_t = data[3]
-                rt_h = data[4]
-
-                feed_dict = {
-                    self.model.h: h,
-                    self.model.r: r,
-                    self.model.t: t,
-                    self.model.hr_t: hr_t,
-                    self.model.rt_h: rt_h
-                }
+            if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
+                h = torch.LongTensor(data[0]).to(self.config.device)
+                r = torch.LongTensor(data[1]).to(self.config.device)
+                t = torch.LongTensor(data[2]).to(self.config.device)
+                hr_t = data[3].to(self.config.device)
+                tr_h = data[4].to(self.config.device)
+                loss = self.train_step_projection(h, r, t, hr_t, tr_h)
+            elif self.model.training_strategy == TrainingStrategy.POINTWISE_BASED:
+                h = torch.LongTensor(data[0]).to(self.config.device)
+                r = torch.LongTensor(data[1]).to(self.config.device)
+                t = torch.LongTensor(data[2]).to(self.config.device)
+                y = torch.LongTensor(data[3]).to(self.config.device)
+                loss = self.train_step_pointwise(h, r, t, y)
+            elif self.model.training_strategy == TrainingStrategy.PAIRWISE_BASED:
+                pos_h = torch.LongTensor(data[0]).to(self.config.device)
+                pos_r = torch.LongTensor(data[1]).to(self.config.device)
+                pos_t = torch.LongTensor(data[2]).to(self.config.device)
+                neg_h = torch.LongTensor(data[3]).to(self.config.device)
+                neg_r = torch.LongTensor(data[4]).to(self.config.device)
+                neg_t = torch.LongTensor(data[5]).to(self.config.device)
+                loss = self.train_step_pairwise(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
             else:
-                ph = data[0]
-                pr = data[1]
-                pt = data[2]
-                nh = data[3]
-                nr = data[4]
-                nt = data[5]
+                raise NotImplementedError("Unknown training strategy: %s" % self.model.training_strategy)
+                
+            loss.backward()
+            self.optimizer.step()
+            acc_loss += loss.item()
 
-                feed_dict = {
-                    self.model.pos_h: ph,
-                    self.model.pos_t: pt,
-                    self.model.pos_r: pr,
-                    self.model.neg_h: nh,
-                    self.model.neg_t: nt,
-                    self.model.neg_r: nr
-                }
-            _, step, loss = self.sess.run([self.op_train, self.global_step, self.model.loss], feed_dict)
-
-            acc_loss += loss
-
-            if not self.tuning:
-                print('[%.2f sec](%d/%d): -- loss: %.5f' % (timeit.default_timer() - start_time,
-                                                            batch_idx, num_batch, loss), end='\r')
-        if not self.tuning:
-            print('iter[%d] ---Train Loss: %.5f ---time: %.2f' % (
-                epoch_idx, acc_loss, timeit.default_timer() - start_time))
-
+            if not tuning:
+                progress_bar.set_description('acc_loss: %f, cur_loss: %f'% (acc_loss, loss))
+            
         self.training_results.append([epoch_idx, acc_loss])
 
         return acc_loss
-
-    ''' Testing related functions:'''
-
-    def test(self, curr_epoch):
-        """function to test the model.
-           
-           Args:
-                curr_epoch (int): The current epoch number.
-        """
-        if not self.evaluator: 
-            self.evaluator = Evaluation(model=self.model, data_type=self.teston, debug=self.debug, session=self.sess)
-
-        if not self.config.full_test_flag and (curr_epoch % self.config.test_step == 0 or
-                                               curr_epoch == 0 or
-                                               curr_epoch == self.config.epochs - 1):
-            self.evaluator.test_batch(curr_epoch)
-        else:
-            if curr_epoch == self.config.epochs - 1:
-                self.evaluator.test_batch(curr_epoch)
-
-    ''' Interactive Inference related '''
    
     def enter_interactive_mode(self):
         self.build_model()
         self.load_model()
 
-        print("The training/loading of the model has finished!\nNow enter interactive mode :)")
-        print("-----")
-        print("Example 1: trainer.infer_tails(1,10,topk=5)")
-        self.infer_tails(1,10,topk=5)
+        self.evaluator = Evaluator(self.model)
+        self._logger.info("""The training/loading of the model has finished!
+                                    Now enter interactive mode :)
+                                    -----
+                                    Example 1: trainer.infer_tails(1,10,topk=5)""")
+        self.infer_tails(1, 10, topk=5)
 
-        print("-----")
-        print("Example 2: trainer.infer_heads(10,20,topk=5)")
-        self.infer_heads(10,20,topk=5)
+        self._logger.info("""-----
+                                    Example 2: trainer.infer_heads(10,20,topk=5)""")
+        self.infer_heads(10, 20, topk=5)
 
-        print("-----")
-        print("Example 3: trainer.infer_rels(1,20,topk=5)")
-        self.infer_rels(1,20,topk=5)
+        self._logger.info("""-----
+                                    Example 3: trainer.infer_rels(1,20,topk=5)""")
+        self.infer_rels(1, 20, topk=5)
 
     def exit_interactive_mode(self):
-        self.sess.close()
-        tf.reset_default_graph() # clean the tensorflow for the next training task.
-
-        print("Thank you for trying out inference interactive script :)")
+        self._logger.info("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self,h,r,topk=5):
-        tails_op = self.model.infer_tails(h,r,topk)
-        tails = self.sess.run(tails_op)
-        print("\n(head, relation)->({},{}) :: Inferred tails->({})\n".format(h,r,",".join([str(i) for i in tails])))
+        tails = self.evaluator.test_tail_rank(h, r, topk).cpu().numpy()
+        logs = [""]
+        logs.append("(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])))
+        logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("head: %s" % idx2ent[h])
-        print("relation: %s" % idx2rel[r])
+        logs.append("head: %s" % idx2ent[h])
+        logs.append("relation: %s" % idx2rel[r])
 
         for idx, tail in enumerate(tails):
-            print("%dth predicted tail: %s" % (idx, idx2ent[tail]))
+            logs.append("%dth predicted tail: %s" % (idx, idx2ent[tail]))
 
+        self._logger.info("\n".join(logs))
         return {tail: idx2ent[tail] for tail in tails}
 
     def infer_heads(self,r,t,topk=5):
-        heads_op = self.model.infer_heads(r,t,topk)
-        heads = self.sess.run(heads_op)
-        
-        print("\n(relation,tail)->({},{}) :: Inferred heads->({})\n".format(t,r,",".join([str(i) for i in heads])))
+        heads = self.evaluator.test_head_rank(r, t, topk).cpu().numpy()
+        logs = [""]
+        logs.append("(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])))
+        logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("tail: %s" % idx2ent[t])
-        print("relation: %s" % idx2rel[r])
+        logs.append("tail: %s" % idx2ent[t])
+        logs.append("relation: %s" % idx2rel[r])
 
         for idx, head in enumerate(heads):
-            print("%dth predicted head: %s" % (idx, idx2ent[head]))
+            logs.append("%dth predicted head: %s" % (idx, idx2ent[head]))
 
+        self._logger.info("\n".join(logs))
         return {head: idx2ent[head] for head in heads}
 
     def infer_rels(self, h, t, topk=5):
-        rels_op = self.model.infer_rels(h, t, topk)
-        rels = self.sess.run(rels_op)
+        if self.model.model_name.lower() in ["proje_pointwise", "conve", "tucker"]:
+            self._logger.info("%s model doesn't support relation inference in nature.")
+            return
 
-        print("\n(head,tail)->({},{}) :: Inferred rels->({})\n".format(h, t, ",".join([str(i) for i in rels])))
+        rels = self.evaluator.test_rel_rank(h, t, topk).cpu().numpy()
+        logs = [""]
+        logs.append("(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])))
+        logs.append("")
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-        print("head: %s" % idx2ent[h])
-        print("tail: %s" % idx2ent[t])
+        logs.append("head: %s" % idx2ent[h])
+        logs.append("tail: %s" % idx2ent[t])
 
         for idx, rel in enumerate(rels):
-            print("%dth predicted rel: %s" % (idx, idx2rel[rel]))
+            logs.append("%dth predicted rel: %s" % (idx, idx2rel[rel]))
 
+        self._logger.info("\n".join(logs))
         return {rel: idx2rel[rel] for rel in rels}
-    ''' Procedural functions:'''
-
+    
+    # ''' Procedural functions:'''
     def save_model(self):
         """Function to save the model."""
         saved_path = self.config.path_tmp / self.model.model_name
         saved_path.mkdir(parents=True, exist_ok=True)
-
-        saver = tf.train.Saver(self.model.parameter_list)
-        saver.save(self.sess, str(saved_path / 'model.vec'))
+        torch.save(self.model.state_dict(), str(saved_path / 'model.vec.pt'))
 
     def load_model(self):
         """Function to load the model."""
         saved_path = self.config.path_tmp / self.model.model_name
         if saved_path.exists():
-            saver = tf.train.Saver(self.model.parameter_list)
-            saver.restore(self.sess, str(saved_path / 'model.vec'))
+            self.model.load_state_dict(torch.load(str(saved_path / 'model.vec.pt')))
+            self.model.eval()
 
     def display(self):
         """Function to display embedding."""
@@ -317,25 +401,22 @@ class Trainer(TrainerMeta):
                     "ent_and_rel_plot": not self.config.plot_entity_only}
 
         if self.config.plot_embedding:
-            viz = Visualization(model=self.model, vis_opts = options, sess=self.sess)
-
-            viz.plot_embedding(resultpath=self.config.figures,
-                               algos=self.model.model_name,
-                               show_label=False)
+            viz = Visualization(model=self.model, vis_opts = options)
+            viz.plot_embedding(resultpath=self.config.path_figures, algos=self.model.model_name, show_label=False)
 
         if self.config.plot_training_result:
-            viz = Visualization(model=self.model, sess=self.sess)
+            viz = Visualization(model=self.model)
             viz.plot_train_result()
 
         if self.config.plot_testing_result:
-            viz = Visualization(model=self.model, sess=self.sess)
+            viz = Visualization(model=self.model)
             viz.plot_test_result()
     
     def export_embeddings(self):
         """
-            Export embeddings in tsv and pandas pickled format. 
+            Export embeddings in tsv and pandas pickled format.
             With tsvs (both label, vector files), you can:
-            1) Use those pretained embeddings for your applications.  
+            1) Use those pretained embeddings for your applications.
             2) Visualize the embeddings in this website to gain insights. (https://projector.tensorflow.org/)
 
             Pandas dataframes can be read with pd.read_pickle('desired_file.pickle')
@@ -345,7 +426,6 @@ class Trainer(TrainerMeta):
         
         idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-
 
         series_ent = pd.Series(idx2ent)
         series_rel = pd.Series(idx2rel)
@@ -360,14 +440,13 @@ class Trainer(TrainerMeta):
             for label in idx2rel.values():
                 l_export_file.write(label + "\n")
 
-        for parameter in self.model.parameter_list:
-            all_ids = list(range(0, int(parameter.shape[0])))
-            stored_name = parameter.name.split(':')[0]
-            # import pdb; pdb.set_trace()
+        for named_embedding in self.model.parameter_list:
+            all_ids = list(range(0, int(named_embedding.weight.shape[0])))
 
-            if len(parameter.shape) == 2:
-                op_get_all_embs = tf.nn.embedding_lookup(parameter, all_ids)
-                all_embs = self.sess.run(op_get_all_embs)
+            stored_name = named_embedding.name
+
+            if len(named_embedding.shape) == 2:
+                all_embs = named_embedding.weight.detach().cpu().numpy()
                 with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
                     for idx in all_ids:
                         v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
@@ -375,32 +454,11 @@ class Trainer(TrainerMeta):
                 df = pd.DataFrame(all_embs)
                 df.to_pickle(save_path / ("%s.pickle" % stored_name))
 
-                    
-    def summary(self):
-        """Function to print the summary."""
-        print("\n------------------Global Setting--------------------")
-        # Acquire the max length and add four more spaces
-        maxspace = len(max([k for k in self.config.__dict__.keys()])) +20
-        for key, val in self.config.__dict__.items():
-            if key in self.config.__dict__['hyperparameters']:
-                continue
-
-            if isinstance(val, (KGMetaData, KnowledgeGraph)) or key.startswith('gpu') or key.startswith('hyperparameters'):
-                continue
-
-            if len(key) < maxspace:
-                for i in range(maxspace - len(key)):
-                    key = ' ' + key
-            print("%s : %s"%(key, val))
-        print("---------------------------------------------------")
-
-    def summary_hyperparameter(self):
-        """Function to print the hyperparameter summary."""
-        print("\n-----------%s Hyperparameter Setting-------------"%(self.model.model_name))
-        maxspace = len(max([k for k in self.config.hyperparameters.keys()])) + 15
-        for key,val in self.config.hyperparameters.items():
-            if len(key) < maxspace:
-                for i in range(maxspace - len(key)):
-                    key = ' ' + key
-            print("%s : %s" % (key, val))
-        print("---------------------------------------------------")
+    def save_training_result(self):
+        """Function that saves training result"""
+        files = os.listdir(str(self.model.config.path_result))
+        l = len([f for f in files if self.model.model_name in f if 'Training' in f])
+        df = pd.DataFrame(self.training_results, columns=['Epochs', 'Loss'])
+        with open(str(self.model.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
+                  'w') as fh:
+            df.to_csv(fh)

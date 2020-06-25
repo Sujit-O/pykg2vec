@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from pykg2vec.core.KGMeta import ModelMeta
+from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.utils.generator import TrainingStrategy
 
-import tensorflow as tf
 
-from pykg2vec.core.KGMeta import ModelMeta, InferenceMeta
-
-
-class TransE(ModelMeta, InferenceMeta):
+class TransE(ModelMeta):
     """ `Translating Embeddings for Modeling Multi-relational Data`_
 
         TransE is an energy based model which represents the
@@ -30,7 +29,7 @@ class TransE(ModelMeta, InferenceMeta):
             >>> from pykg2vec.core.TransE import TransE
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransE()
-            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
 
@@ -44,162 +43,59 @@ class TransE(ModelMeta, InferenceMeta):
             http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-rela
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
+
+        super(TransE, self).__init__()
+
         self.config = config
         self.model_name = 'TransE'
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
-    def def_inputs(self):
-        """Defines the inputs to the model.
+        self.ent_embeddings = nn.Embedding(self.config.kg_meta.tot_entity, self.config.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.config.kg_meta.tot_relation, self.config.hidden_size)
+        nn.init.xavier_uniform_(self.ent_embeddings.weight)
+        nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
-           Attributes:
-              pos_h (Tensor): Positive Head entities ids.
-              pos_r (Tensor): Positive Relation ids of the triple.
-              pos_t (Tensor): Positive Tail entity ids of the triple.
-              neg_h (Tensor): Negative Head entities ids.
-              neg_r (Tensor): Negative Relation ids of the triple.
-              neg_t (Tensor): Negative Tail entity ids of the triple.
-              test_h_batch (Tensor): Batch of head ids for testing.
-              test_r_batch (Tensor): Batch of relation ids for testing
-              test_t_batch (Tensor): Batch of tail ids for testing.
+        self.parameter_list = [
+            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
+            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+        ]
+
+    def forward(self, h, r, t):
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids.
+               t (Tensor): Tail entity ids.
+
+            Returns:
+                Tensors: the scores of evaluationReturns head, relation and tail embedding Tensors.
         """
-        self.pos_h = tf.placeholder(tf.int32, [None])
-        self.pos_t = tf.placeholder(tf.int32, [None])
-        self.pos_r = tf.placeholder(tf.int32, [None])
-        self.neg_h = tf.placeholder(tf.int32, [None])
-        self.neg_t = tf.placeholder(tf.int32, [None])
-        self.neg_r = tf.placeholder(tf.int32, [None])
-        self.test_h_batch = tf.placeholder(tf.int32, [None])
-        self.test_t_batch = tf.placeholder(tf.int32, [None])
-        self.test_r_batch = tf.placeholder(tf.int32, [None])
+        h_e, r_e, t_e = self.embed(h, r, t)
 
-    def def_parameters(self):
-        """Defines the model parameters.
-
-           Attributes:
-               num_total_ent (int): Total number of entities.
-               num_total_rel (int): Total number of relations.
-               k (Tensor): Size of the latent dimesnion for entities and relations.
-               ent_embeddings (Tensor Variable): Lookup variable containing  embedding of the entities.
-               rel_embeddings  (Tensor Variable): Lookup variable containing  embedding of the relations.
-               parameter_list  (list): List of Tensor parameters.
-        """
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
-
-        with tf.name_scope("embedding"):
-            self.ent_embeddings = tf.get_variable(name="ent_embedding", shape=[num_total_ent, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-            self.rel_embeddings = tf.get_variable(name="rel_embedding", shape=[num_total_rel, k],
-                                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
-
-            self.parameter_list = [self.ent_embeddings, self.rel_embeddings]
-
-    def dissimilarity(self, h, r, t, axis=-1):
-        """Function to calculate distance measure in embedding space.
-        
-        if used in def_loss,
-            h, r, t shape [b, k], return shape will be [b]
-        if used in test_batch, 
-            h, r, t shape [1, tot_ent, k] or [b, 1, k], return shape will be [b, tot_ent]
-
-        Args:
-            h (Tensor): shape [b, k] Head entities in a batch. 
-            r (Tensor): shape [b, k] Relation entities in a batch.
-            t (Tensor): shape [b, k] Tail entities in a batch.
-            axis (int): Determines the axis for reduction
-
-        Returns:
-            Tensor: shape [b] the aggregated distance measure.
-        """
-        norm_h = tf.nn.l2_normalize(h, axis=axis)
-        norm_r = tf.nn.l2_normalize(r, axis=axis)
-        norm_t = tf.nn.l2_normalize(t, axis=axis)
-        
-        dissimilarity = norm_h + norm_r - norm_t 
+        norm_h_e = F.normalize(h_e, p=2, dim=-1)
+        norm_r_e = F.normalize(r_e, p=2, dim=-1)
+        norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
         if self.config.L1_flag:
-            dissimilarity = tf.math.abs(dissimilarity) # L1 norm 
+            return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
-            dissimilarity = tf.math.square(dissimilarity) # L2 norm
-        
-        return tf.reduce_sum(dissimilarity, axis=axis)
-
-    def def_loss(self):
-        """Defines the loss function for the algorithm."""
-        pos_h_e, pos_r_e, pos_t_e = self.embed(self.pos_h, self.pos_r, self.pos_t)
-        pos_score = self.dissimilarity(pos_h_e, pos_r_e, pos_t_e)
-
-        neg_h_e, neg_r_e, neg_t_e = self.embed(self.neg_h, self.neg_r, self.neg_t)      
-        neg_score = self.dissimilarity(neg_h_e, neg_r_e, neg_t_e)
-
-        self.loss = self.pairwise_margin_loss(pos_score, neg_score)
-
-    def test_batch(self):
-        """Function that performs batch testing for the algorithm.
-
-          Returns:
-              Tensors: Returns ranks of head and tail.
-        """
-        h_e, r_e, t_e = self.embed(self.test_h_batch, self.test_r_batch, self.test_t_batch)
-
-        expanded_ent_embeddings = tf.expand_dims(self.ent_embeddings, axis=0)
-        score_head = self.dissimilarity(expanded_ent_embeddings,
-                                        tf.expand_dims(r_e, axis=1),
-                                        tf.expand_dims(t_e, axis=1))
-        score_tail = self.dissimilarity(tf.expand_dims(h_e, axis=1),
-                                        tf.expand_dims(r_e, axis=1),
-                                        expanded_ent_embeddings)
-
-        _, head_rank = tf.nn.top_k(score_head, k=self.config.kg_meta.tot_entity)
-        _, tail_rank = tf.nn.top_k(score_tail, k=self.config.kg_meta.tot_entity)
-
-        return head_rank, tail_rank
+            return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
            Args:
                h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
+               r (Tensor): Relation ids.
+               t (Tensor): Tail entity ids.
 
             Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
+                Tensors: Returns a tuple of head, relation and tail embedding Tensors.
         """
-        emb_h = tf.nn.embedding_lookup(self.ent_embeddings, h)
-        emb_r = tf.nn.embedding_lookup(self.rel_embeddings, r)
-        emb_t = tf.nn.embedding_lookup(self.ent_embeddings, t)
+        h_e = self.ent_embeddings(h)
+        r_e = self.rel_embeddings(r)
+        t_e = self.ent_embeddings(t)
 
-        return emb_h, emb_r, emb_t
-
-    def get_embed(self, h, r, t, sess):
-        """Function to get the embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        emb_h, emb_r, emb_t = self.embed(h, r, t)
-        h, r, t = sess.run([emb_h, emb_r, emb_t])
-        return h, r, t
-
-    def get_proj_embed(self, h, r, t, sess=None):
-        """"Function to get the projected embedding value in numpy.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
-               sess (object): Tensorflow Session object.
-
-            Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
-         """
-        return self.get_embed(h, r, t, sess)
+        return h_e, r_e, t_e

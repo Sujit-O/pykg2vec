@@ -1,40 +1,17 @@
-import os
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
+import os, pytest
+from pathlib import Path
+from pykg2vec.utils.kgcontroller import KnowledgeGraph, KnownDataset
 
-
-def test_fb15k():
+@pytest.mark.parametrize("dataset_name", ["freebase15k", "wordnet18", "wordnet18_rr", "yago3_10"])
+def test_benchmarks(dataset_name):
     """Function to test the the knowledge graph parse for Freebase."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="uniform")
-    knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
-
-def test_dl50a():
-    """Function to test the the knowledge graph parse for Deep learning knowledge base."""
-    knowledge_graph = KnowledgeGraph(dataset="deeplearning50a", negative_sample="uniform")
-    knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
-
-def test_wn18():
-    """Function to test the the knowledge graph parse for Wordnet dataset."""
-    knowledge_graph = KnowledgeGraph(dataset="wordnet18", negative_sample="uniform")
-    knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
-
-def test_wn18rr():
-    """Function to test the the knowledge graph parse for Wordnet Dataset."""
-    knowledge_graph = KnowledgeGraph(dataset="wordnet18_rr", negative_sample="uniform")
-    knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
-
-def test_yago():
-    """Function to test the the knowledge graph parse for Yago Dataset."""
-    knowledge_graph = KnowledgeGraph(dataset="yago3_10", negative_sample="uniform")
+    knowledge_graph = KnowledgeGraph(dataset=dataset_name)
     knowledge_graph.force_prepare_data()
     knowledge_graph.dump()
 
 def test_fb15k_manipulate():
     """Function to test the the knowledge graph parse for Freebase and basic operations."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="bern")
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
     knowledge_graph.dump()
 
@@ -50,7 +27,7 @@ def test_fb15k_manipulate():
 
 def test_fb15k_meta():
     """Function to test the the knowledge graph parse for Freebase and basic operations."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k", negative_sample="bern")
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
     knowledge_graph.dump()
 
@@ -62,8 +39,8 @@ def test_fb15k_meta():
 
 
 def test_userdefined_dataset():
-    custom_dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resource/custom_dataset")
-    knowledge_graph = KnowledgeGraph(dataset="userdefineddataset", negative_sample="uniform", custom_dataset_path=custom_dataset_path)
+    custom_dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resource', 'custom_dataset')
+    knowledge_graph = KnowledgeGraph(dataset="userdefineddataset", custom_dataset_path=custom_dataset_path)
     knowledge_graph.prepare_data()
     knowledge_graph.dump()
 
@@ -85,3 +62,21 @@ def test_userdefined_dataset():
     assert knowledge_graph.kg_meta.tot_valid_triples == 1
     assert knowledge_graph.kg_meta.tot_entity == 6
     assert knowledge_graph.kg_meta.tot_relation == 3
+
+@pytest.mark.parametrize('file_name, new_ext', [
+    ('dataset.tar.gz', 'tgz'),
+    ('dataset.tgz', 'tgz'),
+    ('dataset.zip', 'zip'),
+])
+def test_extract_compressed_dataset(file_name, new_ext):
+    url = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resource', file_name)).absolute().as_uri()
+    dataset_name = 'test_dataset_%s' % file_name.replace('.', '_')
+    dataset = KnownDataset(dataset_name, url, 'userdefineddataset-')
+    dataset_dir = os.path.join(dataset.dataset_home_path, dataset_name)
+    dataset_files = os.listdir(dataset_dir)
+
+    assert len(dataset_files) == 4
+    assert dataset_name + '.' + new_ext in dataset_files
+    assert 'userdefineddataset-train.txt' in dataset_files
+    assert 'userdefineddataset-test.txt' in dataset_files
+    assert 'userdefineddataset-valid.txt' in dataset_files

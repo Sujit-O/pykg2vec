@@ -1,36 +1,22 @@
 Introduction
 ===============
 
-In recent years, Knowledge Graph Embedding (KGE) methods have been applied in benchmark
-datasets including Wikidata_, Freebase_, DBpedia_,
-and YAGO_. Applications of KGE methods include fact prediction, question answering, and recommender systems.
+Pykg2vec is built with PyTorch for learning the representation of entities and relations in Knowledge Graphs.
+In recent years, Knowledge Graph Embedding (KGE) methods have been applied in applications such as Fact Prediction, Question Answering, and Recommender Systems.
+KGE is an active research field and many authors have provided reference software implementations.
 
-KGE is an active area of research and many authors have provided reference software implementations.
-However, most of these are standalone reference implementations and therefore it is difficult and
-time-consuming to:
+However, most of these are standalone reference implementations and therefore it is difficult and time-consuming to work with KGE methods. Therefore, we built this library, pykg2vec, hoping to contribute this community with:
 
-(i) find the source code
-(ii) adapt the source code to new datasets
-(iii) correctly parameterize the models
-(iv) compare against other methods
+1. A sheer amount of existing state-of-the-art knowledge graph embedding algorithms (TransE, TransH, TransR, TransD, TransM, KG2E, RESCAL, DistMult, ComplEX, ConvE, ProjE, RotatE, SME, SLM, NTN, TuckER, etc) is presented.
+2. The module that supports automatic hyperparameter tuning using bayesian optimization.
+3. A suite of visualization and summary tools to facilitate result inspection.
 
-Recently, this problem has been partially addressed by libraries such as OpenKE_ and AmpliGraph_ that provide a
-framework common to several KGE methods. However, these frameworks take different perspectives, make specific
-assumptions, and thus the resulting implementations diverge substantially from the original architectures.
-Furthermore, these libraries often force the user to use preset hyperparameters, or make implicit use of
-golden hyperparameters, and thus make it tedious and time-consuming to adapt the models to new datasets.
+.. image:: ../../figures/pykg2vec_structure.png
+   :width: 600
+   :align: center
+   :alt: Structure of the pykg2vec library.
 
-**To solve these issues we propose pykg2vec which is a single Python library with large collection of state-of-the-art
-KGE methods. The goals of pykg2vec are to be practical and educational.** The practical value is achieved through:
-
-(a) proper use of GPUs and CPUs
-(b) a set of tools to automate the discovery of golden hyperparameters
-(c) a set of visualization tools for the training and results of the embeddings
-
-The educational value is achieved through:
-
-(d) a modular and flexible software architecture and KGE pipeline
-(e) access to a large number of state-of-the-art KGE models
+We hope Pykg2vec has both practical and educational values for users who hope to explore the related fields.
 
 .. _Wikidata: https://cacm.acm.org/magazines/2014/10/178785-wikidata/fulltext
 .. _Freebase: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.538.7139&rep=rep1&type=pdf
