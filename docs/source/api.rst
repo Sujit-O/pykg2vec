@@ -205,9 +205,3 @@ pykg2vec.test.test_model
 
 .. automodule:: pykg2vec.test.test_model
    :members:
-
-pykg2vec.test.test_KGPipeline
------------------------------
-
-.. automodule:: pykg2vec.test.test_KGPipeline
-   :members:   
