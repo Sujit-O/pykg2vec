@@ -1,13 +1,12 @@
 '''
-=========================
-Full Pykg2vec pipeline
-=========================
-In this example, we will demonstrate how the full
-pykg2vec pipeline can be used. This pipeline includes tuning the 
-algorithm's hyperparameter using training and validation set.
-Then using the tuned hyper-parameter train the algorithm again on
-combined training and validation data to finally get the results on 
-the testing set. 
+======================================
+Full Pykg2vec pipeline (kgpipeline.py)
+======================================
+kgpipeline.py demonstrates the full pipeline of training KGE methods with pykg2vec.
+This pipeline first discover the best set of hyperparameters using training and validation set.
+Then it uses the discovered hyperparameters to evaluate the KGE algorithm on the testing set. ::
+
+    python kgpipeline.py
 
 ====
 
