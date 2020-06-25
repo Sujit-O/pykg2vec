@@ -23,9 +23,8 @@ Before using pykg2vec, we strongly recommend users to set up a virtual work envi
 * pytorch>= 1.5
 
 Quick Guide for users who use anaconda:
-Installation Guide
 
-Setup a Virtual Environment: we encourage you to use anaconda to work with pykg2vec:
+* Setup a Virtual Environment: we encourage you to use anaconda to work with pykg2vec:
 ```bash
 (base) $ conda create --name pykg2vec python=3.6
 (base) $ conda activate pykg2vec
