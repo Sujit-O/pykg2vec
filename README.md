@@ -16,11 +16,11 @@ Features:
 We welcome any form of contribution! Please refer to [CONTRIBUTING.md](https://github.com/Sujit-O/pykg2vec/blob/master/CONTRIBUTING.md) for more details. 
 
 ## To Get Started 
-Before using pykg2vec, we strongly recommend users to set up a virtual work environment (Anaconda) and to have the following libraries installed:
+Before using pykg2vec, we recommend users to have the following libraries installed:
 * python >=3.6 (recommended)
 * pytorch>= 1.5
 
-Quick Guide for users who use anaconda:
+Quick Guide for Anaconda users:
 
 * Setup a Virtual Environment: we encourage you to use anaconda to work with pykg2vec:
 ```bash
