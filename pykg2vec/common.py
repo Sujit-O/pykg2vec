@@ -221,6 +221,7 @@ class Importer:
     def __init__(self):
         self.model_path = "pykg2vec.models"
         self.config_path = "pykg2vec.config"
+        self.hyper_path = "pykg2vec.hyperparams"
 
         self.modelMap = {"analogy": "pointwise.ANALOGY",
                          "complex": "pointwise.Complex",
@@ -274,34 +275,72 @@ class Importer:
                           "transm": "TransMConfig",
                           "transr": "TransRConfig",
                           "tucker": "TuckERConfig"}
+        
+        self.hyperparamMap = {"analogy": "ANALOGYParams",
+                              "complex": "ComplexParams",
+                              "complexn3": "ComplexParams",
+                              "conve": "ConvEParams",
+                              "cp": "CPParams",
+                              "hole": "HoLEParams",
+                              "distmult": "DistMultParams",
+                              "kg2e": "KG2EParams",
+                              "kg2e_el": "KG2EParams",
+                              "ntn": "NTNParams",
+                              "proje_pointwise": "ProjE_pointwiseParams",
+                              "rescal": "RescalParams",
+                              "rotate": "RotatEParams",
+                              "simple": "SimplEParams",
+                              "simple_ignr": "SimplEParams",
+                              "slm": "SLMParams",
+                              "sme": "SMEParams",
+                              "sme_bl": "SMEParams",
+                              "transd": "TransDParams",
+                              "transe": "TransEParams",
+                              "transg": "TransGParams",
+                              "transh": "TransHParams",
+                              "transm": "TransMParams",
+                              "transr": "TransRParams",
+                              "tucker": "TuckERParams"}
+
+    def import_hyperparam_config(self, name):
+        hyper_obj = None 
+
+        try:
+            hyper_obj = getattr(importlib.import_module(self.hyper_path), self.hyperparamMap[name])
+          
+        except ModuleNotFoundError:
+            self._logger.error("%s model  has not been implemented. please select from: %s" % (
+            name, ' '.join(map(str, self.hyperparamMap.values()))))
+
+        return hyper_obj
 
     def import_model_config(self, name):
-      """This function imports models and configuration.
+        """This function imports models and configuration.
 
-      This function is used to dynamically import the modules within
-      pykg2vec. 
+        This function is used to dynamically import the modules within
+        pykg2vec. 
 
-      Args:
+        Args:
           name (str): The input to the module is either name of the model or the configuration file. The strings are converted to lowercase to makesure the user inputs can easily be matched to the names of the models and the configuration class.
 
-      Returns:
+        Returns:
           object: Configuration and model object after it is successfully loaded.
 
           `config_obj` (object): Returns the configuration class object of the corresponding algorithm.
           `model_obj` (object): Returns the model class object of the corresponding algorithm.
 
-      Raises:
+        Raises:
           ModuleNotFoundError: It raises a module not found error if the configuration or the model cannot be found.
-      """
-      config_obj = None
-      model_obj = None
-      try:
-          config_obj = getattr(importlib.import_module(self.config_path), self.configMap[name])
-          splited_path = self.modelMap[name].split('.')
-          model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % splited_path[0]), splited_path[1])
+        """
+        config_obj = None
+        model_obj = None
+        try:
+            config_obj = getattr(importlib.import_module(self.config_path), self.configMap[name])
+            splited_path = self.modelMap[name].split('.')
+            model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % splited_path[0]), splited_path[1])
 
-      except ModuleNotFoundError:
-          self._logger.error("%s model  has not been implemented. please select from: %s" % (
-          name, ' '.join(map(str, self.modelMap.values()))))
+        except ModuleNotFoundError:
+            self._logger.error("%s model  has not been implemented. please select from: %s" % (
+            name, ' '.join(map(str, self.modelMap.values()))))
 
-      return config_obj, model_obj
+        return config_obj, model_obj
