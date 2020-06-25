@@ -1297,7 +1297,7 @@ class ConvEConfig(BasicConfig):
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
         self.hidden_size_1 = args.hidden_size_1
-        self.hidden_size_2 = args.hidden_size // args.hidden_size_1
+        
         self.batch_size = args.batch_training
         self.epochs = args.epochs
         self.data = args.dataset_name
