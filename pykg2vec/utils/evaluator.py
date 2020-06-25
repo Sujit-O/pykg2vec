@@ -8,7 +8,6 @@ import timeit
 import torch
 import numpy as np
 import pandas as pd
-from pykg2vec.models.KGMeta import EvaluationMeta
 from pykg2vec.utils.logger import Logger
 from tqdm import tqdm
 
@@ -222,7 +221,7 @@ class MetricCalculator:
         self._logger.info("\n".join(test_results))
 
 
-class Evaluator(EvaluationMeta):
+class Evaluator:
     """Class to perform evaluation of the model.
 
         Args:

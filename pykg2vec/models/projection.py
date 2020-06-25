@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
-from pykg2vec.models.KGMeta import ModelMeta
+from pykg2vec.models.KGMeta import ProjectionModel
 from pykg2vec.models.Domain import NamedEmbedding
 from pykg2vec.common import TrainingStrategy
 
 
-class ConvE(ModelMeta):
+class ConvE(ProjectionModel):
     """`Convolutional 2D Knowledge Graph Embeddings`_
 
     ConvE is a multi-layer convolutional network model for link prediction,
@@ -18,7 +18,7 @@ class ConvE(ModelMeta):
     
     Attributes:
         config (object): Model configuration.
-        data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+        data_stats (object): ProjectionModel object instance. It consists of the knowledge graph metadata.
         model (str): Name of the model.
         last_dim (int): The size of the last dimesion, depends on hidden size.
 
@@ -36,11 +36,8 @@ class ConvE(ModelMeta):
     """
 
     def __init__(self, config):
-        super(ConvE, self).__init__()
-        self.config = config
-        self.model_name = 'ConvE'
-        self.training_strategy = TrainingStrategy.PROJECTION_BASED
-
+        super(ConvE, self).__init__(self.__class__.__name__.lower(), config)
+        
         self.config.hidden_size_2 = self.config.hidden_size // self.config.hidden_size_1
 
         num_total_ent = self.config.kg_meta.tot_entity
@@ -48,9 +45,11 @@ class ConvE(ModelMeta):
         k = self.config.hidden_size
 
         self.ent_embeddings = nn.Embedding(num_total_ent, k)
+        
         # because conve considers the reciprocal relations,
         # so every rel should have its mirrored rev_rel in ConvE.
         self.rel_embeddings = nn.Embedding(num_total_rel*2, k)
+        
         self.b = nn.Embedding(1, num_total_ent)
 
         self.bn0 = nn.BatchNorm2d(1)
@@ -136,7 +135,7 @@ class ConvE(ModelMeta):
         return tensor.permute(dims)
 
 
-class ProjE_pointwise(ModelMeta):
+class ProjE_pointwise(ProjectionModel):
     """`ProjE-Embedding Projection for Knowledge Graph Completion`_.
 
         Instead of measuring the distance or matching scores between the pair of the
@@ -152,7 +151,7 @@ class ProjE_pointwise(ModelMeta):
 
         Attributes:
             config (object): Model configuration.
-            data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+            data_stats (object): ProjectionModel object instance. It consists of the knowledge graph metadata.
             model_name (str): Name of the model.
 
         Examples:
@@ -169,11 +168,8 @@ class ProjE_pointwise(ModelMeta):
     """
 
     def __init__(self, config):
-        super(ProjE_pointwise, self).__init__()
-        self.config = config
-        self.model_name = 'ProjE_pointwise'
-        self.training_strategy = TrainingStrategy.PROJECTION_BASED
-
+        super(ProjE_pointwise, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -278,7 +274,7 @@ class ProjE_pointwise(ModelMeta):
         return tensor.permute(dims)
 
 
-class TuckER(ModelMeta):
+class TuckER(ProjectionModel):
     """ `TuckER-Tensor Factorization for Knowledge Graph Completion`_
 
         TuckER is a Tensor-factorization-based embedding technique based on
@@ -292,7 +288,7 @@ class TuckER(ModelMeta):
 
         Attributes:
             config (object): Model configuration.
-            data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+            data_stats (object): ProjectionModel object instance. It consists of the knowledge graph metadata.
             model_name (str): Name of the model.
 
         Examples:
@@ -309,11 +305,8 @@ class TuckER(ModelMeta):
     """
 
     def __init__(self, config=None):
-        super(TuckER, self).__init__()
-        self.config = config
-        self.model_name = 'TuckER'
-        self.training_strategy = TrainingStrategy.PROJECTION_BASED
-
+        super(TuckER, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         self.d1 = self.config.ent_hidden_size

@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-This module is for training process.
-"""
 import timeit, os, warnings
 warnings.filterwarnings('ignore')
 
@@ -12,7 +9,6 @@ import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
 
-from pykg2vec.models.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.data.generator import Generator
@@ -64,7 +60,7 @@ class EarlyStopper:
         return should_stop
 
 
-class Trainer(TrainerMeta):
+class Trainer:
     """Class for handling the training of the algorithms.
 
         Args:
