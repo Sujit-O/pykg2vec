@@ -4,7 +4,7 @@
 This module is for integration tests on visualization
 """
 from os import listdir
-from pykg2vec.config import KGEArgParser, Importer
+from pykg2vec.common import KGEArgParser, Importer
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
 

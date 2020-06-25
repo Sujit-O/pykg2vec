@@ -12,7 +12,7 @@ import pandas as pd
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.logger import Logger
-from pykg2vec.config import KGEArgParser
+from pykg2vec.common import KGEArgParser
 
 model_path = "pykg2vec.models"
 config_path = "pykg2vec.config"

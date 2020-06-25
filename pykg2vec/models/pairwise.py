@@ -852,10 +852,7 @@ class RotatE(PairwiseModel):
     """
 
     def __init__(self, config):
-        super(RotatE, self).__init__()
-        self.config = config
-        self.model_name = 'RotatE'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
+        super(RotatE, self).__init__(self.__class__.__name__.lower(), config)
 
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation

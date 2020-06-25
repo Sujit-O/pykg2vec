@@ -5,7 +5,7 @@ This module is for testing unit functions of generator
 """
 import torch
 from pykg2vec.data.generator import Generator
-from pykg2vec.config import Importer, KGEArgParser
+from pykg2vec.common import Importer, KGEArgParser
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 
 def test_generator_proje():
