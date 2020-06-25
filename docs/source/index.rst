@@ -38,9 +38,4 @@ library.
    contribute
    authors
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
+Click "Introduction" on the sidebar to start exploring pykg2vec.

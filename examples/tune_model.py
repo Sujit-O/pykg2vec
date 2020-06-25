@@ -1,6 +1,6 @@
 '''
 =================================================
-Automatic hyperparameter discovery
+Automatic Hyperparameter Discovery
 =================================================
 In this example, we will domonstrate how to 
 use the pykg2vec to tune a single algorithm.
