@@ -16,7 +16,6 @@ library.
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
    :caption: Quick Start Tutorial
 
    intro 
@@ -25,7 +24,6 @@ library.
    
 .. toctree::
    :maxdepth: 2
-   :hidden:
    :caption: User Documentation
 
    kge
@@ -34,12 +32,9 @@ library.
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
    :caption: Additional Information
 
    contribute
    authors
-
-Click "Introduction" on the sidebar to start exploring pykg2vec.
 
 .. _tf2-master: https://github.com/Sujit-O/pykg2vec/tree/tf2-master 
