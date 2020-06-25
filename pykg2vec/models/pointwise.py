@@ -99,30 +99,25 @@ class ANALOGY(PointwiseModel):
 
 
 class Complex(PointwiseModel):
-    """`Complex Embeddings for Simple Link Prediction`_.
-
-    ComplEx is an enhanced version of DistMult in that it uses complex-valued embeddings
-    to represent both entities and relations. Using the complex-valued embedding allows
-    the defined scoring function in ComplEx to differentiate that facts with assymmetric relations.
+    """ 
+        `Complex Embeddings for Simple Link Prediction`_ (ComplEx) is an enhanced version of DistMult in that it uses complex-valued embeddings
+        to represent both entities and relations. Using the complex-valued embedding allows
+        the defined scoring function in ComplEx to differentiate that facts with assymmetric relations.
     
-    Args:
-        config (object): Model configuration parameters.
+        Args:
+            config (object): Model configuration parameters.
 
-    Attributes:
-        config (object): Model configuration.
-        data_stats (object): PointwiseModel object instance. It consists of the knowledge graph metadata.
-        model (str): Name of the model.
-    
-    Examples:
-        >>> from pykg2vec.models.Complex import Complex
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = Complex()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
+        Examples:
+            >>> from pykg2vec.models.Complex import Complex
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = Complex()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    .. _Complex Embeddings for Simple Link Prediction:
-        http://proceedings.mlr.press/v48/trouillon16.pdf
+        .. _Complex Embeddings for Simple Link Prediction:
+            http://proceedings.mlr.press/v48/trouillon16.pdf
+
     """
 
     def __init__(self, config):
@@ -182,30 +177,25 @@ class Complex(PointwiseModel):
 
 
 class ComplexN3(Complex):
-    """`Complex Embeddings for Simple Link Prediction`_.
-
-    ComplEx is an enhanced version of DistMult in that it uses complex-valued embeddings
-    to represent both entities and relations. Using the complex-valued embedding allows
-    the defined scoring function in ComplEx to differentiate that facts with assymmetric relations.
+    """ 
+        `Complex Embeddings for Simple Link Prediction`_ (ComplEx) is an enhanced version of DistMult in that it uses complex-valued embeddings
+        to represent both entities and relations. Using the complex-valued embedding allows
+        the defined scoring function in ComplEx to differentiate that facts with assymmetric relations.
     
-    Args:
-        config (object): Model configuration parameters.
+        Args:
+            config (object): Model configuration parameters.
 
-    Attributes:
-        config (object): Model configuration.
-        data_stats (object): PointwiseModel object instance. It consists of the knowledge graph metadata.
-        model (str): Name of the model.
-    
-    Examples:
-        >>> from pykg2vec.models.Complex import Complex
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = Complex()
-        >>> trainer = Trainer(model=model, debug=False)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
+        Examples:
+            >>> from pykg2vec.models.Complex import Complex
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = Complex()
+            >>> trainer = Trainer(model=model, debug=False)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    .. _Complex Embeddings for Simple Link Prediction:
-        http://proceedings.mlr.press/v48/trouillon16.pdf
+        .. _Complex Embeddings for Simple Link Prediction:
+            http://proceedings.mlr.press/v48/trouillon16.pdf
+
     """
 
     def __init__(self, config):
@@ -221,36 +211,28 @@ class ComplexN3(Complex):
 
 
 class ConvKB(PointwiseModel):
-    """`A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network`_
+    """ 
+        In `A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network`_ (ConvKB), 
+        each triple (head entity, relation, tail entity) is represented as a 3-column matrix where each column vector represents a triple element
+        
+        Portion of the code based on daiquocnguyen_.
 
-    ConvKB, each triple (head entity, relation, tail entity) is represented as a 3-
-    column matrix where each column vector represents a triple element
+        Args:
+            config (object): Model configuration parameters.
+    
+        Examples:
+            >>> from pykg2vec.models.ConvKB import ConvKB
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = ConvKB()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+            
+        .. _daiquocnguyen:
+            https://github.com/daiquocnguyen/ConvKB
 
-    Args:
-        config (object): Model configuration parameters.
-    
-    Attributes:
-        config (object): Model configuration.
-        data_stats (object): PointwiseModel object instance. It consists of the knowledge graph metadata.
-        model (str): Name of the model.
-        last_dim (int): The size of the last dimesion, depends on hidden size.
-
-    
-    Examples:
-        >>> from pykg2vec.models.ConvKB import ConvKB
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = ConvKB()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
-    
-    Portion of the code based on daiquocnguyen_.
-    
-    .. _daiquocnguyen:
-        https://github.com/daiquocnguyen/ConvKB
-
-    .. _A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network:
-        https://www.aclweb.org/anthology/N18-2053
+        .. _A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network:
+            https://www.aclweb.org/anthology/N18-2053
     """
 
     def __init__(self, config):
@@ -364,23 +346,14 @@ class CP(PointwiseModel):
 
 
 class DistMult(PointwiseModel):
-    """`EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES`_
-
-        DistMult is a simpler model comparing with RESCAL in that it simplifies
+    """ 
+        `EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES`_ (DistMult) is a simpler model comparing with RESCAL in that it simplifies
         the weight matrix used in RESCAL to a diagonal matrix. The scoring
         function used DistMult can capture the pairwise interactions between
-        the head and the tail entities. However, DistMult has limitation on modeling
-        asymmetric relations.
+        the head and the tail entities. However, DistMult has limitation on modeling asymmetric relations.
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            data_stats (object): PointwiseModel object instance. It consists of the knowledge graph metadata.
-            tot_ent (int): Total unique entites in the knowledge graph.
-            tot_rel (int): Total unique relation in the knowledge graph.
-            model (str): Name of the model.
 
         Examples:
             >>> from pykg2vec.models.Complex import DistMult

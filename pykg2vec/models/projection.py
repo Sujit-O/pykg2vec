@@ -8,31 +8,24 @@ from pykg2vec.models.Domain import NamedEmbedding
 
 
 class ConvE(ProjectionModel):
-    """`Convolutional 2D Knowledge Graph Embeddings`_
+    """ 
+        `Convolutional 2D Knowledge Graph Embeddings`_ (ConvE) is a multi-layer convolutional network model for link prediction,
+        it is a embedding model which is highly parameter efficient.
 
-    ConvE is a multi-layer convolutional network model for link prediction,
-    it is a embedding model which is highly parameter efficient.
-
-    Args:
-        config (object): Model configuration parameters.
+        Args:
+            config (object): Model configuration parameters.
     
-    Attributes:
-        config (object): Model configuration.
-        data_stats (object): ProjectionModel object instance. It consists of the knowledge graph metadata.
-        model (str): Name of the model.
-        last_dim (int): The size of the last dimesion, depends on hidden size.
+        Examples:
+            >>> from pykg2vec.models.Complex import ConvE
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = ConvE()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    
-    Examples:
-        >>> from pykg2vec.models.Complex import ConvE
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = ConvE()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
+        .. _Convolutional 2D Knowledge Graph Embeddings:
+            https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/download/17366/15884
 
-    .. _Convolutional 2D Knowledge Graph Embeddings:
-        https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/download/17366/15884
     """
 
     def __init__(self, config):
@@ -136,9 +129,8 @@ class ConvE(ProjectionModel):
 
 
 class ProjE_pointwise(ProjectionModel):
-    """`ProjE-Embedding Projection for Knowledge Graph Completion`_.
-
-        Instead of measuring the distance or matching scores between the pair of the
+    """ 
+        `ProjE-Embedding Projection for Knowledge Graph Completion`_. (ProjE) Instead of measuring the distance or matching scores between the pair of the
         head entity and relation and then tail entity in embedding space ((h,r) vs (t)).
         ProjE projects the entity candidates onto a target vector representing the
         input data. The loss in ProjE is computed by the cross-entropy between
@@ -146,13 +138,8 @@ class ProjE_pointwise(ProjectionModel):
         entities will have value 0 if in negative sample set and value 1 if in
         positive sample set.
 
-         Args:
+        Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            data_stats (object): ProjectionModel object instance. It consists of the knowledge graph metadata.
-            model_name (str): Name of the model.
 
         Examples:
             >>> from pykg2vec.models.ProjE_pointwise import ProjE_pointwise
@@ -275,9 +262,9 @@ class ProjE_pointwise(ProjectionModel):
 
 
 class TuckER(ProjectionModel):
-    """ `TuckER-Tensor Factorization for Knowledge Graph Completion`_
-
-        TuckER is a Tensor-factorization-based embedding technique based on
+    """ 
+        `TuckER-Tensor Factorization for Knowledge Graph Completion`_ (TuckER) 
+        is a Tensor-factorization-based embedding technique based on
         the Tucker decomposition of a third-order binary tensor of triplets. Although
         being fully expressive, the number of parameters used in Tucker only grows linearly
         with respect to embedding dimension as the number of entities or relations in a
@@ -285,11 +272,6 @@ class TuckER(ProjectionModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            data_stats (object): ProjectionModel object instance. It consists of the knowledge graph metadata.
-            model_name (str): Name of the model.
 
         Examples:
             >>> from pykg2vec.models.TuckER import TuckER

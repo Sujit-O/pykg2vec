@@ -9,21 +9,16 @@ from pykg2vec.models.Domain import NamedEmbedding
 
 
 class TransE(PairwiseModel):
-    """ `Translating Embeddings for Modeling Multi-relational Data`_
-
-        TransE is an energy based model which represents the
-        relationships as translations in the embedding space. Which
-        means that if (h,l,t) holds then the embedding of the tail
+    """ 
+        `Translating Embeddings for Modeling Multi-relational Data`_ (TransE) 
+        is an energy based model which represents the relationships as translations in the embedding space. Which
+        means that if (h,r,t) holds then the embedding of the tail
         't' should be close to the embedding of head entity 'h'
-        plus some vector that depends on the relationship 'l'.
+        plus some vector that depends on the relationship 'r'.
         Both entities and relations are vectors in the same space.
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
 
         Examples:
             >>> from pykg2vec.models.TransE import TransE
@@ -41,6 +36,7 @@ class TransE(PairwiseModel):
 
         .. _Translating Embeddings for Modeling Multi-relational Data:
             http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-rela
+
     """
 
     def __init__(self, config):
@@ -104,14 +100,10 @@ class TransH(PairwiseModel):
         By doing this, it aims to preserve the mapping properties of relations such as reflexive,
         one-to-many, many-to-one, and many-to-many with almost the same model complexity of TransE.
 
-         Args:
+        Args:
             config (object): Model configuration parameters.
 
-         Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-
-         Examples:
+        Examples:
             >>> from pykg2vec.models.TransH import TransH
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransH()
@@ -119,16 +111,16 @@ class TransH(PairwiseModel):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-         Portion of the code based on `OpenKE_TransH`_ and `thunlp_TransH`_.
+        Portion of the code based on `OpenKE_TransH`_ and `thunlp_TransH`_.
 
-         .. _OpenKE_TransH:
-             https://github.com/thunlp/OpenKE/blob/master/models/TransH.py
+        .. _OpenKE_TransH:
+            https://github.com/thunlp/OpenKE/blob/master/models/TransH.py
 
-         .. _thunlp_TransH:
-             https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
+        .. _thunlp_TransH:
+            https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
 
-         .. _Knowledge Graph Embedding by Translating on Hyperplanes:
-             https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf
+        .. _Knowledge Graph Embedding by Translating on Hyperplanes:
+            https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf
     """
 
     def __init__(self, config):
@@ -200,11 +192,6 @@ class TransD(PairwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-            data_stats (object): Class object with knowlege graph statistics.
-
         Examples:
             >>> from pykg2vec.models.TransD import TransD
             >>> from pykg2vec.utils.trainer import Trainer
@@ -220,6 +207,7 @@ class TransD(PairwiseModel):
 
         .. _Knowledge Graph Embedding via Dynamic Mapping Matrix:
             https://www.aclweb.org/anthology/P15-1067
+
     """
 
     def __init__(self, config):
@@ -304,11 +292,6 @@ class TransM(PairwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-            data_stats (object): Class object with knowlege graph statistics.
-
         Examples:
             >>> from pykg2vec.models.TransM import TransM
             >>> from pykg2vec.utils.trainer import Trainer
@@ -319,6 +302,7 @@ class TransM(PairwiseModel):
 
         .. _Transition-based Knowledge Graph Embedding with Relational Mapping Properties:
             https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
+
     """
 
     def __init__(self, config):
@@ -403,11 +387,6 @@ class TransR(PairwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-            data_stats (object): Class object with knowlege graph statistics.
-
         Examples:
             >>> from pykg2vec.models.TransR import TransR
             >>> from pykg2vec.utils.trainer import Trainer
@@ -418,8 +397,8 @@ class TransR(PairwiseModel):
 
         Portion of the code based on `thunlp_transR`_.
 
-         .. _thunlp_transR:
-             https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
+        .. _thunlp_transR:
+            https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
 
         .. _Learning Entity and Relation Embeddings for Knowledge Graph Completion:
             http://nlp.csai.tsinghua.edu.cn/~lyk/publications/aaai2015_transr.pdf
@@ -523,11 +502,6 @@ class SLM(PairwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Attributes:
-            config (object): Model configuration.
-            data_stats (object): PairwiseModel object instance. It consists of the knowledge graph metadata.
-            model_name (str): Name of the model.
-
         Examples:
             >>> from pykg2vec.models.SLM import SLM
             >>> from pykg2vec.utils.trainer import Trainer
@@ -602,35 +576,30 @@ class SLM(PairwiseModel):
 class SME(PairwiseModel):
     """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
 
-    Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
-    SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
-    entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
-    to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
+        Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
+        SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
+        entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
+        to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
 
-    There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
+        There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
 
-    Args:
-        config (object): Model configuration parameters.
+        Args:
+            config (object): Model configuration parameters.
 
-    Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
-        data_stats (object): Class object with knowlege graph statistics.
+        Examples:
+            >>> from pykg2vec.models.SME import SME
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = SME()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    Examples:
-        >>> from pykg2vec.models.SME import SME
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = SME()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
-
-    Portion of the code based on glorotxa_.
+        Portion of the code based on glorotxa_.
     
-    .. _glorotxa: https://github.com/glorotxa/SME/blob/master/model.py
+        .. _glorotxa: https://github.com/glorotxa/SME/blob/master/model.py
 
-    .. _A Semantic Matching Energy Function for Learning with Multi-relational Data: http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
-    
+        .. _A Semantic Matching Energy Function for Learning with Multi-relational Data: http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
+
     """
 
     def __init__(self, config):
@@ -739,34 +708,30 @@ class SME(PairwiseModel):
 class SME_BL(SME):
     """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
 
-    Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
-    SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
-    entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
-    to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
+        Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
+        SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
+        entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
+        to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
 
-    There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
+        There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
 
-    Args:
-        config (object): Model configuration parameters.
+        Args:
+            config (object): Model configuration parameters.
 
-    Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
-        data_stats (object): Class object with knowlege graph statistics.
-
-    Examples:
-        >>> from pykg2vec.models.SME import SME
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = SME()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
-
-    Portion of the code based on glorotxa_.
     
-    .. _glorotxa: https://github.com/glorotxa/SME/blob/master/model.py
+        Examples:
+            >>> from pykg2vec.models.SME import SME
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = SME_BL()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    .. _A Semantic Matching Energy Function for Learning with Multi-relational Data: http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
+        Portion of the code based on glorotxa_.
+    
+        .. _glorotxa: https://github.com/glorotxa/SME/blob/master/model.py
+
+        .. _A Semantic Matching Energy Function for Learning with Multi-relational Data: http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
     
     """
 
@@ -831,11 +796,6 @@ class RotatE(PairwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            data_stats (object): PairwiseModel object instance. It consists of the knowledge graph metadata.
-            model_name (str): Name of the model.
 
         Examples:
             >>> from pykg2vec.models.RotatE import RotatE
@@ -909,11 +869,6 @@ class Rescal(PairwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-            data_stats (object): Class object with knowlege graph statistics.
-
         Examples:
             >>> from pykg2vec.models.Rescal import Rescal
             >>> from pykg2vec.utils.trainer import Trainer
@@ -929,6 +884,7 @@ class Rescal(PairwiseModel):
          .. _OpenKE_Rescal: https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
 
          .. _A Three-Way Model for Collective Learning on Multi-Relational Data : http://www.icml-2011.org/papers/438_icmlpaper.pdf
+
     """
 
     def __init__(self, config):
@@ -989,34 +945,30 @@ class Rescal(PairwiseModel):
 class NTN(PairwiseModel):
     """ `Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
 
-    It is a neural tensor network which represents entities as an average of their
-    constituting word vectors. It then projects entities to their vector embeddings
-    in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.
-    https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
+        It is a neural tensor network which represents entities as an average of their
+        constituting word vectors. It then projects entities to their vector embeddings
+        in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.
+        https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
 
-     Args:
-        config (object): Model configuration parameters.
+        Args:
+            config (object): Model configuration parameters.
+     
+        Examples:
+            >>> from pykg2vec.models.NTN import NTN
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = NTN()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-     Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
-        data_stats (object): Class object with knowlege graph statistics.
+        Portion of the code based on `siddharth-agrawal`_.
 
-     Examples:
-        >>> from pykg2vec.models.NTN import NTN
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = NTN()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
+        .. _siddharth-agrawal:
+            https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
 
-     Portion of the code based on `siddharth-agrawal`_.
+        .. _Reasoning With Neural Tensor Networks for Knowledge Base Completion:
+            https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
 
-     .. _siddharth-agrawal:
-         https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
-
-     .. _Reasoning With Neural Tensor Networks for Knowledge Base Completion:
-         https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
     """
 
     def __init__(self, config):
@@ -1099,38 +1051,33 @@ class NTN(PairwiseModel):
 
 
 class KG2E(PairwiseModel):
-    """`Learning to Represent Knowledge Graphs with Gaussian Embedding`_
+    """ `Learning to Represent Knowledge Graphs with Gaussian Embedding`_
 
-    Instead of assumming entities and relations as determinstic points in the
-    embedding vector spaces, KG2E models both entities and relations (h, r and t)
-    using random variables derived from multivariate Gaussian distribution.
-    KG2E then evaluates a fact using translational relation by evaluating the
-    distance between two distributions, r and t-h. KG2E provides two distance
-    measures (KL-divergence and estimated likelihood).
+        Instead of assumming entities and relations as determinstic points in the
+        embedding vector spaces, KG2E models both entities and relations (h, r and t)
+        using random variables derived from multivariate Gaussian distribution.
+        KG2E then evaluates a fact using translational relation by evaluating the
+        distance between two distributions, r and t-h. KG2E provides two distance
+        measures (KL-divergence and estimated likelihood).
 
-    Args:
-        config (object): Model configuration parameters.
+        Args:
+            config (object): Model configuration parameters.
 
-    Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
-        data_stats (object): Class object with knowlege graph statistics.
+        Examples:
+            >>> from pykg2vec.models.KG2E import KG2E
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = KG2E()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    Examples:
-        >>> from pykg2vec.models.KG2E import KG2E
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = KG2E()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
-
-    Portion of the code based on `this Source`_.
+        Portion of the code based on `this Source`_.
     
-    .. _this Source:
-        https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
+        .. _this Source:
+            https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
 
-    .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
-        https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
+        .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
+            https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
     
     """
 
@@ -1227,38 +1174,33 @@ class KG2E(PairwiseModel):
 
 
 class KG2E_EL(KG2E):
-    """`Learning to Represent Knowledge Graphs with Gaussian Embedding`_
+    """ `Learning to Represent Knowledge Graphs with Gaussian Embedding`_
 
-    Instead of assumming entities and relations as determinstic points in the
-    embedding vector spaces, KG2E models both entities and relations (h, r and t)
-    using random variables derived from multivariate Gaussian distribution.
-    KG2E then evaluates a fact using translational relation by evaluating the
-    distance between two distributions, r and t-h. KG2E provides two distance
-    measures (KL-divergence and estimated likelihood).
+        Instead of assumming entities and relations as determinstic points in the
+        embedding vector spaces, KG2E models both entities and relations (h, r and t)
+        using random variables derived from multivariate Gaussian distribution.
+        KG2E then evaluates a fact using translational relation by evaluating the
+        distance between two distributions, r and t-h. KG2E provides two distance
+        measures (KL-divergence and estimated likelihood).
 
-    Args:
-        config (object): Model configuration parameters.
+        Args:
+            config (object): Model configuration parameters.
+        
+        Examples:
+            >>> from pykg2vec.models.KG2E import KG2E
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = KG2E()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
-        data_stats (object): Class object with knowlege graph statistics.
-
-    Examples:
-        >>> from pykg2vec.models.KG2E import KG2E
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = KG2E()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
-
-    Portion of the code based on `this Source`_.
+        Portion of the code based on `this Source`_.
     
-    .. _this Source:
-        https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
+        .. _this Source:
+            https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
 
-    .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
-        https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
+        .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
+            https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
     
     """
 
@@ -1297,29 +1239,25 @@ class KG2E_EL(KG2E):
 
 
 class HoLE(PairwiseModel):
-    """`Holographic Embeddings of Knowledge Graphs`_.
+    """ `Holographic Embeddings of Knowledge Graphs`_.
 
-    HoLE employs the circular correlation to create composition correlations. It
-    is able to represent and capture the interactions betweek entities and relations
-    while being efficient to compute, easier to train and scalable to large dataset.
+        HoLE employs the circular correlation to create composition correlations. It
+        is able to represent and capture the interactions betweek entities and relations
+        while being efficient to compute, easier to train and scalable to large dataset.
 
-    Args:
-        config (object): Model configuration parameters.
-
-    Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
+        Args:
+            config (object): Model configuration parameters.
     
-    Examples:
-        >>> from pykg2vec.models.HoLE import HoLE
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = HoLE()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
+        Examples:
+            >>> from pykg2vec.models.HoLE import HoLE
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = HoLE()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    .. _Holographic Embeddings of Knowledge Graphs:
-        https://arxiv.org/pdf/1510.04935.pdf
+        .. _Holographic Embeddings of Knowledge Graphs:
+            https://arxiv.org/pdf/1510.04935.pdf
 
     """
 
