@@ -3,28 +3,22 @@
 """
 This module is for training process.
 """
-import timeit, os
-import torch
-import warnings
+import timeit, os, warnings
 warnings.filterwarnings('ignore')
-# import tensorflow as tf
+
+import torch
 import pandas as pd
 import torch.optim as optim
+import torch.nn as nn
 import torch.nn.functional as F
 
 from enum import Enum
 from pykg2vec.models.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
-from pykg2vec.utils.generator import Generator, TrainingStrategy
+from pykg2vec.data.generator import Generator, TrainingStrategy
 from pykg2vec.utils.logger import Logger
 from tqdm import tqdm 
-import warnings
-warnings.filterwarnings('ignore')
-import torch.optim as optim
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
 
 class Monitor(Enum):

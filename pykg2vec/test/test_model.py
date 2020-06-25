@@ -7,7 +7,7 @@ import pytest
 
 from pykg2vec.config import KGEArgParser, Importer
 from pykg2vec.utils.trainer import Trainer
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pykg2vec.data.kgcontroller import KnowledgeGraph
 
 
 @pytest.mark.parametrize("model_name", [

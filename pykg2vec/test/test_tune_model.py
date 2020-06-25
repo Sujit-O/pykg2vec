@@ -6,7 +6,7 @@ This module is for testing unit functions of tuning model
 import pytest
 
 from unittest.mock import patch
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 

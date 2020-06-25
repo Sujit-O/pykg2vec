@@ -9,7 +9,7 @@ from hyperopt import fmin, tpe, Trials, STATUS_OK, space_eval
 import pandas as pd
 
 
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.logger import Logger
 from pykg2vec.config import KGEArgParser
