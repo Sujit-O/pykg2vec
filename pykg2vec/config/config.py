@@ -425,7 +425,7 @@ class HoLEConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -481,7 +481,7 @@ class TransRConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.ent_hidden_size = args.ent_hidden_size
@@ -538,7 +538,7 @@ class TransDConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.ent_hidden_size = args.ent_hidden_size
@@ -595,7 +595,7 @@ class TransMConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -651,7 +651,7 @@ class TransHConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -705,7 +705,7 @@ class RescalConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -759,7 +759,7 @@ class SMEConfig(BasicConfig):
       bilinear (bool): If true uses bilnear transformation for loss else uses linear.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
         self.batch_size = args.batch_training
@@ -810,7 +810,7 @@ class NTNConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
@@ -869,7 +869,7 @@ class SLMConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.ent_hidden_size = args.ent_hidden_size
@@ -925,7 +925,7 @@ class RotatEConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -985,7 +985,7 @@ class KG2EConfig(BasicConfig):
       cmin (float): Sets the lower clipping range for the embedding.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -1044,7 +1044,7 @@ class ComplexConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
@@ -1103,7 +1103,7 @@ class DistMultConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
@@ -1162,7 +1162,7 @@ class ProjE_pointwiseConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.hidden_dropout = args.hidden_dropout
         self.learning_rate = args.learning_rate
@@ -1225,7 +1225,7 @@ class ConvKBConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.filter_sizes =args.filter_sizes
         self.num_filters = args.num_filters
@@ -1288,7 +1288,7 @@ class ConvEConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
 
         self.feature_map_dropout = args.feature_map_dropout
         self.input_dropout = args.input_dropout
@@ -1357,7 +1357,7 @@ class TuckERConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = 0.1
         self.input_dropout = 0.3
         self.hidden_dropout2 = 0.5
@@ -1438,7 +1438,7 @@ class TransGConfig(BasicConfig):
       step_before (int): Defines the number of steps before which the update is cluster is not performed.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         if args is None or args.exp is True:
             # the exp setting for TransG (only for Freebase15k now)
             self.learning_rate = 0.0015
@@ -1517,7 +1517,7 @@ class CPConfig(BasicConfig):
 
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
@@ -1569,7 +1569,7 @@ class ANALOGYConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
@@ -1623,7 +1623,7 @@ class SimplEConfig(BasicConfig):
 
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
