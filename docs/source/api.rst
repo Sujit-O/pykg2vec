@@ -21,13 +21,13 @@ the total execution time. The various components of the library are as follows:
 .. contents:: Contents
     :local:
 
-pykg2vec.config
+pykg2vec
 ======================
 
-.. automodule:: pykg2vec.config.config
+.. automodule:: pykg2vec.config
    :members:
 
-.. automodule:: pykg2vec.config.hyperparams
+.. automodule:: pykg2vec.hyperparams
    :members:
 
 ====
