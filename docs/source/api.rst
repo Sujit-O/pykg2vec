@@ -35,106 +35,22 @@ pykg2vec
 pykg2vec.models
 ======================
 
-pykg2vec.models.Complex
------------------------
-
-.. automodule:: pykg2vec.models.Complex
-   :members:
-
-pykg2vec.models.ConvE
----------------------
-
-.. automodule:: pykg2vec.models.ConvE
-   :members:
-
-pykg2vec.models.DistMult
+pykg2vec.models.pairwise
 ------------------------
 
-.. automodule:: pykg2vec.models.DistMult
+.. automodule:: pykg2vec.models.pairwise
    :members:
 
-pykg2vec.models.HoLE
---------------------
+pykg2vec.models.pointwise
+-------------------------
 
-.. automodule:: pykg2vec.models.HoLE
+.. automodule:: pykg2vec.models.pointwise
    :members:
 
-pykg2vec.models.KG2E
---------------------
+pykg2vec.models.projection
+--------------------------
 
-.. automodule:: pykg2vec.models.KG2E
-   :members:
-
-pykg2vec.models.NTN
--------------------
-
-.. automodule:: pykg2vec.models.NTN
-   :members:
-
-pykg2vec.models.ProjE
----------------------
-
-.. automodule:: pykg2vec.models.ProjE_pointwise
-   :members:
-
-pykg2vec.models.Rescal
-----------------------
-
-.. automodule:: pykg2vec.models.Rescal
-   :members:
-
-pykg2vec.models.RotatE
-----------------------
-
-.. automodule:: pykg2vec.models.RotatE
-   :members:
-
-pykg2vec.models.SLM
--------------------
-
-.. automodule:: pykg2vec.models.SLM
-   :members:
-
-pykg2vec.models.SME
--------------------
-
-.. automodule:: pykg2vec.models.SME
-   :members:
-
-pykg2vec.models.TransD
-----------------------
-
-.. automodule:: pykg2vec.models.TransD
-   :members:
-
-pykg2vec.models.TransE
-----------------------
-
-.. automodule:: pykg2vec.models.TransE
-   :members:
-
-pykg2vec.models.TransH
-----------------------
-
-.. automodule:: pykg2vec.models.TransH
-   :members:
-
-pykg2vec.models.TransM
-----------------------
-
-.. automodule:: pykg2vec.models.TransM
-   :members:
-
-pykg2vec.models.TransR
-----------------------
-
-.. automodule:: pykg2vec.models.TransR
-   :members:
-
-pykg2vec.models.TuckER
-----------------------
-
-.. automodule:: pykg2vec.models.TuckER
+.. automodule:: pykg2vec.models.projection
    :members:
 
 ====
