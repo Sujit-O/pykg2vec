@@ -2,7 +2,7 @@
 ==================================================
 Automatic Hyperparameter Discovery (tune_model.py)
 ==================================================
-With tune_model.py we can train the existed model using command:
+With tune_model.py we can train and tune the existed model using command:
 
 - check all tunnable parameters. ::
 
