@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from pykg2vec.models.KGMeta import ModelMeta
 from pykg2vec.models.Domain import NamedEmbedding
-from pykg2vec.utils.generator import TrainingStrategy
+from pykg2vec.data.generator import TrainingStrategy
 
 
 class ANALOGY(ModelMeta):
@@ -251,13 +251,13 @@ class ConvKB(ModelMeta):
         >>> trainer.build_model()
         >>> trainer.train_model()
     
-    Portion of the code based on Niubohan_ and BookmanHan_.
+    Portion of the code based on daiquocnguyen_.
+    
     .. _daiquocnguyen:
         https://github.com/daiquocnguyen/ConvKB
 
     .. _A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network:
         https://www.aclweb.org/anthology/N18-2053
-
     """
 
     def __init__(self, config):

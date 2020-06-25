@@ -23,7 +23,7 @@ We also attached the source code of inference.py below for your reference.
 import sys, code
 
 
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.config import Importer, KGEArgParser
 from pykg2vec.utils.trainer import Trainer
 

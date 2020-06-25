@@ -32,6 +32,21 @@ pykg2vec
 
 ====
 
+pykg2vec.data
+=============
+
+pykg2vec.data.kgcontroller
+--------------------------
+
+.. automodule:: pykg2vec.data.kgcontroller
+   :members:
+
+pykg2vec.data.generator
+-----------------------
+
+.. automodule:: pykg2vec.data.generator
+   :members:
+
 pykg2vec.models
 ======================
 
@@ -70,12 +85,6 @@ pykg2vec.utils.evaluator
 .. automodule:: pykg2vec.utils.evaluator
    :members:
 
-pykg2vec.utils.generator
-------------------------
-
-.. automodule:: pykg2vec.utils.generator
-   :members:
-
 pykg2vec.utils.trainer
 ----------------------
 
@@ -86,12 +95,6 @@ pykg2vec.utils.visualization
 ----------------------------
 
 .. automodule:: pykg2vec.utils.visualization
-   :members:
-
-pykg2vec.utils.kgcontroller
----------------------------
-
-.. automodule:: pykg2vec.utils.kgcontroller
    :members:
 
 ====

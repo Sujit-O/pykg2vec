@@ -18,7 +18,7 @@ You can adjust to fit your usage.
 # License: MIT
 
 from pykg2vec.config import Importer, KGEArgParser
-from pykg2vec.utils.kgcontroller import KnowledgeGraph
+from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 from pykg2vec.utils.trainer import Trainer

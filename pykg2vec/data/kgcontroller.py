@@ -33,7 +33,7 @@ class Triple(object):
        Todo:
                 * Move the module to config.
        Examples:
-           >>> from pykg2vec.utils.kgcontroller import Triple
+           >>> from pykg2vec.data.kgcontroller import Triple
            >>> trip1 = Triple(2,3,5)
            >>> trip2 = Triple('Tokyo','isCapitalof','Japan')
     """
@@ -70,7 +70,7 @@ class KGMetaData(object):
             tot_valid_triples(int): Total number of validation triples
 
        Examples:
-            >>> from pykg2vec.utils.kgcontroller import KGMetaData
+            >>> from pykg2vec.data.kgcontroller import KGMetaData
             >>> kg_meta = KGMetaData(tot_triple =1000)
 
     """
@@ -143,7 +143,7 @@ class KnownDataset:
            root_oath (object): Path object for the specific dataset.
 
        Examples:
-           >>> from pykg2vec.utils.kgcontroller import KnownDataset
+           >>> from pykg2vec.data.kgcontroller import KnownDataset
            >>> name = "dL50a"
            >>> url = "https://github.com/louisccc/KGppler/raw/master/datasets/dL50a.tgz"
            >>> prefix = 'deeplearning_dataset_50arch-'
@@ -552,7 +552,7 @@ class KnowledgeGraph(object):
         kg_meta (object): Object storing the statistics metadata of the dataset.
 
       Examples:
-          >>> from pykg2vec.utils.kgcontroller import KnowledgeGraph
+          >>> from pykg2vec.data.kgcontroller import KnowledgeGraph
           >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k')
           >>> knowledge_graph.prepare_data()
     """
