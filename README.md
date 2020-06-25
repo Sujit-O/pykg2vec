@@ -12,7 +12,7 @@ Pykg2vec has following features:
 
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
-We welcome any form of contribution! Please check for more details [here](https://github.com/Sujit-O/pykg2vec/blob/master/CONTRIBUTING.md). 
+We welcome any form of contribution! Please refer to [CONTRIBUTING.md](https://github.com/Sujit-O/pykg2vec/blob/master/CONTRIBUTING.md) for more details. 
 
 ## To Get Started 
 Before using pykg2vec, we strongly recommend users to set up a virtual work environment (Anaconda) and to have the following libraries installed:
