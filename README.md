@@ -9,7 +9,8 @@ Pykg2vec has following features:
   * Support exporting the learned embeddings in TSV or Pandas-supported format.
   * Interactive result inspector.
   * TSNE-based visualization, KPI summary visualization (mean rank, hit ratio) in various format. (csvs, figures, latex table)
-  
+
+## Documentation
 The documentation is [here](https://pykg2vec.readthedocs.io/). 
 
 We welcome any form of contribution! Please check for more details [here](https://github.com/Sujit-O/pykg2vec/blob/master/CONTRIBUTING.md). 
@@ -17,33 +18,37 @@ We welcome any form of contribution! Please check for more details [here](https:
 * **pykg2vec/config**: This folder consists of the configuration module. It provides the necessary configuration to parse the datasets, and also consists of the baseline hyperparameters for the knowledge graph embedding algorithms. 
 * **pykg2vec/core**: This folder consists of the core codes of the knowledge graph embedding algorithms. Inside this folder, each algorithm is implemented as a separate python module. 
 * **pykg2vec/utils**: This folder consists of modules providing various utilities, such as data preparation, data visualization, and evaluation of the algorithms, data generators, baynesian optimizer.
-* **pykg2vec/example**: This folder consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
+* **examples**: This folder consists of example codes that can be used to run individual modules or run all the modules at once or tune the model.
 
 ![](https://github.com/Sujit-O/pykg2vec/blob/master/figures/pykg2vec_structure.png?raw=true)
 
 ## To Get Started 
-Pykg2vec aims to minimize the dependency on other libraries as far as possible to rapidly test the algorithms against different datasets. In pykg2vec, we won't focus in run-time performance at this moment. **However, Tensorflow 2 nativaly support utilizing the GPUs available in your device! Please find out more the guide [here](https://www.tensorflow.org/install/pip) to install Tensorflow through pip.** 
-In the future, may provide faster implementation of each of the algorithms. (C++ implementations to come!)
+Before using pykg2vec, we strongly recommend users to set up a virtual work environment (Anaconda) and to have the following libraries installed:
+* python >=3.6 (recommended)
+* pytorch>= 1.5
 
-Before using pykg2vec, we strongly recommend users to set up a virtual work environment (Venv or Anaconda) and to have the following packages installed:
-* Python >= 3.6
-* tensorflow==2.1.0
+Quick Guide for users who use anaconda:
+Installation Guide
 
-Three ways to install pykg2vec are described as follows.
+Setup a Virtual Environment: we encourage you to use anaconda to work with pykg2vec:
 ```bash
-#Install pykg2vec from PyPI:  
-$ pip install pykg2vec
+(base) $ conda create --name pykg2vec python=3.6
+(base) $ conda activate pykg2vec
+```
+* Setup Pytorch: we encourage to use pytorch with GPU support for good training performance. However, a CPU version also runs. The following sample commands are for setting up pytorch:
 
-# (Suggested!) Install stable version directly from github repo:
-$ git clone https://github.com/Sujit-O/pykg2vec.git
-$ cd pykg2vec
-$ python setup.py install
+```bash
+# if you have a GPU with CUDA 10.1 installed
+(pykg2vec) $ conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
+# or cpu-only
+(pykg2vec) $ conda install pytorch torchvision cpuonly -c pytorch
+```
 
-#Install development version directly from github repo:  
-$ git clone https://github.com/Sujit-O/pykg2vec.git
-$ cd pykg2vec
-$ git checkout development
-$ python setup.py install
+* Setup Pykg2vec:
+```bash
+(pykg2vec) $ git clone https://github.com/Sujit-O/pykg2vec.git
+(pykg2vec) $ cd pykg2vec
+(pykg2vec) $ python setup.py install
 ```
 
 ## Usage Examples
