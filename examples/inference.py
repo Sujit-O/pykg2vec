@@ -4,6 +4,21 @@ Inference task for one KGE method
 ==================================
 In this example, we will demonstrate how interactive inference can be performed
 using the trained algorithm.
+
+For inference task, you can use the following command:::
+
+    $ python inference.py -mn TransE # train a model on FK15K dataset and enter interactive CMD for manual inference tasks.
+    $ python inference.py -mn TransE -ld true # pykg2vec will look for the location of cached pretrained parameters in your local.
+
+    # Once interactive mode is reached, you can execute instruction manually like
+    # Example 1: trainer.infer_tails(1,10,topk=5) => give the list of top-5 predicted tails. 
+    # Example 2: trainer.infer_heads(10,20,topk=5) => give the list of top-5 predicted heads.
+    # Example 3: trainer.infer_rels(1,20,topk=5) => give the list of top-5 predicted relations.
+
+====
+
+We also attached the source code of inference.py below for your reference.
+
 '''
 # Author: Sujit Rokka Chhetri and Shiy Yuan Yu
 # License: MIT
