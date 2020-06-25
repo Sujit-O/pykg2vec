@@ -11,6 +11,7 @@ class ConvE(ProjectionModel):
     """ 
         `Convolutional 2D Knowledge Graph Embeddings`_ (ConvE) is a multi-layer convolutional network model for link prediction,
         it is a embedding model which is highly parameter efficient.
+        ConvE is the first non-linear model that uses a global 2D convolution operation on the combined and head entity and relation embedding vectors. The obtained feature maps are made flattened and then transformed through a fully connected layer. The projected target vector is then computed by performing linear transformation (passing through the fully connected layer) and activation function, and finally an inner product with the latent representation of every entities.
 
         Args:
             config (object): Model configuration parameters.
@@ -137,6 +138,8 @@ class ProjE_pointwise(ProjectionModel):
         the projected target vector and binary label vector, where the included
         entities will have value 0 if in negative sample set and value 1 if in
         positive sample set.
+        Instead of measuring the distance or matching scores between the pair of the head entity and relation and then tail entity in embedding space ((h,r) vs (t)). ProjE projects the entity candidates onto a target vector representing the input data. The loss in ProjE is computed by the cross-entropy between the projected target vector and binary label vector, where the included entities will have value 0 if in negative sample set and value 1 if in positive sample set.
+        
 
         Args:
             config (object): Model configuration parameters.
@@ -269,6 +272,8 @@ class TuckER(ProjectionModel):
         being fully expressive, the number of parameters used in Tucker only grows linearly
         with respect to embedding dimension as the number of entities or relations in a
         knowledge graph increases.
+        TuckER is a Tensor-factorization-based embedding technique based on the Tucker decomposition of a third-order binary tensor of triplets. Although being fully expressive, the number of parameters used in Tucker only grows linearly with respect to embedding dimension as the number of entities or relations in a knowledge graph increases. The author also showed in paper that the models, such as RESCAL, DistMult, ComplEx, are all special case of TuckER.
+        
 
         Args:
             config (object): Model configuration parameters.

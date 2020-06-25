@@ -11,11 +11,14 @@ from pykg2vec.models.Domain import NamedEmbedding
 class TransE(PairwiseModel):
     """ 
         `Translating Embeddings for Modeling Multi-relational Data`_ (TransE) 
-        is an energy based model which represents the relationships as translations in the embedding space. Which
-        means that if (h,r,t) holds then the embedding of the tail
+        is an energy based model which represents the relationships as translations in the embedding space. 
+        Specifically, it assumes that if a fact (h, r, t) holds then the embedding of the tail 't' 
+        should be close to the embedding of head entity 'h' plus some vector that 
+        depends on the relationship 'r'.
+        Which means that if (h,r,t) holds then the embedding of the tail
         't' should be close to the embedding of head entity 'h'
         plus some vector that depends on the relationship 'r'.
-        Both entities and relations are vectors in the same space.
+        In TransE, both entities and relations are vectors in the same space
 
         Args:
             config (object): Model configuration parameters.
@@ -94,8 +97,12 @@ class TransE(PairwiseModel):
 
 
 class TransH(PairwiseModel):
-    """ `Knowledge Graph Embedding by Translating on Hyperplanes`_
-
+    """ 
+        `Knowledge Graph Embedding by Translating on Hyperplanes`_ (TransH) follows the general principle 
+        of the TransE. However, compared to it, it introduces relation-specific hyperplanes. 
+        The entities are represented as vecotrs just like in TransE, 
+        however, the relation is modeled as a vector on its own hyperplane with a normal vector. 
+        The entities are then projected to the relation hyperplane to calculate the loss.
         TransH models a relation as a hyperplane together with a translation operation on it.
         By doing this, it aims to preserve the mapping properties of relations such as reflexive,
         one-to-many, many-to-one, and many-to-many with almost the same model complexity of TransE.
@@ -184,8 +191,9 @@ class TransH(PairwiseModel):
 
 
 class TransD(PairwiseModel):
-    """ `Knowledge Graph Embedding via Dynamic Mapping Matrix`_
-
+    """ 
+        `Knowledge Graph Embedding via Dynamic Mapping Matrix`_ (TransD) is an improved version of TransR. 
+        For each triplet :math:`(h, r, t)`, it uses two mapping matrices :math:`M_{rh}`, :math:`M_{rt}` :math:`\in` :math:`R^{mn}` to project entities from entity space to relation space.
         TransD constructs a dynamic mapping matrix for each entity-relation pair by considering the diversity of entities and relations simultaneously.
         Compared with TransR/CTransR, TransD has fewer parameters and has no matrix vector multiplication.
 
@@ -284,10 +292,11 @@ class TransD(PairwiseModel):
 
 
 class TransM(PairwiseModel):
-    """ `Transition-based Knowledge Graph Embedding with Relational Mapping Properties`_
-
-        TransM is another line of research that improves TransE by relaxing the overstrict requirement of
+    """ 
+        `Transition-based Knowledge Graph Embedding with Relational Mapping Properties`_ (TransM)
+        is another line of research that improves TransE by relaxing the overstrict requirement of
         h+r ==> t. TransM associates each fact (h, r, t) with a weight theta(r) specific to the relation.
+        TransM helps to remove the the lack of flexibility present in TransE when it comes to mapping properties of triplets. It utilizes the structure of the knowledge graph via pre-calculating the distinct weight for each training triplet according to its relational mapping property.
 
         Args:
             config (object): Model configuration parameters.
@@ -377,12 +386,11 @@ class TransM(PairwiseModel):
 
 
 class TransR(PairwiseModel):
-    """ `Learning Entity and Relation Embeddings for Knowledge Graph Completion`_
-
-        TranR is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
+    """ 
+        `Learning Entity and Relation Embeddings for Knowledge Graph Completion`_ (TransR) is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
         builds entity and relation embeddings by regarding a relation as translation from head entity to tail
         entity. However, compared to them, it builds the entity and relation embeddings in a separate entity
-        and relation spaces.
+        and relation spaces. Portion of the code based on `thunlp_transR`_.
 
         Args:
             config (object): Model configuration parameters.
@@ -394,8 +402,6 @@ class TransR(PairwiseModel):
             >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
-
-        Portion of the code based on `thunlp_transR`_.
 
         .. _thunlp_transR:
             https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
@@ -494,8 +500,8 @@ class TransR(PairwiseModel):
 
 
 class SLM(PairwiseModel):
-    """`Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
-
+    """ 
+        In `Reasoning With Neural Tensor Networks for Knowledge Base Completion`_, 
         SLM model is designed as a baseline of Neural Tensor Network.
         The model constructs a nonlinear neural network to represent the score function.
 
@@ -707,18 +713,12 @@ class SME(PairwiseModel):
 
 class SME_BL(SME):
     """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
-
-        Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
-        SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
-        entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
-        to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
-
-        There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
+        
+        SME_BL is an extension of SME_ that BiLinear function to calculate the matching scores. 
 
         Args:
             config (object): Model configuration parameters.
 
-    
         Examples:
             >>> from pykg2vec.models.SME import SME
             >>> from pykg2vec.utils.trainer import Trainer
@@ -726,13 +726,9 @@ class SME_BL(SME):
             >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
+        
+        .. _`SME`: api.html#pykg2vec.models.pairwise.SME
 
-        Portion of the code based on glorotxa_.
-    
-        .. _glorotxa: https://github.com/glorotxa/SME/blob/master/model.py
-
-        .. _A Semantic Matching Energy Function for Learning with Multi-relational Data: http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
-    
     """
 
     def __init__(self, config):
@@ -787,9 +783,9 @@ class SME_BL(SME):
 
 
 class RotatE(PairwiseModel):
-    """ `Rotate-Knowledge graph embedding by relation rotation in complex space`_
-
-        RotatE models the entities and the relations in the complex vector space.
+    """ 
+        `Rotate-Knowledge graph embedding by relation rotation in complex space`_ (RotatE)
+        models the entities and the relations in the complex vector space.
         The translational relation in RotatE is defined as the element-wise 2D
         rotation in which the head entity h will be rotated to the tail entity t by
         multiplying the unit-length relation r in complex number form.
@@ -861,10 +857,11 @@ class RotatE(PairwiseModel):
 
 
 class Rescal(PairwiseModel):
-    """`A Three-Way Model for Collective Learning on Multi-Relational Data`_
-
-        RESCAL is a tensor factorization approach to knowledge representation learning,
+    """ 
+        `A Three-Way Model for Collective Learning on Multi-Relational Data`_ (RESCAL) is a tensor factorization approach to knowledge representation learning,
         which is able to perform collective learning via the latent components of the factorization.
+        Rescal is a latent feature model where each relation is represented as a matrix modeling the iteraction between latent factors. It utilizes a weight matrix which specify how much the latent features of head and tail entities interact in the relation.
+        Portion of the code based on mnick_ and `OpenKE_Rescal`_.
 
         Args:
             config (object): Model configuration parameters.
@@ -877,13 +874,11 @@ class Rescal(PairwiseModel):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on mnick_ and `OpenKE_Rescal`_.
+        .. _mnick: https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
 
-         .. _mnick: https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
+        .. _OpenKE_Rescal: https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
 
-         .. _OpenKE_Rescal: https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
-
-         .. _A Three-Way Model for Collective Learning on Multi-Relational Data : http://www.icml-2011.org/papers/438_icmlpaper.pdf
+        .. _A Three-Way Model for Collective Learning on Multi-Relational Data : http://www.icml-2011.org/papers/438_icmlpaper.pdf
 
     """
 
@@ -905,15 +900,16 @@ class Rescal(PairwiseModel):
         ]
 
     def embed(self, h, r, t):
-        """Function to get the embedding value.
+        """ Function to get the embedding value.
 
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
+            Args:
+                h (Tensor): Head entities ids.
+                r (Tensor): Relation ids of the triple.
+                t (Tensor): Tail entity ids of the triple.
 
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
+
         """
         k = self.config.hidden_size
 
@@ -943,13 +939,15 @@ class Rescal(PairwiseModel):
 
 
 class NTN(PairwiseModel):
-    """ `Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
-
-        It is a neural tensor network which represents entities as an average of their
-        constituting word vectors. It then projects entities to their vector embeddings
+    """ 
+        `Reasoning With Neural Tensor Networks for Knowledge Base Completion`_ (NTN) is 
+        a neural tensor network which represents entities as an average of their constituting
+        word vectors. It then projects entities to their vector embeddings
         in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.
         https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
-
+        It is a neural tensor network which represents entities as an average of their constituting word vectors. It then projects entities to their vector embeddings in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.
+        Portion of the code based on `siddharth-agrawal`_.
+        
         Args:
             config (object): Model configuration parameters.
      
@@ -960,8 +958,6 @@ class NTN(PairwiseModel):
             >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
-
-        Portion of the code based on `siddharth-agrawal`_.
 
         .. _siddharth-agrawal:
             https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
@@ -1002,9 +998,9 @@ class NTN(PairwiseModel):
         ]
 
     def train_layer(self, h, t):
-        """Defines the forward pass training layers of the algorithm.
+        """ Defines the forward pass training layers of the algorithm.
 
-           Args:
+            Args:
                h (Tensor): Head entities ids.
                t (Tensor): Tail entity ids of the triple.
         """
@@ -1051,14 +1047,15 @@ class NTN(PairwiseModel):
 
 
 class KG2E(PairwiseModel):
-    """ `Learning to Represent Knowledge Graphs with Gaussian Embedding`_
-
+    """ 
+        `Learning to Represent Knowledge Graphs with Gaussian Embedding`_ (KG2E)
         Instead of assumming entities and relations as determinstic points in the
         embedding vector spaces, KG2E models both entities and relations (h, r and t)
         using random variables derived from multivariate Gaussian distribution.
         KG2E then evaluates a fact using translational relation by evaluating the
         distance between two distributions, r and t-h. KG2E provides two distance
-        measures (KL-divergence and estimated likelihood).
+        measures (KL-divergence and estimated likelihood). 
+        Portion of the code based on `mana-ysh's repository`_.
 
         Args:
             config (object): Model configuration parameters.
@@ -1071,9 +1068,7 @@ class KG2E(PairwiseModel):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on `this Source`_.
-    
-        .. _this Source:
+        .. _`mana-ysh's repository`:
             https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
 
         .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
@@ -1081,7 +1076,7 @@ class KG2E(PairwiseModel):
     
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(KG2E, self).__init__(self.__class__.__name__.lower(), config)
         
         num_total_ent = self.config.kg_meta.tot_entity
@@ -1117,16 +1112,17 @@ class KG2E(PairwiseModel):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
         return self._cal_score_expected_likelihood(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
 
-    def embed(self, h, r, t):
-        """Function to get the embedding.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
+    def embed(self, head, rel, tail):
+        """ 
+            Function to get the embedding value.
+           
+            Args:
+                head (Tensor): Head entities ids.
+                rel  (Tensor): Relation ids of the triple.
+                tail (Tensor): Tail entity ids of the triple.
 
             Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
+                tuple: Returns a 6-tuple of head, relation and tail embedding tensors (both real and img parts).
         """
 
         self.ent_embeddings_mu.weight.data = self.get_normalized_data(self.ent_embeddings_mu, self.config.kg_meta.tot_entity)
@@ -1135,13 +1131,13 @@ class KG2E(PairwiseModel):
         self.ent_embeddings_sigma.weight.data = self.get_normalized_data(self.ent_embeddings_sigma, self.config.kg_meta.tot_entity)
         self.rel_embeddings_sigma.weight.data = self.get_normalized_data(self.rel_embeddings_sigma, self.config.kg_meta.tot_relation)
 
-        emb_h_mu = self.ent_embeddings_mu(h)
-        emb_r_mu = self.rel_embeddings_mu(r)
-        emb_t_mu = self.ent_embeddings_mu(t)
+        emb_h_mu = self.ent_embeddings_mu(head)
+        emb_r_mu = self.rel_embeddings_mu(rel)
+        emb_t_mu = self.ent_embeddings_mu(tail)
 
-        emb_h_sigma = self.ent_embeddings_sigma(h)
-        emb_r_sigma = self.rel_embeddings_sigma(r)
-        emb_t_sigma = self.ent_embeddings_sigma(t)
+        emb_h_sigma = self.ent_embeddings_sigma(head)
+        emb_r_sigma = self.rel_embeddings_sigma(rel)
+        emb_t_sigma = self.ent_embeddings_sigma(tail)
 
         return emb_h_mu, emb_h_sigma, emb_r_mu, emb_r_sigma, emb_t_mu, emb_t_sigma
 
@@ -1174,14 +1170,8 @@ class KG2E(PairwiseModel):
 
 
 class KG2E_EL(KG2E):
-    """ `Learning to Represent Knowledge Graphs with Gaussian Embedding`_
-
-        Instead of assumming entities and relations as determinstic points in the
-        embedding vector spaces, KG2E models both entities and relations (h, r and t)
-        using random variables derived from multivariate Gaussian distribution.
-        KG2E then evaluates a fact using translational relation by evaluating the
-        distance between two distributions, r and t-h. KG2E provides two distance
-        measures (KL-divergence and estimated likelihood).
+    """ 
+        KG2E_EL is a extension of `KG2E`_ that uses estimated likelihood as the distance measure.
 
         Args:
             config (object): Model configuration parameters.
@@ -1193,15 +1183,9 @@ class KG2E_EL(KG2E):
             >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
+        
+        .. _`KG2E`: api.html#pykg2vec.models.pairwise.KG2E
 
-        Portion of the code based on `this Source`_.
-    
-        .. _this Source:
-            https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
-
-        .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
-            https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
-    
     """
 
     def __init__(self, config):
@@ -1239,9 +1223,8 @@ class KG2E_EL(KG2E):
 
 
 class HoLE(PairwiseModel):
-    """ `Holographic Embeddings of Knowledge Graphs`_.
-
-        HoLE employs the circular correlation to create composition correlations. It
+    """ 
+        `Holographic Embeddings of Knowledge Graphs`_. (HoLE) employs the circular correlation to create composition correlations. It
         is able to represent and capture the interactions betweek entities and relations
         while being efficient to compute, easier to train and scalable to large dataset.
 
@@ -1249,7 +1232,7 @@ class HoLE(PairwiseModel):
             config (object): Model configuration parameters.
     
         Examples:
-            >>> from pykg2vec.models.HoLE import HoLE
+            >>> from pykg2vec.models.pairwise.HoLE import HoLE
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = HoLE()
             >>> trainer = Trainer(model=model)
@@ -1278,26 +1261,27 @@ class HoLE(PairwiseModel):
             NamedEmbedding(self.rel_embeddings, "rel_embedding"),
         ]
 
-    def forward(self, h, r, t):
-        h_e, r_e, t_e = self.embed(h, r, t)
+    def forward(self, head, rel, tail):
+        h_e, r_e, t_e = self.embed(head, rel, tail)
         r_e = F.normalize(r_e, p=2, dim=-1)
         h_e = torch.stack((h_e, torch.zeros_like(h_e)), -1)
         t_e = torch.stack((t_e, torch.zeros_like(t_e)), -1)
         e, _ = torch.unbind(torch.ifft(torch.conj(torch.fft(h_e, 1)) * torch.fft(t_e, 1), 1), -1)
         return -F.sigmoid(torch.sum(r_e * e, 1))
 
-    def embed(self, h, r, t):
-        """Function to get the embedding value.
+    def embed(self, head, rel, tail):
+        """ 
+            Function to get the embedding value.
            
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
+            Args:
+                head (Tensor): Head entities ids.
+                rel  (Tensor): Relation ids of the triple.
+                tail (Tensor): Tail entity ids of the triple.
 
             Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
+                tuple: Returns a 3-tuple of head, relation and tail embedding tensors.
         """
-        emb_h = self.ent_embeddings(h)
-        emb_r = self.rel_embeddings(r)
-        emb_t = self.ent_embeddings(t)
+        emb_h = self.ent_embeddings(head)
+        emb_r = self.rel_embeddings(rel)
+        emb_t = self.ent_embeddings(tail)
         return emb_h, emb_r, emb_t

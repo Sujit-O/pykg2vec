@@ -351,7 +351,7 @@ class DistMult(PointwiseModel):
         the weight matrix used in RESCAL to a diagonal matrix. The scoring
         function used DistMult can capture the pairwise interactions between
         the head and the tail entities. However, DistMult has limitation on modeling asymmetric relations.
-
+        
         Args:
             config (object): Model configuration parameters.
 
