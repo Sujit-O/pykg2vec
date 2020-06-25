@@ -14,7 +14,7 @@ from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.logger import Logger
 from pykg2vec.config.config import KGEArgParser
 
-model_path = "pykg2vec.core"
+model_path = "pykg2vec.models"
 config_path = "pykg2vec.config.config"
 hyper_param_path = "pykg2vec.config.hyperparams"
 

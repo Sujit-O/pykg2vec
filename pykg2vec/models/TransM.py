@@ -4,8 +4,8 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-from pykg2vec.core.KGMeta import ModelMeta
-from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.models.KGMeta import ModelMeta
+from pykg2vec.models.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -24,7 +24,7 @@ class TransM(ModelMeta):
             data_stats (object): Class object with knowlege graph statistics.
 
         Examples:
-            >>> from pykg2vec.core.TransM import TransM
+            >>> from pykg2vec.models.TransM import TransM
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransM()
             >>> trainer = Trainer(model=model)

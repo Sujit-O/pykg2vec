@@ -3,8 +3,8 @@
 import math
 import torch
 import torch.nn as nn
-from pykg2vec.core.KGMeta import ModelMeta
-from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.models.KGMeta import ModelMeta
+from pykg2vec.models.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 

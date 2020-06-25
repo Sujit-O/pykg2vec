@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
-from pykg2vec.core.KGMeta import ModelMeta
-from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.models.KGMeta import ModelMeta
+from pykg2vec.models.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -24,7 +24,7 @@ class ConvE(ModelMeta):
 
     
     Examples:
-        >>> from pykg2vec.core.Complex import ConvE
+        >>> from pykg2vec.models.Complex import ConvE
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = ConvE()
         >>> trainer = Trainer(model=model)

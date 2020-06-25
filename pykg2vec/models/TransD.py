@@ -3,8 +3,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pykg2vec.core.KGMeta import ModelMeta
-from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.models.KGMeta import ModelMeta
+from pykg2vec.models.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -23,7 +23,7 @@ class TransD(ModelMeta):
             data_stats (object): Class object with knowlege graph statistics.
 
         Examples:
-            >>> from pykg2vec.core.TransD import TransD
+            >>> from pykg2vec.models.TransD import TransD
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransD()
             >>> trainer = Trainer(model=model)

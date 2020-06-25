@@ -8,7 +8,7 @@ import timeit
 import torch
 import numpy as np
 import pandas as pd
-from pykg2vec.core.KGMeta import EvaluationMeta
+from pykg2vec.models.KGMeta import EvaluationMeta
 from pykg2vec.utils.logger import Logger
 from tqdm import tqdm
 

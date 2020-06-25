@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
-from pykg2vec.core.KGMeta import ModelMeta
-from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.models.KGMeta import ModelMeta
+from pykg2vec.models.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -23,7 +23,7 @@ class Complex(ModelMeta):
         model (str): Name of the model.
     
     Examples:
-        >>> from pykg2vec.core.Complex import Complex
+        >>> from pykg2vec.models.Complex import Complex
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = Complex()
         >>> trainer = Trainer(model=model)
@@ -108,7 +108,7 @@ class ComplexN3(Complex):
         model (str): Name of the model.
     
     Examples:
-        >>> from pykg2vec.core.Complex import Complex
+        >>> from pykg2vec.models.Complex import Complex
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = Complex()
         >>> trainer = Trainer(model=model, debug=False)

@@ -3,8 +3,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pykg2vec.core.KGMeta import ModelMeta
-from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.models.KGMeta import ModelMeta
+from pykg2vec.models.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -26,7 +26,7 @@ class TransE(ModelMeta):
             model_name (str): Name of the model.
 
         Examples:
-            >>> from pykg2vec.core.TransE import TransE
+            >>> from pykg2vec.models.TransE import TransE
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransE()
             >>> trainer = Trainer(model=model)

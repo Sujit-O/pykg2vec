@@ -28,7 +28,7 @@ class Visualization(object):
         Examples:
             >>> from pykg2vec.utils.visualization import Visualization
             >>> from pykg2vec.utils.trainer import Trainer
-            >>> from pykg2vec.core.TransE import TransE
+            >>> from pykg2vec.models.TransE import TransE
             >>> model = TransE()
             >>> trainer = Trainer(model=model)
             >>> trainer.build_model()

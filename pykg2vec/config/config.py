@@ -37,7 +37,7 @@ class Importer:
     _logger = Logger().get_logger(__name__)
 
     def __init__(self):
-        self.model_path = "pykg2vec.core"
+        self.model_path = "pykg2vec.models"
         self.config_path = "pykg2vec.config.config"
 
         self.modelMap = {"analogy": "ANALOGY.ANALOGY",

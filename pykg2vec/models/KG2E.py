@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
-from pykg2vec.core.KGMeta import ModelMeta
-from pykg2vec.core.Domain import NamedEmbedding
+from pykg2vec.models.KGMeta import ModelMeta
+from pykg2vec.models.Domain import NamedEmbedding
 from pykg2vec.utils.generator import TrainingStrategy
 
 
@@ -26,7 +26,7 @@ class KG2E(ModelMeta):
         data_stats (object): Class object with knowlege graph statistics.
 
     Examples:
-        >>> from pykg2vec.core.KG2E import KG2E
+        >>> from pykg2vec.models.KG2E import KG2E
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = KG2E()
         >>> trainer = Trainer(model=model)
@@ -156,7 +156,7 @@ class KG2E_EL(KG2E):
         data_stats (object): Class object with knowlege graph statistics.
 
     Examples:
-        >>> from pykg2vec.core.KG2E import KG2E
+        >>> from pykg2vec.models.KG2E import KG2E
         >>> from pykg2vec.utils.trainer import Trainer
         >>> model = KG2E()
         >>> trainer = Trainer(model=model)
