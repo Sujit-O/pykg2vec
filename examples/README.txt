@@ -3,13 +3,19 @@
 Programming Examples
 =====================================
 
-To demonstrate the usage of pykg2vec, we developed several programming examples for your convenience. 
+To demonstrate the usage of pykg2vec, we developed several programming examples to show how to work with pykg2vec.
 
-General-purpose and introductory examples for the `pykg2vec` library.
+- Work with one KGE method: a short example to demonstrate how to train a model.
+- Automatic Hyperparameter Discovery: shows how to tune a model and find golden Hyperparameter.
+- Inference task for one KGE method: shows how interactive inference can be performed.
+- Train multiple algorithms: shows how to train several models one after another.
+- Full pykg2vec pipeline: shows how to work with a full pykg2vec pipeline,
 
+====
 
 **Use Your Own Dataset**
-To use your own dataset, these steps are required:
+Besides using the datasets provided, you can also create your own dataset.
+To create and use your own dataset, these steps are required:
 
 1. Store all of triples in a text-format with each line as below, using tab space ("\t") to seperate entities and relations.::
     

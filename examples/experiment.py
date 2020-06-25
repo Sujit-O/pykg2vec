@@ -1,6 +1,6 @@
 '''
 ==========================
-Train multiple Algorithm
+Train multiple Algorithms
 ==========================
 In this example, we will show how to import all the modules to start training and algorithm: ::
 

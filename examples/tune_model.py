@@ -1,6 +1,6 @@
 '''
 =================================================
-Golden hyperparameter finding for one KGE method
+Automatic hyperparameter discovery
 =================================================
 In this example, we will domonstrate how to 
 use the pykg2vec to tune a single algorithm.
