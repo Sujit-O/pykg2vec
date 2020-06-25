@@ -32,109 +32,109 @@ pykg2vec.config
 
 ====
 
-pykg2vec.core
+pykg2vec.models
 ======================
 
-pykg2vec.core.Complex
+pykg2vec.models.Complex
+-----------------------
+
+.. automodule:: pykg2vec.models.Complex
+   :members:
+
+pykg2vec.models.ConvE
 ---------------------
 
-.. automodule:: pykg2vec.core.Complex
+.. automodule:: pykg2vec.models.ConvE
    :members:
 
-pykg2vec.core.ConvE
+pykg2vec.models.DistMult
+------------------------
+
+.. automodule:: pykg2vec.models.DistMult
+   :members:
+
+pykg2vec.models.HoLE
+--------------------
+
+.. automodule:: pykg2vec.models.HoLE
+   :members:
+
+pykg2vec.models.KG2E
+--------------------
+
+.. automodule:: pykg2vec.models.KG2E
+   :members:
+
+pykg2vec.models.NTN
 -------------------
 
-.. automodule:: pykg2vec.core.ConvE
+.. automodule:: pykg2vec.models.NTN
    :members:
 
-pykg2vec.core.DistMult
+pykg2vec.models.ProjE
+---------------------
+
+.. automodule:: pykg2vec.models.ProjE_pointwise
+   :members:
+
+pykg2vec.models.Rescal
 ----------------------
 
-.. automodule:: pykg2vec.core.DistMult
+.. automodule:: pykg2vec.models.Rescal
    :members:
 
-pykg2vec.core.HoLE
-------------------
+pykg2vec.models.RotatE
+----------------------
 
-.. automodule:: pykg2vec.core.HoLE
+.. automodule:: pykg2vec.models.RotatE
    :members:
 
-pykg2vec.core.KG2E
-------------------
+pykg2vec.models.SLM
+-------------------
 
-.. automodule:: pykg2vec.core.KG2E
+.. automodule:: pykg2vec.models.SLM
    :members:
 
-pykg2vec.core.NTN
------------------
+pykg2vec.models.SME
+-------------------
 
-.. automodule:: pykg2vec.core.NTN
+.. automodule:: pykg2vec.models.SME
    :members:
 
-pykg2vec.core.ProjE
---------------------
+pykg2vec.models.TransD
+----------------------
 
-.. automodule:: pykg2vec.core.ProjE_pointwise
+.. automodule:: pykg2vec.models.TransD
    :members:
 
-pykg2vec.core.Rescal
---------------------
+pykg2vec.models.TransE
+----------------------
 
-.. automodule:: pykg2vec.core.Rescal
+.. automodule:: pykg2vec.models.TransE
    :members:
 
-pykg2vec.core.RotatE
---------------------
+pykg2vec.models.TransH
+----------------------
 
-.. automodule:: pykg2vec.core.RotatE
+.. automodule:: pykg2vec.models.TransH
    :members:
 
-pykg2vec.core.SLM
------------------
+pykg2vec.models.TransM
+----------------------
 
-.. automodule:: pykg2vec.core.SLM
+.. automodule:: pykg2vec.models.TransM
    :members:
 
-pykg2vec.core.SME
-------------------
+pykg2vec.models.TransR
+----------------------
 
-.. automodule:: pykg2vec.core.SME
+.. automodule:: pykg2vec.models.TransR
    :members:
 
-pykg2vec.core.TransD
---------------------
+pykg2vec.models.TuckER
+----------------------
 
-.. automodule:: pykg2vec.core.TransD
-   :members:
-
-pykg2vec.core.TransE
---------------------
-
-.. automodule:: pykg2vec.core.TransE
-   :members:
-
-pykg2vec.core.TransH
---------------------
-
-.. automodule:: pykg2vec.core.TransH
-   :members:
-
-pykg2vec.core.TransM
---------------------
-
-.. automodule:: pykg2vec.core.TransM
-   :members:
-
-pykg2vec.core.TransR
---------------------
-
-.. automodule:: pykg2vec.core.TransR
-   :members:
-
-pykg2vec.core.TuckER
---------------------
-
-.. automodule:: pykg2vec.core.TuckER
+.. automodule:: pykg2vec.models.TuckER
    :members:
 
 ====
