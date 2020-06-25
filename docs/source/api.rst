@@ -18,7 +18,10 @@ the total execution time. The various components of the library are as follows:
 
 ====
 
-Configuration
+.. contents:: Contents
+    :local:
+
+pykg2vec.config
 ======================
 
 .. automodule:: pykg2vec.config.config
@@ -29,106 +32,106 @@ Configuration
 
 ====
 
-Core Algorithms
+pykg2vec.core
 ======================
 
-Complex
+pykg2vec.core.Complex
 -----------
 
 .. automodule:: pykg2vec.core.Complex
    :members:
 
-ConvE
+pykg2vec.core.ConvE
 -----------
 
 .. automodule:: pykg2vec.core.ConvE
    :members:
 
-DistMult
+pykg2vec.core.DistMult
 -----------
 
 .. automodule:: pykg2vec.core.DistMult
    :members:
 
-HoLE
+pykg2vec.core.HoLE
 -----------
 
 .. automodule:: pykg2vec.core.HoLE
    :members:
 
-KG2E
+pykg2vec.core.KG2E
 -----------
 
 .. automodule:: pykg2vec.core.KG2E
    :members:
 
-NTN
+pykg2vec.core.NTN
 -----------
 
 .. automodule:: pykg2vec.core.NTN
    :members:
 
-ProjE
+pykg2vec.core.ProjE
 -----------
 
 .. automodule:: pykg2vec.core.ProjE_pointwise
    :members:
 
-Rescal
+pykg2vec.core.Rescal
 -----------
 
 .. automodule:: pykg2vec.core.Rescal
    :members:
 
-RotatE
+pykg2vec.core.RotatE
 -----------
 
 .. automodule:: pykg2vec.core.RotatE
    :members:
 
-SLM
+pykg2vec.core.SLM
 -----------
 
 .. automodule:: pykg2vec.core.SLM
    :members:
 
-SME
+pykg2vec.core.SME
 -----------
 
 .. automodule:: pykg2vec.core.SME
    :members:
 
-TransD
+pykg2vec.core.TransD
 -----------
 
 .. automodule:: pykg2vec.core.TransD
    :members:
 
-TransE
+pykg2vec.core.TransE
 -----------
 
 .. automodule:: pykg2vec.core.TransE
    :members:
 
-TransH
+pykg2vec.core.TransH
 -----------
 
 .. automodule:: pykg2vec.core.TransH
    :members:
 
-TransM
+pykg2vec.core.TransM
 -----------
 
 .. automodule:: pykg2vec.core.TransM
    :members:
 
-TransR
+pykg2vec.core.TransR
 -----------
 
 .. automodule:: pykg2vec.core.TransR
    :members:
 
-TuckER
+pykg2vec.core.TuckER
 -----------
 
 .. automodule:: pykg2vec.core.TuckER
