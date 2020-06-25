@@ -6,7 +6,7 @@ This module is for generating the batch data for training and testing.
 import torch
 import numpy as np
 from multiprocessing import Process, Queue
-from enum import Enum
+from pykg2vec.common import TrainingStrategy
 
 def raw_data_generator(command_queue, raw_queue, config):
     """Function to feed  triples to raw queue for multiprocessing.
@@ -329,9 +329,3 @@ class Generator:
 
     def start_one_epoch(self, num_batch):
         self.command_queue.put(num_batch)
-
-
-class TrainingStrategy(Enum):
-    PROJECTION_BASED = "projection_based"   # matching models with neural network
-    PAIRWISE_BASED = "pairwise_based"       # translational distance models
-    POINTWISE_BASED = "pointwise_based"     # semantic matching models

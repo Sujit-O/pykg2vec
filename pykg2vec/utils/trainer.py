@@ -12,20 +12,14 @@ import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
 
-from enum import Enum
 from pykg2vec.models.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
-from pykg2vec.data.generator import Generator, TrainingStrategy
+from pykg2vec.data.generator import Generator
 from pykg2vec.utils.logger import Logger
+from pykg2vec.common import Monitor, TrainingStrategy
+
 from tqdm import tqdm 
-
-
-class Monitor(Enum):
-    MEAN_RANK = "mr"
-    FILTERED_MEAN_RANK = "fmr"
-    MEAN_RECIPROCAL_RANK = "mrr"
-    FILTERED_MEAN_RECIPROCAL_RANK = "fmrr"
 
 
 class EarlyStopper:

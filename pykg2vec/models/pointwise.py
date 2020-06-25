@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from pykg2vec.models.KGMeta import ModelMeta
 from pykg2vec.models.Domain import NamedEmbedding
-from pykg2vec.data.generator import TrainingStrategy
+from pykg2vec.common import TrainingStrategy
 
 
 class ANALOGY(ModelMeta):
