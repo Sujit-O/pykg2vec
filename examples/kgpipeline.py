@@ -11,7 +11,7 @@ the testing set.
 
 ====
 
-We also attached the source code of Train.py below for your reference.
+We also attached the source code of kgpipeline.py below for your reference.
 You can adjust to fit your usage.
 
 '''

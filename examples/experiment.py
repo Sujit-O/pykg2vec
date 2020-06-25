@@ -8,7 +8,7 @@ In this example, we will show how to import all the modules to start training an
 
 ====
 
-We also attached the source code of Train.py below for your reference.
+We also attached the source code of experiment.py below for your reference.
 You can adjust to fit your usage.
 
 '''
