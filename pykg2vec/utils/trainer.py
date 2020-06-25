@@ -20,6 +20,15 @@ from tqdm import tqdm
 
 class EarlyStopper:
     
+    """ Class used by trainer for handling the early stopping mechanism during the training of KGE algorithms.
+
+        Args:
+            patience (int): Number of epochs to wait before early stopping the training on no improvement.
+            No early stopping if it is a negative number (default: {-1}).
+            monitor (Monitor): the type of metric that earlystopper will monitor.
+
+    """
+
     _logger = Logger().get_logger(__name__)
 
     def __init__(self, patience, monitor):
@@ -61,14 +70,10 @@ class EarlyStopper:
 
 
 class Trainer:
-    """Class for handling the training of the algorithms.
+    """ Class for handling the training of the algorithms.
 
         Args:
-            model (object): Model object
-            debug (bool): Flag to check if its debugging
-            tuning (bool): Flag to denoting tuning if True
-            patience (int): Number of epochs to wait before early stopping the training on no improvement.
-            No early stopping if it is a negative number (default: {-1}).
+            model (object): KGE model object
 
         Examples:
             >>> from pykg2vec.utils.trainer import Trainer

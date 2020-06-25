@@ -10,27 +10,18 @@ import numpy as np
 from pykg2vec.data.datasets import FreebaseFB15k, DeepLearning50a, WordNet18, WordNet18_RR, YAGO3_10, FreebaseFB15k_237, Kinship, Nations, UMLS, NELL_995, UserDefinedDataset
 
 class Triple(object):
-    """The class defines the datastructure of the knowledge graph triples.
+    """ The class defines the datastructure of the knowledge graph triples.
 
-       Triple class is used to store the head, tail and relation triple in both its numerical id and
-       string form. It also stores the dictonary of (head, relation)=[tail1, tail2,..] and
-       (tail, relation)=[head1, head2, ...]
+        Triple class is used to store the head, tail and relation triple in both its numerical id and
+        string form. It also stores the dictonary of (head, relation)=[tail1, tail2,..] and
+        (tail, relation)=[head1, head2, ...]
 
-       Args:
+        Args:
           h (str or int): String or integer head entity.
           r (str or int): String or integer relation entity.
           t (str or int): String or integer tail entity.
 
-       Attributes:
-           h (int): Stores the head triple id.
-           t (int): Stores the tail triple id.
-           r (int): Stores the relation triple id.
-           hr_t (dict): Stores the list of tails for head and relation pair.
-           tr_h (dict): Stores the list of heads for tail and relation pair.
-
-       Todo:
-                * Move the module to config.
-       Examples:
+        Examples:
            >>> from pykg2vec.data.kgcontroller import Triple
            >>> trip1 = Triple(2,3,5)
            >>> trip2 = Triple('Tokyo','isCapitalof','Japan')
@@ -41,7 +32,7 @@ class Triple(object):
         self.t = t
 
     def set_ids(self, h, r, t):
-        """This function assigns the head, relation and tail.
+        """ This function assigns the head, relation and tail.
 
             Args:
                 h (int): Integer head entity.
@@ -88,35 +79,37 @@ class KGMetaData(object):
 
 
 class KnowledgeGraph(object):
-    """The class is the main module that handles the knowledge graph.
+    """ The class is the main module that handles the knowledge graph.
 
-      KnowledgeGraph is responsible for downloading, parsing, processing and preparing
-      the training, testing and validation dataset.
+        KnowledgeGraph is responsible for downloading, parsing, processing and preparing
+        the training, testing and validation dataset.
 
-      Args:
-         dataset_name (str): Name of the datasets
+        Args:
+            dataset_name (str): Name of the datasets
+            custom_dataset_path (str): The path to custom dataset.
 
-      Attributes:
-        dataset_name (str): The name of the dataset.
-        dataset (object): The dataset object isntance.
-        triplets (dict): dictionary with three list of training, testing and validation triples.
-        relations (list):list of all the relations.
-        entities (list): List of all the entities.
-        entity2idx (dict): Dictionary for mapping string name of entities to unique numerical id.
-        idx2entity (dict): Dictionary for mapping the id to string.
-        relation2idx (dict): Dictionary for mapping the id to string.
-        idx2relation (dict): Dictionary for mapping the id to string.
-        hr_t (dict):  Dictionary with set as a default key and list as values.
-        tr_h (dict):  Dictionary with set as a default key and list as values.
-        hr_t_train (dict):  Dictionary with set as a default key and list as values.
-        tr_h_train (dict):  Dictionary with set as a default key and list as values.
-        relation_property (list): list storing the entities tied to a specific relation.
-        kg_meta (object): Object storing the statistics metadata of the dataset.
+        Attributes:
+            dataset_name (str): The name of the dataset.
+            dataset (object): The dataset object isntance.
+            triplets (dict): dictionary with three list of training, testing and validation triples.
+            relations (list):list of all the relations.
+            entities (list): List of all the entities.
+            entity2idx (dict): Dictionary for mapping string name of entities to unique numerical id.
+            idx2entity (dict): Dictionary for mapping the id to string.
+            relation2idx (dict): Dictionary for mapping the id to string.
+            idx2relation (dict): Dictionary for mapping the id to string.
+            hr_t (dict):  Dictionary with set as a default key and list as values.
+            tr_h (dict):  Dictionary with set as a default key and list as values.
+            hr_t_train (dict):  Dictionary with set as a default key and list as values.
+            tr_h_train (dict):  Dictionary with set as a default key and list as values.
+            relation_property (list): list storing the entities tied to a specific relation.
+            kg_meta (object): Object storing the statistics metadata of the dataset.
 
-      Examples:
-          >>> from pykg2vec.data.kgcontroller import KnowledgeGraph
-          >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k')
-          >>> knowledge_graph.prepare_data()
+        Examples:
+            >>> from pykg2vec.data.kgcontroller import KnowledgeGraph
+            >>> knowledge_graph = KnowledgeGraph(dataset='Freebase15k')
+            >>> knowledge_graph.prepare_data()
+
     """
     _logger = Logger().get_logger(__name__)
 
@@ -215,9 +208,9 @@ class KnowledgeGraph(object):
                                   self.kg_meta.tot_test_triples + \
                                   self.kg_meta.tot_train_triples
 
-        self.cache_data()
+        self._cache_data()
 
-    def cache_data(self):
+    def _cache_data(self):
         """Function to cache the prepared dataset in the memory"""
         with open(str(self.dataset.cache_metadata_path), 'wb') as f:
             pickle.dump(self.kg_meta, f)

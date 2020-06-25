@@ -10,20 +10,10 @@ import numpy as np
 
 
 class TransEParams:
-    """This class defines the hyperameters and its ranges for tuning TranE algorithm.
+    """ This class defines the hyperameters and its ranges for tuning TranE algorithm.
 
-    TransEParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        TransEParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -40,20 +30,10 @@ class TransEParams:
 
 
 class TransHParams:
-    """This class defines the hyperameters and its ranges for tuning TranH algorithm.
+    """ This class defines the hyperameters and its ranges for tuning TranH algorithm.
 
-    TransHParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        TransHParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -70,21 +50,11 @@ class TransHParams:
 
 
 class TransMParams:
-    """This class defines the hyperameters and its ranges for tuning TranM algorithm.
+    """ This class defines the hyperameters and its ranges for tuning TranM algorithm.
 
-    TransMParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
-
+        TransMParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
+    
     """
 
     def __init__(self):
@@ -100,20 +70,10 @@ class TransMParams:
 
 
 class RescalParams:
-    """This class defines the hyperameters and its ranges for tuning Rescal algorithm.
+    """ This class defines the hyperameters and its ranges for tuning Rescal algorithm.
 
-    Rescal defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        Rescal defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -130,21 +90,10 @@ class RescalParams:
 
 
 class SMEParams:
-    """This class defines the hyperameters and its ranges for tuning SME algorithm.
+    """ This class defines the hyperameters and its ranges for tuning SME algorithm.
 
-    SME defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
-      bilinear (bool): List of boolean values.
+        SME defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -161,20 +110,10 @@ class SMEParams:
         }
 
 class TransDParams:
-    """This class defines the hyperameters and its ranges for tuning TranD algorithm.
+    """ This class defines the hyperameters and its ranges for tuning TranD algorithm.
 
-    TransDParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        TransDParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -191,21 +130,10 @@ class TransDParams:
 
 
 class TransRParams:
-    """This class defines the hyperameters and its ranges for tuning TranR algorithm.
+    """ This class defines the hyperameters and its ranges for tuning TranR algorithm.
 
-    TransRParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      ent_hidden_size (list): List of integer values.
-      rel_hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        TransRParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -223,21 +151,10 @@ class TransRParams:
 
 
 class NTNParams:
-    """This class defines the hyperameters and its ranges for tuning NTN algorithm.
+    """ This class defines the hyperameters and its ranges for tuning NTN algorithm.
 
-    NTNParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      ent_hidden_size (list): List of integer values.
-      rel_hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        NTNParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -255,21 +172,10 @@ class NTNParams:
 
 
 class SLMParams:
-    """This class defines the hyperameters and its ranges for tuning SLM algorithm.
+    """ This class defines the hyperameters and its ranges for tuning SLM algorithm.
 
-    SLMParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      ent_hidden_size (list): List of integer values.
-      rel_hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        SLMParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -287,20 +193,10 @@ class SLMParams:
 
 
 class HoLEParams:
-    """This class defines the hyperameters and its ranges for tuning HoLE algorithm.
+    """ This class defines the hyperameters and its ranges for tuning HoLE algorithm.
 
-    HoLEParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        HoLEParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -317,20 +213,11 @@ class HoLEParams:
 
 
 class RotatEParams:
-    """This class defines the hyperameters and its ranges for tuning RotatE algorithm.
+    """ This class defines the hyperameters and its ranges for tuning RotatE algorithm.
 
-    RotatEParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
+        RotatEParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
 
     """
 
@@ -347,28 +234,10 @@ class RotatEParams:
 
 
 class ConvEParams:
-    """This class defines the hyperameters and its ranges for tuning ConvE algorithm.
+    """ This class defines the hyperameters and its ranges for tuning ConvE algorithm.
 
-    ConvEParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      lambda (list) : List of floating point values.
-      feature_map_dropout (list) :List of floating point values.
-      input_dropout (list) : List of floating point values.
-      hidden_dropout (list) : List of floating point values.
-      use_bias (list) :List of boolean values.
-      label_smoothing (list) : List of floating point values.
-      lr_decay (float) : List of floating point values.
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
-
+        ConvEParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -391,27 +260,10 @@ class ConvEParams:
 
 
 class ProjE_pointwiseParams:
-    """This class defines the hyperameters and its ranges for tuning ProjE_pointwise algorithm.
+    """ This class defines the hyperameters and its ranges for tuning ProjE_pointwise algorithm.
 
-    ProjE_pointwise defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      lambda (list) : List of floating point values.
-      feature_map_dropout (list) :List of floating point values.
-      input_dropout (list) : List of floating point values.
-      hidden_dropout (list) : List of floating point values.
-      use_bias (list) :List of boolean values.
-      label_smoothing (list) : List of floating point values.
-      lr_decay (float) : List of floating point values.
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        ProjE_pointwise defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -434,24 +286,10 @@ class ProjE_pointwiseParams:
 
 
 class KG2EParams:
-    """This class defines the hyperameters and its ranges for tuning KG2E algorithm.
+    """ This class defines the hyperameters and its ranges for tuning KG2E algorithm.
 
-    KG2E defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
-      bilinear (list): List of boolean values.
-      distance_measure (list): [kl_divergence or expected_likelihood]
-      cmax (list):  List of floating point values.
-      cmin (list):  List of floating point values.
+        KG2E defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -473,27 +311,10 @@ class KG2EParams:
 
 
 class ComplexParams:
-    """This class defines the hyperameters and its ranges for tuning Complex algorithm.
+    """ This class defines the hyperameters and its ranges for tuning Complex algorithm.
 
-    Complex defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      lambda (list) : List of floating point values.
-      feature_map_dropout (list) :List of floating point values.
-      input_dropout (list) : List of floating point values.
-      hidden_dropout (list) : List of floating point values.
-      use_bias (list) :List of boolean values.
-      label_smoothing (list) : List of floating point values.
-      lr_decay (float) : List of floating point values.
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        Complex defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -509,27 +330,10 @@ class ComplexParams:
 
 
 class DistMultParams:
-    """This class defines the hyperameters and its ranges for tuning DistMult algorithm.
+    """ This class defines the hyperameters and its ranges for tuning DistMult algorithm.
 
-    DistMultParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      lambda (list) : List of floating point values.
-      feature_map_dropout (list) :List of floating point values.
-      input_dropout (list) : List of floating point values.
-      hidden_dropout (list) : List of floating point values.
-      use_bias (list) :List of boolean values.
-      label_smoothing (list) : List of floating point values.
-      lr_decay (float) : List of floating point values.
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        DistMultParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -545,27 +349,10 @@ class DistMultParams:
 
 
 class TuckERParams:
-    """This class defines the hyperameters and its ranges for tuning TuckER algorithm.
+    """ This class defines the hyperameters and its ranges for tuning TuckER algorithm.
 
-    TuckERParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      lambda (list) : List of floating point values.
-      feature_map_dropout (list) :List of floating point values.
-      input_dropout (list) : List of floating point values.
-      hidden_dropout (list) : List of floating point values.
-      use_bias (list) :List of boolean values.
-      label_smoothing (list) : List of floating point values.
-      lr_decay (float) : List of floating point values.
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        TuckERParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -588,24 +375,10 @@ class TuckERParams:
 
 
 class TransGParams:
-    """This class defines the hyperameters and its ranges for tuning TransG algorithm.
+    """ This class defines the hyperameters and its ranges for tuning TransG algorithm.
 
-    TransGParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
-      training_threshold (float): List of floating point values.
-      ncluster (int): List of integer values.
-      CRP_factor (float): List of floating point values.
-      weight_norm (bool): List of boolean values.
+        TransGParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -625,27 +398,10 @@ class TransGParams:
 
 
 class CPParams:
-    """This class defines the hyperameters and its ranges for tuning Canonical Tensor Decomposition algorithm.
+    """ This class defines the hyperameters and its ranges for tuning Canonical Tensor Decomposition algorithm.
 
-    CPParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      lambda (list) : List of floating point values.
-      feature_map_dropout (list) :List of floating point values.
-      input_dropout (list) : List of floating point values.
-      hidden_dropout (list) : List of floating point values.
-      use_bias (list) :List of boolean values.
-      label_smoothing (list) : List of floating point values.
-      lr_decay (float) : List of floating point values.
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        CPParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
@@ -660,27 +416,11 @@ class CPParams:
         }
 
 class ANALOGYParams:
-    """This class defines the hyperameters and its ranges for tuning ANALOGY algorithm. 
-    ANALOGYParams defines all the possibel values to be tuned for the algorithm. 
-    User may change these values directly for performing2 the bayesian optimization of the hyper-parameters
+    """ This class defines the hyperameters and its ranges for tuning ANALOGY algorithm. 
     
-    Args:
-      lambda (list) : List of floating point values.
-      feature_map_dropout (list) : List of floating point values.
-      input_dropout (list) : List of floating point values.
-      hidden_dropout (list) : List of floating point values.
-      use_bias (list) :List of boolean values.
-      label_smoothing (list) : List of floating point values.
-      lr_decay (float) : List of floating point values.
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
-
+        ANALOGYParams defines all the possibel values to be tuned for the algorithm. 
+        User may change these values directly for performing2 the bayesian optimization of the hyper-parameters
+    
     """
 
     def __init__(self):
@@ -694,28 +434,10 @@ class ANALOGYParams:
         }
 
 class SimplEParams:
-    """This class defines the hyperameters and its ranges for tuning SimplE algorithm.
+    """ This class defines the hyperameters and its ranges for tuning SimplE algorithm.
 
-    SimplEParams defines all the possibel values to be tuned for the algorithm. User may
-
-    change these values directly for performing the bayesian optimization of the hyper-parameters
-
-    Args:
-      lambda (list) : List of floating point values.
-      feature_map_dropout (list) :List of floating point values.
-      input_dropout (list) : List of floating point values.
-      hidden_dropout (list) : List of floating point values.
-      use_bias (list) :List of boolean values.
-      label_smoothing (list) : List of floating point values.
-      lr_decay (float) : List of floating point values.
-      learning_rate (list): List of floating point values.
-      L1_flag (list): List of boolean values.
-      hidden_size (list): List of integer values.
-      batch_size (list): List of integer values.
-      epochs (list): List of integer values.
-      margin (list): List of floating point values.
-      optimizer (list): List of strings defining the optimization algorithm to be used.
-      sampling (list): List of string defining the sampling to be used for generating negative examples.
+        SimplEParams defines all the possibel values to be tuned for the algorithm. User may
+        change these values directly for performing the bayesian optimization of the hyper-parameters
 
     """
 
