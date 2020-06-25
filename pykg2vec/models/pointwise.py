@@ -4,20 +4,16 @@ import math
 import torch
 import torch.nn as nn
 
-from pykg2vec.models.KGMeta import ModelMeta
+from pykg2vec.models.KGMeta import PointwiseModel
 from pykg2vec.models.Domain import NamedEmbedding
-from pykg2vec.data.generator import TrainingStrategy
+from pykg2vec.common import TrainingStrategy
 
 
-class ANALOGY(ModelMeta):
+class ANALOGY(PointwiseModel):
 
     def __init__(self, config):
-        super(ANALOGY, self).__init__()
+        super(ANALOGY, self).__init__(self.__class__.__name__.lower(), config)
         
-        self.config = config
-        self.model_name = 'ANALOGY'
-        self.training_strategy = TrainingStrategy.POINTWISE_BASED
-
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -102,7 +98,7 @@ class ANALOGY(ModelMeta):
         return self.config.lmbda*regul_term
 
 
-class Complex(ModelMeta):
+class Complex(PointwiseModel):
     """`Complex Embeddings for Simple Link Prediction`_.
 
     ComplEx is an enhanced version of DistMult in that it uses complex-valued embeddings
@@ -114,7 +110,7 @@ class Complex(ModelMeta):
 
     Attributes:
         config (object): Model configuration.
-        data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+        data_stats (object): PointwiseModel object instance. It consists of the knowledge graph metadata.
         model (str): Name of the model.
     
     Examples:
@@ -130,11 +126,8 @@ class Complex(ModelMeta):
     """
 
     def __init__(self, config):
-        super(Complex, self).__init__()
-        self.config = config
-        self.model_name = 'Complex'
-        self.training_strategy = TrainingStrategy.POINTWISE_BASED
-
+        super(Complex, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -200,7 +193,7 @@ class ComplexN3(Complex):
 
     Attributes:
         config (object): Model configuration.
-        data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+        data_stats (object): PointwiseModel object instance. It consists of the knowledge graph metadata.
         model (str): Name of the model.
     
     Examples:
@@ -217,7 +210,7 @@ class ComplexN3(Complex):
 
     def __init__(self, config):
         super(ComplexN3, self).__init__(config)
-        self.model_name = 'ComplexN3'
+        self.model_name = 'complexn3'
 
     def get_reg(self, h, r, t):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
@@ -227,7 +220,7 @@ class ComplexN3(Complex):
         return self.config.lmbda*regul_term
 
 
-class ConvKB(ModelMeta):
+class ConvKB(PointwiseModel):
     """`A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network`_
 
     ConvKB, each triple (head entity, relation, tail entity) is represented as a 3-
@@ -238,7 +231,7 @@ class ConvKB(ModelMeta):
     
     Attributes:
         config (object): Model configuration.
-        data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+        data_stats (object): PointwiseModel object instance. It consists of the knowledge graph metadata.
         model (str): Name of the model.
         last_dim (int): The size of the last dimesion, depends on hidden size.
 
@@ -261,11 +254,8 @@ class ConvKB(ModelMeta):
     """
 
     def __init__(self, config):
-        super(ConvKB, self).__init__()
-        self.config = config
-        self.model_name = 'ConvKB'
-        self.training_strategy = TrainingStrategy.POINTWISE_BASED
-
+        super(ConvKB, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -319,14 +309,11 @@ class ConvKB(ModelMeta):
         return preds
 
 
-class CP(ModelMeta):
+class CP(PointwiseModel):
 
     def __init__(self, config):
-        super(CP, self).__init__()
-        self.config = config
-        self.model_name = 'CP'
-        self.training_strategy = TrainingStrategy.POINTWISE_BASED
-
+        super(CP, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -376,7 +363,7 @@ class CP(ModelMeta):
         return self.config.lmbda * regul_term
 
 
-class DistMult(ModelMeta):
+class DistMult(PointwiseModel):
     """`EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES`_
 
         DistMult is a simpler model comparing with RESCAL in that it simplifies
@@ -390,7 +377,7 @@ class DistMult(ModelMeta):
 
         Attributes:
             config (object): Model configuration.
-            data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+            data_stats (object): PointwiseModel object instance. It consists of the knowledge graph metadata.
             tot_ent (int): Total unique entites in the knowledge graph.
             tot_rel (int): Total unique relation in the knowledge graph.
             model (str): Name of the model.
@@ -409,11 +396,8 @@ class DistMult(ModelMeta):
     """
 
     def __init__(self, config):
-        super(DistMult, self).__init__()
-        self.config = config
-        self.model_name = 'DistMult'
-        self.training_strategy = TrainingStrategy.POINTWISE_BASED
-
+        super(DistMult, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -455,14 +439,11 @@ class DistMult(ModelMeta):
         return self.config.lmbda*regul_term
 
 
-class SimplE(ModelMeta):
+class SimplE(PointwiseModel):
 
     def __init__(self, config):
-        super(SimplE, self).__init__()
-        self.config = config
-        self.model_name = 'SimplE_avg'
-        self.training_strategy = TrainingStrategy.POINTWISE_BASED
-
+        super(SimplE, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -524,9 +505,7 @@ class SimplE_ignr(SimplE):
 
     def __init__(self, config):
         super(SimplE_ignr, self).__init__(config)
-        self.config = config
-        self.model_name = 'SimplE_ignr'
-        self.training_strategy = TrainingStrategy.POINTWISE_BASED
+        self.model_name = 'simple_ignr'
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

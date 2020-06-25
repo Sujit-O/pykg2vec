@@ -4,12 +4,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from pykg2vec.models.KGMeta import ModelMeta
+from pykg2vec.models.KGMeta import PairwiseModel
 from pykg2vec.models.Domain import NamedEmbedding
-from pykg2vec.data.generator import TrainingStrategy
 
 
-class TransE(ModelMeta):
+class TransE(PairwiseModel):
     """ `Translating Embeddings for Modeling Multi-relational Data`_
 
         TransE is an energy based model which represents the
@@ -46,12 +45,8 @@ class TransE(ModelMeta):
 
     def __init__(self, config):
 
-        super(TransE, self).__init__()
-
-        self.config = config
-        self.model_name = 'TransE'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(TransE, self).__init__(self.__class__.__name__.lower(), config)
+        
         self.ent_embeddings = nn.Embedding(self.config.kg_meta.tot_entity, self.config.hidden_size)
         self.rel_embeddings = nn.Embedding(self.config.kg_meta.tot_relation, self.config.hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
@@ -102,7 +97,7 @@ class TransE(ModelMeta):
         return h_e, r_e, t_e
 
 
-class TransH(ModelMeta):
+class TransH(PairwiseModel):
     """ `Knowledge Graph Embedding by Translating on Hyperplanes`_
 
         TransH models a relation as a hyperplane together with a translation operation on it.
@@ -137,11 +132,8 @@ class TransH(ModelMeta):
     """
 
     def __init__(self, config):
-        super(TransH, self).__init__()
-        self.config = config
-        self.model_name = 'TransH'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(TransH, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
 
@@ -199,7 +191,7 @@ class TransH(ModelMeta):
         return emb_h, emb_r, emb_t
 
 
-class TransD(ModelMeta):
+class TransD(PairwiseModel):
     """ `Knowledge Graph Embedding via Dynamic Mapping Matrix`_
 
         TransD constructs a dynamic mapping matrix for each entity-relation pair by considering the diversity of entities and relations simultaneously.
@@ -231,11 +223,8 @@ class TransD(ModelMeta):
     """
 
     def __init__(self, config):
-        super(TransD, self).__init__()
-        self.config = config
-        self.model_name = 'TransD'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(TransD, self).__init__(self.__class__.__name__.lower(), config)
+        
         d = self.config.ent_hidden_size
         k = self.config.rel_hidden_size
 
@@ -306,7 +295,7 @@ class TransD(ModelMeta):
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
 
 
-class TransM(ModelMeta):
+class TransM(PairwiseModel):
     """ `Transition-based Knowledge Graph Embedding with Relational Mapping Properties`_
 
         TransM is another line of research that improves TransE by relaxing the overstrict requirement of
@@ -333,11 +322,8 @@ class TransM(ModelMeta):
     """
 
     def __init__(self, config):
-        super(TransM, self).__init__()
-        self.config = config
-        self.model_name = 'TransM'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(TransM, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -406,7 +392,7 @@ class TransM(ModelMeta):
         return emb_h, emb_r, emb_t
 
 
-class TransR(ModelMeta):
+class TransR(PairwiseModel):
     """ `Learning Entity and Relation Embeddings for Knowledge Graph Completion`_
 
         TranR is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
@@ -440,11 +426,8 @@ class TransR(ModelMeta):
     """
 
     def __init__(self, config):
-        super(TransR, self).__init__()
-        self.config = config
-        self.model_name = 'TransR'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(TransR, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.ent_hidden_size
@@ -531,7 +514,7 @@ class TransR(ModelMeta):
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
 
 
-class SLM(ModelMeta):
+class SLM(PairwiseModel):
     """`Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
 
         SLM model is designed as a baseline of Neural Tensor Network.
@@ -542,7 +525,7 @@ class SLM(ModelMeta):
 
         Attributes:
             config (object): Model configuration.
-            data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+            data_stats (object): PairwiseModel object instance. It consists of the knowledge graph metadata.
             model_name (str): Name of the model.
 
         Examples:
@@ -558,11 +541,8 @@ class SLM(ModelMeta):
     """
 
     def __init__(self, config):
-        super(SLM, self).__init__()
-        self.config = config
-        self.model_name = 'SLM'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(SLM, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         d = self.config.ent_hidden_size
@@ -619,7 +599,7 @@ class SLM(ModelMeta):
         return torch.tanh(mr1h + mr2t)
 
 
-class SME(ModelMeta):
+class SME(PairwiseModel):
     """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
 
     Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
@@ -654,11 +634,8 @@ class SME(ModelMeta):
     """
 
     def __init__(self, config):
-        super(SME, self).__init__()
-        self.config = config
-        self.model_name = 'SME_Linear'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(SME, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -846,7 +823,7 @@ class SME_BL(SME):
         return torch.sum(self._gu_bilinear(norm_h, norm_r) * self._gv_bilinear(norm_r, norm_t), -1)
 
 
-class RotatE(ModelMeta):
+class RotatE(PairwiseModel):
     """ `Rotate-Knowledge graph embedding by relation rotation in complex space`_
 
         RotatE models the entities and the relations in the complex vector space.
@@ -859,7 +836,7 @@ class RotatE(ModelMeta):
 
         Attributes:
             config (object): Model configuration.
-            data_stats (object): ModelMeta object instance. It consists of the knowledge graph metadata.
+            data_stats (object): PairwiseModel object instance. It consists of the knowledge graph metadata.
             model_name (str): Name of the model.
 
         Examples:
@@ -928,7 +905,7 @@ class RotatE(ModelMeta):
         return -(self.config.margin - torch.sum(score_r**2 + score_i**2, axis=-1))
 
 
-class Rescal(ModelMeta):
+class Rescal(PairwiseModel):
     """`A Three-Way Model for Collective Learning on Multi-Relational Data`_
 
         RESCAL is a tensor factorization approach to knowledge representation learning,
@@ -960,11 +937,8 @@ class Rescal(ModelMeta):
     """
 
     def __init__(self, config):
-        super(Rescal, self).__init__()
-        self.config = config
-        self.model_name = 'Rescal'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(Rescal, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -1017,7 +991,7 @@ class Rescal(ModelMeta):
         return embedding.weight.data.div(norms.view(num_embeddings, 1).expand_as(embedding.weight))
 
 
-class NTN(ModelMeta):
+class NTN(PairwiseModel):
     """ `Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
 
     It is a neural tensor network which represents entities as an average of their
@@ -1051,11 +1025,8 @@ class NTN(ModelMeta):
     """
 
     def __init__(self, config):
-        super(NTN, self).__init__()
-        self.config = config
-        self.model_name = 'NTN'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(NTN, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         d = self.config.ent_hidden_size
@@ -1132,7 +1103,7 @@ class NTN(ModelMeta):
         return self.config.lmbda*torch.sqrt(sum([torch.sum(torch.pow(var.weight, 2)) for var in self.parameter_list]))
 
 
-class KG2E(ModelMeta):
+class KG2E(PairwiseModel):
     """`Learning to Represent Knowledge Graphs with Gaussian Embedding`_
 
     Instead of assumming entities and relations as determinstic points in the
@@ -1169,11 +1140,8 @@ class KG2E(ModelMeta):
     """
 
     def __init__(self, config=None):
-        super(KG2E, self).__init__()
-        self.config = config
-        self.model_name = 'KG2E_KL'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(KG2E, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size
@@ -1301,9 +1269,7 @@ class KG2E_EL(KG2E):
 
     def __init__(self, config):
         super(KG2E_EL, self).__init__(config)
-        self.config = config
-        self.model_name = 'KG2E_EL'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
+        self.model_name = 'KG2E_EL'.lower()
 
     def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
@@ -1335,7 +1301,7 @@ class KG2E_EL(KG2E):
         return trace_fac + mul_fac - det_fac - self.config.hidden_size
 
 
-class HoLE(ModelMeta):
+class HoLE(PairwiseModel):
     """`Holographic Embeddings of Knowledge Graphs`_.
 
     HoLE employs the circular correlation to create composition correlations. It
@@ -1363,11 +1329,8 @@ class HoLE(ModelMeta):
     """
 
     def __init__(self, config):
-        super(HoLE, self).__init__()
-        self.config = config
-        self.model_name = 'HoLE'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
+        super(HoLE, self).__init__(self.__class__.__name__.lower(), config)
+        
         num_total_ent = self.config.kg_meta.tot_entity
         num_total_rel = self.config.kg_meta.tot_relation
         k = self.config.hidden_size

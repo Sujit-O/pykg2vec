@@ -6,105 +6,76 @@ Knowledge Graph Meta Class
 It provides Abstract class for the Knowledge graph models.
 """
 
+from pykg2vec.common import TrainingStrategy
 from abc import ABCMeta, abstractmethod
 import torch.nn as nn
 
-class ModelMeta(nn.Module):
+class PairwiseModel(nn.Module):
     """ Meta Class for knowledge graph embedding algorithms"""
 
     __metaclass__ = ABCMeta
 
-    def __init__(self):
+    def __init__(self, model_name, config):
         """Initialize and create the model to be trained and inferred"""
-        super(ModelMeta, self).__init__()
+        super(PairwiseModel, self).__init__()
+
+        self.model_name = model_name
+        self.config = config
+        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
 
     @abstractmethod
-    def get_loss(self):
-        """Function to define how loss is calculated in the model"""
-        pass
-
-    @abstractmethod
-    def embed(self,h, r, t):
+    def embed(self, h, r, t):
         """Function to get the embedding value"""
         pass
 
-class TrainerMeta:
-    """ Meta Class for Trainer Module"""
+    @abstractmethod
+    def forward(self, h, r, t):
+        """Function to get the embedding value"""
+        pass
+
+
+class PointwiseModel(nn.Module):
+    """ Meta Class for knowledge graph embedding algorithms"""
+
     __metaclass__ = ABCMeta
 
-    def __init__(self):
-        """Initializing and create the model to be trained and inferred"""
+    def __init__(self, model_name, config):
+        """Initialize and create the model to be trained and inferred"""
+        super(PointwiseModel, self).__init__()
+
+        self.model_name = model_name
+        self.config = config
+        self.training_strategy = TrainingStrategy.POINTWISE_BASED
+
+    @abstractmethod
+    def embed(self, h, r, t):
+        """Function to get the embedding value"""
         pass
 
     @abstractmethod
-    def build_model(self):
-        """function to compile the model"""
+    def forward(self, h, r, t):
+        """Function to get the embedding value"""
         pass
 
-    @abstractmethod
-    def train_model(self):
-        """function to train the model"""
-        pass
+class ProjectionModel(nn.Module):
+    """ Meta Class for knowledge graph embedding algorithms"""
 
-    @abstractmethod
-    def save_model(self):
-        """function to save the model"""
-        pass
-
-    @abstractmethod
-    def load_model(self):
-        """function to load the model"""
-        pass
-
-
-class VisualizationMeta:
-    """ Meta Class for Visualization Module"""
-    __metaclass__ = ABCMeta
-    
-    def __init__(self):
-        """Initializing and create the model to be trained and inferred"""
-        pass
-
-    @abstractmethod
-    def display(self):
-        """function to display embedding"""
-        pass
-
-    @abstractmethod
-    def summary(self):
-        """function to print the summary"""
-        pass
-
-
-class EvaluationMeta:
-    """ Meta Class for Evaluation Module"""
     __metaclass__ = ABCMeta
 
-    def __init__(self):
+    def __init__(self, model_name, config):
+        """Initialize and create the model to be trained and inferred"""
+        super(ProjectionModel, self).__init__()
+
+        self.model_name = model_name
+        self.config = config
+        self.training_strategy = TrainingStrategy.PROJECTION_BASED
+
+    @abstractmethod
+    def embed(self, h, r, t):
+        """Function to get the embedding value"""
         pass
 
     @abstractmethod
-    def relation_prediction(self):
-        """Function for evaluating link prediction"""
+    def forward(self, h, r, t):
+        """Function to get the embedding value"""
         pass
-
-    @abstractmethod
-    def entity_classification(self):
-        """Function for evaluating entity classification"""
-        pass
-
-    @abstractmethod
-    def relation_classification(self):
-        """Function for evaluating relation classification"""
-        pass
-
-    @abstractmethod
-    def triple_classification(self):
-        """Function for evaluating triple classificaiton"""
-        pass
-
-    @abstractmethod
-    def entity_completion(self):
-        """Function for evaluating entity completion"""
-        pass
-
