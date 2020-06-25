@@ -45,15 +45,13 @@ Quick Guide for users who use anaconda:
 ## User Documentation
 The documentation is [here](https://pykg2vec.readthedocs.io/). 
 
+## Usage Examples
 With pykg2vec, For usage examples, you can 
 1. Running a single algorithm with various models and datasets (customized dataset also supported).
 2. Tune a single algorithm. 
 3. Perform Inference Tasks (more advanced).
 
-For usage examples, please check the [programming examples](https://pykg2vec.readthedocs.io/en/latest/auto_examples/index.html).
-
-## Common Installation Problems
-* [SSL: CERTIFICATE_VERIFY_FAILED with urllib](https://stackoverflow.com/questions/49183801/ssl-certificate-verify-failed-with-urllib)
+Please check the [programming examples](https://pykg2vec.readthedocs.io/en/latest/auto_examples/index.html) for more detailed information.
 
 ## Citation
 Please kindly consider citing our paper if you find pykg2vec useful for your research. 
