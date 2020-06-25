@@ -1,15 +1,14 @@
 '''
-==========================
-Train multiple Algorithms
-==========================
-In this example, we will show how to import all the modules to start training and algorithm: ::
+=========================================
+Train multiple Algorithms (experiment.py)
+=========================================
+You can also design your own expriment plans. 
+For example, we attached experiment.py (adjust it for your own usage) below for your reference, which trains multiple algorithms at once. ::
 
     $ python experiment.py
 
 ====
 
-We also attached the source code of experiment.py below for your reference.
-You can adjust to fit your usage.
 
 '''
 # Author: Sujit Rokka Chhetri and Shih Yuan Yu

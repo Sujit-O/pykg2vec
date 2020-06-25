@@ -1,11 +1,8 @@
 '''
-==================================
-Inference task for one KGE method
-==================================
-In this example, we will demonstrate how interactive inference can be performed
-using the trained algorithm.
-
-For inference task, you can use the following command:::
+================================================
+Inference task for one KGE method (inference.py)
+================================================
+With inference.py, you can perform inference tasks with learned KGE model. Some available commands are: ::
 
     $ python inference.py -mn TransE # train a model on FK15K dataset and enter interactive CMD for manual inference tasks.
     $ python inference.py -mn TransE -ld true # pykg2vec will look for the location of cached pretrained parameters in your local.
