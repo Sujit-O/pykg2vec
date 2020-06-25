@@ -101,7 +101,8 @@ class ConvE(ModelMeta):
         x = x.view(first_dimension_size, -1) # flatten => [b, 32*(2*hidden_size_2-3+1)*(hidden_size_1-3+1)
         x = self.fc(x) # dense layer => [b, k]
         x = self.hidden_drop(x)
-        x = self.bn2(x) # batch normalization across the last axis
+        if self.training:
+            x = self.bn2(x) # batch normalization across the last axis
         x = torch.relu(x)
         x = torch.matmul(x, self.transpose(self.ent_embeddings.weight)) # [b, k] * [k, tot_ent] => [b, tot_ent]
         x = torch.add(x, self.b.weight) # add a bias value

@@ -87,7 +87,7 @@ class Visualization(object):
             self.r_name.append(self.idx2relation[t.r])
             self.t_name.append(self.idx2entity[t.t])
 
-            emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]), torch.tensor([t.r]), torch.tensor([t.t]))
+            emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]).to(self.model.config.device), torch.tensor([t.r]).to(self.model.config.device), torch.tensor([t.t]).to(self.model.config.device))
 
             self.h_emb.append(emb_h)
             self.r_emb.append(emb_r)
@@ -95,7 +95,7 @@ class Visualization(object):
 
             if self.ent_and_rel_plot:
                 try:
-                    emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]), torch.tensor([t.r]), torch.tensor([t.t]))
+                    emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]).to(self.model.config.device), torch.tensor([t.r]).to(self.model.config.device), torch.tensor([t.t]).to(self.model.config.device))
                     self.h_proj_emb.append(emb_h)
                     self.r_proj_emb.append(emb_r)
                     self.t_proj_emb.append(emb_t)
@@ -123,7 +123,7 @@ class Visualization(object):
             x = torch.cat(self.h_emb + self.t_emb, dim=0)
             ent_names = np.concatenate((self.h_name, self.t_name), axis=0)
             self._logger.info("\t Reducing dimension using TSNE to 2!")
-            x = TSNE(n_components=2).fit_transform(x.detach())
+            x = TSNE(n_components=2).fit_transform(x.detach().cpu())
             x = np.asarray(x)
             ent_names = np.asarray(ent_names)
 
@@ -132,14 +132,14 @@ class Visualization(object):
         if self.rel_only_plot:
             x = torch.cat(self.r_emb, dim=0)
             self._logger.info("\t Reducing dimension using TSNE to 2!")
-            x = TSNE(n_components=2).fit_transform(x.detach())
+            x = TSNE(n_components=2).fit_transform(x.detach().cpu())
             self.draw_embedding(x, self.r_name, resultpath, algos + '_rel_plot', show_label)
 
         if self.ent_and_rel_plot:
             length = len(self.h_proj_emb)
             x = torch.cat(self.h_proj_emb + self.r_proj_emb + self.t_proj_emb, dim=0)
             self._logger.info("\t Reducing dimension using TSNE to 2!")
-            x = TSNE(n_components=2).fit_transform(x.detach())
+            x = TSNE(n_components=2).fit_transform(x.detach().cpu())
 
             h_embs = x[:length, :]
             r_embs = x[length:2 * length, :]

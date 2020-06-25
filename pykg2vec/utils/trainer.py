@@ -210,6 +210,7 @@ class Trainer(TrainerMeta):
             self.train_model_epoch(cur_epoch_idx)
 
             if cur_epoch_idx % self.config.test_step == 0:
+                self.model.eval()
                 metrics = self.evaluator.mini_test(cur_epoch_idx)
                               
                 if self.early_stopper.should_stop(metrics):
@@ -267,6 +268,7 @@ class Trainer(TrainerMeta):
         for _ in progress_bar:
             data = list(next(self.generator))
             
+            self.model.train()
             self.optimizer.zero_grad()
 
             if self.model.training_strategy == TrainingStrategy.PROJECTION_BASED:
