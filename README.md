@@ -49,8 +49,8 @@ For beginners, these papers, [A Review of Relational Machine Learning for Knowle
 The documentation is [here](https://pykg2vec.readthedocs.io/). 
 
 ## Usage Examples
-With pykg2vec, For usage examples, you can 
-1. Running a single algorithm with various models and datasets (customized dataset also supported).
+With pykg2vec, you can 
+1. Run a single algorithm with various models and datasets (customized dataset also supported).
 2. Tune a single algorithm. 
 3. Perform Inference Tasks (more advanced).
 
