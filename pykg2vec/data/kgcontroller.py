@@ -3,9 +3,7 @@
 """
 This module is for controlling knowledge graph
 """
-import shutil, tarfile, pickle, time, os, zipfile
-import urllib.request
-from pathlib import Path
+import shutil, pickle, time
 from collections import defaultdict
 from pykg2vec.utils.logger import Logger
 import numpy as np

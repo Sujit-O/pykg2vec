@@ -9,7 +9,6 @@ across all the algorithms, and local parameters which are specific to the algori
 """
 
 
-
 from pykg2vec.data.kgcontroller import KnowledgeGraph, KGMetaData
 from pykg2vec.utils.logger import Logger
 from pykg2vec.common import HyperparamterLoader

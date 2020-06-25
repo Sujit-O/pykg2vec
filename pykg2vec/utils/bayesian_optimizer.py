@@ -3,11 +3,8 @@
 """
 This module is for performing bayesian optimization on algorithms
 """
-import importlib
-
 from hyperopt import fmin, tpe, Trials, STATUS_OK, space_eval
 import pandas as pd
-
 
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import timeit, os, warnings
+import os, warnings
 warnings.filterwarnings('ignore')
 
 import torch

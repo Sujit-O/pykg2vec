@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pykg2vec.models.KGMeta import ProjectionModel
 from pykg2vec.models.Domain import NamedEmbedding
-from pykg2vec.common import TrainingStrategy
 
 
 class ConvE(ProjectionModel):
