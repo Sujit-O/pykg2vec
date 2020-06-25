@@ -7,14 +7,15 @@
 Welcome to pykg2vec documentation!
 ####################################
 
-Pykg2vec is a Tensorflow-based library, currently in active development, for learning the representation of
+Pykg2vec is a Pytorch-based library, currently in active development, for learning the representation of
 entities and relations in Knowledge Graphs. We have attempted to bring all the state-of-the-art knowledge
 graph embedding algorithms and the necessary building blocks including the whole pipeline into a single
 library. 
 
+- Previously, we built pykg2vec using TensorFlow. We switched to Pytorch as we found that more authors use Pytorch to implement their KGE models. Nevertheless, the TF version is still available in branch tf2-master_.
+
 .. toctree::
    :maxdepth: 2
-   :hidden:
    :caption: Quick Start Tutorial
 
    intro 
@@ -23,7 +24,6 @@ library.
    
 .. toctree::
    :maxdepth: 2
-   :hidden:
    :caption: User Documentation
 
    kge
@@ -31,10 +31,9 @@ library.
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
    :caption: Additional Information
 
    contribute
    authors
 
-Click "Introduction" on the sidebar to start exploring pykg2vec.
+.. _tf2-master: https://github.com/Sujit-O/pykg2vec/tree/tf2-master 

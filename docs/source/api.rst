@@ -18,199 +18,106 @@ the total execution time. The various components of the library are as follows:
 
 ====
 
-Configuration
+.. contents:: Contents
+    :local:
+
+pykg2vec
 ======================
 
-.. automodule:: pykg2vec.config.config
+.. automodule:: pykg2vec.config
    :members:
 
-.. automodule:: pykg2vec.config.hyperparams
+.. automodule:: pykg2vec.hyperparams
    :members:
 
 ====
 
-Core Algorithms
+pykg2vec.models
 ======================
 
-Complex
------------
+pykg2vec.models.pairwise
+------------------------
 
-.. automodule:: pykg2vec.core.Complex
+.. automodule:: pykg2vec.models.pairwise
    :members:
 
-ConvE
------------
+pykg2vec.models.pointwise
+-------------------------
 
-.. automodule:: pykg2vec.core.ConvE
+.. automodule:: pykg2vec.models.pointwise
    :members:
 
-DistMult
------------
+pykg2vec.models.projection
+--------------------------
 
-.. automodule:: pykg2vec.core.DistMult
-   :members:
-
-HoLE
------------
-
-.. automodule:: pykg2vec.core.HoLE
-   :members:
-
-KG2E
------------
-
-.. automodule:: pykg2vec.core.KG2E
-   :members:
-
-NTN
------------
-
-.. automodule:: pykg2vec.core.NTN
-   :members:
-
-ProjE
------------
-
-.. automodule:: pykg2vec.core.ProjE_pointwise
-   :members:
-
-Rescal
------------
-
-.. automodule:: pykg2vec.core.Rescal
-   :members:
-
-RotatE
------------
-
-.. automodule:: pykg2vec.core.RotatE
-   :members:
-
-SLM
------------
-
-.. automodule:: pykg2vec.core.SLM
-   :members:
-
-SME
------------
-
-.. automodule:: pykg2vec.core.SME
-   :members:
-
-TransD
------------
-
-.. automodule:: pykg2vec.core.TransD
-   :members:
-
-TransE
------------
-
-.. automodule:: pykg2vec.core.TransE
-   :members:
-
-TransH
------------
-
-.. automodule:: pykg2vec.core.TransH
-   :members:
-
-TransM
------------
-
-.. automodule:: pykg2vec.core.TransM
-   :members:
-
-TransR
------------
-
-.. automodule:: pykg2vec.core.TransR
-   :members:
-
-TuckER
------------
-
-.. automodule:: pykg2vec.core.TuckER
+.. automodule:: pykg2vec.models.projection
    :members:
 
 ====
 
-Utility Functions
-======================
+pykg2vec.utils
+==============
 
-Hyper-parameter Tuner
-----------------------
+pykg2vec.utils.bayesian_optimizer
+---------------------------------
 
 .. automodule:: pykg2vec.utils.bayesian_optimizer
    :members:
 
-Evaluator
------------
+pykg2vec.utils.evaluator
+------------------------
 
 .. automodule:: pykg2vec.utils.evaluator
    :members:
 
-Generator
------------
+pykg2vec.utils.generator
+------------------------
 
 .. automodule:: pykg2vec.utils.generator
    :members:
 
-Trainer
------------
+pykg2vec.utils.trainer
+----------------------
 
 .. automodule:: pykg2vec.utils.trainer
    :members:
 
-Visualization
---------------
+pykg2vec.utils.visualization
+----------------------------
 
 .. automodule:: pykg2vec.utils.visualization
    :members:
 
-KG Controller
---------------
+pykg2vec.utils.kgcontroller
+---------------------------
 
 .. automodule:: pykg2vec.utils.kgcontroller
    :members:
 
-KG Pipeline
---------------
-
-.. automodule:: pykg2vec.utils.KGPipeline
-   :members:   
-
 ====
 
-Unit Test
+pykg2vec.test
 ======================
 
 After installation, you can use `pytest` to run the test suite from pykg2vec's root directory::
 
   pytest
 
-Generator Test
------------------
+pykg2vec.test.test_generator
+----------------------------
 
 .. automodule:: pykg2vec.test.test_generator
    :members:
 
-Kg Controller Test
--------------------
+pykg2vec.test.test_kg
+---------------------
 
 .. automodule:: pykg2vec.test.test_kg
    :members:
 
 
-Model Test
------------------
+pykg2vec.test.test_model
+------------------------
 
 .. automodule:: pykg2vec.test.test_model
    :members:
-
-Pipeline Test
------------------
-
-.. automodule:: pykg2vec.test.test_KGPipeline
-   :members:   

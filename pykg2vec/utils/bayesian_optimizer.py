@@ -12,11 +12,11 @@ import pandas as pd
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.logger import Logger
-from pykg2vec.config.config import KGEArgParser
+from pykg2vec.config import KGEArgParser
 
-model_path = "pykg2vec.core"
-config_path = "pykg2vec.config.config"
-hyper_param_path = "pykg2vec.config.hyperparams"
+model_path = "pykg2vec.models"
+config_path = "pykg2vec.config"
+hyper_param_path = "pykg2vec.hyperparams"
 
 moduleMap = {"analogy": "ANALOGY",
              "complex": "Complex",
@@ -136,7 +136,7 @@ class BaysOptimizer(object):
 
 
       Examples:
-        >>> from pykg2vec.config.hyperparams import KGETuneArgParser
+        >>> from pykg2vec.hyperparams import KGETuneArgParser
         >>> from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
         >>> model = Complex()
         >>> args = KGETuneArgParser().get_args(sys.argv[1:])

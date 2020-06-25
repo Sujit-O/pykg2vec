@@ -269,7 +269,7 @@ class Generator:
 
         Examples:
             >>> from pykg2vec.utils.generator import Generator
-            >>> from pykg2vec.core.TransE impor TransE
+            >>> from pykg2vec.models.TransE impor TransE
             >>> model = TransE()
             >>> gen_train = Generator(model.config, training_strategy=TrainingStrategy.PAIRWISE_BASED)
     """

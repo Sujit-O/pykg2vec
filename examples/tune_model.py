@@ -40,7 +40,7 @@ We also attached the source code of tune_model.py below for your reference.
 import sys
 
 
-from pykg2vec.config.hyperparams import KGETuneArgParser
+from pykg2vec.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
 

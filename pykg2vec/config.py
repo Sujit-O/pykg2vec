@@ -13,7 +13,7 @@ import importlib
 
 from pykg2vec.utils.kgcontroller import KnowledgeGraph, KGMetaData
 from pykg2vec.utils.logger import Logger
-from pykg2vec.config.hyperparams import HyperparamterLoader
+from pykg2vec.hyperparams import HyperparamterLoader
 
 class Importer:
     """The class defines methods for importing pykg2vec modules.
@@ -28,7 +28,7 @@ class Importer:
         configMap (dict): This map transforms the input config names to the actuall config class names.
     
     Examples:
-        >>> from pykg2vec.config.config import Importer
+        >>> from pykg2vec import Importer
         >>> config_def, model_def = Importer().import_model_config('transe')
         >>> config = config_def()
         >>> model = model_def(config)
@@ -37,35 +37,34 @@ class Importer:
     _logger = Logger().get_logger(__name__)
 
     def __init__(self):
-        self.model_path = "pykg2vec.core"
-        self.config_path = "pykg2vec.config.config"
+        self.model_path = "pykg2vec.models"
+        self.config_path = "pykg2vec.config"
 
-        self.modelMap = {"analogy": "ANALOGY.ANALOGY",
-                         "complex": "Complex.Complex",
-                         "complexn3": "Complex.ComplexN3",
-                         "conve": "ConvE.ConvE",
-                         "convkb": "ConvKB.ConvKB",
-                         "cp": "CP.CP",
-                         "hole": "HoLE.HoLE",
-                         "distmult": "DistMult.DistMult",
-                         "kg2e": "KG2E.KG2E",
-                         "kg2e_el": "KG2E.KG2E_EL",
-                         "ntn": "NTN.NTN",
-                         "proje_pointwise": "ProjE_pointwise.ProjE_pointwise",
-                         "rescal": "Rescal.Rescal",
-                         "rotate": "RotatE.RotatE",
-                         "simple": "SimplE.SimplE",
-                         "simple_ignr": "SimplE.SimplE_ignr",
-                         "slm": "SLM.SLM",
-                         "sme": "SME.SME",
-                         "sme_bl": "SME.SME_BL",
-                         "transd": "TransD.TransD",
-                         "transe": "TransE.TransE",
-                         "transh": "TransH.TransH",
-                         "transg": "TransG.TransG",
-                         "transm": "TransM.TransM",
-                         "transr": "TransR.TransR",
-                         "tucker": "TuckER.TuckER"}
+        self.modelMap = {"analogy": "pointwise.ANALOGY",
+                         "complex": "pointwise.Complex",
+                         "complexn3": "pointwise.ComplexN3",
+                         "conve": "projection.ConvE",
+                         "convkb": "pointwise.ConvKB",
+                         "cp": "pointwise.CP",
+                         "hole": "pairwise.HoLE",
+                         "distmult": "pointwise.DistMult",
+                         "kg2e": "pairwise.KG2E",
+                         "kg2e_el": "pairwise.KG2E_EL",
+                         "ntn": "pairwise.NTN",
+                         "proje_pointwise": "projection.ProjE_pointwise",
+                         "rescal": "pairwise.Rescal",
+                         "rotate": "pairwise.RotatE",
+                         "simple": "pointwise.SimplE",
+                         "simple_ignr": "pointwise.SimplE_ignr",
+                         "slm": "pairwise.SLM",
+                         "sme": "pairwise.SME",
+                         "sme_bl": "pairwise.SME_BL",
+                         "transd": "pairwise.TransD",
+                         "transe": "pairwise.TransE",
+                         "transh": "pairwise.TransH",
+                         "transm": "pairwise.TransM",
+                         "transr": "pairwise.TransR",
+                         "tucker": "projection.TuckER"}
 
         self.configMap = {"analogy": "ANALOGYConfig",
                           "complex": "ComplexConfig",
@@ -140,7 +139,7 @@ class KGEArgParser:
         misc_group (object): It prases other necessary arguments.
     
     Examples:
-        >>> from pykg2vec.config.config import KGEArgParser
+        >>> from pykg2vec.config import KGEArgParser
         >>> args = KGEArgParser().get_args()
     """
 
@@ -425,7 +424,7 @@ class HoLEConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -481,7 +480,7 @@ class TransRConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.ent_hidden_size = args.ent_hidden_size
@@ -538,7 +537,7 @@ class TransDConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.ent_hidden_size = args.ent_hidden_size
@@ -595,7 +594,7 @@ class TransMConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -651,7 +650,7 @@ class TransHConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -705,7 +704,7 @@ class RescalConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -759,7 +758,7 @@ class SMEConfig(BasicConfig):
       bilinear (bool): If true uses bilnear transformation for loss else uses linear.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
         self.batch_size = args.batch_training
@@ -810,7 +809,7 @@ class NTNConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
@@ -869,7 +868,7 @@ class SLMConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.ent_hidden_size = args.ent_hidden_size
@@ -925,7 +924,7 @@ class RotatEConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -985,7 +984,7 @@ class KG2EConfig(BasicConfig):
       cmin (float): Sets the lower clipping range for the embedding.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.learning_rate = args.learning_rate
         self.L1_flag = args.l1_flag
         self.hidden_size = args.hidden_size
@@ -1044,7 +1043,7 @@ class ComplexConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
@@ -1103,7 +1102,7 @@ class DistMultConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
@@ -1162,7 +1161,7 @@ class ProjE_pointwiseConfig(BasicConfig):
     
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.hidden_dropout = args.hidden_dropout
         self.learning_rate = args.learning_rate
@@ -1225,7 +1224,7 @@ class ConvKBConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.filter_sizes =args.filter_sizes
         self.num_filters = args.num_filters
@@ -1288,7 +1287,7 @@ class ConvEConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
 
         self.feature_map_dropout = args.feature_map_dropout
         self.input_dropout = args.input_dropout
@@ -1357,7 +1356,7 @@ class TuckERConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = 0.1
         self.input_dropout = 0.3
         self.hidden_dropout2 = 0.5
@@ -1438,7 +1437,7 @@ class TransGConfig(BasicConfig):
       step_before (int): Defines the number of steps before which the update is cluster is not performed.
     
     """
-    def __init__(self, args=None):
+    def __init__(self, args):
         if args is None or args.exp is True:
             # the exp setting for TransG (only for Freebase15k now)
             self.learning_rate = 0.0015
@@ -1517,7 +1516,7 @@ class CPConfig(BasicConfig):
 
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
@@ -1569,7 +1568,7 @@ class ANALOGYConfig(BasicConfig):
       sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size
@@ -1623,7 +1622,7 @@ class SimplEConfig(BasicConfig):
 
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args):
         self.lmbda = args.lmbda
         self.learning_rate = args.learning_rate
         self.hidden_size = args.hidden_size

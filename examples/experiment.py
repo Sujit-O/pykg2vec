@@ -16,7 +16,7 @@ For example, we attached experiment.py (adjust it for your own usage) below for 
 
 
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
-from pykg2vec.config.config import Importer, KGEArgParser
+from pykg2vec.config import Importer, KGEArgParser
 from pykg2vec.utils.trainer import Trainer
 
 

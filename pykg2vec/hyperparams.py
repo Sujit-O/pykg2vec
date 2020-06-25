@@ -63,7 +63,7 @@ class KGETuneArgParser:
          debug (bool): If True, tunes the model in debugging mode.
 
       Examples:
-          >>> from pykg2vec.config.hyperparams import KGETuneArgParser
+          >>> from pykg2vec.hyperparams import KGETuneArgParser
           >>> from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
           >>> args = KGETuneArgParser().get_args()
           >>> bays_opt = BaysOptimizer(args=args)
@@ -708,7 +708,6 @@ class CPParams:
     """This class defines the hyperameters and its ranges for tuning Canonical Tensor Decomposition algorithm.
 
     CPParams defines all the possibel values to be tuned for the algorithm. User may
-
     change these values directly for performing the bayesian optimization of the hyper-parameters
 
     Args:
@@ -741,12 +740,13 @@ class CPParams:
         }
 
 class ANALOGYParams:
-    """This class defines the hyperameters and its ranges for tuning ANALOGY algorithm.
-    ANALOGYParams defines all the possibel values to be tuned for the algorithm. User may
-    change these values directly for performing the bayesian optimization of the hyper-parameters
+    """This class defines the hyperameters and its ranges for tuning ANALOGY algorithm. 
+    ANALOGYParams defines all the possibel values to be tuned for the algorithm. 
+    User may change these values directly for performing2 the bayesian optimization of the hyper-parameters
+    
     Args:
       lambda (list) : List of floating point values.
-      feature_map_dropout (list) :List of floating point values.
+      feature_map_dropout (list) : List of floating point values.
       input_dropout (list) : List of floating point values.
       hidden_dropout (list) : List of floating point values.
       use_bias (list) :List of boolean values.
@@ -760,6 +760,7 @@ class ANALOGYParams:
       margin (list): List of floating point values.
       optimizer (list): List of strings defining the optimization algorithm to be used.
       sampling (list): List of string defining the sampling to be used for generating negative examples.
+
     """
 
     def __init__(self):

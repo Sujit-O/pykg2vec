@@ -13,7 +13,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from enum import Enum
-from pykg2vec.core.KGMeta import TrainerMeta
+from pykg2vec.models.KGMeta import TrainerMeta
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.generator import Generator, TrainingStrategy
@@ -88,7 +88,7 @@ class Trainer(TrainerMeta):
 
         Examples:
             >>> from pykg2vec.utils.trainer import Trainer
-            >>> from pykg2vec.core.TransE import TransE
+            >>> from pykg2vec.models.TransE import TransE
             >>> trainer = Trainer(TransE())
             >>> trainer.build_model()
             >>> trainer.train_model()
