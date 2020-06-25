@@ -63,7 +63,7 @@ class KGETuneArgParser:
          debug (bool): If True, tunes the model in debugging mode.
 
       Examples:
-          >>> from pykg2vec.config.hyperparams import KGETuneArgParser
+          >>> from pykg2vec.hyperparams import KGETuneArgParser
           >>> from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
           >>> args = KGETuneArgParser().get_args()
           >>> bays_opt = BaysOptimizer(args=args)

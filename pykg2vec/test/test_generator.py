@@ -5,8 +5,8 @@ This module is for testing unit functions of generator
 """
 import torch
 from pykg2vec.utils.generator import Generator
-from pykg2vec.config.config import KnowledgeGraph, Importer, KGEArgParser
-
+from pykg2vec.config import Importer, KGEArgParser
+from pykg2vec.utils.kgcontroller import KnowledgeGraph
 
 def test_generator_proje():
     """Function to test the generator for projection based algorithm."""

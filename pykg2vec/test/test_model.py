@@ -5,7 +5,7 @@ This module is for testing unit functions of model
 """
 import pytest
 
-from pykg2vec.config.config import KGEArgParser, Importer
+from pykg2vec.config import KGEArgParser, Importer
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
 

@@ -7,7 +7,7 @@ import pytest
 
 from unittest.mock import patch
 from pykg2vec.utils.kgcontroller import KnowledgeGraph
-from pykg2vec.config.hyperparams import KGETuneArgParser
+from pykg2vec.hyperparams import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
 

@@ -13,7 +13,7 @@ import importlib
 
 from pykg2vec.utils.kgcontroller import KnowledgeGraph, KGMetaData
 from pykg2vec.utils.logger import Logger
-from pykg2vec.config.hyperparams import HyperparamterLoader
+from pykg2vec.hyperparams import HyperparamterLoader
 
 class Importer:
     """The class defines methods for importing pykg2vec modules.
@@ -28,7 +28,7 @@ class Importer:
         configMap (dict): This map transforms the input config names to the actuall config class names.
     
     Examples:
-        >>> from pykg2vec.config.config import Importer
+        >>> from pykg2vec import Importer
         >>> config_def, model_def = Importer().import_model_config('transe')
         >>> config = config_def()
         >>> model = model_def(config)
@@ -38,7 +38,7 @@ class Importer:
 
     def __init__(self):
         self.model_path = "pykg2vec.models"
-        self.config_path = "pykg2vec.config.config"
+        self.config_path = "pykg2vec.config"
 
         self.modelMap = {"analogy": "ANALOGY.ANALOGY",
                          "complex": "Complex.Complex",
@@ -140,7 +140,7 @@ class KGEArgParser:
         misc_group (object): It prases other necessary arguments.
     
     Examples:
-        >>> from pykg2vec.config.config import KGEArgParser
+        >>> from pykg2vec.config import KGEArgParser
         >>> args = KGEArgParser().get_args()
     """
 
