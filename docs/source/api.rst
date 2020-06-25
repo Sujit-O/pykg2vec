@@ -36,184 +36,178 @@ pykg2vec.core
 ======================
 
 pykg2vec.core.Complex
------------
+---------------------
 
 .. automodule:: pykg2vec.core.Complex
    :members:
 
 pykg2vec.core.ConvE
------------
+-------------------
 
 .. automodule:: pykg2vec.core.ConvE
    :members:
 
 pykg2vec.core.DistMult
------------
+----------------------
 
 .. automodule:: pykg2vec.core.DistMult
    :members:
 
 pykg2vec.core.HoLE
------------
+------------------
 
 .. automodule:: pykg2vec.core.HoLE
    :members:
 
 pykg2vec.core.KG2E
------------
+------------------
 
 .. automodule:: pykg2vec.core.KG2E
    :members:
 
 pykg2vec.core.NTN
------------
+-----------------
 
 .. automodule:: pykg2vec.core.NTN
    :members:
 
 pykg2vec.core.ProjE
------------
+--------------------
 
 .. automodule:: pykg2vec.core.ProjE_pointwise
    :members:
 
 pykg2vec.core.Rescal
------------
+--------------------
 
 .. automodule:: pykg2vec.core.Rescal
    :members:
 
 pykg2vec.core.RotatE
------------
+--------------------
 
 .. automodule:: pykg2vec.core.RotatE
    :members:
 
 pykg2vec.core.SLM
------------
+-----------------
 
 .. automodule:: pykg2vec.core.SLM
    :members:
 
 pykg2vec.core.SME
------------
+------------------
 
 .. automodule:: pykg2vec.core.SME
    :members:
 
 pykg2vec.core.TransD
------------
+--------------------
 
 .. automodule:: pykg2vec.core.TransD
    :members:
 
 pykg2vec.core.TransE
------------
+--------------------
 
 .. automodule:: pykg2vec.core.TransE
    :members:
 
 pykg2vec.core.TransH
------------
+--------------------
 
 .. automodule:: pykg2vec.core.TransH
    :members:
 
 pykg2vec.core.TransM
------------
+--------------------
 
 .. automodule:: pykg2vec.core.TransM
    :members:
 
 pykg2vec.core.TransR
------------
+--------------------
 
 .. automodule:: pykg2vec.core.TransR
    :members:
 
 pykg2vec.core.TuckER
------------
+--------------------
 
 .. automodule:: pykg2vec.core.TuckER
    :members:
 
 ====
 
-Utility Functions
-======================
+pykg2vec.utils
+==============
 
-Hyper-parameter Tuner
-----------------------
+pykg2vec.utils.bayesian_optimizer
+---------------------------------
 
 .. automodule:: pykg2vec.utils.bayesian_optimizer
    :members:
 
-Evaluator
------------
+pykg2vec.utils.evaluator
+------------------------
 
 .. automodule:: pykg2vec.utils.evaluator
    :members:
 
-Generator
------------
+pykg2vec.utils.generator
+------------------------
 
 .. automodule:: pykg2vec.utils.generator
    :members:
 
-Trainer
------------
+pykg2vec.utils.trainer
+----------------------
 
 .. automodule:: pykg2vec.utils.trainer
    :members:
 
-Visualization
---------------
+pykg2vec.utils.visualization
+----------------------------
 
 .. automodule:: pykg2vec.utils.visualization
    :members:
 
-KG Controller
---------------
+pykg2vec.utils.kgcontroller
+---------------------------
 
 .. automodule:: pykg2vec.utils.kgcontroller
    :members:
 
-KG Pipeline
---------------
-
-.. automodule:: pykg2vec.utils.KGPipeline
-   :members:   
-
 ====
 
-Unit Test
+pykg2vec.test
 ======================
 
 After installation, you can use `pytest` to run the test suite from pykg2vec's root directory::
 
   pytest
 
-Generator Test
------------------
+pykg2vec.test.test_generator
+----------------------------
 
 .. automodule:: pykg2vec.test.test_generator
    :members:
 
-Kg Controller Test
--------------------
+pykg2vec.test.test_kg
+---------------------
 
 .. automodule:: pykg2vec.test.test_kg
    :members:
 
 
-Model Test
------------------
+pykg2vec.test.test_model
+------------------------
 
 .. automodule:: pykg2vec.test.test_model
    :members:
 
-Pipeline Test
------------------
+pykg2vec.test.test_KGPipeline
+-----------------------------
 
 .. automodule:: pykg2vec.test.test_KGPipeline
    :members:   
