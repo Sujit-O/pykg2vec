@@ -772,9 +772,7 @@ class SME_BL(SME):
 
     def __init__(self, config):
         super(SME_BL, self).__init__(config)
-        self.config = config
-        self.model_name = 'SME_Bilinear'
-        self.training_strategy = TrainingStrategy.PAIRWISE_BASED
+        self.model_name = self.__class__.__name__.lower()
 
     def _gu_bilinear(self, h, r):
         """Function to calculate bilinear loss.
@@ -1266,7 +1264,7 @@ class KG2E_EL(KG2E):
 
     def __init__(self, config):
         super(KG2E_EL, self).__init__(config)
-        self.model_name = 'KG2E_EL'.lower()
+        self.model_name = self.__class__.__name__.lower()
 
     def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
