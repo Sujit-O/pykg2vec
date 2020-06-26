@@ -152,8 +152,8 @@ class Trainer:
     def train_step_projection(self, h, r, t, hr_t, tr_h):
         if self.model.model_name.lower() == "conve" or self.model.model_name.lower() == "tucker":
             if hasattr(self.config, 'label_smoothing'):
-                hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
-                tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+                hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.tot_entity
+                tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.tot_entity
 
             pred_tails = self.model(h, r, direction="tail")  # (h, r) -> hr_t forward
             pred_heads = self.model(t, r, direction="head")  # (t, r) -> tr_h backward

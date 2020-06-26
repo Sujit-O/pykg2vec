@@ -52,7 +52,7 @@ class Visualization(object):
         self.config = config 
 
         self.algo_list = ['ANALOGY', 'Complex', 'ComplexN3', 'ConvE', 'CP', 'DistMult', 'DistMult2', 'HoLE',
-                          'KG2E_EL', 'KG2E_KL', 'KGMeta', 'NTN', 'ProjE_pointwise', 'Rescal', 'RotatE', 'SimplE_avg',
+                          'KG2E_EL', 'KG2E_KL', 'NTN', 'ProjE_pointwise', 'Rescal', 'RotatE', 'SimplE_avg',
                           'SimplE_ignr', 'SLM', 'SME_Bilinear', 'SME_Linear', 'TransD', 'TransE', 'TransH', 'TransM',
                           'TransR', 'TuckER']
 
@@ -159,7 +159,7 @@ class Visualization(object):
         algo = self.algo_list
         path = self.config.path_result
         result = self.config.path_figures
-        data = [self.config.data]
+        data = [self.config.dataset_name]
         
         files = os.listdir(str(path))
         files_lwcase = [f.lower() for f in files]
@@ -197,7 +197,7 @@ class Visualization(object):
         algo = self.algo_list
         path = self.config.path_result
         result = self.config.path_figures
-        data = [self.config.data]
+        data = [self.config.dataset_name]
         hits = self.config.hits
         if path is None or algo is None or data is None:
             raise NotImplementedError('Please provide valid path, algorithm and dataset!')

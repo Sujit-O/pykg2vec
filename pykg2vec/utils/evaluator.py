@@ -160,7 +160,7 @@ class MetricCalculator:
             for key, val in self.config.__dict__.items():
                 if 'gpu' in key:
                     continue
-                if 'kg_meta' in key or 'knowledge_graph' in key:
+                if 'knowledge_graph' in key:
                     continue
                 if not isinstance(val, str):
                     if isinstance(val, list):
@@ -177,11 +177,11 @@ class MetricCalculator:
                 fh.write(key + ':' + val + '\n')
             fh.write('-----------------------------------------\n')
             fh.write("\n----------Metadata Info for Dataset:%s----------------" % self.config.knowledge_graph.dataset_name)
-            fh.write("Total Training Triples   :%d\n"%self.config.kg_meta.tot_train_triples)
-            fh.write("Total Testing Triples    :%d\n"%self.config.kg_meta.tot_test_triples)
-            fh.write("Total validation Triples :%d\n"%self.config.kg_meta.tot_valid_triples)
-            fh.write("Total Entities           :%d\n"%self.config.kg_meta.tot_entity)
-            fh.write("Total Relations          :%d\n"%self.config.kg_meta.tot_relation)
+            fh.write("Total Training Triples   :%d\n"%self.config.tot_train_triples)
+            fh.write("Total Testing Triples    :%d\n"%self.config.tot_test_triples)
+            fh.write("Total validation Triples :%d\n"%self.config.tot_valid_triples)
+            fh.write("Total Entities           :%d\n"%self.config.tot_entity)
+            fh.write("Total Relations          :%d\n"%self.config.tot_relation)
             fh.write("---------------------------------------------")
 
         columns = ['Epoch', 'Mean Rank', 'Filtered Mean Rank', 'Mean Reciprocal Rank', 'Filtered Mean Reciprocal Rank']
@@ -205,12 +205,11 @@ class MetricCalculator:
 
     def display_summary(self):
         """Function to print the test summary."""
-        kg = self.config.knowledge_graph
         stop_time = timeit.default_timer()
         test_results = []
         test_results.append('')
-        test_results.append("------Test Results for %s: Epoch: %d --- time: %.2f------------" % (kg.dataset_name, self.epoch, stop_time - self.start_time))
-        test_results.append('--# of entities, # of relations: %d, %d'%(kg.kg_meta.tot_entity, kg.kg_meta.tot_relation) )
+        test_results.append("------Test Results for %s: Epoch: %d --- time: %.2f------------" % (self.config.dataset_name, self.epoch, stop_time - self.start_time))
+        test_results.append('--# of entities, # of relations: %d, %d'%(self.config.tot_entity, self.config.tot_relation) )
         test_results.append('--mr,  filtered mr             : %.4f, %.4f'%(self.mr[self.epoch], self.fmr[self.epoch]))
         test_results.append('--mrr, filtered mrr            : %.4f, %.4f'%(self.mrr[self.epoch], self.fmrr[self.epoch]))
         for hit in self.config.hits:
@@ -253,9 +252,9 @@ class Evaluator:
             rank = self.model.predict_tail_rank(h, r, topk=topk)
             return rank.squeeze(0)
 
-        h_batch = torch.LongTensor([h]).repeat([self.config.kg_meta.tot_entity]).to(self.config.device)
-        r_batch = torch.LongTensor([r]).repeat([self.config.kg_meta.tot_entity]).to(self.config.device)
-        entity_array = torch.LongTensor(list(range(self.config.kg_meta.tot_entity))).to(self.config.device)
+        h_batch = torch.LongTensor([h]).repeat([self.config.tot_entity]).to(self.config.device)
+        r_batch = torch.LongTensor([r]).repeat([self.config.tot_entity]).to(self.config.device)
+        entity_array = torch.LongTensor(list(range(self.config.tot_entity))).to(self.config.device)
 
         preds = self.model.forward(h_batch, r_batch, entity_array)
         _, rank = torch.topk(preds, k=topk)
@@ -269,9 +268,9 @@ class Evaluator:
             rank = self.model.predict_head_rank(t, r, topk=topk)
             return rank.squeeze(0)
 
-        entity_array = torch.LongTensor(list(range(self.config.kg_meta.tot_entity))).to(self.config.device)
-        r_batch = torch.LongTensor([r]).repeat([self.config.kg_meta.tot_entity]).to(self.config.device)
-        t_batch = torch.LongTensor([t]).repeat([self.config.kg_meta.tot_entity]).to(self.config.device)
+        entity_array = torch.LongTensor(list(range(self.config.tot_entity))).to(self.config.device)
+        r_batch = torch.LongTensor([r]).repeat([self.config.tot_entity]).to(self.config.device)
+        t_batch = torch.LongTensor([t]).repeat([self.config.tot_entity]).to(self.config.device)
 
         preds = self.model.forward(entity_array, r_batch, t_batch)
         _, rank = torch.topk(preds, k=topk)
@@ -285,9 +284,9 @@ class Evaluator:
             rank = self.model.predict_rel_rank(h, t, topk=topk)
             return rank.squeeze(0)
 
-        h_batch = torch.LongTensor([h]).repeat([self.config.kg_meta.tot_relation]).to(self.config.device)
-        rel_array = torch.LongTensor(list(range(self.config.kg_meta.tot_relation))).to(self.config.device)
-        t_batch = torch.LongTensor([t]).repeat([self.config.kg_meta.tot_relation]).to(self.config.device)
+        h_batch = torch.LongTensor([h]).repeat([self.config.tot_relation]).to(self.config.device)
+        rel_array = torch.LongTensor(list(range(self.config.tot_relation))).to(self.config.device)
+        t_batch = torch.LongTensor([t]).repeat([self.config.tot_relation]).to(self.config.device)
 
         preds = self.model.forward(h_batch, rel_array, t_batch)
         _, rank = torch.topk(preds, k=topk)
@@ -324,8 +323,8 @@ class Evaluator:
             r_tensor = torch.LongTensor([r]).to(self.config.device)
             t_tensor = torch.LongTensor([t]).to(self.config.device)
 
-            hrank = self.test_head_rank(r_tensor, t_tensor, self.config.kg_meta.tot_entity)
-            trank = self.test_tail_rank(h_tensor, r_tensor, self.config.kg_meta.tot_entity)
+            hrank = self.test_head_rank(r_tensor, t_tensor, self.config.tot_entity)
+            trank = self.test_tail_rank(h_tensor, r_tensor, self.config.tot_entity)
 
             result_data = [trank.cpu().numpy(), hrank.cpu().numpy(), h, r, t, epoch]
 
