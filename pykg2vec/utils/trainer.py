@@ -297,7 +297,7 @@ class Trainer:
         self.build_model()
         self.load_model()
 
-        self.evaluator = Evaluator(self.model)
+        self.evaluator = Evaluator(self.model, self.config)
         self._logger.info("""The training/loading of the model has finished!
                                     Now enter interactive mode :)
                                     -----
