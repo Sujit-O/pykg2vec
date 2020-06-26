@@ -35,7 +35,7 @@ def experiment(model_name):
     model = model_def(config)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model)
+    trainer = Trainer(model, config)
     trainer.build_model()
     trainer.train_model()
 
