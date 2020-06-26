@@ -154,390 +154,48 @@ class TransRConfig(BasicConfig):
     def __init__(self, args):
         BasicConfig.__init__(self, args)
 
+class SLMConfig(BasicConfig):
+    """ This class defines the configuration for the SLM Algorithm.       """
 
-
-class HoLEConfig(BasicConfig):
-    """ This class defines the configuration for the HoLE Algorithm.
-
-        HoLEConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            hidden_size (int): Defines the size of the latent dimension for both entities and relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
     def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.hidden_size = args.hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.margin = args.margin
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'hole')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling, 
-            'neg_rate': self.neg_rate,
-        }
-
         BasicConfig.__init__(self, args)
-
-
-class RescalConfig(BasicConfig):
-    """ This class defines the configuration for the Rescal Algorithm.
-
-        RescalConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            hidden_size (int): Defines the size of the latent dimension for entities and relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-    def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.hidden_size = args.hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.margin = args.margin
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'rescal')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
 
 class SMEConfig(BasicConfig):
-    """ This class defines the configuration for the SME Algorithm.
+    """ This class defines the configuration for the SME Algorithm.   """
+    def __init__(self, args):
+        BasicConfig.__init__(self, args)
 
-        SMEConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            hidden_size (int): Defines the size of the latent dimension for entities and relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-            bilinear (bool): If true uses bilnear transformation for loss else uses linear.
-    
+class RotatEConfig(BasicConfig):
+    """ This class defines the configuration for the RotatE Algorithm. 
     """
     def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.hidden_size = args.hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = 1
-        self.margin = 1.0
-        
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'sme')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
+        BasicConfig.__init__(self, args)
 
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'margin': self.margin,
-        }
-
+class RescalConfig(BasicConfig):
+    """ This class defines the configuration for the Rescal Algorithm. 
+    """
+    def __init__(self, args):
         BasicConfig.__init__(self, args)
 
 
 class NTNConfig(BasicConfig):
-    """ This class defines the configuration for the NTN Algorithm.
-
-        NTNConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            ent_hidden_size (int): Defines the size of the latent dimension for entities.
-            rel_hidden_size (int): Defines the size of the latent dimension for relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
+    """ This class defines the configuration for the NTN Algorithm. 
     """
     def __init__(self, args):
-        self.lmbda = args.lmbda
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.ent_hidden_size = args.ent_hidden_size
-        self.rel_hidden_size = args.rel_hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-        self.margin = 1.0
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'ntn')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'lmbda': self.lmbda,
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'ent_hidden_size': self.ent_hidden_size,
-            'rel_hidden_size': self.rel_hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
-
-class SLMConfig(BasicConfig):
-    """ This class defines the configuration for the SLM Algorithm.
-
-        SLMConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            ent_hidden_size (int): Defines the size of the latent dimension for entities.
-            rel_hidden_size (int): Defines the size of the latent dimension for relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-
-    def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.ent_hidden_size = args.ent_hidden_size
-        self.rel_hidden_size = args.rel_hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.margin = args.margin
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'slm')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'ent_hidden_size': self.ent_hidden_size,
-            'rel_hidden_size': self.rel_hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
-
-class RotatEConfig(BasicConfig):
-    """ This class defines the configuration for the RotatE Algorithm.
-
-        RotatEDConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            hidden_size (int): Defines the size of the latent dimension for entities and relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-    def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.hidden_size = args.hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.margin = args.margin
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-        self.alpha = args.alpha
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'rotate')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-            'alpha': self.alpha
-        }
-
         BasicConfig.__init__(self, args)
 
 
 class KG2EConfig(BasicConfig):
-    """This class defines the configuration for the KG2E Algorithm.
-
-        KG2EConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            hidden_size (int): Defines the size of the latent dimension for entities and relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-            bilinear (bool): If True, sets the transformaton to be bilinear.
-            distance_measure (str): Uses either kl_divergence or expected_likelihood as distance measure.
-            cmax (float): Sets the upper clipping range for the embedding.
-            cmin (float): Sets the lower clipping range for the embedding.
-    
+    """This class defines the configuration for the KG2E Algorithm. 
     """
     def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.hidden_size = args.hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.margin = args.margin
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.cmax = args.cmax
-        self.cmin = args.cmin
-        self.neg_rate = args.negrate
+        BasicConfig.__init__(self, args)
 
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'kg2e')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
 
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'cmax': self.cmax,
-            'cmin': self.cmin,
-            'neg_rate': self.neg_rate,
-        }
-
+class HoLEConfig(BasicConfig):
+    """ This class defines the configuration for the HoLE Algorithm.
+    """
+    def __init__(self, args):
         BasicConfig.__init__(self, args)
 
 

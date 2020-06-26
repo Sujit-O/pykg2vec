@@ -75,7 +75,7 @@ class TransE(PairwiseModel):
         norm_r_e = F.normalize(r_e, p=2, dim=-1)
         norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
-        if self.get_param("l1_flag"):
+        if self.l1_flag:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
@@ -320,7 +320,7 @@ class TransM(PairwiseModel):
         param_list = ["tot_entity", "tot_relation", "hidden_size", "l1_flag"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
-        
+
         self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
         self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
 
@@ -517,19 +517,16 @@ class SLM(PairwiseModel):
         .. _Reasoning With Neural Tensor Networks for Knowledge Base Completion:
             https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
     """
+    def __init__(self, **kwargs):
+        super(SLM, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "rel_hidden_size", "ent_hidden_size"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-    def __init__(self, config):
-        super(SLM, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
-
-        self.ent_embeddings = nn.Embedding(num_total_ent, d)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-        self.mr1 = nn.Embedding(d, k)
-        self.mr2 = nn.Embedding(d, k)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.ent_hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.rel_hidden_size)
+        self.mr1 = nn.Embedding(self.ent_hidden_size, self.rel_hidden_size)
+        self.mr2 = nn.Embedding(self.ent_hidden_size, self.rel_hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.mr1.weight)
@@ -606,21 +603,20 @@ class SME(PairwiseModel):
 
     """
 
-    def __init__(self, config):
-        super(SME, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+    def __init__(self, **kwargs):
+        super(SME, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-        self.mu1 = nn.Embedding(k, k)
-        self.mu2 = nn.Embedding(k, k)
-        self.bu = nn.Embedding(k, 1)
-        self.mv1 = nn.Embedding(k, k)
-        self.mv2 = nn.Embedding(k, k)
-        self.bv = nn.Embedding(k, 1)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
+        self.mu1 = nn.Embedding(self.hidden_size, self.hidden_size)
+        self.mu2 = nn.Embedding(self.hidden_size, self.hidden_size)
+        self.bu = nn.Embedding(self.hidden_size, 1)
+        self.mv1 = nn.Embedding(self.hidden_size, self.hidden_size)
+        self.mv2 = nn.Embedding(self.hidden_size, self.hidden_size)
+        self.bv = nn.Embedding(self.hidden_size, 1)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.mu1.weight)
@@ -728,9 +724,8 @@ class SME_BL(SME):
         .. _`SME`: api.html#pykg2vec.models.pairwise.SME
 
     """
-
-    def __init__(self, config):
-        super(SME_BL, self).__init__(config)
+    def __init__(self, **kwargs):
+        super(SME_BL, self).__init__(**kwargs)
         self.model_name = self.__class__.__name__.lower()
 
     def _gu_bilinear(self, h, r):
@@ -803,18 +798,17 @@ class RotatE(PairwiseModel):
             https://openreview.net/pdf?id=HkgEQnRqYQ
     """
 
-    def __init__(self, config):
-        super(RotatE, self).__init__(self.__class__.__name__.lower(), config)
+    def __init__(self, **kwargs):
+        super(RotatE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "margin"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
+        self.embedding_range = (self.margin + 2.0) / self.hidden_size
 
-        k = self.config.hidden_size
-        self.embedding_range = (self.config.margin + 2.0) / k
-
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.ent_embeddings_imag = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.ent_embeddings_imag = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
         nn.init.uniform_(self.ent_embeddings.weight, -self.embedding_range, self.embedding_range)
         nn.init.uniform_(self.ent_embeddings_imag.weight, -self.embedding_range, self.embedding_range)
         nn.init.uniform_(self.rel_embeddings.weight, -self.embedding_range, self.embedding_range)
@@ -851,7 +845,7 @@ class RotatE(PairwiseModel):
         h_e_r, h_e_i, r_e_r, r_e_i, t_e_r, t_e_i = self.embed(h, r, t)
         score_r = h_e_r * r_e_r - h_e_i * r_e_i - t_e_r
         score_i = h_e_r * r_e_i + h_e_i * r_e_r - t_e_i
-        return -(self.config.margin - torch.sum(score_r**2 + score_i**2, axis=-1))
+        return -(self.margin - torch.sum(score_r**2 + score_i**2, axis=-1))
 
 
 class Rescal(PairwiseModel):
@@ -879,16 +873,14 @@ class Rescal(PairwiseModel):
         .. _A Three-Way Model for Collective Learning on Multi-Relational Data : http://www.icml-2011.org/papers/438_icmlpaper.pdf
 
     """
+    def __init__(self, **kwargs):
+        super(Rescal, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "margin"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-    def __init__(self, config):
-        super(Rescal, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
-
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_matrices = nn.Embedding(num_total_rel, k * k)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_matrices = nn.Embedding(self.tot_relation, self.hidden_size * self.hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_matrices.weight)
 
@@ -909,10 +901,10 @@ class Rescal(PairwiseModel):
                 Tensors: Returns head, relation and tail embedding Tensors.
 
         """
-        k = self.config.hidden_size
+        k = self.hidden_size
 
-        self.ent_embeddings.weight.data = self.get_normalized_data(self.ent_embeddings, self.config.kg_meta.tot_entity, dim=-1)
-        self.rel_matrices.weight.data = self.get_normalized_data(self.rel_matrices, self.config.kg_meta.tot_relation, dim=-1)
+        self.ent_embeddings.weight.data = self.get_normalized_data(self.ent_embeddings, self.tot_entity, dim=-1)
+        self.rel_matrices.weight.data = self.get_normalized_data(self.rel_matrices, self.tot_relation, dim=-1)
 
         emb_h = self.ent_embeddings(h)
         emb_r = self.rel_matrices(r)
@@ -965,20 +957,18 @@ class NTN(PairwiseModel):
 
     """
 
-    def __init__(self, config):
-        super(NTN, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
+    def __init__(self, **kwargs):
+        super(NTN, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "ent_hidden_size", "rel_hidden_size", "lmbda"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, d)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-        self.mr1 = nn.Embedding(d, k)
-        self.mr2 = nn.Embedding(d, k)
-        self.br = nn.Embedding(1, k)
-        self.mr = nn.Embedding(k, d*d)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.ent_hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.rel_hidden_size)
+        self.mr1 = nn.Embedding(self.ent_hidden_size, self.rel_hidden_size)
+        self.mr2 = nn.Embedding(self.ent_hidden_size, self.rel_hidden_size)
+        self.br = nn.Embedding(1, self.rel_hidden_size)
+        self.mr = nn.Embedding(self.rel_hidden_size, self.ent_hidden_size*self.ent_hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.mr1.weight)
@@ -1002,17 +992,15 @@ class NTN(PairwiseModel):
                h (Tensor): Head entities ids.
                t (Tensor): Tail entity ids of the triple.
         """
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
         
-        mr1h = torch.matmul(h, self.mr1.weight) # h => [m, d], self.mr1 => [d, k]
-        mr2t = torch.matmul(t, self.mr2.weight) # t => [m, d], self.mr2 => [d, k]
+        mr1h = torch.matmul(h, self.mr1.weight) # h => [m, self.ent_hidden_size], self.mr1 => [self.ent_hidden_size, self.rel_hidden_size]
+        mr2t = torch.matmul(t, self.mr2.weight) # t => [m, self.ent_hidden_size], self.mr2 => [self.ent_hidden_size, self.rel_hidden_size]
 
-        expanded_h = h.unsqueeze(dim=0).repeat(k, 1, 1) # [k, m, d]
-        expanded_t = t.unsqueeze(dim=-1) # [m, d, 1]
+        expanded_h = h.unsqueeze(dim=0).repeat(self.rel_hidden_size, 1, 1) # [self.rel_hidden_size, m, self.ent_hidden_size]
+        expanded_t = t.unsqueeze(dim=-1) # [m, self.ent_hidden_size, 1]
 
-        temp = (torch.matmul(expanded_h, self.mr.weight.view(k, d, d))).permute(1, 0, 2) # [m, k, d]
-        htmrt = torch.squeeze(torch.matmul(temp, expanded_t), dim=-1) # [m, k]
+        temp = (torch.matmul(expanded_h, self.mr.weight.view(self.rel_hidden_size, self.ent_hidden_size, self.ent_hidden_size))).permute(1, 0, 2) # [m, self.rel_hidden_size, self.ent_hidden_size]
+        htmrt = torch.squeeze(torch.matmul(temp, expanded_t), dim=-1) # [m, self.rel_hidden_size]
 
         return F.tanh(htmrt + mr1h + mr2t + self.br.weight)
 
@@ -1041,7 +1029,7 @@ class NTN(PairwiseModel):
         return -torch.sum(norm_r*self.train_layer(norm_h, norm_t), -1)
 
     def get_reg(self):
-        return self.config.lmbda*torch.sqrt(sum([torch.sum(torch.pow(var.weight, 2)) for var in self.parameter_list]))
+        return self.lmbda*torch.sqrt(sum([torch.sum(torch.pow(var.weight, 2)) for var in self.parameter_list]))
 
 
 class KG2E(PairwiseModel):
@@ -1074,20 +1062,19 @@ class KG2E(PairwiseModel):
     
     """
 
-    def __init__(self, config):
-        super(KG2E, self).__init__(self.__class__.__name__.lower(), config)
+    def __init__(self, **kwargs):
+        super(KG2E, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "cmax", "cmin"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
         
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
-
         # the mean for each element in the embedding space. 
-        self.ent_embeddings_mu = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings_mu = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings_mu = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings_mu = nn.Embedding(self.tot_relation, self.hidden_size)
 
         # as the paper suggested, sigma is simplified to be the diagonal element in the covariance matrix. 
-        self.ent_embeddings_sigma = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings_sigma = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings_sigma = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings_sigma = nn.Embedding(self.tot_relation, self.hidden_size)
 
         nn.init.xavier_uniform_(self.ent_embeddings_mu.weight)
         nn.init.xavier_uniform_(self.rel_embeddings_mu.weight)
@@ -1101,10 +1088,10 @@ class KG2E(PairwiseModel):
             NamedEmbedding(self.rel_embeddings_sigma, "rel_embeddings_sigma"),
         ]
 
-        min_ent = torch.min(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.config.cmax), torch.add(self.ent_embeddings_sigma.weight, 1.0))
-        self.ent_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.config.cmin), min_ent))
-        min_rel = torch.min(torch.FloatTensor().new_full(self.rel_embeddings_sigma.weight.shape, self.config.cmax), torch.add(self.rel_embeddings_sigma.weight, 1.0))
-        self.rel_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.rel_embeddings_sigma.weight.shape, self.config.cmin), min_rel))
+        min_ent = torch.min(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.cmax), torch.add(self.ent_embeddings_sigma.weight, 1.0))
+        self.ent_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.cmin), min_ent))
+        min_rel = torch.min(torch.FloatTensor().new_full(self.rel_embeddings_sigma.weight.shape, self.cmax), torch.add(self.rel_embeddings_sigma.weight, 1.0))
+        self.rel_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.rel_embeddings_sigma.weight.shape, self.cmin), min_rel))
 
     def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
@@ -1123,11 +1110,11 @@ class KG2E(PairwiseModel):
                 tuple: Returns a 6-tuple of head, relation and tail embedding tensors (both real and img parts).
         """
 
-        self.ent_embeddings_mu.weight.data = self.get_normalized_data(self.ent_embeddings_mu, self.config.kg_meta.tot_entity)
-        self.rel_embeddings_mu.weight.data = self.get_normalized_data(self.rel_embeddings_mu, self.config.kg_meta.tot_relation)
+        self.ent_embeddings_mu.weight.data = self.get_normalized_data(self.ent_embeddings_mu, self.tot_entity)
+        self.rel_embeddings_mu.weight.data = self.get_normalized_data(self.rel_embeddings_mu, self.tot_relation)
 
-        self.ent_embeddings_sigma.weight.data = self.get_normalized_data(self.ent_embeddings_sigma, self.config.kg_meta.tot_entity)
-        self.rel_embeddings_sigma.weight.data = self.get_normalized_data(self.rel_embeddings_sigma, self.config.kg_meta.tot_relation)
+        self.ent_embeddings_sigma.weight.data = self.get_normalized_data(self.ent_embeddings_sigma, self.tot_entity)
+        self.rel_embeddings_sigma.weight.data = self.get_normalized_data(self.rel_embeddings_sigma, self.tot_relation)
 
         emb_h_mu = self.ent_embeddings_mu(head)
         emb_r_mu = self.rel_embeddings_mu(rel)
@@ -1164,7 +1151,7 @@ class KG2E(PairwiseModel):
         mul_fac = torch.sum((h_mu + r_mu - t_mu) ** 2 / (h_sigma + r_sigma + t_sigma), -1)
         det_fac = torch.sum(torch.log(h_sigma + r_sigma + t_sigma), -1)
 
-        return mul_fac + det_fac - self.config.hidden_size
+        return mul_fac + det_fac - self.hidden_size
 
 
 class KG2E_EL(KG2E):
@@ -1186,9 +1173,12 @@ class KG2E_EL(KG2E):
 
     """
 
-    def __init__(self, config):
-        super(KG2E_EL, self).__init__(config)
+    def __init__(self, **kwargs):
+        super(KG2E_EL, self).__init__(**kwargs)
         self.model_name = self.__class__.__name__.lower()
+        param_list = ["hidden_size"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
     def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
@@ -1217,7 +1207,7 @@ class KG2E_EL(KG2E):
         mul_fac = torch.sum((- h_mu + t_mu - r_mu) ** 2 / r_sigma, -1)
         det_fac = torch.sum(torch.log(h_sigma + t_sigma) - torch.log(r_sigma), -1)
 
-        return trace_fac + mul_fac - det_fac - self.config.hidden_size
+        return trace_fac + mul_fac - det_fac - self.hidden_size
 
 
 class HoLE(PairwiseModel):
@@ -1242,15 +1232,18 @@ class HoLE(PairwiseModel):
 
     """
 
-    def __init__(self, config):
-        super(HoLE, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+    def __init__(self, **kwargs):
+        super(HoLE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "cmax", "cmin"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+ 
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
