@@ -302,7 +302,7 @@ class Importer:
         config_obj = None
         model_obj = None
         try:
-            config_obj = getattr(importlib.import_module(self.config_path), "BasicConfig")
+            config_obj = getattr(importlib.import_module(self.config_path), "Config")
             splited_path = self.modelMap[name].split('.')
             model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % splited_path[0]), splited_path[1])
 

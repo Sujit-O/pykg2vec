@@ -14,7 +14,7 @@ from pykg2vec.utils.logger import Logger
 from pykg2vec.common import HyperparamterLoader
 
 
-class BasicConfig:
+class Config:
     """ The class defines the basic configuration for the pykg2vec.
 
         BasicConfig consists of the necessary parameter description used by all the 
@@ -52,12 +52,9 @@ class BasicConfig:
             self.__dict__[arg_name] = getattr(args, arg_name)
 
         # Training and evaluating related variables
-        self.test_step = args.test_step
         self.full_test_flag = (self.test_step == 0)
-        self.test_num = args.test_num
         self.hits = [1, 3, 5, 10]
         self.loadFromData = args.load_from_data
-        self.save_model = args.save_model
         self.disp_summary = True
         self.disp_result = False
         
@@ -66,16 +63,8 @@ class BasicConfig:
         # Visualization related, 
         # p.s. the visualizer is disable for most of the KGE methods for now. 
         self.disp_triple_num = 20
-        self.plot_embedding = args.plot_embedding
         self.plot_training_result = True
         self.plot_testing_result = True
-        self.plot_entity_only = args.plot_entity_only
-        
-        # Working environment variables.
-        self.num_process_gen = args.num_process_gen
-        self.log_device_placement = False
-        self.gpu_fraction = args.gpu_frac
-        self.gpu_allow_growth = True
 
         # Knowledge Graph Information
         self.custom_dataset_path = args.dataset_path
@@ -95,12 +84,6 @@ class BasicConfig:
         self.path_figures.mkdir(parents=True, exist_ok=True)
         self.path_embeddings = dataset_path / 'embeddings'
         self.path_embeddings.mkdir(parents=True, exist_ok=True)
-
-        # debugging information 
-        self.debug = args.debug
-        self.device = args.device
-
-        self.data = args.dataset_name
 
         if args.exp is True:
             paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, args.model_name)
