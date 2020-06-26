@@ -73,15 +73,6 @@ class KGEArgParser:
     def __init__(self):
         self.parser = ArgumentParser(description='Knowledge Graph Embedding tunable configs.')
 
-        
-        ''' arguments regarding TransG '''
-        self.TransG_group = self.parser.add_argument_group('TransG function selection')
-        self.TransG_group.add_argument('-th', dest='training_threshold', default=3.5, type=float, help="Training Threshold for updateing the clusters.")
-        self.TransG_group.add_argument('-nc', dest='ncluster', default=4, type=int, help="Number of clusters")
-        self.TransG_group.add_argument('-crp', dest='crp_factor', default=0.01, type=float, help="Chinese Restaurant Process Factor.")
-        self.TransG_group.add_argument('-stb', dest='step_before', default=10, type=int, help="Steps before")
-        self.TransG_group.add_argument('-wn', dest='weight_norm', default=False, type=lambda x: (str(x).lower() == 'true'), help="normalize the weights!")
-
         ''' arguments regarding SME and KG2E '''
         self.SME_group = self.parser.add_argument_group('SME KG2E function selection')
         self.SME_group.add_argument('-func', dest='function', default='bilinear', type=str, help="The name of function used in SME model.")
