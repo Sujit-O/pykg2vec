@@ -169,9 +169,9 @@ class Visualization(object):
                 file_no = len([c for c in files_lwcase if a.lower() in c if 'training' in c])
                 if file_no < 1:
                     continue
-                file_path = str(path / (a + '_Training_results_' + str(file_no - 1) + '.csv'))
+                file_path = str(path / (a.lower() + '_Training_results_' + str(file_no - 1) + '.csv'))
                 if os.path.exists(file_path):
-                    with open(str(path / (a + '_Training_results_' + str(file_no - 1) + '.csv')), 'r') as fh:
+                    with open(str(path / (a.lower() + '_Training_results_' + str(file_no - 1) + '.csv')), 'r') as fh:
                         df_2 = pd.read_csv(fh)
                     if df.empty:
                         df['Epochs'] = df_2['Epochs']
