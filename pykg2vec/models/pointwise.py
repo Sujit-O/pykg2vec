@@ -120,7 +120,6 @@ class Complex(PointwiseModel):
 
     """
     def __init__(self, **kwargs):
-        import pdb; pdb.set_trace()
         super(Complex, self).__init__(self.__class__.__name__.lower())
         param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
         param_dict = self.load_params(param_list, kwargs)

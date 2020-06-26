@@ -29,14 +29,18 @@ class ConvE(ProjectionModel):
 
     """
 
-    def __init__(self, config):
-        super(ConvE, self).__init__(self.__class__.__name__.lower(), config)
-        
-        self.config.hidden_size_2 = self.config.hidden_size // self.config.hidden_size_1
+    def __init__(self, **kwargs):
+        super(ConvE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "hidden_size_1", 
+                      "lmbda", "input_dropout", "feature_map_dropout", "hidden_dropout"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+        self.hidden_size_2 = self.hidden_size // self.hidden_size_1
+
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
 
         self.ent_embeddings = nn.Embedding(num_total_ent, k)
         
@@ -47,12 +51,12 @@ class ConvE(ProjectionModel):
         self.b = nn.Embedding(1, num_total_ent)
 
         self.bn0 = nn.BatchNorm2d(1)
-        self.inp_drop = nn.Dropout(self.config.input_dropout)
+        self.inp_drop = nn.Dropout(self.input_dropout)
         self.conv2d_1 = nn.Conv2d(1, 32, (3, 3), stride=(1, 1))
         self.bn1 = nn.BatchNorm2d(32)
-        self.feat_drop = nn.Dropout2d(self.config.feature_map_dropout)
-        self.fc = nn.Linear((2*self.config.hidden_size_2-3+1)*(self.config.hidden_size_1-3+1)*32, k) # use the conv output shape * out_channel
-        self.hidden_drop = nn.Dropout(self.config.hidden_dropout)
+        self.feat_drop = nn.Dropout2d(self.feature_map_dropout)
+        self.fc = nn.Linear((2*self.hidden_size_2-3+1)*(self.hidden_size_1-3+1)*32, k) # use the conv output shape * out_channel
+        self.hidden_drop = nn.Dropout(self.hidden_dropout)
         self.bn2 = nn.BatchNorm1d(k)
 
         self.parameter_list = [
@@ -103,12 +107,12 @@ class ConvE(ProjectionModel):
 
     def forward(self, e, r, direction="tail"):
         if direction == "head":
-            e_emb, r_emb = self.embed2(e, r + self.config.kg_meta.tot_relation)
+            e_emb, r_emb = self.embed2(e, r + self.tot_relation)
         else:
             e_emb, r_emb = self.embed2(e, r)
         
-        stacked_e = e_emb.view(-1, 1, self.config.hidden_size_2, self.config.hidden_size_1)
-        stacked_r = r_emb.view(-1, 1, self.config.hidden_size_2, self.config.hidden_size_1)
+        stacked_e = e_emb.view(-1, 1, self.hidden_size_2, self.hidden_size_1)
+        stacked_r = r_emb.view(-1, 1, self.hidden_size_2, self.hidden_size_1)
         stacked_er = torch.cat([stacked_e, stacked_r], 2)
 
         preds = self.inner_forward(stacked_er, list(e.shape)[0])
@@ -157,12 +161,16 @@ class ProjE_pointwise(ProjectionModel):
 
     """
 
-    def __init__(self, config):
-        super(ProjE_pointwise, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+    def __init__(self, **kwargs):
+        super(ProjE_pointwise, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda", "hidden_dropout"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
+        self.device = kwargs["device"]
 
         self.ent_embeddings = nn.Embedding(num_total_ent, k)
         self.rel_embeddings = nn.Embedding(num_total_rel, k)
@@ -193,7 +201,7 @@ class ProjE_pointwise(ProjectionModel):
         ]
 
     def get_reg(self):
-        return self.config.lmbda*(torch.sum(torch.abs(self.De1.weight) + torch.abs(self.Dr1.weight)) + torch.sum(torch.abs(self.De2.weight)
+        return self.lmbda*(torch.sum(torch.abs(self.De1.weight) + torch.abs(self.Dr1.weight)) + torch.sum(torch.abs(self.De2.weight)
                + torch.abs(self.Dr2.weight)) + torch.sum(torch.abs(self.ent_embeddings.weight)) + torch.sum(torch.abs(self.rel_embeddings.weight)))
 
     def forward(self, e, r, er_e2, direction="tail"):
@@ -201,12 +209,12 @@ class ProjE_pointwise(ProjectionModel):
         emb_hr_r = self.rel_embeddings(r)  # [m, k]
         
         if direction == "tail":
-            ere2_sigmoid = self.g(torch.dropout(self.f1(emb_hr_e, emb_hr_r), p=self.config.hidden_dropout, train=True), self.ent_embeddings.weight)
+            ere2_sigmoid = self.g(torch.dropout(self.f1(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
         else:
-            ere2_sigmoid = self.g(torch.dropout(self.f2(emb_hr_e, emb_hr_r), p=self.config.hidden_dropout, train=True), self.ent_embeddings.weight)
+            ere2_sigmoid = self.g(torch.dropout(self.f2(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
 
-        ere2_loss_left = -torch.sum((torch.log(torch.clamp(ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.config.device), er_e2)))
-        ere2_loss_right = -torch.sum((torch.log(torch.clamp(1 - ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.config.device), torch.neg(er_e2))))
+        ere2_loss_left = -torch.sum((torch.log(torch.clamp(ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.device), er_e2)))
+        ere2_loss_right = -torch.sum((torch.log(torch.clamp(1 - ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.device), torch.neg(er_e2))))
 
         hrt_loss = ere2_loss_left + ere2_loss_right
 
@@ -291,13 +299,18 @@ class TuckER(ProjectionModel):
 
     """
 
-    def __init__(self, config=None):
-        super(TuckER, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        self.d1 = self.config.ent_hidden_size
-        self.d2 = self.config.rel_hidden_size
+    def __init__(self, **kwargs):
+        super(TuckER, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "ent_hidden_size", 
+                        "rel_hidden_size", "lmbda", "input_dropout", 
+                        "hidden_dropout1", "hidden_dropout2"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        self.d1 = self.ent_hidden_size
+        self.d2 = self.rel_hidden_size
 
         self.ent_embeddings = nn.Embedding(num_total_ent, self.d1)
         self.rel_embeddings = nn.Embedding(num_total_rel, self.d2)
@@ -312,9 +325,9 @@ class TuckER(ProjectionModel):
             NamedEmbedding(self.W, "W"),
         ]
 
-        self.inp_drop = nn.Dropout(self.config.input_dropout)
-        self.hidden_dropout1 = nn.Dropout(self.config.hidden_dropout1)
-        self.hidden_dropout2 = nn.Dropout(self.config.hidden_dropout2)
+        self.inp_drop = nn.Dropout(self.input_dropout)
+        self.hidden_dropout1 = nn.Dropout(self.hidden_dropout1)
+        self.hidden_dropout2 = nn.Dropout(self.hidden_dropout2)
 
     def forward(self, e1, r, direction=None):
         """Implementation of the layer.

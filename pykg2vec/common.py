@@ -93,6 +93,8 @@ class KGEArgParser:
         self.conv_group.add_argument('-fmd', dest='feature_map_dropout', default=0.2, type=float, help="feature map dropout value used in ConvE.")
         self.conv_group.add_argument('-idt', dest="input_dropout", default=0.3, type=float, help="input dropout value used in ConvE.")
         self.conv_group.add_argument('-hdt', dest="hidden_dropout", default=0.3, type=float, help="hidden dropout value used in ConvE.")
+        self.conv_group.add_argument('-hdt1', dest="hidden_dropout1", default=0.4, type=float, help="hidden dropout value used in TuckER.")
+        self.conv_group.add_argument('-hdt2', dest="hidden_dropout2", default=0.5, type=float, help="hidden dropout value used in TuckER.")
         self.conv_group.add_argument('-lbs', dest='label_smoothing', default=0.1, type=float, help="The parameter used in label smoothing.")
 
         '''for convKB'''
