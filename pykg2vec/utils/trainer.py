@@ -189,7 +189,7 @@ class Trainer:
         self.generator = Generator(self.model, self.config)
         self.evaluator = Evaluator(self.model, self.config)
 
-        if self.config.loadFromData:
+        if self.config.load_from_data:
             self.load_model()
         
         for cur_epoch_idx in range(self.config.epochs):
@@ -219,9 +219,6 @@ class Trainer:
         if self.config.disp_result:
             self.display()
 
-        if self.config.disp_summary:
-            self.config.summary()
-
         self.export_embeddings()
 
         return cur_epoch_idx # the runned epoches.
@@ -246,7 +243,7 @@ class Trainer:
         """Function to train the model for one epoch."""
         acc_loss = 0
 
-        num_batch = self.config.kg_meta.tot_train_triples // self.config.batch_size if not self.config.debug else 10
+        num_batch = self.config.tot_train_triples // self.config.batch_size if not self.config.debug else 10
        
         self.generator.start_one_epoch(num_batch)
         

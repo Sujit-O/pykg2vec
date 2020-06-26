@@ -20,9 +20,7 @@ class PairwiseModel(nn.Module):
         super(PairwiseModel, self).__init__()
 
         self.model_name = model_name
-        # self.config = config
         self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-
         self.database = {} # dict to store model-specific hyperparameter
 
     @abstractmethod
@@ -54,7 +52,6 @@ class PointwiseModel(nn.Module):
 
         self.model_name = model_name
         self.training_strategy = TrainingStrategy.POINTWISE_BASED
-
         self.database = {} # dict to store model-specific hyperparameter
 
     @abstractmethod
@@ -85,7 +82,6 @@ class ProjectionModel(nn.Module):
 
         self.model_name = model_name
         self.training_strategy = TrainingStrategy.PROJECTION_BASED
-
         self.database = {} # dict to store model-specific hyperparameter
 
     @abstractmethod

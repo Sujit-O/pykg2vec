@@ -48,7 +48,7 @@ class BaysOptimizer(object):
         
         self.config_obj, self.model_obj = Importer().import_model_config(self.model_name.lower())
         self.config_local = self.config_obj(self.kge_args)
-        self.hyper_params = Importer().import_hyperparam_config(self.model_name.lower())()
+        self.hyper_params = Importer().import_hyperparam(self.model_name.lower())()
         self.search_space = self.hyper_params.search_space
         
     def optimize(self):
@@ -103,7 +103,7 @@ class BaysOptimizer(object):
             self.config_local.test_num = 1000
 
         if self.kge_args.debug:
-          self.config_local.epochs = 1
+            self.config_local.epochs = 1
 
         # start the trial.
         self.trainer.build_model()

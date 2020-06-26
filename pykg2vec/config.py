@@ -17,7 +17,7 @@ from pykg2vec.common import HyperparamterLoader
 class Config:
     """ The class defines the basic configuration for the pykg2vec.
 
-        BasicConfig consists of the necessary parameter description used by all the 
+        Config consists of the necessary parameter description used by all the 
         modules including the algorithms and utility functions.
 
         Args:
@@ -27,9 +27,7 @@ class Config:
             tmp (Path Object): Path where temporary model information is stored.
             result (Path Object): Gives the path where the result will be saved.
             figures (Path Object): Gives the path where the figures will be saved.
-            gpu_fraction (float): Amount of GPU fraction that will be made available for training and inference.
-            gpu_allow_growth (bool): If True, allocates only necessary GPU memory and grows as required later.
-            loadFromData (bool): If True, loads the model parameters if available from memory.
+            load_from_data (bool): If True, loads the model parameters if available from memory.
             save_model (True): If True, store the trained model parameters.
             disp_summary (bool): If True, display the summary before and after training the algorithm.
             disp_result (bool): If True, displays result while training.
@@ -38,7 +36,6 @@ class Config:
             plot_training_result (bool): If True, plots the loss values stored during training.
             plot_testing_result (bool): If True, it will plot all the testing result such as mean rank, hit ratio, etc.
             plot_entity_only (bool): If True, plots the t-SNE reduced embdding of the entities in a figure.
-            full_test_flag (bool): It True, performs a full test after completing the training for full epochs.
             hits (List): Gives the list of integer for calculating hits.
             knowledge_graph (Object): It prepares and holds the instance of the knowledge graph dataset.
             kg_meta (object): Stores the statistics metadata of the knowledge graph.
@@ -52,12 +49,8 @@ class Config:
             self.__dict__[arg_name] = getattr(args, arg_name)
 
         # Training and evaluating related variables
-        self.full_test_flag = (self.test_step == 0)
         self.hits = [1, 3, 5, 10]
-        self.loadFromData = args.load_from_data
-        self.disp_summary = True
         self.disp_result = False
-        
         self.patience = 3 # should make this configurable as well.
         
         # Visualization related, 
@@ -67,11 +60,9 @@ class Config:
         self.plot_testing_result = True
 
         # Knowledge Graph Information
-        self.custom_dataset_path = args.dataset_path
-        self.knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=self.custom_dataset_path)
-        self.kg_meta = self.knowledge_graph.kg_meta
-        for key in self.kg_meta.__dict__:
-            self.__dict__[key] = self.kg_meta.__dict__[key]
+        self.knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
+        for key in self.knowledge_graph.kg_meta.__dict__:
+            self.__dict__[key] = self.knowledge_graph.kg_meta.__dict__[key]
         
         # The results of training will be stored in the following folders 
         # which are relative to the parent folder (the path of the dataset).
@@ -98,7 +89,7 @@ class Config:
         # Acquire the max length and add four more spaces
         maxspace = len(max([k for k in self.__dict__.keys()])) +20
         for key, val in self.__dict__.items():
-            if isinstance(val, (KGMetaData, KnowledgeGraph)) or key.startswith('gpu') or key.startswith('hyperparameters'):
+            if isinstance(val, (KGMetaData, KnowledgeGraph)):
                 continue
 
             if len(key) < maxspace:
