@@ -50,7 +50,7 @@ import sys
 
 
 from pykg2vec.data.kgcontroller import KnowledgeGraph
-from pykg2vec.config import Importer, KGEArgParser
+from pykg2vec.common import Importer, KGEArgParser
 from pykg2vec.utils.trainer import Trainer
 
 
@@ -65,10 +65,10 @@ def main():
     # Extracting the corresponding model config and definition from Importer().
     config_def, model_def = Importer().import_model_config(args.model_name.lower())
     config = config_def(args)
-    model = model_def(config)
+    model = model_def(**config.__dict__)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model)
+    trainer = Trainer(model, config)
     trainer.build_model()
     trainer.train_model()
 

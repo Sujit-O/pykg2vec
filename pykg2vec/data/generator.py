@@ -274,9 +274,9 @@ class Generator:
             >>> gen_train = Generator(model.config, training_strategy=TrainingStrategy.PAIRWISE_BASED)
     """
 
-    def __init__(self, model):
+    def __init__(self, model, config):
         self.model = model
-        self.config = model.config
+        self.config = config
         self.training_strategy = model.training_strategy
 
         self.process_list = []

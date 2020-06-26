@@ -84,9 +84,9 @@ class Trainer:
     """
     _logger = Logger().get_logger(__name__)
 
-    def __init__(self, model):
+    def __init__(self, model, config):
         self.model = model
-        self.config = model.config
+        self.config = config
 
         self.training_results = []
 
@@ -120,7 +120,6 @@ class Trainer:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
 
         self.config.summary()
-        self.config.summary_hyperparameter(self.model.model_name)
 
         self.early_stopper = EarlyStopper(self.config.patience, Monitor.FILTERED_MEAN_RANK)
 
@@ -187,8 +186,8 @@ class Trainer:
 
     def train_model(self, monitor=Monitor.FILTERED_MEAN_RANK):
         """Function to train the model."""
-        self.generator = Generator(self.model)
-        self.evaluator = Evaluator(self.model)
+        self.generator = Generator(self.model, self.config)
+        self.evaluator = Evaluator(self.model, self.config)
 
         if self.config.loadFromData:
             self.load_model()
@@ -222,7 +221,6 @@ class Trainer:
 
         if self.config.disp_summary:
             self.config.summary()
-            self.config.summary_hyperparameter(self.model.model_name)
 
         self.export_embeddings()
 
@@ -232,8 +230,8 @@ class Trainer:
         """Function to tune the model."""
         current_loss = float("inf")
 
-        self.generator = Generator(self.model)
-        self.evaluator = Evaluator(self.model, tuning=True)
+        self.generator = Generator(self.model, self.config)
+        self.evaluator = Evaluator(self.model, self.config, tuning=True)
        
         for cur_epoch_idx in range(self.config.epochs):
             current_loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
@@ -248,7 +246,7 @@ class Trainer:
         """Function to train the model for one epoch."""
         acc_loss = 0
 
-        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.config.debug else 10
+        num_batch = self.config.kg_meta.tot_train_triples // self.config.batch_size if not self.config.debug else 10
        
         self.generator.start_one_epoch(num_batch)
         
@@ -322,8 +320,8 @@ class Trainer:
         logs = [""]
         logs.append("(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])))
         logs.append("")
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs.append("head: %s" % idx2ent[h])
         logs.append("relation: %s" % idx2rel[r])
 
@@ -338,8 +336,8 @@ class Trainer:
         logs = [""]
         logs.append("(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])))
         logs.append("")
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs.append("tail: %s" % idx2ent[t])
         logs.append("relation: %s" % idx2rel[r])
 
@@ -358,8 +356,8 @@ class Trainer:
         logs = [""]
         logs.append("(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])))
         logs.append("")
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs.append("head: %s" % idx2ent[h])
         logs.append("tail: %s" % idx2ent[t])
 
@@ -413,8 +411,8 @@ class Trainer:
         save_path = self.config.path_embeddings / self.model.model_name
         save_path.mkdir(parents=True, exist_ok=True)
         
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
 
         series_ent = pd.Series(idx2ent)
         series_rel = pd.Series(idx2rel)
@@ -445,9 +443,9 @@ class Trainer:
 
     def save_training_result(self):
         """Function that saves training result"""
-        files = os.listdir(str(self.model.config.path_result))
+        files = os.listdir(str(self.config.path_result))
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
         df = pd.DataFrame(self.training_results, columns=['Epochs', 'Loss'])
-        with open(str(self.model.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
+        with open(str(self.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)

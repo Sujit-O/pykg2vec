@@ -88,7 +88,6 @@ class BaysOptimizer(object):
         # copy the hyperparameters to trainer config and hyperparameter set. 
         for key, value in params.items():
           self.config_local.__dict__[key] = value
-          self.config_local.hyperparameters[key] = value
 
         model = self.model_obj(self.config_local)
 
@@ -105,7 +104,6 @@ class BaysOptimizer(object):
 
         if self.kge_args.debug:
           self.config_local.epochs = 1
-          self.config_local.hyperparameters['epochs'] = 1
 
         # start the trial.
         self.trainer.build_model()

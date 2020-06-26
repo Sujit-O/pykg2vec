@@ -42,12 +42,14 @@ class TransE(PairwiseModel):
 
     """
 
-    def __init__(self, config):
-
-        super(TransE, self).__init__(self.__class__.__name__.lower(), config)
+    def __init__(self, **kwargs):
+        super(TransE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "l1_flag"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
         
-        self.ent_embeddings = nn.Embedding(self.config.kg_meta.tot_entity, self.config.hidden_size)
-        self.rel_embeddings = nn.Embedding(self.config.kg_meta.tot_relation, self.config.hidden_size)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
@@ -73,7 +75,7 @@ class TransE(PairwiseModel):
         norm_r_e = F.normalize(r_e, p=2, dim=-1)
         norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
-        if self.config.L1_flag:
+        if self.get_param("l1_flag"):
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
@@ -130,15 +132,15 @@ class TransH(PairwiseModel):
             https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf
     """
 
-    def __init__(self, config):
-        super(TransH, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
+    def __init__(self, **kwargs):
+        super(TransH, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "l1_flag"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, self.config.hidden_size)
-        self.rel_embeddings = nn.Embedding(num_total_rel, self.config.hidden_size)
-        self.w = nn.Embedding(num_total_rel, self.config.hidden_size)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
+        self.w = nn.Embedding(self.tot_relation, self.hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.w.weight)
@@ -156,7 +158,7 @@ class TransH(PairwiseModel):
         norm_r_e = F.normalize(r_e, p=2, dim=-1)
         norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
-        if self.config.L1_flag:
+        if self.l1_flag:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
@@ -218,16 +220,16 @@ class TransD(PairwiseModel):
 
     """
 
-    def __init__(self, config):
-        super(TransD, self).__init__(self.__class__.__name__.lower(), config)
-        
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
+    def __init__(self, **kwargs):
+        super(TransD, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "rel_hidden_size", "ent_hidden_size", "l1_flag"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        self.ent_embeddings = nn.Embedding(self.config.kg_meta.tot_entity, d)
-        self.rel_embeddings = nn.Embedding(self.config.kg_meta.tot_relation, k)
-        self.ent_mappings = nn.Embedding(self.config.kg_meta.tot_entity, d)
-        self.rel_mappings = nn.Embedding(self.config.kg_meta.tot_relation, k)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.ent_hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.rel_hidden_size)
+        self.ent_mappings = nn.Embedding(self.tot_entity, self.ent_hidden_size)
+        self.rel_mappings = nn.Embedding(self.tot_relation, self.rel_hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.ent_mappings.weight)
@@ -285,7 +287,7 @@ class TransD(PairwiseModel):
         norm_r_e = F.normalize(r_e, p=2, dim=-1)
         norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
-        if self.config.L1_flag:
+        if self.l1_flag:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
@@ -313,28 +315,26 @@ class TransM(PairwiseModel):
             https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
 
     """
-
-    def __init__(self, config):
-        super(TransM, self).__init__(self.__class__.__name__.lower(), config)
+    def __init__(self, **kwargs):
+        super(TransM, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "l1_flag"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
         
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-
-        rel_head = {x: [] for x in range(num_total_rel)}
-        rel_tail = {x: [] for x in range(num_total_rel)}
-        rel_counts = {x: 0 for x in range(num_total_rel)}
-        train_triples_ids = self.config.knowledge_graph.read_cache_data('triplets_train')
+        rel_head = {x: [] for x in range(self.tot_relation)}
+        rel_tail = {x: [] for x in range(self.tot_relation)}
+        rel_counts = {x: 0 for x in range(self.tot_relation)}
+        train_triples_ids = kwargs["knowledge_graph"].read_cache_data('triplets_train')
         for t in train_triples_ids:
             rel_head[t.r].append(t.h)
             rel_tail[t.r].append(t.t)
             rel_counts[t.r] += 1
 
-        theta = [1/np.log(2+rel_counts[x]/(1+len(rel_tail[x])) + rel_counts[x]/(1+len(rel_head[x]))) for x in range(num_total_rel)]
-        self.theta = torch.from_numpy(np.asarray(theta, dtype=np.float32)).to(self.config.device)
+        theta = [1/np.log(2+rel_counts[x]/(1+len(rel_tail[x])) + rel_counts[x]/(1+len(rel_head[x]))) for x in range(self.tot_relation)]
+        self.theta = torch.from_numpy(np.asarray(theta, dtype=np.float32)).to(kwargs["device"])
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
@@ -362,7 +362,7 @@ class TransM(PairwiseModel):
 
         r_theta = self.theta[r]
 
-        if self.config.L1_flag:
+        if self.l1_flag:
             return r_theta*torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return r_theta*torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
@@ -410,17 +410,15 @@ class TransR(PairwiseModel):
             http://nlp.csai.tsinghua.edu.cn/~lyk/publications/aaai2015_transr.pdf
     """
 
-    def __init__(self, config):
-        super(TransR, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.ent_hidden_size
-        d = self.config.rel_hidden_size
+    def __init__(self, **kwargs):
+        super(TransR, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "rel_hidden_size", "ent_hidden_size", "l1_flag"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, d)
-        self.rel_matrix = nn.Embedding(num_total_rel, k * d)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.ent_hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.rel_hidden_size)
+        self.rel_matrix = nn.Embedding(self.tot_relation, self.ent_hidden_size * self.rel_hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_matrix.weight)
@@ -432,14 +430,14 @@ class TransR(PairwiseModel):
         ]
 
     def transform(self, e, matrix):
-        matrix = matrix.view(-1, self.config.ent_hidden_size, self.config.rel_hidden_size)
+        matrix = matrix.view(-1, self.ent_hidden_size, self.rel_hidden_size)
         if e.shape[0] != matrix.shape[0]:
-            e = e.view(-1, matrix.shape[0], self.config.ent_hidden_size).permute(1, 0, 2)
+            e = e.view(-1, matrix.shape[0], self.ent_hidden_size).permute(1, 0, 2)
             e = torch.matmul(e, matrix).permute(1, 0, 2)
         else:
-            e = e.view(-1, 1, self.config.ent_hidden_size)
+            e = e.view(-1, 1, self.ent_hidden_size)
             e = torch.matmul(e, matrix)
-        return e.view(-1, self.config.rel_hidden_size)
+        return e.view(-1, self.rel_hidden_size)
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -493,7 +491,7 @@ class TransR(PairwiseModel):
         norm_r_e = F.normalize(r_e, p=2, dim=-1)
         norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
-        if self.config.L1_flag:
+        if self.l1_flag:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)

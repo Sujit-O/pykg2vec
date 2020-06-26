@@ -107,11 +107,11 @@ class KGEArgParser:
         ''' arguments regarding hyperparameters '''
         self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
         self.general_hyper_group.add_argument('-lmda', dest='lmbda', default=0.1, type=float, help='The lmbda for regularization.')
-        self.general_hyper_group.add_argument('-b',   dest='batch_training', default=128, type=int, help='training batch size')
+        self.general_hyper_group.add_argument('-b',   dest='batch_size', default=128, type=int, help='training batch size')
         self.general_hyper_group.add_argument('-mg',  dest='margin', default=0.8, type=float, help='Margin to take')
         self.general_hyper_group.add_argument('-opt', dest='optimizer', default='adam', type=str, help='optimizer to be used in training.')
         self.general_hyper_group.add_argument('-s',   dest='sampling', default='uniform', type=str, help='strategy to do negative sampling.')
-        self.general_hyper_group.add_argument('-ngr', dest='negrate', default=1, type=int, help='The number of negative samples generated per positve one.')
+        self.general_hyper_group.add_argument('-ngr', dest='neg_rate', default=1, type=int, help='The number of negative samples generated per positve one.')
         self.general_hyper_group.add_argument('-l',   dest='epochs', default=100, type=int, help='The total number of Epochs')
         self.general_hyper_group.add_argument('-lr',  dest='learning_rate', default=0.01, type=float,help='learning rate')
         self.general_hyper_group.add_argument('-k',   dest='hidden_size', default=50, type=int,help='Hidden embedding size.')

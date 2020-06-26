@@ -48,6 +48,9 @@ class BasicConfig:
 
     def __init__(self, args):
 
+        for arg_name in vars(args):
+            self.__dict__[arg_name] = getattr(args, arg_name)
+
         # Training and evaluating related variables
         self.test_step = args.test_step
         self.full_test_flag = (self.test_step == 0)
@@ -76,8 +79,10 @@ class BasicConfig:
 
         # Knowledge Graph Information
         self.custom_dataset_path = args.dataset_path
-        self.knowledge_graph = KnowledgeGraph(dataset=self.data, custom_dataset_path=self.custom_dataset_path)
+        self.knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=self.custom_dataset_path)
         self.kg_meta = self.knowledge_graph.kg_meta
+        for key in self.kg_meta.__dict__:
+            self.__dict__[key] = self.kg_meta.__dict__[key]
         
         # The results of training will be stored in the following folders 
         # which are relative to the parent folder (the path of the dataset).
@@ -95,6 +100,13 @@ class BasicConfig:
         self.debug = args.debug
         self.device = args.device
 
+        self.data = args.dataset_name
+
+        if args.exp is True:
+            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, args.model_name)
+            for key, value in paper_params.items():
+                self.__dict__[key] = value # copy all the setting from the paper.
+
     def summary(self):
         """Function to print the summary."""
         summary = []
@@ -103,9 +115,6 @@ class BasicConfig:
         # Acquire the max length and add four more spaces
         maxspace = len(max([k for k in self.__dict__.keys()])) +20
         for key, val in self.__dict__.items():
-            if key in self.__dict__['hyperparameters']:
-                continue
-
             if isinstance(val, (KGMetaData, KnowledgeGraph)) or key.startswith('gpu') or key.startswith('hyperparameters'):
                 continue
 
@@ -117,73 +126,34 @@ class BasicConfig:
         summary.append("")
         self._logger.info("\n".join(summary))
 
-    def summary_hyperparameter(self, model_name):
-        """Function to print the hyperparameter summary."""
-        summary_hyperparameter = []
-        summary_hyperparameter.append("")
-        summary_hyperparameter.append("-----------%s Hyperparameter Setting-------------"%(model_name))
-        maxspace = len(max([k for k in self.hyperparameters.keys()])) + 15
-        for key,val in self.hyperparameters.items():
-            if len(key) < maxspace:
-                for i in range(maxspace - len(key)):
-                    key = ' ' + key
-            summary_hyperparameter.append("%s : %s" % (key, val))
-        summary_hyperparameter.append("---------------------------------------------------")
-        self._logger.info("\n".join(summary_hyperparameter))
-
 
 class TransEConfig(BasicConfig):
-    """ This class defines the configuration for the TransE Algorithm.
-
-        TransEConfig inherits the BasicConfig and defines the local arguements used in the
-        algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            hidden_size (int): Defines the size of the latent dimension for both entities and relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-    def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.hidden_size = args.hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.margin = args.margin
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transe')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
+    """ This class defines the configuration for the TransE Algorithm."""
+    def __init__(self, args):        
         BasicConfig.__init__(self, args)
+
+class TransHConfig(BasicConfig):
+    """ This class defines the configuration for the TransH Algorithm."""
+    def __init__(self, args):
+        BasicConfig.__init__(self, args)
+
+class TransDConfig(BasicConfig):
+    """ This class defines the configuration for the TransD Algorithm."""
+    def __init__(self, args):
+        BasicConfig.__init__(self, args)
+
+class TransMConfig(BasicConfig):
+    """ This class defines the configuration for the TransM Algorithm."""
+
+    def __init__(self, args):
+        BasicConfig.__init__(self, args)
+
+class TransRConfig(BasicConfig):
+    """ This class defines the configuration for the TransR Algorithm."""
+
+    def __init__(self, args):
+        BasicConfig.__init__(self, args)
+
 
 
 class HoLEConfig(BasicConfig):
@@ -233,228 +203,6 @@ class HoLEConfig(BasicConfig):
             'data': self.data,
             'optimizer': self.optimizer,
             'sampling': self.sampling, 
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
-
-class TransRConfig(BasicConfig):
-    """ This class defines the configuration for the TransR Algorithm.
-
-        TransRConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            ent_hidden_size (int): Defines the size of the latent dimension for entities.
-            rel_hidden_size (int): Defines the size of the latent dimension for relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-
-    def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.ent_hidden_size = args.ent_hidden_size
-        self.rel_hidden_size = args.rel_hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.margin = args.margin
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transr')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'ent_hidden_size': self.ent_hidden_size,
-            'rel_hidden_size': self.rel_hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
-
-class TransDConfig(BasicConfig):
-    """ This class defines the configuration for the TransD Algorithm.
-
-            TransDConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            ent_hidden_size (int): Defines the size of the latent dimension for entities.
-            rel_hidden_size (int): Defines the size of the latent dimension for relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-    def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.ent_hidden_size = args.ent_hidden_size
-        self.rel_hidden_size = args.rel_hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.margin = args.margin
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transd')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'ent_hidden_size': self.ent_hidden_size,
-            'rel_hidden_size': self.rel_hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
-
-class TransMConfig(BasicConfig):
-    """ This class defines the configuration for the TransM Algorithm.
-
-        TransMConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            hidden_size (int): Defines the size of the latent dimension for entities and relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-
-    def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.hidden_size = args.hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.margin = args.margin
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transm')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
-            'neg_rate': self.neg_rate,
-        }
-
-        BasicConfig.__init__(self, args)
-
-
-class TransHConfig(BasicConfig):
-    """ This class defines the configuration for the TransH Algorithm.
-
-        TransHConfig inherits the BasicConfig and defines the local arguements used in the algorithm.
-
-        Attributes:
-            hyperparameters (dict): Defines the dictionary of hyperparameters to be used by bayesian optimizer for tuning.
-
-        Args:
-            learning_rate (float): Defines the learning rate for the optimization.
-            L1_flag (bool): If True, perform L1 regularization on the model parameters.
-            hidden_size (int): Defines the size of the latent dimension for entities and relations.
-            batch_size (int): Defines the batch size for training the algorithm.
-            epochs (int): Defines the total number of epochs for training the algorithm.
-            C (float) : It is used to weigh the importance of soft-constraints.
-            margin (float): Defines the margin used between the positive and negative triple loss.
-            data (str): Defines the knowledge base dataset to be used for training the algorithm.
-            optimizer (str): Defines the optimization algorithm such as adam, sgd, adagrad, etc.
-            sampling (str): Defines the sampling (bern or uniform) for corrupting the triples.
-    
-    """
-
-    def __init__(self, args):
-        self.learning_rate = args.learning_rate
-        self.L1_flag = args.l1_flag
-        self.hidden_size = args.hidden_size
-        self.batch_size = args.batch_training
-        self.epochs = args.epochs
-        self.margin = args.margin
-        self.data = args.dataset_name
-        self.optimizer = args.optimizer
-        self.sampling = args.sampling
-        self.neg_rate = args.negrate
-
-        if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, 'transh')
-            for key, value in paper_params.items():
-                self.__dict__[key] = value # copy all the setting from the paper.
-
-        self.hyperparameters = {
-            'learning_rate': self.learning_rate,
-            'L1_flag': self.L1_flag,
-            'hidden_size': self.hidden_size,
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'margin': self.margin,
-            'data': self.data,
-            'optimizer': self.optimizer,
-            'sampling': self.sampling,
             'neg_rate': self.neg_rate,
         }
 
