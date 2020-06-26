@@ -31,7 +31,7 @@ def get_model(result_path_dir, configured_epochs, patience, config_key):
     return model_def(config)
 
 @pytest.mark.parametrize("config_key",
-                         filter(lambda x: x != "conve" and x != "convkb" and x != "transg", list(Importer().configMap.keys())))
+                         filter(lambda x: x != "conve" and x != "convkb" and x != "transg", list(Importer().modelMap.keys())))
 def test_full_epochs(tmpdir, config_key):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 10
