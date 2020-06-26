@@ -84,20 +84,20 @@ def process_function_pairwise(raw_queue, processed_queue, config):
             for i in range(neg_rate):
                 
                 if np.random.random() > prob:
-                    idx_replace_tail = np.random.randint(config.kg_meta.tot_entity)
+                    idx_replace_tail = np.random.randint(config.tot_entity)
 
                     while (t[0], t[1], idx_replace_tail) in positive_triplets:
-                        idx_replace_tail = np.random.randint(config.kg_meta.tot_entity)
+                        idx_replace_tail = np.random.randint(config.tot_entity)
 
                     nh.append(t[0])
                     nr.append(t[1])
                     nt.append(idx_replace_tail)
 
                 else:
-                    idx_replace_head = np.random.randint(config.kg_meta.tot_entity)
+                    idx_replace_head = np.random.randint(config.tot_entity)
                     
                     while ((idx_replace_head, t[1], t[2]) in positive_triplets):
-                        idx_replace_head = np.random.randint(config.kg_meta.tot_entity)
+                        idx_replace_head = np.random.randint(config.tot_entity)
                     
                     nh.append(idx_replace_head)
                     nr.append(t[1])
@@ -148,10 +148,10 @@ def process_function_pointwise(raw_queue, processed_queue, config):
             for i in range(neg_rate):
                 
                 if np.random.random() > prob:
-                    idx_replace_tail = np.random.randint(config.kg_meta.tot_entity)
+                    idx_replace_tail = np.random.randint(config.tot_entity)
 
                     while (t[0], t[1], idx_replace_tail) in positive_triplets:
-                        idx_replace_tail = np.random.randint(config.kg_meta.tot_entity)
+                        idx_replace_tail = np.random.randint(config.tot_entity)
 
                     point_h.append(t[0])
                     point_r.append(t[1])
@@ -159,10 +159,10 @@ def process_function_pointwise(raw_queue, processed_queue, config):
                     point_y.append(-1)
 
                 else:
-                    idx_replace_head = np.random.randint(config.kg_meta.tot_entity)
+                    idx_replace_head = np.random.randint(config.tot_entity)
                     
                     while ((idx_replace_head, t[1], t[2]) in positive_triplets):
-                        idx_replace_head = np.random.randint(config.kg_meta.tot_entity)
+                        idx_replace_head = np.random.randint(config.tot_entity)
                     
                     point_h.append(idx_replace_head)
                     point_r.append(t[1])
@@ -196,7 +196,7 @@ def process_function_multiclass(raw_queue, processed_queue, config):
     
     neg_rate = config.neg_rate
     
-    shape = [config.batch_size, config.kg_meta.tot_entity]
+    shape = [config.batch_size, config.tot_entity]
 
     while True:
         item = raw_queue.get()
@@ -213,7 +213,7 @@ def process_function_multiclass(raw_queue, processed_queue, config):
         neg_indices_hr_t = []
         neg_indices_tr_h = []
 
-        random_ids = np.random.permutation(config.kg_meta.tot_entity)
+        random_ids = np.random.permutation(config.tot_entity)
 
         for i in range(config.batch_size):
             hr_t = hr_t_train[(h[i], r[i])]
