@@ -91,7 +91,7 @@ class BaysOptimizer(object):
 
         model = self.model_obj(**self.config_local.__dict__)
 
-        self.trainer = Trainer(model)
+        self.trainer = Trainer(model, self.config_local)
 
         # configure common setting for a tuning training. 
         self.config_local.disp_result = False

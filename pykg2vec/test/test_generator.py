@@ -14,7 +14,8 @@ def test_generator_proje():
     knowledge_graph.force_prepare_data()
 
     config_def, model_def = Importer().import_model_config("proje_pointwise")
-    generator = Generator(model_def(config_def(KGEArgParser().get_args([]))))
+    config = config_def(KGEArgParser().get_args([]))
+    generator = Generator(model_def(**config.__dict__), config)
     generator.start_one_epoch(10)
     for i in range(10):
         data = list(next(generator))
@@ -38,7 +39,8 @@ def test_generator_pointwise():
     knowledge_graph.force_prepare_data()
 
     config_def, model_def = Importer().import_model_config("complex")
-    generator = Generator(model_def(config_def(KGEArgParser().get_args([]))))
+    config = config_def(KGEArgParser().get_args([]))
+    generator = Generator(model_def(**config.__dict__), config)
     generator.start_one_epoch(10)
     for i in range(10):
         data = list(next(generator))
@@ -60,7 +62,8 @@ def test_generator_pairwise():
     knowledge_graph.force_prepare_data()
 
     config_def, model_def = Importer().import_model_config('transe')
-    generator = Generator(model_def(config_def(KGEArgParser().get_args([]))))
+    config = config_def(KGEArgParser().get_args([]))
+    generator = Generator(model_def(**config.__dict__), config)
     generator.start_one_epoch(10)
     for i in range(10):
         data = list(next(generator))
