@@ -6,24 +6,24 @@ import torch.nn as nn
 
 from pykg2vec.models.KGMeta import PointwiseModel
 from pykg2vec.models.Domain import NamedEmbedding
-from pykg2vec.common import TrainingStrategy
 
 
 class ANALOGY(PointwiseModel):
 
-    def __init__(self, config):
-        super(ANALOGY, self).__init__(self.__class__.__name__.lower(), config)
+    def __init__(self, **kwargs):
+        super(ANALOGY, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
         
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+        k = self.hidden_size
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-        self.ent_embeddings_real = nn.Embedding(num_total_ent, k // 2)
-        self.ent_embeddings_img  = nn.Embedding(num_total_ent, k // 2)
-        self.rel_embeddings_real = nn.Embedding(num_total_rel, k // 2)
-        self.rel_embeddings_img  = nn.Embedding(num_total_rel, k // 2)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, k)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, k)
+        self.ent_embeddings_real = nn.Embedding(self.tot_entity, k // 2)
+        self.ent_embeddings_img  = nn.Embedding(self.tot_entity, k // 2)
+        self.rel_embeddings_real = nn.Embedding(self.tot_relation, k // 2)
+        self.rel_embeddings_img  = nn.Embedding(self.tot_relation, k // 2)
 
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
@@ -95,7 +95,7 @@ class ANALOGY(PointwiseModel):
 
         regul_term = (h_e_real**2+h_e_img**2+r_e_real**2+r_e_img**2+t_e_real**2+t_e_img**2).sum(axis=-1).mean()
         regul_term += (h_e**2+r_e**2+t_e**2).sum(axis=-1).mean()
-        return self.config.lmbda*regul_term
+        return self.lmbda*regul_term
 
 
 class Complex(PointwiseModel):
@@ -119,13 +119,16 @@ class Complex(PointwiseModel):
             http://proceedings.mlr.press/v48/trouillon16.pdf
 
     """
-
-    def __init__(self, config):
-        super(Complex, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+    def __init__(self, **kwargs):
+        import pdb; pdb.set_trace()
+        super(Complex, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+                
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
 
         self.ent_embeddings_real = nn.Embedding(num_total_ent, k)
         self.ent_embeddings_img  = nn.Embedding(num_total_ent, k)
@@ -173,7 +176,7 @@ class Complex(PointwiseModel):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
         regul_term = torch.mean(torch.sum(h_e_real**2, -1) + torch.sum(h_e_img**2, -1) + torch.sum(r_e_real**2,-1)
                                 + torch.sum(r_e_img**2, -1) + torch.sum(t_e_real**2, -1) + torch.sum(t_e_img**2, -1))
-        return self.config.lmbda*regul_term
+        return self.lmbda*regul_term
 
 
 class ComplexN3(Complex):
@@ -198,8 +201,8 @@ class ComplexN3(Complex):
 
     """
 
-    def __init__(self, config):
-        super(ComplexN3, self).__init__(config)
+    def __init__(self, **kwargs):
+        super(ComplexN3, self).__init__(**kwargs)
         self.model_name = 'complexn3'
 
     def get_reg(self, h, r, t):
@@ -207,7 +210,7 @@ class ComplexN3(Complex):
         regul_term = torch.mean(torch.sum(h_e_real.abs()**3, -1) + torch.sum(h_e_img.abs()**3, -1)
                               + torch.sum(r_e_real.abs()**3, -1) + torch.sum(r_e_img.abs()**3, -1)
                               + torch.sum(t_e_real.abs()**3, -1) + torch.sum(t_e_img.abs()**3, -1))
-        return self.config.lmbda*regul_term
+        return self.lmbda*regul_term
 
 
 class ConvKB(PointwiseModel):
@@ -234,13 +237,18 @@ class ConvKB(PointwiseModel):
         .. _A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network:
             https://www.aclweb.org/anthology/N18-2053
     """
-
-    def __init__(self, config):
-        super(ConvKB, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+    def __init__(self, **kwargs):
+        super(ConvKB, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "num_filters", "filter_sizes"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+                
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
+        num_filters = self.num_filters
+        filter_sizes = self.filter_sizes
+        device = kwargs["device"]
 
         self.ent_embeddings = nn.Embedding(num_total_ent, k)
         self.rel_embeddings = nn.Embedding(num_total_rel, k)
@@ -252,8 +260,8 @@ class ConvKB(PointwiseModel):
             NamedEmbedding(self.rel_embeddings, "rel_embedding"),
         ]
 
-        self.conv_list = [nn.Conv2d(1, self.config.num_filters, (3, filter_size), stride=(1, 1)).to(self.config.device) for filter_size in self.config.filter_sizes]
-        conv_out_dim = self.config.num_filters*sum([(self.config.hidden_size-filter_size+1) for filter_size in self.config.filter_sizes])
+        self.conv_list = [nn.Conv2d(1, num_filters, (3, filter_size), stride=(1, 1)).to(device) for filter_size in filter_sizes]
+        conv_out_dim = num_filters*sum([(k-filter_size+1) for filter_size in filter_sizes])
         self.fc1 = nn.Linear(in_features=conv_out_dim, out_features=1, bias=True)
 
     def embed(self, h, r, t):
@@ -292,17 +300,20 @@ class ConvKB(PointwiseModel):
 
 
 class CP(PointwiseModel):
-
-    def __init__(self, config):
-        super(CP, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+    def __init__(self, **kwargs):
+        super(CP, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+                
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
 
         self.sub_embeddings = nn.Embedding(num_total_ent, k)
         self.rel_embeddings = nn.Embedding(num_total_rel, k)
         self.obj_embeddings = nn.Embedding(num_total_ent, k)
+
         nn.init.xavier_uniform_(self.sub_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.obj_embeddings.weight)
@@ -342,7 +353,7 @@ class CP(PointwiseModel):
         else:
             raise NotImplementedError('Unknown regularizer type: %s' % type)
 
-        return self.config.lmbda * regul_term
+        return self.lmbda * regul_term
 
 
 class DistMult(PointwiseModel):
@@ -367,13 +378,15 @@ class DistMult(PointwiseModel):
             https://arxiv.org/pdf/1412.6575.pdf
 
     """
-
-    def __init__(self, config):
-        super(DistMult, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+    def __init__(self, **kwargs):
+        super(DistMult, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+      
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
 
         self.ent_embeddings = nn.Embedding(num_total_ent, k)
         self.rel_embeddings = nn.Embedding(num_total_rel, k)
@@ -409,22 +422,28 @@ class DistMult(PointwiseModel):
     def get_reg(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)
         regul_term = torch.mean(torch.sum(h_e**2, -1) + torch.sum(r_e**2, -1) + torch.sum(t_e**2,-1))
-        return self.config.lmbda*regul_term
+        return self.lmbda*regul_term
 
 
 class SimplE(PointwiseModel):
 
-    def __init__(self, config):
-        super(SimplE, self).__init__(self.__class__.__name__.lower(), config)
+    def __init__(self, **kwargs):
+        super(SimplE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
         
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
+        self.tot_train_triples = kwargs['tot_train_triples']
+        self.batch_size = kwargs['batch_size']
 
         self.ent_head_embeddings = nn.Embedding(num_total_ent, k)
         self.ent_tail_embeddings = nn.Embedding(num_total_ent, k)
         self.rel_embeddings = nn.Embedding(num_total_rel, k)
         self.rel_inv_embeddings = nn.Embedding(num_total_rel, k)
+
         nn.init.xavier_uniform_(self.ent_head_embeddings.weight)
         nn.init.xavier_uniform_(self.ent_tail_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
@@ -464,10 +483,10 @@ class SimplE(PointwiseModel):
         return -torch.clamp(init, -20, 20)
 
     def get_reg(self, h, r, t):
-        num_batch = math.ceil(self.config.kg_meta.tot_train_triples / self.config.batch_size)
+        num_batch = math.ceil(self.tot_train_triples / self.batch_size)
         regul_term = (self._get_l2_loss(self.ent_head_embeddings) + self._get_l2_loss(self.ent_tail_embeddings) +
                       self._get_l2_loss(self.rel_embeddings) + self._get_l2_loss(self.rel_inv_embeddings)) / num_batch**2
-        return self.config.lmbda * regul_term
+        return self.lmbda * regul_term
 
     @staticmethod
     def _get_l2_loss(embeddings):
@@ -476,8 +495,8 @@ class SimplE(PointwiseModel):
 
 class SimplE_ignr(SimplE):
 
-    def __init__(self, config):
-        super(SimplE_ignr, self).__init__(config)
+    def __init__(self, **kwargs):
+        super(SimplE_ignr, self).__init__(**kwargs)
         self.model_name = 'simple_ignr'
 
     def embed(self, h, r, t):
