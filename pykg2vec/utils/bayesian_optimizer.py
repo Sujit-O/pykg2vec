@@ -3,11 +3,8 @@
 """
 This module is for performing bayesian optimization on algorithms
 """
-import importlib
-
 from hyperopt import fmin, tpe, Trials, STATUS_OK, space_eval
 import pandas as pd
-
 
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
@@ -51,7 +48,7 @@ class BaysOptimizer(object):
         
         self.config_obj, self.model_obj = Importer().import_model_config(self.model_name.lower())
         self.config_local = self.config_obj(self.kge_args)
-        self.hyper_params = Importer().import_hyperparam_config(self.model_name.lower())()
+        self.hyper_params = Importer().import_hyperparam(self.model_name.lower())()
         self.search_space = self.hyper_params.search_space
         
     def optimize(self):
@@ -91,11 +88,10 @@ class BaysOptimizer(object):
         # copy the hyperparameters to trainer config and hyperparameter set. 
         for key, value in params.items():
           self.config_local.__dict__[key] = value
-          self.config_local.hyperparameters[key] = value
 
-        model = self.model_obj(self.config_local)
+        model = self.model_obj(**self.config_local.__dict__)
 
-        self.trainer = Trainer(model)
+        self.trainer = Trainer(model, self.config_local)
 
         # configure common setting for a tuning training. 
         self.config_local.disp_result = False
@@ -107,8 +103,7 @@ class BaysOptimizer(object):
             self.config_local.test_num = 1000
 
         if self.kge_args.debug:
-          self.config_local.epochs = 1
-          self.config_local.hyperparameters['epochs'] = 1
+            self.config_local.epochs = 1
 
         # start the trial.
         self.trainer.build_model()

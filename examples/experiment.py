@@ -16,7 +16,7 @@ For example, we attached experiment.py (adjust it for your own usage) below for 
 
 
 from pykg2vec.data.kgcontroller import KnowledgeGraph
-from pykg2vec.config import Importer, KGEArgParser
+from pykg2vec.common import Importer, KGEArgParser
 from pykg2vec.utils.trainer import Trainer
 
 
@@ -35,7 +35,7 @@ def experiment(model_name):
     model = model_def(config)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model)
+    trainer = Trainer(model, config)
     trainer.build_model()
     trainer.train_model()
 

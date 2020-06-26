@@ -3,13 +3,24 @@
 Programming Examples
 =====================================
 
-We developed `several programming examples`__ for users to start working with pykg2vec, including:
+We developed `several programming examples`__ for users to start working with pykg2vec.
+The examples are in /examples folder. ::
+
+    (pykg2vec) $ cd ./examples
+    # train TransE using benchmark dataset fb15k
+    (pykg2vec) $ python train.py -mn transe -ds fb15k
+    # train and tune TransE using benchmark dataset fb15k
+    (pykg2vec) $ python tune_model.py -mn TransE -ds fb15k
+
+Please go through the examples for more advanced usages:
 
 - Work with one KGE method (train.py_)
 - Automatic Hyperparameter Discovery (tune_model.py_)
 - Inference task for one KGE method (inference.py_)
 - Train multiple algorithms: (experiment.py_)
 - Full pykg2vec pipeline: (kgpipeline.py_)
+
+
 
 ====
 

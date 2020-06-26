@@ -61,9 +61,6 @@ class KGEArgParser:
     Attributes:
         general_group (object): It parses the general arguements used by most of the modules.
         general_hyper_group (object): It parses the arguments for the hyper-parameter tuning.
-        SME_group (object): It parses the arguments for SME and KG2E algorithms.
-        conv_group (object): It parses the arguments for convE algorithms.
-        misc_group (object): It prases other necessary arguments.
     
     Examples:
         >>> from pykg2vec.config import KGEArgParser
@@ -73,58 +70,32 @@ class KGEArgParser:
     def __init__(self):
         self.parser = ArgumentParser(description='Knowledge Graph Embedding tunable configs.')
 
-        
-        ''' arguments regarding TransG '''
-        self.TransG_group = self.parser.add_argument_group('TransG function selection')
-        self.TransG_group.add_argument('-th', dest='training_threshold', default=3.5, type=float, help="Training Threshold for updateing the clusters.")
-        self.TransG_group.add_argument('-nc', dest='ncluster', default=4, type=int, help="Number of clusters")
-        self.TransG_group.add_argument('-crp', dest='crp_factor', default=0.01, type=float, help="Chinese Restaurant Process Factor.")
-        self.TransG_group.add_argument('-stb', dest='step_before', default=10, type=int, help="Steps before")
-        self.TransG_group.add_argument('-wn', dest='weight_norm', default=False, type=lambda x: (str(x).lower() == 'true'), help="normalize the weights!")
-
-        ''' arguments regarding SME and KG2E '''
-        self.SME_group = self.parser.add_argument_group('SME KG2E function selection')
-        self.SME_group.add_argument('-func', dest='function', default='bilinear', type=str, help="The name of function used in SME model.")
-        self.SME_group.add_argument('-cmax', dest='cmax', default=0.05, type=float, help="The parameter for clipping values for KG2E.")
-        self.SME_group.add_argument('-cmin', dest='cmin', default=5.00, type=float, help="The parameter for clipping values for KG2E.")
-
-        ''' for conve '''
-        self.conv_group = self.parser.add_argument_group('ConvE specific Hyperparameters')
-        self.conv_group.add_argument('-fmd', dest='feature_map_dropout', default=0.2, type=float, help="feature map dropout value used in ConvE.")
-        self.conv_group.add_argument('-idt', dest="input_dropout", default=0.3, type=float, help="input dropout value used in ConvE.")
-        self.conv_group.add_argument('-hdt', dest="hidden_dropout", default=0.3, type=float, help="hidden dropout value used in ConvE.")
-        self.conv_group.add_argument('-lbs', dest='label_smoothing', default=0.1, type=float, help="The parameter used in label smoothing.")
-
-        '''for convKB'''
-        self.convkb_group = self.parser.add_argument_group('ConvKB specific Hyperparameters')
-        self.convkb_group.add_argument('-fsize', dest='filter_sizes', default=[1,2,3],nargs='+', type=int, help='Filter sizes to be used in convKB which acts as the widths of the kernals')
-        self.convkb_group.add_argument('-fnum', dest='num_filters', default=50, type=int, help='Filter numbers to be used in convKB')
-
-        '''for RotatE'''
-        self.rotate_group = self.parser.add_argument_group('RotatE specific Hyperparameters')
-        self.rotate_group.add_argument('-al', dest='alpha', default=0.1, type=float, help='The alpha used in self-adversarial negative sampling.')
-
-        ''' arguments regarding hyperparameters '''
+        ''' argument group for hyperparameters '''
         self.general_hyper_group = self.parser.add_argument_group('Generic Hyperparameters')
-        self.general_hyper_group.add_argument('-lmda', dest='lmbda', default=0.1, type=float, help='The lmbda for regularization.')
-        self.general_hyper_group.add_argument('-b',   dest='batch_training', default=128, type=int, help='training batch size')
+        self.general_hyper_group.add_argument('-lmda',dest='lmbda', default=0.1, type=float, help='The lmbda for regularization.')
+        self.general_hyper_group.add_argument('-b',   dest='batch_size', default=128, type=int, help='training batch size')
         self.general_hyper_group.add_argument('-mg',  dest='margin', default=0.8, type=float, help='Margin to take')
         self.general_hyper_group.add_argument('-opt', dest='optimizer', default='adam', type=str, help='optimizer to be used in training.')
         self.general_hyper_group.add_argument('-s',   dest='sampling', default='uniform', type=str, help='strategy to do negative sampling.')
-        self.general_hyper_group.add_argument('-ngr', dest='negrate', default=1, type=int, help='The number of negative samples generated per positve one.')
+        self.general_hyper_group.add_argument('-ngr', dest='neg_rate', default=1, type=int, help='The number of negative samples generated per positve one.')
         self.general_hyper_group.add_argument('-l',   dest='epochs', default=100, type=int, help='The total number of Epochs')
         self.general_hyper_group.add_argument('-lr',  dest='learning_rate', default=0.01, type=float,help='learning rate')
         self.general_hyper_group.add_argument('-k',   dest='hidden_size', default=50, type=int,help='Hidden embedding size.')
         self.general_hyper_group.add_argument('-km',  dest='ent_hidden_size', default=50, type=int, help="Hidden embedding size for entities.")
         self.general_hyper_group.add_argument('-kr',  dest='rel_hidden_size', default=50, type=int, help="Hidden embedding size for relations.")
         self.general_hyper_group.add_argument('-k2',  dest='hidden_size_1', default=10, type=int, help="Hidden embedding size for relations.")
-
         self.general_hyper_group.add_argument('-l1',  dest='l1_flag', default=True, type=lambda x: (str(x).lower() == 'true'),help='The flag of using L1 or L2 norm.')
-
-        ''' working environments '''
-        self.environment_group = self.parser.add_argument_group('Working Environments')
-        self.environment_group.add_argument('-gp',  dest='gpu_frac', default=0.8, type=float, help='GPU fraction to use')
-        self.environment_group.add_argument('-npg', dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
+        self.general_hyper_group.add_argument('-al',  dest='alpha', default=0.1, type=float, help='The alpha used in self-adversarial negative sampling.')
+        self.general_hyper_group.add_argument('-fsize',dest='filter_sizes', default=[1,2,3],nargs='+', type=int, help='Filter sizes to be used in convKB which acts as the widths of the kernals')
+        self.general_hyper_group.add_argument('-fnum',dest='num_filters', default=50, type=int, help='Filter numbers to be used in convKB')
+        self.general_hyper_group.add_argument('-fmd', dest='feature_map_dropout', default=0.2, type=float, help="feature map dropout value used in ConvE.")
+        self.general_hyper_group.add_argument('-idt', dest="input_dropout", default=0.3, type=float, help="input dropout value used in ConvE.")
+        self.general_hyper_group.add_argument('-hdt', dest="hidden_dropout", default=0.3, type=float, help="hidden dropout value used in ConvE.")
+        self.general_hyper_group.add_argument('-hdt1', dest="hidden_dropout1", default=0.4, type=float, help="hidden dropout value used in TuckER.")
+        self.general_hyper_group.add_argument('-hdt2', dest="hidden_dropout2", default=0.5, type=float, help="hidden dropout value used in TuckER.")
+        self.general_hyper_group.add_argument('-lbs', dest='label_smoothing', default=0.1, type=float, help="The parameter used in label smoothing.")
+        self.general_hyper_group.add_argument('-cmax', dest='cmax', default=0.05, type=float, help="The parameter for clipping values for KG2E.")
+        self.general_hyper_group.add_argument('-cmin', dest='cmin', default=5.00, type=float, help="The parameter for clipping values for KG2E.")
 
         ''' basic configs '''
         self.general_group = self.parser.add_argument_group('Generic')
@@ -143,6 +114,8 @@ class KGEArgParser:
         self.general_group.add_argument('-plote', dest='plot_embedding', default=False,type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.general_group.add_argument('-plot',  dest='plot_entity_only', default=False,type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.general_group.add_argument('-device',dest='device', default='cpu', type=str, choices=['cpu', 'cuda'], help="Device to run pykg2vec (cpu or cuda).")
+        self.general_group.add_argument('-npg',   dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
+
 
     def get_args(self, args):
       """This function parses the necessary arguments.
@@ -178,9 +151,9 @@ class HyperparamterLoader:
           'proje_po': {'learning_rate':  0.01,'hidden_dropout': 0.5, 'hidden_size':200,'batch_size':200,' epochs':100, 'optimizer':'adam','lmbda':0.00001},
           'conve'   : {'learning_rate': 0.003,'optimizer':'adam', 'label_smoothing':0.1, 'batch_size':128, 'hidden_size':200, 'hidden_size_1':20, 'input_dropout':0.2, 'feature_map_dropout':0.2, 'hidden_dropout':0.3,'neg_rate':0},
           'convkb'  : {'lmbda': 0.001,'filter_sizes':[1,2],'num_filters':50,'learning_rate': 0.0001,'optimizer':'adam','hidden_size': 100,'batch_size': 128,'epochs':200,'neg_rate':1},
-          'cp': {'learning_rate': 0.01, 'hidden_size': 50, 'batch_size': 128, 'epochs': 50, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.0001},
-          'analogy': {'learning_rate': 0.1, 'hidden_size': 200, 'batch_size': 128, 'epochs': 500, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.0001},
-          'simple': {'learning_rate': 0.05, 'hidden_size': 100, 'batch_size': 128, 'epochs': 1000, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.1}
+          'cp'      : {'learning_rate': 0.01, 'hidden_size': 50, 'batch_size': 128, 'epochs': 50, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.0001},
+          'analogy' : {'learning_rate': 0.1, 'hidden_size': 200, 'batch_size': 128, 'epochs': 500, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.0001},
+          'simple'  : {'learning_rate': 0.05, 'hidden_size': 100, 'batch_size': 128, 'epochs': 1000, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.1}
         }
       }
 
@@ -249,32 +222,6 @@ class Importer:
                          "transr": "pairwise.TransR",
                          "tucker": "projection.TuckER"}
 
-        self.configMap = {"analogy": "ANALOGYConfig",
-                          "complex": "ComplexConfig",
-                          "complexn3": "ComplexConfig",
-                          "conve": "ConvEConfig",
-                          "convkb": "ConvKBConfig",
-                          "cp": "CPConfig",
-                          "hole": "HoLEConfig",
-                          "distmult": "DistMultConfig",
-                          "kg2e": "KG2EConfig",
-                          "kg2e_el": "KG2EConfig",
-                          "ntn": "NTNConfig",
-                          "proje_pointwise": "ProjE_pointwiseConfig",
-                          "rescal": "RescalConfig",
-                          "rotate": "RotatEConfig",
-                          "simple": "SimplEConfig",
-                          "simple_ignr": "SimplEConfig",
-                          "slm": "SLMConfig",
-                          "sme": "SMEConfig",
-                          "sme_bl": "SMEConfig",
-                          "transd": "TransDConfig",
-                          "transe": "TransEConfig",
-                          "transg": "TransGConfig",
-                          "transh": "TransHConfig",
-                          "transm": "TransMConfig",
-                          "transr": "TransRConfig",
-                          "tucker": "TuckERConfig"}
         
         self.hyperparamMap = {"analogy": "ANALOGYParams",
                               "complex": "ComplexParams",
@@ -296,20 +243,19 @@ class Importer:
                               "sme_bl": "SMEParams",
                               "transd": "TransDParams",
                               "transe": "TransEParams",
-                              "transg": "TransGParams",
                               "transh": "TransHParams",
                               "transm": "TransMParams",
                               "transr": "TransRParams",
                               "tucker": "TuckERParams"}
 
-    def import_hyperparam_config(self, name):
+    def import_hyperparam(self, name):
         hyper_obj = None 
 
         try:
             hyper_obj = getattr(importlib.import_module(self.hyper_path), self.hyperparamMap[name])
           
         except ModuleNotFoundError:
-            self._logger.error("%s model  has not been implemented. please select from: %s" % (
+            self._logger.error("%s model has not been implemented. please select from: %s" % (
             name, ' '.join(map(str, self.hyperparamMap.values()))))
 
         return hyper_obj
@@ -332,10 +278,9 @@ class Importer:
         Raises:
           ModuleNotFoundError: It raises a module not found error if the configuration or the model cannot be found.
         """
-        config_obj = None
+        config_obj = getattr(importlib.import_module(self.config_path), "Config")
         model_obj = None
         try:
-            config_obj = getattr(importlib.import_module(self.config_path), self.configMap[name])
             splited_path = self.modelMap[name].split('.')
             model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % splited_path[0]), splited_path[1])
 

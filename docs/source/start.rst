@@ -44,7 +44,11 @@ All dependent packages (requirements.txt_) will be installed automatically when 
     (pykg2vec) $ cd pykg2vec
     (pykg2vec) $ python setup.py install
 
-4. **Validate the Installation**: try the examples under /examples folder.
+4. **Validate the Installation**: try the examples under /examples folder. ::
+
+    (pykg2vec) $ cd ./examples
+    # train TransE using benchmark dataset fb15k
+    (pykg2vec) $ python train.py -mn transe -ds fb15k
 
 .. _GitHub: https://github.com/Sujit-O/pykg2vec/pulls
 .. _pytorch: https://pytorch.org/

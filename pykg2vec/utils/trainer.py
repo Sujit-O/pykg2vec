@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import timeit, os, warnings
+import os, warnings
 warnings.filterwarnings('ignore')
 
 import torch
@@ -20,6 +20,15 @@ from tqdm import tqdm
 
 class EarlyStopper:
     
+    """ Class used by trainer for handling the early stopping mechanism during the training of KGE algorithms.
+
+        Args:
+            patience (int): Number of epochs to wait before early stopping the training on no improvement.
+            No early stopping if it is a negative number (default: {-1}).
+            monitor (Monitor): the type of metric that earlystopper will monitor.
+
+    """
+
     _logger = Logger().get_logger(__name__)
 
     def __init__(self, patience, monitor):
@@ -61,14 +70,10 @@ class EarlyStopper:
 
 
 class Trainer:
-    """Class for handling the training of the algorithms.
+    """ Class for handling the training of the algorithms.
 
         Args:
-            model (object): Model object
-            debug (bool): Flag to check if its debugging
-            tuning (bool): Flag to denoting tuning if True
-            patience (int): Number of epochs to wait before early stopping the training on no improvement.
-            No early stopping if it is a negative number (default: {-1}).
+            model (object): KGE model object
 
         Examples:
             >>> from pykg2vec.utils.trainer import Trainer
@@ -79,9 +84,9 @@ class Trainer:
     """
     _logger = Logger().get_logger(__name__)
 
-    def __init__(self, model):
+    def __init__(self, model, config):
         self.model = model
-        self.config = model.config
+        self.config = config
 
         self.training_results = []
 
@@ -115,7 +120,6 @@ class Trainer:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
 
         self.config.summary()
-        self.config.summary_hyperparameter(self.model.model_name)
 
         self.early_stopper = EarlyStopper(self.config.patience, Monitor.FILTERED_MEAN_RANK)
 
@@ -148,8 +152,8 @@ class Trainer:
     def train_step_projection(self, h, r, t, hr_t, tr_h):
         if self.model.model_name.lower() == "conve" or self.model.model_name.lower() == "tucker":
             if hasattr(self.config, 'label_smoothing'):
-                hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
-                tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.kg_meta.tot_entity
+                hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.tot_entity
+                tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.tot_entity
 
             pred_tails = self.model(h, r, direction="tail")  # (h, r) -> hr_t forward
             pred_heads = self.model(t, r, direction="head")  # (t, r) -> tr_h backward
@@ -182,10 +186,10 @@ class Trainer:
 
     def train_model(self, monitor=Monitor.FILTERED_MEAN_RANK):
         """Function to train the model."""
-        self.generator = Generator(self.model)
-        self.evaluator = Evaluator(self.model)
+        self.generator = Generator(self.model, self.config)
+        self.evaluator = Evaluator(self.model, self.config)
 
-        if self.config.loadFromData:
+        if self.config.load_from_data:
             self.load_model()
         
         for cur_epoch_idx in range(self.config.epochs):
@@ -215,10 +219,6 @@ class Trainer:
         if self.config.disp_result:
             self.display()
 
-        if self.config.disp_summary:
-            self.config.summary()
-            self.config.summary_hyperparameter(self.model.model_name)
-
         self.export_embeddings()
 
         return cur_epoch_idx # the runned epoches.
@@ -227,8 +227,8 @@ class Trainer:
         """Function to tune the model."""
         current_loss = float("inf")
 
-        self.generator = Generator(self.model)
-        self.evaluator = Evaluator(self.model, tuning=True)
+        self.generator = Generator(self.model, self.config)
+        self.evaluator = Evaluator(self.model, self.config, tuning=True)
        
         for cur_epoch_idx in range(self.config.epochs):
             current_loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
@@ -243,7 +243,7 @@ class Trainer:
         """Function to train the model for one epoch."""
         acc_loss = 0
 
-        num_batch = self.model.config.kg_meta.tot_train_triples // self.config.batch_size if not self.config.debug else 10
+        num_batch = self.config.tot_train_triples // self.config.batch_size if not self.config.debug else 10
        
         self.generator.start_one_epoch(num_batch)
         
@@ -294,7 +294,7 @@ class Trainer:
         self.build_model()
         self.load_model()
 
-        self.evaluator = Evaluator(self.model)
+        self.evaluator = Evaluator(self.model, self.config)
         self._logger.info("""The training/loading of the model has finished!
                                     Now enter interactive mode :)
                                     -----
@@ -317,8 +317,8 @@ class Trainer:
         logs = [""]
         logs.append("(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])))
         logs.append("")
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs.append("head: %s" % idx2ent[h])
         logs.append("relation: %s" % idx2rel[r])
 
@@ -333,8 +333,8 @@ class Trainer:
         logs = [""]
         logs.append("(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])))
         logs.append("")
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs.append("tail: %s" % idx2ent[t])
         logs.append("relation: %s" % idx2rel[r])
 
@@ -353,8 +353,8 @@ class Trainer:
         logs = [""]
         logs.append("(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])))
         logs.append("")
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+        idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs.append("head: %s" % idx2ent[h])
         logs.append("tail: %s" % idx2ent[t])
 
@@ -385,15 +385,15 @@ class Trainer:
                     "ent_and_rel_plot": not self.config.plot_entity_only}
 
         if self.config.plot_embedding:
-            viz = Visualization(model=self.model, vis_opts = options)
+            viz = Visualization(self.model, self.config, vis_opts = options)
             viz.plot_embedding(resultpath=self.config.path_figures, algos=self.model.model_name, show_label=False)
 
         if self.config.plot_training_result:
-            viz = Visualization(model=self.model)
+            viz = Visualization(self.model, self.config)
             viz.plot_train_result()
 
         if self.config.plot_testing_result:
-            viz = Visualization(model=self.model)
+            viz = Visualization(self.model, self.config)
             viz.plot_test_result()
     
     def export_embeddings(self):
@@ -408,13 +408,8 @@ class Trainer:
         save_path = self.config.path_embeddings / self.model.model_name
         save_path.mkdir(parents=True, exist_ok=True)
         
-        idx2ent = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-        idx2rel = self.model.config.knowledge_graph.read_cache_data('idx2relation')
-
-        series_ent = pd.Series(idx2ent)
-        series_rel = pd.Series(idx2rel)
-        series_ent.to_pickle(save_path / "ent_labels.pickle")
-        series_rel.to_pickle(save_path / "rel_labels.pickle")
+        idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
+        idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
 
         with open(str(save_path / "ent_labels.tsv"), 'w') as l_export_file:
             for label in idx2ent.values():
@@ -435,14 +430,11 @@ class Trainer:
                     for idx in all_ids:
                         v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
 
-                df = pd.DataFrame(all_embs)
-                df.to_pickle(save_path / ("%s.pickle" % stored_name))
-
     def save_training_result(self):
         """Function that saves training result"""
-        files = os.listdir(str(self.model.config.path_result))
+        files = os.listdir(str(self.config.path_result))
         l = len([f for f in files if self.model.model_name in f if 'Training' in f])
         df = pd.DataFrame(self.training_results, columns=['Epochs', 'Loss'])
-        with open(str(self.model.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
+        with open(str(self.config.path_result / (self.model.model_name + '_Training_results_' + str(l) + '.csv')),
                   'w') as fh:
             df.to_csv(fh)

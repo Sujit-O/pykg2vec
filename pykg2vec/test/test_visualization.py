@@ -33,7 +33,7 @@ def test_visualization(tmpdir):
     config.path_figures = result_path_dir
     config.path_result = result_path_dir
 
-    trainer = Trainer(model=model_def(config))
+    trainer = Trainer(model_def(**config.__dict__), config)
     trainer.build_model()
     trainer.train_model()
 

@@ -53,4 +53,3 @@ class Logger(Singleton):
     def level(self, value):
         for name in self._loggers:
             self._loggers[name].setLevel(value)
-

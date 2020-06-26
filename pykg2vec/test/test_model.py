@@ -63,10 +63,10 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     if channels:
         config.channels = channels
 
-    model = model_def(config)
+    model = model_def(**config.__dict__)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model)
+    trainer = Trainer(model, config)
     trainer.build_model()
     trainer.train_model()
 

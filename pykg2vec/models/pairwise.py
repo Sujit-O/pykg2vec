@@ -9,21 +9,19 @@ from pykg2vec.models.Domain import NamedEmbedding
 
 
 class TransE(PairwiseModel):
-    """ `Translating Embeddings for Modeling Multi-relational Data`_
-
-        TransE is an energy based model which represents the
-        relationships as translations in the embedding space. Which
-        means that if (h,l,t) holds then the embedding of the tail
+    """ 
+        `Translating Embeddings for Modeling Multi-relational Data`_ (TransE) 
+        is an energy based model which represents the relationships as translations in the embedding space. 
+        Specifically, it assumes that if a fact (h, r, t) holds then the embedding of the tail 't' 
+        should be close to the embedding of head entity 'h' plus some vector that 
+        depends on the relationship 'r'.
+        Which means that if (h,r,t) holds then the embedding of the tail
         't' should be close to the embedding of head entity 'h'
-        plus some vector that depends on the relationship 'l'.
-        Both entities and relations are vectors in the same space.
+        plus some vector that depends on the relationship 'r'.
+        In TransE, both entities and relations are vectors in the same space
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
 
         Examples:
             >>> from pykg2vec.models.TransE import TransE
@@ -41,14 +39,17 @@ class TransE(PairwiseModel):
 
         .. _Translating Embeddings for Modeling Multi-relational Data:
             http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-rela
+
     """
 
-    def __init__(self, config):
-
-        super(TransE, self).__init__(self.__class__.__name__.lower(), config)
+    def __init__(self, **kwargs):
+        super(TransE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "l1_flag"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
         
-        self.ent_embeddings = nn.Embedding(self.config.kg_meta.tot_entity, self.config.hidden_size)
-        self.rel_embeddings = nn.Embedding(self.config.kg_meta.tot_relation, self.config.hidden_size)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
@@ -74,7 +75,7 @@ class TransE(PairwiseModel):
         norm_r_e = F.normalize(r_e, p=2, dim=-1)
         norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
-        if self.config.L1_flag:
+        if self.l1_flag:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
@@ -98,20 +99,20 @@ class TransE(PairwiseModel):
 
 
 class TransH(PairwiseModel):
-    """ `Knowledge Graph Embedding by Translating on Hyperplanes`_
-
+    """ 
+        `Knowledge Graph Embedding by Translating on Hyperplanes`_ (TransH) follows the general principle 
+        of the TransE. However, compared to it, it introduces relation-specific hyperplanes. 
+        The entities are represented as vecotrs just like in TransE, 
+        however, the relation is modeled as a vector on its own hyperplane with a normal vector. 
+        The entities are then projected to the relation hyperplane to calculate the loss.
         TransH models a relation as a hyperplane together with a translation operation on it.
         By doing this, it aims to preserve the mapping properties of relations such as reflexive,
         one-to-many, many-to-one, and many-to-many with almost the same model complexity of TransE.
 
-         Args:
+        Args:
             config (object): Model configuration parameters.
 
-         Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-
-         Examples:
+        Examples:
             >>> from pykg2vec.models.TransH import TransH
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransH()
@@ -119,27 +120,27 @@ class TransH(PairwiseModel):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-         Portion of the code based on `OpenKE_TransH`_ and `thunlp_TransH`_.
+        Portion of the code based on `OpenKE_TransH`_ and `thunlp_TransH`_.
 
-         .. _OpenKE_TransH:
-             https://github.com/thunlp/OpenKE/blob/master/models/TransH.py
+        .. _OpenKE_TransH:
+            https://github.com/thunlp/OpenKE/blob/master/models/TransH.py
 
-         .. _thunlp_TransH:
-             https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
+        .. _thunlp_TransH:
+            https://github.com/thunlp/TensorFlow-TransX/blob/master/transH.py
 
-         .. _Knowledge Graph Embedding by Translating on Hyperplanes:
-             https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf
+        .. _Knowledge Graph Embedding by Translating on Hyperplanes:
+            https://pdfs.semanticscholar.org/2a3f/862199883ceff5e3c74126f0c80770653e05.pdf
     """
 
-    def __init__(self, config):
-        super(TransH, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
+    def __init__(self, **kwargs):
+        super(TransH, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "l1_flag"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, self.config.hidden_size)
-        self.rel_embeddings = nn.Embedding(num_total_rel, self.config.hidden_size)
-        self.w = nn.Embedding(num_total_rel, self.config.hidden_size)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
+        self.w = nn.Embedding(self.tot_relation, self.hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.w.weight)
@@ -157,7 +158,7 @@ class TransH(PairwiseModel):
         norm_r_e = F.normalize(r_e, p=2, dim=-1)
         norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
-        if self.config.L1_flag:
+        if self.l1_flag:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
@@ -192,18 +193,14 @@ class TransH(PairwiseModel):
 
 
 class TransD(PairwiseModel):
-    """ `Knowledge Graph Embedding via Dynamic Mapping Matrix`_
-
+    """ 
+        `Knowledge Graph Embedding via Dynamic Mapping Matrix`_ (TransD) is an improved version of TransR. 
+        For each triplet :math:`(h, r, t)`, it uses two mapping matrices :math:`M_{rh}`, :math:`M_{rt}` :math:`\in` :math:`R^{mn}` to project entities from entity space to relation space.
         TransD constructs a dynamic mapping matrix for each entity-relation pair by considering the diversity of entities and relations simultaneously.
         Compared with TransR/CTransR, TransD has fewer parameters and has no matrix vector multiplication.
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-            data_stats (object): Class object with knowlege graph statistics.
 
         Examples:
             >>> from pykg2vec.models.TransD import TransD
@@ -220,18 +217,19 @@ class TransD(PairwiseModel):
 
         .. _Knowledge Graph Embedding via Dynamic Mapping Matrix:
             https://www.aclweb.org/anthology/P15-1067
+
     """
 
-    def __init__(self, config):
-        super(TransD, self).__init__(self.__class__.__name__.lower(), config)
-        
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
+    def __init__(self, **kwargs):
+        super(TransD, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "rel_hidden_size", "ent_hidden_size", "l1_flag"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        self.ent_embeddings = nn.Embedding(self.config.kg_meta.tot_entity, d)
-        self.rel_embeddings = nn.Embedding(self.config.kg_meta.tot_relation, k)
-        self.ent_mappings = nn.Embedding(self.config.kg_meta.tot_entity, d)
-        self.rel_mappings = nn.Embedding(self.config.kg_meta.tot_relation, k)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.ent_hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.rel_hidden_size)
+        self.ent_mappings = nn.Embedding(self.tot_entity, self.ent_hidden_size)
+        self.rel_mappings = nn.Embedding(self.tot_relation, self.rel_hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.ent_mappings.weight)
@@ -289,25 +287,21 @@ class TransD(PairwiseModel):
         norm_r_e = F.normalize(r_e, p=2, dim=-1)
         norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
-        if self.config.L1_flag:
+        if self.l1_flag:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
 
 
 class TransM(PairwiseModel):
-    """ `Transition-based Knowledge Graph Embedding with Relational Mapping Properties`_
-
-        TransM is another line of research that improves TransE by relaxing the overstrict requirement of
+    """ 
+        `Transition-based Knowledge Graph Embedding with Relational Mapping Properties`_ (TransM)
+        is another line of research that improves TransE by relaxing the overstrict requirement of
         h+r ==> t. TransM associates each fact (h, r, t) with a weight theta(r) specific to the relation.
+        TransM helps to remove the the lack of flexibility present in TransE when it comes to mapping properties of triplets. It utilizes the structure of the knowledge graph via pre-calculating the distinct weight for each training triplet according to its relational mapping property.
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-            data_stats (object): Class object with knowlege graph statistics.
 
         Examples:
             >>> from pykg2vec.models.TransM import TransM
@@ -319,29 +313,28 @@ class TransM(PairwiseModel):
 
         .. _Transition-based Knowledge Graph Embedding with Relational Mapping Properties:
             https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
+
     """
+    def __init__(self, **kwargs):
+        super(TransM, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "l1_flag"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-    def __init__(self, config):
-        super(TransM, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-
-        rel_head = {x: [] for x in range(num_total_rel)}
-        rel_tail = {x: [] for x in range(num_total_rel)}
-        rel_counts = {x: 0 for x in range(num_total_rel)}
-        train_triples_ids = self.config.knowledge_graph.read_cache_data('triplets_train')
+        rel_head = {x: [] for x in range(self.tot_relation)}
+        rel_tail = {x: [] for x in range(self.tot_relation)}
+        rel_counts = {x: 0 for x in range(self.tot_relation)}
+        train_triples_ids = kwargs["knowledge_graph"].read_cache_data('triplets_train')
         for t in train_triples_ids:
             rel_head[t.r].append(t.h)
             rel_tail[t.r].append(t.t)
             rel_counts[t.r] += 1
 
-        theta = [1/np.log(2+rel_counts[x]/(1+len(rel_tail[x])) + rel_counts[x]/(1+len(rel_head[x]))) for x in range(num_total_rel)]
-        self.theta = torch.from_numpy(np.asarray(theta, dtype=np.float32)).to(self.config.device)
+        theta = [1/np.log(2+rel_counts[x]/(1+len(rel_tail[x])) + rel_counts[x]/(1+len(rel_head[x]))) for x in range(self.tot_relation)]
+        self.theta = torch.from_numpy(np.asarray(theta, dtype=np.float32)).to(kwargs["device"])
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
@@ -369,7 +362,7 @@ class TransM(PairwiseModel):
 
         r_theta = self.theta[r]
 
-        if self.config.L1_flag:
+        if self.l1_flag:
             return r_theta*torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return r_theta*torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
@@ -393,20 +386,14 @@ class TransM(PairwiseModel):
 
 
 class TransR(PairwiseModel):
-    """ `Learning Entity and Relation Embeddings for Knowledge Graph Completion`_
-
-        TranR is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
+    """ 
+        `Learning Entity and Relation Embeddings for Knowledge Graph Completion`_ (TransR) is a translation based knowledge graph embedding method. Similar to TransE and TransH, it also
         builds entity and relation embeddings by regarding a relation as translation from head entity to tail
         entity. However, compared to them, it builds the entity and relation embeddings in a separate entity
-        and relation spaces.
+        and relation spaces. Portion of the code based on `thunlp_transR`_.
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-            data_stats (object): Class object with knowlege graph statistics.
 
         Examples:
             >>> from pykg2vec.models.TransR import TransR
@@ -416,26 +403,22 @@ class TransR(PairwiseModel):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on `thunlp_transR`_.
-
-         .. _thunlp_transR:
-             https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
+        .. _thunlp_transR:
+            https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
 
         .. _Learning Entity and Relation Embeddings for Knowledge Graph Completion:
             http://nlp.csai.tsinghua.edu.cn/~lyk/publications/aaai2015_transr.pdf
     """
 
-    def __init__(self, config):
-        super(TransR, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.ent_hidden_size
-        d = self.config.rel_hidden_size
+    def __init__(self, **kwargs):
+        super(TransR, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "rel_hidden_size", "ent_hidden_size", "l1_flag"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, d)
-        self.rel_matrix = nn.Embedding(num_total_rel, k * d)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.ent_hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.rel_hidden_size)
+        self.rel_matrix = nn.Embedding(self.tot_relation, self.ent_hidden_size * self.rel_hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_matrix.weight)
@@ -447,14 +430,14 @@ class TransR(PairwiseModel):
         ]
 
     def transform(self, e, matrix):
-        matrix = matrix.view(-1, self.config.ent_hidden_size, self.config.rel_hidden_size)
+        matrix = matrix.view(-1, self.ent_hidden_size, self.rel_hidden_size)
         if e.shape[0] != matrix.shape[0]:
-            e = e.view(-1, matrix.shape[0], self.config.ent_hidden_size).permute(1, 0, 2)
+            e = e.view(-1, matrix.shape[0], self.ent_hidden_size).permute(1, 0, 2)
             e = torch.matmul(e, matrix).permute(1, 0, 2)
         else:
-            e = e.view(-1, 1, self.config.ent_hidden_size)
+            e = e.view(-1, 1, self.ent_hidden_size)
             e = torch.matmul(e, matrix)
-        return e.view(-1, self.config.rel_hidden_size)
+        return e.view(-1, self.rel_hidden_size)
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -508,25 +491,20 @@ class TransR(PairwiseModel):
         norm_r_e = F.normalize(r_e, p=2, dim=-1)
         norm_t_e = F.normalize(t_e, p=2, dim=-1)
 
-        if self.config.L1_flag:
+        if self.l1_flag:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=1, dim=-1)
         else:
             return torch.norm(norm_h_e + norm_r_e - norm_t_e, p=2, dim=-1)
 
 
 class SLM(PairwiseModel):
-    """`Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
-
+    """ 
+        In `Reasoning With Neural Tensor Networks for Knowledge Base Completion`_, 
         SLM model is designed as a baseline of Neural Tensor Network.
         The model constructs a nonlinear neural network to represent the score function.
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            data_stats (object): PairwiseModel object instance. It consists of the knowledge graph metadata.
-            model_name (str): Name of the model.
 
         Examples:
             >>> from pykg2vec.models.SLM import SLM
@@ -539,19 +517,16 @@ class SLM(PairwiseModel):
         .. _Reasoning With Neural Tensor Networks for Knowledge Base Completion:
             https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
     """
+    def __init__(self, **kwargs):
+        super(SLM, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "rel_hidden_size", "ent_hidden_size"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-    def __init__(self, config):
-        super(SLM, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
-
-        self.ent_embeddings = nn.Embedding(num_total_ent, d)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-        self.mr1 = nn.Embedding(d, k)
-        self.mr2 = nn.Embedding(d, k)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.ent_hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.rel_hidden_size)
+        self.mr1 = nn.Embedding(self.ent_hidden_size, self.rel_hidden_size)
+        self.mr2 = nn.Embedding(self.ent_hidden_size, self.rel_hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.mr1.weight)
@@ -602,52 +577,46 @@ class SLM(PairwiseModel):
 class SME(PairwiseModel):
     """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
 
-    Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
-    SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
-    entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
-    to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
+        Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
+        SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
+        entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
+        to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
 
-    There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
+        There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
 
-    Args:
-        config (object): Model configuration parameters.
+        Args:
+            config (object): Model configuration parameters.
 
-    Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
-        data_stats (object): Class object with knowlege graph statistics.
+        Examples:
+            >>> from pykg2vec.models.SME import SME
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = SME()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    Examples:
-        >>> from pykg2vec.models.SME import SME
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = SME()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
-
-    Portion of the code based on glorotxa_.
+        Portion of the code based on glorotxa_.
     
-    .. _glorotxa: https://github.com/glorotxa/SME/blob/master/model.py
+        .. _glorotxa: https://github.com/glorotxa/SME/blob/master/model.py
 
-    .. _A Semantic Matching Energy Function for Learning with Multi-relational Data: http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
-    
+        .. _A Semantic Matching Energy Function for Learning with Multi-relational Data: http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
+
     """
 
-    def __init__(self, config):
-        super(SME, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+    def __init__(self, **kwargs):
+        super(SME, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-        self.mu1 = nn.Embedding(k, k)
-        self.mu2 = nn.Embedding(k, k)
-        self.bu = nn.Embedding(k, 1)
-        self.mv1 = nn.Embedding(k, k)
-        self.mv2 = nn.Embedding(k, k)
-        self.bv = nn.Embedding(k, 1)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
+        self.mu1 = nn.Embedding(self.hidden_size, self.hidden_size)
+        self.mu2 = nn.Embedding(self.hidden_size, self.hidden_size)
+        self.bu = nn.Embedding(self.hidden_size, 1)
+        self.mv1 = nn.Embedding(self.hidden_size, self.hidden_size)
+        self.mv2 = nn.Embedding(self.hidden_size, self.hidden_size)
+        self.bv = nn.Embedding(self.hidden_size, 1)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.mu1.weight)
@@ -738,40 +707,25 @@ class SME(PairwiseModel):
 
 class SME_BL(SME):
     """ `A Semantic Matching Energy Function for Learning with Multi-relational Data`_
+        
+        SME_BL is an extension of SME_ that BiLinear function to calculate the matching scores. 
 
-    Semantic Matching Energy (SME) is an algorithm for embedding multi-relational data into vector spaces.
-    SME conducts semantic matching using neural network architectures. Given a fact (h, r, t), it first projects
-    entities and relations to their embeddings in the input layer. Later the relation r is combined with both h and t
-    to get gu(h, r) and gv(r, t) in its hidden layer. The score is determined by calculating the matching score of gu and gv.
+        Args:
+            config (object): Model configuration parameters.
 
-    There are two versions of SME: a linear version(SMELinear) as well as bilinear(SMEBilinear) version which differ in how the hidden layer is defined.
+        Examples:
+            >>> from pykg2vec.models.SME import SME
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = SME_BL()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+        
+        .. _`SME`: api.html#pykg2vec.models.pairwise.SME
 
-    Args:
-        config (object): Model configuration parameters.
-
-    Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
-        data_stats (object): Class object with knowlege graph statistics.
-
-    Examples:
-        >>> from pykg2vec.models.SME import SME
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = SME()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
-
-    Portion of the code based on glorotxa_.
-    
-    .. _glorotxa: https://github.com/glorotxa/SME/blob/master/model.py
-
-    .. _A Semantic Matching Energy Function for Learning with Multi-relational Data: http://www.thespermwhale.com/jaseweston/papers/ebrm_mlj.pdf
-    
     """
-
-    def __init__(self, config):
-        super(SME_BL, self).__init__(config)
+    def __init__(self, **kwargs):
+        super(SME_BL, self).__init__(**kwargs)
         self.model_name = self.__class__.__name__.lower()
 
     def _gu_bilinear(self, h, r):
@@ -822,20 +776,15 @@ class SME_BL(SME):
 
 
 class RotatE(PairwiseModel):
-    """ `Rotate-Knowledge graph embedding by relation rotation in complex space`_
-
-        RotatE models the entities and the relations in the complex vector space.
+    """ 
+        `Rotate-Knowledge graph embedding by relation rotation in complex space`_ (RotatE)
+        models the entities and the relations in the complex vector space.
         The translational relation in RotatE is defined as the element-wise 2D
         rotation in which the head entity h will be rotated to the tail entity t by
         multiplying the unit-length relation r in complex number form.
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            data_stats (object): PairwiseModel object instance. It consists of the knowledge graph metadata.
-            model_name (str): Name of the model.
 
         Examples:
             >>> from pykg2vec.models.RotatE import RotatE
@@ -849,18 +798,17 @@ class RotatE(PairwiseModel):
             https://openreview.net/pdf?id=HkgEQnRqYQ
     """
 
-    def __init__(self, config):
-        super(RotatE, self).__init__(self.__class__.__name__.lower(), config)
+    def __init__(self, **kwargs):
+        super(RotatE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "margin"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
+        self.embedding_range = (self.margin + 2.0) / self.hidden_size
 
-        k = self.config.hidden_size
-        self.embedding_range = (self.config.margin + 2.0) / k
-
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.ent_embeddings_imag = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.ent_embeddings_imag = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
         nn.init.uniform_(self.ent_embeddings.weight, -self.embedding_range, self.embedding_range)
         nn.init.uniform_(self.ent_embeddings_imag.weight, -self.embedding_range, self.embedding_range)
         nn.init.uniform_(self.rel_embeddings.weight, -self.embedding_range, self.embedding_range)
@@ -897,22 +845,18 @@ class RotatE(PairwiseModel):
         h_e_r, h_e_i, r_e_r, r_e_i, t_e_r, t_e_i = self.embed(h, r, t)
         score_r = h_e_r * r_e_r - h_e_i * r_e_i - t_e_r
         score_i = h_e_r * r_e_i + h_e_i * r_e_r - t_e_i
-        return -(self.config.margin - torch.sum(score_r**2 + score_i**2, axis=-1))
+        return -(self.margin - torch.sum(score_r**2 + score_i**2, axis=-1))
 
 
 class Rescal(PairwiseModel):
-    """`A Three-Way Model for Collective Learning on Multi-Relational Data`_
-
-        RESCAL is a tensor factorization approach to knowledge representation learning,
+    """ 
+        `A Three-Way Model for Collective Learning on Multi-Relational Data`_ (RESCAL) is a tensor factorization approach to knowledge representation learning,
         which is able to perform collective learning via the latent components of the factorization.
+        Rescal is a latent feature model where each relation is represented as a matrix modeling the iteraction between latent factors. It utilizes a weight matrix which specify how much the latent features of head and tail entities interact in the relation.
+        Portion of the code based on mnick_ and `OpenKE_Rescal`_.
 
         Args:
             config (object): Model configuration parameters.
-
-        Attributes:
-            config (object): Model configuration.
-            model_name (str): Name of the model.
-            data_stats (object): Class object with knowlege graph statistics.
 
         Examples:
             >>> from pykg2vec.models.Rescal import Rescal
@@ -922,24 +866,21 @@ class Rescal(PairwiseModel):
             >>> trainer.build_model()
             >>> trainer.train_model()
 
-        Portion of the code based on mnick_ and `OpenKE_Rescal`_.
+        .. _mnick: https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
 
-         .. _mnick: https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
+        .. _OpenKE_Rescal: https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
 
-         .. _OpenKE_Rescal: https://github.com/thunlp/OpenKE/blob/master/models/RESCAL.py
+        .. _A Three-Way Model for Collective Learning on Multi-Relational Data : http://www.icml-2011.org/papers/438_icmlpaper.pdf
 
-         .. _A Three-Way Model for Collective Learning on Multi-Relational Data : http://www.icml-2011.org/papers/438_icmlpaper.pdf
     """
+    def __init__(self, **kwargs):
+        super(Rescal, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "margin"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-    def __init__(self, config):
-        super(Rescal, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
-
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_matrices = nn.Embedding(num_total_rel, k * k)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_matrices = nn.Embedding(self.tot_relation, self.hidden_size * self.hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_matrices.weight)
 
@@ -949,20 +890,21 @@ class Rescal(PairwiseModel):
         ]
 
     def embed(self, h, r, t):
-        """Function to get the embedding value.
+        """ Function to get the embedding value.
 
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
+            Args:
+                h (Tensor): Head entities ids.
+                r (Tensor): Relation ids of the triple.
+                t (Tensor): Tail entity ids of the triple.
 
             Returns:
                 Tensors: Returns head, relation and tail embedding Tensors.
-        """
-        k = self.config.hidden_size
 
-        self.ent_embeddings.weight.data = self.get_normalized_data(self.ent_embeddings, self.config.kg_meta.tot_entity, dim=-1)
-        self.rel_matrices.weight.data = self.get_normalized_data(self.rel_matrices, self.config.kg_meta.tot_relation, dim=-1)
+        """
+        k = self.hidden_size
+
+        self.ent_embeddings.weight.data = self.get_normalized_data(self.ent_embeddings, self.tot_entity, dim=-1)
+        self.rel_matrices.weight.data = self.get_normalized_data(self.rel_matrices, self.tot_relation, dim=-1)
 
         emb_h = self.ent_embeddings(h)
         emb_r = self.rel_matrices(r)
@@ -987,52 +929,46 @@ class Rescal(PairwiseModel):
 
 
 class NTN(PairwiseModel):
-    """ `Reasoning With Neural Tensor Networks for Knowledge Base Completion`_
+    """ 
+        `Reasoning With Neural Tensor Networks for Knowledge Base Completion`_ (NTN) is 
+        a neural tensor network which represents entities as an average of their constituting
+        word vectors. It then projects entities to their vector embeddings
+        in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.
+        https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
+        It is a neural tensor network which represents entities as an average of their constituting word vectors. It then projects entities to their vector embeddings in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.
+        Portion of the code based on `siddharth-agrawal`_.
+        
+        Args:
+            config (object): Model configuration parameters.
+     
+        Examples:
+            >>> from pykg2vec.models.NTN import NTN
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = NTN()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    It is a neural tensor network which represents entities as an average of their
-    constituting word vectors. It then projects entities to their vector embeddings
-    in the input layer. The two entities are then combined and mapped to a non-linear hidden layer.
-    https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
+        .. _siddharth-agrawal:
+            https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
 
-     Args:
-        config (object): Model configuration parameters.
+        .. _Reasoning With Neural Tensor Networks for Knowledge Base Completion:
+            https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
 
-     Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
-        data_stats (object): Class object with knowlege graph statistics.
-
-     Examples:
-        >>> from pykg2vec.models.NTN import NTN
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = NTN()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
-
-     Portion of the code based on `siddharth-agrawal`_.
-
-     .. _siddharth-agrawal:
-         https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
-
-     .. _Reasoning With Neural Tensor Networks for Knowledge Base Completion:
-         https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
     """
 
-    def __init__(self, config):
-        super(NTN, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
+    def __init__(self, **kwargs):
+        super(NTN, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "ent_hidden_size", "rel_hidden_size", "lmbda"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, d)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-        self.mr1 = nn.Embedding(d, k)
-        self.mr2 = nn.Embedding(d, k)
-        self.br = nn.Embedding(1, k)
-        self.mr = nn.Embedding(k, d*d)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.ent_hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.rel_hidden_size)
+        self.mr1 = nn.Embedding(self.ent_hidden_size, self.rel_hidden_size)
+        self.mr2 = nn.Embedding(self.ent_hidden_size, self.rel_hidden_size)
+        self.br = nn.Embedding(1, self.rel_hidden_size)
+        self.mr = nn.Embedding(self.rel_hidden_size, self.ent_hidden_size*self.ent_hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.mr1.weight)
@@ -1050,23 +986,21 @@ class NTN(PairwiseModel):
         ]
 
     def train_layer(self, h, t):
-        """Defines the forward pass training layers of the algorithm.
+        """ Defines the forward pass training layers of the algorithm.
 
-           Args:
+            Args:
                h (Tensor): Head entities ids.
                t (Tensor): Tail entity ids of the triple.
         """
-        d = self.config.ent_hidden_size
-        k = self.config.rel_hidden_size
         
-        mr1h = torch.matmul(h, self.mr1.weight) # h => [m, d], self.mr1 => [d, k]
-        mr2t = torch.matmul(t, self.mr2.weight) # t => [m, d], self.mr2 => [d, k]
+        mr1h = torch.matmul(h, self.mr1.weight) # h => [m, self.ent_hidden_size], self.mr1 => [self.ent_hidden_size, self.rel_hidden_size]
+        mr2t = torch.matmul(t, self.mr2.weight) # t => [m, self.ent_hidden_size], self.mr2 => [self.ent_hidden_size, self.rel_hidden_size]
 
-        expanded_h = h.unsqueeze(dim=0).repeat(k, 1, 1) # [k, m, d]
-        expanded_t = t.unsqueeze(dim=-1) # [m, d, 1]
+        expanded_h = h.unsqueeze(dim=0).repeat(self.rel_hidden_size, 1, 1) # [self.rel_hidden_size, m, self.ent_hidden_size]
+        expanded_t = t.unsqueeze(dim=-1) # [m, self.ent_hidden_size, 1]
 
-        temp = (torch.matmul(expanded_h, self.mr.weight.view(k, d, d))).permute(1, 0, 2) # [m, k, d]
-        htmrt = torch.squeeze(torch.matmul(temp, expanded_t), dim=-1) # [m, k]
+        temp = (torch.matmul(expanded_h, self.mr.weight.view(self.rel_hidden_size, self.ent_hidden_size, self.ent_hidden_size))).permute(1, 0, 2) # [m, self.rel_hidden_size, self.ent_hidden_size]
+        htmrt = torch.squeeze(torch.matmul(temp, expanded_t), dim=-1) # [m, self.rel_hidden_size]
 
         return F.tanh(htmrt + mr1h + mr2t + self.br.weight)
 
@@ -1095,59 +1029,52 @@ class NTN(PairwiseModel):
         return -torch.sum(norm_r*self.train_layer(norm_h, norm_t), -1)
 
     def get_reg(self):
-        return self.config.lmbda*torch.sqrt(sum([torch.sum(torch.pow(var.weight, 2)) for var in self.parameter_list]))
+        return self.lmbda*torch.sqrt(sum([torch.sum(torch.pow(var.weight, 2)) for var in self.parameter_list]))
 
 
 class KG2E(PairwiseModel):
-    """`Learning to Represent Knowledge Graphs with Gaussian Embedding`_
+    """ 
+        `Learning to Represent Knowledge Graphs with Gaussian Embedding`_ (KG2E)
+        Instead of assumming entities and relations as determinstic points in the
+        embedding vector spaces, KG2E models both entities and relations (h, r and t)
+        using random variables derived from multivariate Gaussian distribution.
+        KG2E then evaluates a fact using translational relation by evaluating the
+        distance between two distributions, r and t-h. KG2E provides two distance
+        measures (KL-divergence and estimated likelihood). 
+        Portion of the code based on `mana-ysh's repository`_.
 
-    Instead of assumming entities and relations as determinstic points in the
-    embedding vector spaces, KG2E models both entities and relations (h, r and t)
-    using random variables derived from multivariate Gaussian distribution.
-    KG2E then evaluates a fact using translational relation by evaluating the
-    distance between two distributions, r and t-h. KG2E provides two distance
-    measures (KL-divergence and estimated likelihood).
+        Args:
+            config (object): Model configuration parameters.
 
-    Args:
-        config (object): Model configuration parameters.
+        Examples:
+            >>> from pykg2vec.models.KG2E import KG2E
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = KG2E()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
-        data_stats (object): Class object with knowlege graph statistics.
+        .. _`mana-ysh's repository`:
+            https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
 
-    Examples:
-        >>> from pykg2vec.models.KG2E import KG2E
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = KG2E()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
-
-    Portion of the code based on `this Source`_.
-    
-    .. _this Source:
-        https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
-
-    .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
-        https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
+        .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
+            https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
     
     """
 
-    def __init__(self, config=None):
-        super(KG2E, self).__init__(self.__class__.__name__.lower(), config)
+    def __init__(self, **kwargs):
+        super(KG2E, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "cmax", "cmin"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
         
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
-
         # the mean for each element in the embedding space. 
-        self.ent_embeddings_mu = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings_mu = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings_mu = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings_mu = nn.Embedding(self.tot_relation, self.hidden_size)
 
         # as the paper suggested, sigma is simplified to be the diagonal element in the covariance matrix. 
-        self.ent_embeddings_sigma = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings_sigma = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings_sigma = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings_sigma = nn.Embedding(self.tot_relation, self.hidden_size)
 
         nn.init.xavier_uniform_(self.ent_embeddings_mu.weight)
         nn.init.xavier_uniform_(self.rel_embeddings_mu.weight)
@@ -1161,40 +1088,41 @@ class KG2E(PairwiseModel):
             NamedEmbedding(self.rel_embeddings_sigma, "rel_embeddings_sigma"),
         ]
 
-        min_ent = torch.min(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.config.cmax), torch.add(self.ent_embeddings_sigma.weight, 1.0))
-        self.ent_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.config.cmin), min_ent))
-        min_rel = torch.min(torch.FloatTensor().new_full(self.rel_embeddings_sigma.weight.shape, self.config.cmax), torch.add(self.rel_embeddings_sigma.weight, 1.0))
-        self.rel_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.rel_embeddings_sigma.weight.shape, self.config.cmin), min_rel))
+        min_ent = torch.min(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.cmax), torch.add(self.ent_embeddings_sigma.weight, 1.0))
+        self.ent_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.cmin), min_ent))
+        min_rel = torch.min(torch.FloatTensor().new_full(self.rel_embeddings_sigma.weight.shape, self.cmax), torch.add(self.rel_embeddings_sigma.weight, 1.0))
+        self.rel_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.rel_embeddings_sigma.weight.shape, self.cmin), min_rel))
 
     def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
         return self._cal_score_expected_likelihood(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
 
-    def embed(self, h, r, t):
-        """Function to get the embedding.
-
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
+    def embed(self, head, rel, tail):
+        """ 
+            Function to get the embedding value.
+           
+            Args:
+                head (Tensor): Head entities ids.
+                rel  (Tensor): Relation ids of the triple.
+                tail (Tensor): Tail entity ids of the triple.
 
             Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
+                tuple: Returns a 6-tuple of head, relation and tail embedding tensors (both real and img parts).
         """
 
-        self.ent_embeddings_mu.weight.data = self.get_normalized_data(self.ent_embeddings_mu, self.config.kg_meta.tot_entity)
-        self.rel_embeddings_mu.weight.data = self.get_normalized_data(self.rel_embeddings_mu, self.config.kg_meta.tot_relation)
+        self.ent_embeddings_mu.weight.data = self.get_normalized_data(self.ent_embeddings_mu, self.tot_entity)
+        self.rel_embeddings_mu.weight.data = self.get_normalized_data(self.rel_embeddings_mu, self.tot_relation)
 
-        self.ent_embeddings_sigma.weight.data = self.get_normalized_data(self.ent_embeddings_sigma, self.config.kg_meta.tot_entity)
-        self.rel_embeddings_sigma.weight.data = self.get_normalized_data(self.rel_embeddings_sigma, self.config.kg_meta.tot_relation)
+        self.ent_embeddings_sigma.weight.data = self.get_normalized_data(self.ent_embeddings_sigma, self.tot_entity)
+        self.rel_embeddings_sigma.weight.data = self.get_normalized_data(self.rel_embeddings_sigma, self.tot_relation)
 
-        emb_h_mu = self.ent_embeddings_mu(h)
-        emb_r_mu = self.rel_embeddings_mu(r)
-        emb_t_mu = self.ent_embeddings_mu(t)
+        emb_h_mu = self.ent_embeddings_mu(head)
+        emb_r_mu = self.rel_embeddings_mu(rel)
+        emb_t_mu = self.ent_embeddings_mu(tail)
 
-        emb_h_sigma = self.ent_embeddings_sigma(h)
-        emb_r_sigma = self.rel_embeddings_sigma(r)
-        emb_t_sigma = self.ent_embeddings_sigma(t)
+        emb_h_sigma = self.ent_embeddings_sigma(head)
+        emb_r_sigma = self.rel_embeddings_sigma(rel)
+        emb_t_sigma = self.ent_embeddings_sigma(tail)
 
         return emb_h_mu, emb_h_sigma, emb_r_mu, emb_r_sigma, emb_t_mu, emb_t_sigma
 
@@ -1223,48 +1151,34 @@ class KG2E(PairwiseModel):
         mul_fac = torch.sum((h_mu + r_mu - t_mu) ** 2 / (h_sigma + r_sigma + t_sigma), -1)
         det_fac = torch.sum(torch.log(h_sigma + r_sigma + t_sigma), -1)
 
-        return mul_fac + det_fac - self.config.hidden_size
+        return mul_fac + det_fac - self.hidden_size
 
 
 class KG2E_EL(KG2E):
-    """`Learning to Represent Knowledge Graphs with Gaussian Embedding`_
+    """ 
+        KG2E_EL is a extension of `KG2E`_ that uses estimated likelihood as the distance measure.
 
-    Instead of assumming entities and relations as determinstic points in the
-    embedding vector spaces, KG2E models both entities and relations (h, r and t)
-    using random variables derived from multivariate Gaussian distribution.
-    KG2E then evaluates a fact using translational relation by evaluating the
-    distance between two distributions, r and t-h. KG2E provides two distance
-    measures (KL-divergence and estimated likelihood).
+        Args:
+            config (object): Model configuration parameters.
+        
+        Examples:
+            >>> from pykg2vec.models.KG2E import KG2E
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = KG2E()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+        
+        .. _`KG2E`: api.html#pykg2vec.models.pairwise.KG2E
 
-    Args:
-        config (object): Model configuration parameters.
-
-    Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
-        data_stats (object): Class object with knowlege graph statistics.
-
-    Examples:
-        >>> from pykg2vec.models.KG2E import KG2E
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = KG2E()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
-
-    Portion of the code based on `this Source`_.
-    
-    .. _this Source:
-        https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
-
-    .. _Learning to Represent Knowledge Graphs with Gaussian Embedding:
-        https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
-    
     """
 
-    def __init__(self, config):
-        super(KG2E_EL, self).__init__(config)
+    def __init__(self, **kwargs):
+        super(KG2E_EL, self).__init__(**kwargs)
         self.model_name = self.__class__.__name__.lower()
+        param_list = ["hidden_size"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
 
     def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
@@ -1293,45 +1207,43 @@ class KG2E_EL(KG2E):
         mul_fac = torch.sum((- h_mu + t_mu - r_mu) ** 2 / r_sigma, -1)
         det_fac = torch.sum(torch.log(h_sigma + t_sigma) - torch.log(r_sigma), -1)
 
-        return trace_fac + mul_fac - det_fac - self.config.hidden_size
+        return trace_fac + mul_fac - det_fac - self.hidden_size
 
 
 class HoLE(PairwiseModel):
-    """`Holographic Embeddings of Knowledge Graphs`_.
+    """ 
+        `Holographic Embeddings of Knowledge Graphs`_. (HoLE) employs the circular correlation to create composition correlations. It
+        is able to represent and capture the interactions betweek entities and relations
+        while being efficient to compute, easier to train and scalable to large dataset.
 
-    HoLE employs the circular correlation to create composition correlations. It
-    is able to represent and capture the interactions betweek entities and relations
-    while being efficient to compute, easier to train and scalable to large dataset.
-
-    Args:
-        config (object): Model configuration parameters.
-
-    Attributes:
-        config (object): Model configuration.
-        model_name (str): Name of the model.
+        Args:
+            config (object): Model configuration parameters.
     
-    Examples:
-        >>> from pykg2vec.models.HoLE import HoLE
-        >>> from pykg2vec.utils.trainer import Trainer
-        >>> model = HoLE()
-        >>> trainer = Trainer(model=model)
-        >>> trainer.build_model()
-        >>> trainer.train_model()
+        Examples:
+            >>> from pykg2vec.models.pairwise.HoLE import HoLE
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = HoLE()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
 
-    .. _Holographic Embeddings of Knowledge Graphs:
-        https://arxiv.org/pdf/1510.04935.pdf
+        .. _Holographic Embeddings of Knowledge Graphs:
+            https://arxiv.org/pdf/1510.04935.pdf
 
     """
 
-    def __init__(self, config):
-        super(HoLE, self).__init__(self.__class__.__name__.lower(), config)
-        
-        num_total_ent = self.config.kg_meta.tot_entity
-        num_total_rel = self.config.kg_meta.tot_relation
-        k = self.config.hidden_size
+    def __init__(self, **kwargs):
+        super(HoLE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "cmax", "cmin"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+ 
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings = nn.Embedding(self.tot_entity, self.hidden_size)
+        self.rel_embeddings = nn.Embedding(self.tot_relation, self.hidden_size)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
@@ -1340,26 +1252,27 @@ class HoLE(PairwiseModel):
             NamedEmbedding(self.rel_embeddings, "rel_embedding"),
         ]
 
-    def forward(self, h, r, t):
-        h_e, r_e, t_e = self.embed(h, r, t)
+    def forward(self, head, rel, tail):
+        h_e, r_e, t_e = self.embed(head, rel, tail)
         r_e = F.normalize(r_e, p=2, dim=-1)
         h_e = torch.stack((h_e, torch.zeros_like(h_e)), -1)
         t_e = torch.stack((t_e, torch.zeros_like(t_e)), -1)
         e, _ = torch.unbind(torch.ifft(torch.conj(torch.fft(h_e, 1)) * torch.fft(t_e, 1), 1), -1)
         return -F.sigmoid(torch.sum(r_e * e, 1))
 
-    def embed(self, h, r, t):
-        """Function to get the embedding value.
+    def embed(self, head, rel, tail):
+        """ 
+            Function to get the embedding value.
            
-           Args:
-               h (Tensor): Head entities ids.
-               r (Tensor): Relation ids of the triple.
-               t (Tensor): Tail entity ids of the triple.
+            Args:
+                head (Tensor): Head entities ids.
+                rel  (Tensor): Relation ids of the triple.
+                tail (Tensor): Tail entity ids of the triple.
 
             Returns:
-                Tensors: Returns head, relation and tail embedding Tensors.
+                tuple: Returns a 3-tuple of head, relation and tail embedding tensors.
         """
-        emb_h = self.ent_embeddings(h)
-        emb_r = self.rel_embeddings(r)
-        emb_t = self.ent_embeddings(t)
+        emb_h = self.ent_embeddings(head)
+        emb_r = self.rel_embeddings(rel)
+        emb_t = self.ent_embeddings(tail)
         return emb_h, emb_r, emb_t
