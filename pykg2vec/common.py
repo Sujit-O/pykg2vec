@@ -242,32 +242,6 @@ class Importer:
                          "transr": "pairwise.TransR",
                          "tucker": "projection.TuckER"}
 
-        self.configMap = {"analogy": "ANALOGYConfig",
-                          "complex": "ComplexConfig",
-                          "complexn3": "ComplexConfig",
-                          "conve": "ConvEConfig",
-                          "convkb": "ConvKBConfig",
-                          "cp": "CPConfig",
-                          "hole": "HoLEConfig",
-                          "distmult": "DistMultConfig",
-                          "kg2e": "KG2EConfig",
-                          "kg2e_el": "KG2EConfig",
-                          "ntn": "NTNConfig",
-                          "proje_pointwise": "ProjE_pointwiseConfig",
-                          "rescal": "RescalConfig",
-                          "rotate": "RotatEConfig",
-                          "simple": "SimplEConfig",
-                          "simple_ignr": "SimplEConfig",
-                          "slm": "SLMConfig",
-                          "sme": "SMEConfig",
-                          "sme_bl": "SMEConfig",
-                          "transd": "TransDConfig",
-                          "transe": "TransEConfig",
-                          "transg": "TransGConfig",
-                          "transh": "TransHConfig",
-                          "transm": "TransMConfig",
-                          "transr": "TransRConfig",
-                          "tucker": "TuckERConfig"}
         
         self.hyperparamMap = {"analogy": "ANALOGYParams",
                               "complex": "ComplexParams",
@@ -328,7 +302,7 @@ class Importer:
         config_obj = None
         model_obj = None
         try:
-            config_obj = getattr(importlib.import_module(self.config_path), self.configMap[name])
+            config_obj = getattr(importlib.import_module(self.config_path), "BasicConfig")
             splited_path = self.modelMap[name].split('.')
             model_obj  = getattr(importlib.import_module(self.model_path + ".%s" % splited_path[0]), splited_path[1])
 
