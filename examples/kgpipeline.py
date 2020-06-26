@@ -53,7 +53,7 @@ def main():
     # Update the config params with the golden hyperparameter
     for k,v in best.items():
         config.__dict__[k]=v
-    model = model_def(config)
+    model = model_def(**config.__dict__)
 
     # Create, Compile and Train the model.
     trainer = Trainer(model, config)

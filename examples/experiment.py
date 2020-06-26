@@ -31,8 +31,8 @@ def experiment(model_name):
 
     # Extracting the corresponding model config and definition from Importer().
     config_def, model_def = Importer().import_model_config(model_name)
-    config = config_def(args=args)
-    model = model_def(config)
+    config = config_def(args)
+    model = model_def(**config.__dict__)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
     trainer = Trainer(model, config)
