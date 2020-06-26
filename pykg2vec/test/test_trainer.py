@@ -17,7 +17,7 @@ def get_model(result_path_dir, configured_epochs, patience, config_key):
     knowledge_graph.prepare_data()
 
     config_def, model_def = Importer().import_model_config(config_key)
-    config = config_def(args=args)
+    config = config_def(args)
 
     config.epochs = configured_epochs
     config.test_step = 1
@@ -28,16 +28,16 @@ def get_model(result_path_dir, configured_epochs, patience, config_key):
     config.debug = True
     config.patience = patience
 
-    return model_def(config)
+    return model_def(**config.__dict__), config
 
 @pytest.mark.parametrize("config_key",
                          filter(lambda x: x != "conve" and x != "convkb" and x != "transg", list(Importer().modelMap.keys())))
 def test_full_epochs(tmpdir, config_key):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 10
-    model = get_model(result_path_dir, configured_epochs, -1, config_key)
+    model, config = get_model(result_path_dir, configured_epochs, -1, config_key)
 
-    trainer = Trainer(model=model)
+    trainer = Trainer(model, config)
     trainer.build_model()
     actual_epochs = trainer.train_model()
 
@@ -52,9 +52,9 @@ def test_full_epochs(tmpdir, config_key):
 def test_early_stopping_on_ranks(tmpdir, monitor):
     result_path_dir = tmpdir.mkdir("result_path")
     configured_epochs = 10
-    model = get_model(result_path_dir, configured_epochs, 0, "complex")
+    model, config = get_model(result_path_dir, configured_epochs, 0, "complex")
 
-    trainer = Trainer(model=model)
+    trainer = Trainer(model, config)
     trainer.build_model()
     actual_epochs = trainer.train_model(monitor=monitor)
 

@@ -22,7 +22,7 @@ def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=No
 
     # Extracting the corresponding model config and definition from Importer().
     config_def, model_def = Importer().import_model_config(name)
-    config = config_def(args=args)
+    config = config_def(args)
 
     config.epochs     = 1
     config.test_step  = 1
@@ -32,10 +32,10 @@ def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=No
     config.L1_flag = l1_flag
     config.debug = True
 
-    model = model_def(config)
+    model = model_def(**config.__dict__)
 
     # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model=model)
+    trainer = Trainer(model, config)
     trainer.build_model()
     trainer.train_model()
 

@@ -89,7 +89,7 @@ class BaysOptimizer(object):
         for key, value in params.items():
           self.config_local.__dict__[key] = value
 
-        model = self.model_obj(self.config_local)
+        model = self.model_obj(**self.config_local.__dict__)
 
         self.trainer = Trainer(model)
 
