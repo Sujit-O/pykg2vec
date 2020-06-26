@@ -38,7 +38,7 @@ class Visualization(object):
     """
     _logger = Logger().get_logger(__name__)
 
-    def __init__(self, model=None, vis_opts=None):
+    def __init__(self, model, config, vis_opts=None):
         if vis_opts:
             self.ent_only_plot = vis_opts["ent_only_plot"]
             self.rel_only_plot = vis_opts["rel_only_plot"]
@@ -49,6 +49,7 @@ class Visualization(object):
             self.ent_and_rel_plot = False
 
         self.model = model
+        self.config = config 
 
         self.algo_list = ['ANALOGY', 'Complex', 'ComplexN3', 'ConvE', 'CP', 'DistMult', 'DistMult2', 'HoLE',
                           'KG2E_EL', 'KG2E_KL', 'KGMeta', 'NTN', 'ProjE_pointwise', 'Rescal', 'RotatE', 'SimplE_avg',
@@ -68,16 +69,16 @@ class Visualization(object):
         self.t_proj_emb = []
 
         if self.model != None:
-            self.validation_triples_ids = self.model.config.knowledge_graph.read_cache_data('triplets_valid')
-            self.idx2entity = self.model.config.knowledge_graph.read_cache_data('idx2entity')
-            self.idx2relation = self.model.config.knowledge_graph.read_cache_data('idx2relation')
+            self.validation_triples_ids = self.config.knowledge_graph.read_cache_data('triplets_valid')
+            self.idx2entity = self.config.knowledge_graph.read_cache_data('idx2entity')
+            self.idx2relation = self.config.knowledge_graph.read_cache_data('idx2relation')
 
         self.get_idx_n_emb()
 
     def get_idx_n_emb(self):
         """Function to get the integer ids and the embedding."""
         
-        idx = np.random.choice(len(self.validation_triples_ids), self.model.config.disp_triple_num)
+        idx = np.random.choice(len(self.validation_triples_ids), self.config.disp_triple_num)
         triples = []
         for i in range(len(idx)):
             triples.append(self.validation_triples_ids[idx[i]])
@@ -87,7 +88,7 @@ class Visualization(object):
             self.r_name.append(self.idx2relation[t.r])
             self.t_name.append(self.idx2entity[t.t])
 
-            emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]).to(self.model.config.device), torch.tensor([t.r]).to(self.model.config.device), torch.tensor([t.t]).to(self.model.config.device))
+            emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]).to(self.config.device), torch.tensor([t.r]).to(self.config.device), torch.tensor([t.t]).to(self.config.device))
 
             self.h_emb.append(emb_h)
             self.r_emb.append(emb_r)
@@ -95,7 +96,7 @@ class Visualization(object):
 
             if self.ent_and_rel_plot:
                 try:
-                    emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]).to(self.model.config.device), torch.tensor([t.r]).to(self.model.config.device), torch.tensor([t.t]).to(self.model.config.device))
+                    emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]).to(self.config.device), torch.tensor([t.r]).to(self.config.device), torch.tensor([t.t]).to(self.config.device))
                     self.h_proj_emb.append(emb_h)
                     self.r_proj_emb.append(emb_r)
                     self.t_proj_emb.append(emb_t)
@@ -156,9 +157,9 @@ class Visualization(object):
     def plot_train_result(self):
         """Function to plot the training result."""
         algo = self.algo_list
-        path = self.model.config.path_result
-        result = self.model.config.path_figures
-        data = [self.model.config.data]
+        path = self.config.path_result
+        result = self.config.path_figures
+        data = [self.config.data]
         
         files = os.listdir(str(path))
         files_lwcase = [f.lower() for f in files]
@@ -194,10 +195,10 @@ class Visualization(object):
     def plot_test_result(self):
         """Function to plot the testing result."""
         algo = self.algo_list
-        path = self.model.config.path_result
-        result = self.model.config.path_figures
-        data = [self.model.config.data]
-        hits = self.model.config.hits
+        path = self.config.path_result
+        result = self.config.path_figures
+        data = [self.config.data]
+        hits = self.config.hits
         if path is None or algo is None or data is None:
             raise NotImplementedError('Please provide valid path, algorithm and dataset!')
         files = os.listdir(str(path))

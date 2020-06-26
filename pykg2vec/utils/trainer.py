@@ -385,15 +385,15 @@ class Trainer:
                     "ent_and_rel_plot": not self.config.plot_entity_only}
 
         if self.config.plot_embedding:
-            viz = Visualization(model=self.model, vis_opts = options)
+            viz = Visualization(self.model, self.config, vis_opts = options)
             viz.plot_embedding(resultpath=self.config.path_figures, algos=self.model.model_name, show_label=False)
 
         if self.config.plot_training_result:
-            viz = Visualization(model=self.model)
+            viz = Visualization(self.model, self.config)
             viz.plot_train_result()
 
         if self.config.plot_testing_result:
-            viz = Visualization(model=self.model)
+            viz = Visualization(self.model, self.config)
             viz.plot_test_result()
     
     def export_embeddings(self):
@@ -410,11 +410,6 @@ class Trainer:
         
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
-
-        series_ent = pd.Series(idx2ent)
-        series_rel = pd.Series(idx2rel)
-        series_ent.to_pickle(save_path / "ent_labels.pickle")
-        series_rel.to_pickle(save_path / "rel_labels.pickle")
 
         with open(str(save_path / "ent_labels.tsv"), 'w') as l_export_file:
             for label in idx2ent.values():
@@ -434,9 +429,6 @@ class Trainer:
                 with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
                     for idx in all_ids:
                         v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
-
-                df = pd.DataFrame(all_embs)
-                df.to_pickle(save_path / ("%s.pickle" % stored_name))
 
     def save_training_result(self):
         """Function that saves training result"""
