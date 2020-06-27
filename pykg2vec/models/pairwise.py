@@ -1095,7 +1095,7 @@ class KG2E(PairwiseModel):
 
     def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
-        return self._cal_score_expected_likelihood(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
+        return self._cal_score_kl_divergence(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
 
     def embed(self, head, rel, tail):
         """ 
@@ -1109,13 +1109,6 @@ class KG2E(PairwiseModel):
             Returns:
                 tuple: Returns a 6-tuple of head, relation and tail embedding tensors (both real and img parts).
         """
-
-        self.ent_embeddings_mu.weight.data = self.get_normalized_data(self.ent_embeddings_mu, self.tot_entity)
-        self.rel_embeddings_mu.weight.data = self.get_normalized_data(self.rel_embeddings_mu, self.tot_relation)
-
-        self.ent_embeddings_sigma.weight.data = self.get_normalized_data(self.ent_embeddings_sigma, self.tot_entity)
-        self.rel_embeddings_sigma.weight.data = self.get_normalized_data(self.rel_embeddings_sigma, self.tot_relation)
-
         emb_h_mu = self.ent_embeddings_mu(head)
         emb_r_mu = self.rel_embeddings_mu(rel)
         emb_t_mu = self.ent_embeddings_mu(tail)
@@ -1124,65 +1117,20 @@ class KG2E(PairwiseModel):
         emb_r_sigma = self.rel_embeddings_sigma(rel)
         emb_t_sigma = self.ent_embeddings_sigma(tail)
 
+        emb_h_mu = self.get_normalized_data(emb_h_mu)
+        emb_r_mu = self.get_normalized_data(emb_r_mu)
+        emb_t_mu = self.get_normalized_data(emb_t_mu)
+
+        emb_h_sigma = self.get_normalized_data(emb_h_sigma)
+        emb_r_sigma = self.get_normalized_data(emb_r_sigma)
+        emb_t_sigma = self.get_normalized_data(emb_t_sigma)
+        
         return emb_h_mu, emb_h_sigma, emb_r_mu, emb_r_sigma, emb_t_mu, emb_t_sigma
 
     @staticmethod
-    def get_normalized_data(embedding, num_embeddings, p=2, dim=1):
-        norms = torch.norm(embedding.weight, p, dim).data
-        return embedding.weight.data.div(norms.view(num_embeddings, 1).expand_as(embedding.weight))
-
-    def _cal_score_expected_likelihood(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
-        """ It calculates the expected likelihood as a score.
-
-            mul_fac: (mu_h + mu_r - mu_t).T * sigma_r-1 * (mu_h + mu_r - mu_t)
-            det_fac: log(det(sigma_r + sigma_h + sigma_t))
-
-            Args:
-                 h_mu (Tensor): Mean of the embedding value of the head.
-                 h_sigma(Tensor): Variance of the embedding value of the head.
-                 r_mu(Tensor): Mean of the embedding value of the relation.
-                 r_sigma(Tensor): Variance of the embedding value of the relation.
-                 t_mu(Tensor): Mean of the embedding value of the tail.
-                 t_sigma(Tensor): Variance of the embedding value of the tail.
-
-            Returns:
-                Tensor: Score after calculating the expected likelihood.
-        """
-        mul_fac = torch.sum((h_mu + r_mu - t_mu) ** 2 / (h_sigma + r_sigma + t_sigma), -1)
-        det_fac = torch.sum(torch.log(h_sigma + r_sigma + t_sigma), -1)
-
-        return mul_fac + det_fac - self.hidden_size
-
-
-class KG2E_EL(KG2E):
-    """ 
-        KG2E_EL is a extension of `KG2E`_ that uses estimated likelihood as the distance measure.
-
-        Args:
-            config (object): Model configuration parameters.
-        
-        Examples:
-            >>> from pykg2vec.models.KG2E import KG2E
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = KG2E()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-        
-        .. _`KG2E`: api.html#pykg2vec.models.pairwise.KG2E
-
-    """
-
-    def __init__(self, **kwargs):
-        super(KG2E_EL, self).__init__(**kwargs)
-        self.model_name = self.__class__.__name__.lower()
-        param_list = ["hidden_size"]
-        param_dict = self.load_params(param_list, kwargs)
-        self.__dict__.update(param_dict)
-
-    def forward(self, h, r, t):
-        h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
-        return self._cal_score_kl_divergence(h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma)
+    def get_normalized_data(embedding, p=2, dim=1):
+        norms = torch.norm(embedding, p, dim)
+        return embedding.div(norms.view(-1, 1).expand_as(embedding))
 
     def _cal_score_kl_divergence(self, h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma):
         """ It calculates the kl_divergence as a score.
@@ -1203,12 +1151,13 @@ class KG2E_EL(KG2E):
                 Tensor: Score after calculating the KL_Divergence.
 
         """
-        trace_fac = torch.sum((h_sigma + t_sigma) / r_sigma, -1)
-        mul_fac = torch.sum((- h_mu + t_mu - r_mu) ** 2 / r_sigma, -1)
-        det_fac = torch.sum(torch.log(h_sigma + t_sigma) - torch.log(r_sigma), -1)
-
-        return trace_fac + mul_fac - det_fac - self.hidden_size
-
+        comp_sigma= h_sigma + r_sigma
+        comp_mu   = h_mu + r_mu
+        trace_fac = (comp_sigma / t_sigma).sum(-1)
+        mul_fac   = ((t_mu - comp_mu) ** 2 / t_sigma).sum(-1)
+        det_fac   = (torch.log(t_sigma) - torch.log(comp_sigma)).sum(-1)
+        return trace_fac + mul_fac + det_fac - self.hidden_size
+        
 
 class HoLE(PairwiseModel):
     """ 

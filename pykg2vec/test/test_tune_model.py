@@ -40,7 +40,6 @@ def tunning_function(name):
     'distmult',
     'hole',
     'kg2e',
-    'kg2e_el',
     'ntn',
     'rescal',
     'rotate',
