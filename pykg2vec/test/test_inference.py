@@ -66,7 +66,6 @@ def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=No
     'distmult',
     'hole',
     'kg2e',
-    'kg2e_el',
     'ntn',
     # 'proje_pointwise',
     'rotate',

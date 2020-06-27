@@ -52,7 +52,7 @@ class Visualization(object):
         self.config = config 
 
         self.algo_list = ['ANALOGY', 'Complex', 'ComplexN3', 'ConvE', 'CP', 'DistMult', 'DistMult2', 'HoLE',
-                          'KG2E_EL', 'KG2E_KL', 'NTN', 'ProjE_pointwise', 'Rescal', 'RotatE', 'SimplE_avg',
+                          'KG2E', 'NTN', 'ProjE_pointwise', 'Rescal', 'RotatE', 'SimplE_avg',
                           'SimplE_ignr', 'SLM', 'SME_Bilinear', 'SME_Linear', 'TransD', 'TransE', 'TransH', 'TransM',
                           'TransR', 'TuckER']
 
