@@ -20,7 +20,7 @@ class Singleton(_Singleton("SingletonMeta", (object,), {})):
 
 class Logger(Singleton):
 
-    _FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
     def __init__(self):
         self._loggers = {}
@@ -32,7 +32,7 @@ class Logger(Singleton):
         if self._loggers.get(name) is None:
             logger = logging.getLogger(name)
             logger.setLevel(self._log_level)
-            formatter = logging.Formatter(Logger._FORMAT)
+            formatter = logging.Formatter(Logger.FORMAT)
 
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(formatter)

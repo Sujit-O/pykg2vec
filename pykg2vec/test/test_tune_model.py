@@ -27,7 +27,7 @@ def tunning_function(name):
     bays_opt = BaysOptimizer(args=args)
     bays_opt.config_local.test_num = 10
 
-    # perform the golden hyperparameter tuning. 
+    # perform the golden hyperparameter tuning.
     bays_opt.optimize()
 
     assert bays_opt.return_best() is not None

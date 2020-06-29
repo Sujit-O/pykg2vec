@@ -1,22 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Associate embeddings with human-readable names
+Domain module for building Knowledge Graphs
 """
-class NamedEmbedding(object):
+from torch.nn import Embedding
 
-    def __init__(self, embedding, name):
-        self._embedding = embedding
+class NamedEmbedding(Embedding):
+    """ Associate embeddings with human-readable names"""
+
+    def __init__(self, name, *args, **kwargs):
+        super(NamedEmbedding, self).__init__(*args, **kwargs)
         self._name = name
 
     @property
     def name(self):
         return self._name
-
-    @property
-    def weight(self):
-        return self._embedding.weight
-
-    @property
-    def shape(self):
-        return self._embedding.weight.shape

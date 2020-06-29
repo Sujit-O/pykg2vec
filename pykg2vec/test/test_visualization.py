@@ -37,7 +37,7 @@ def test_visualization(tmpdir):
     trainer.build_model()
     trainer.train_model()
 
-    files = [f for f in listdir(result_path_dir)]
+    files = listdir(result_path_dir)
     assert any(map(lambda f: "_entity_plot" in f, files))
     assert any(map(lambda f: "_rel_plot" in f, files))
     assert any(map(lambda f: "_ent_n_rel_plot" in f, files))
@@ -47,4 +47,3 @@ def test_visualization(tmpdir):
     assert any(map(lambda f: "_testing_table_" in f, files))
     assert any(map(lambda f: "_testing_rank_plot_" in f, files))
     assert any(map(lambda f: "_testing_hits_plot_" in f, files))
-

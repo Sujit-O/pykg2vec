@@ -101,7 +101,7 @@ class Visualization(object):
                     self.r_proj_emb.append(emb_r)
                     self.t_proj_emb.append(emb_t)
                 except Exception as e:
-                    self._logger.error(e.args)
+                    self._logger.exception(e)
 
     def plot_embedding(self,
                        resultpath=None,

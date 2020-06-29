@@ -11,7 +11,7 @@ from pykg2vec.data.kgcontroller import KnowledgeGraph
 
 
 @pytest.mark.skip(reason="This is a functional method.")
-def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=None, display=False):
+def testing_function_with_args(name, l1_flag, display=False):
     """Function to test the models with arguments."""
     # getting the customized configurations from the command-line arguments.
     args = KGEArgParser().get_args([])
@@ -24,10 +24,10 @@ def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=No
     config_def, model_def = Importer().import_model_config(name)
     config = config_def(args)
 
-    config.epochs     = 1
-    config.test_step  = 1
-    config.test_num   = 10
-    config.disp_result= display
+    config.epochs = 1
+    config.test_step = 1
+    config.test_num = 10
+    config.disp_result = display
     config.save_model = True
     config.L1_flag = l1_flag
     config.debug = True
@@ -85,5 +85,3 @@ def testing_function_with_args(name, l1_flag, distance_measure=None, bilinear=No
 def test_inference(model_name):
     """Function to test Algorithms with arguments."""
     testing_function_with_args(model_name, True)
-
-

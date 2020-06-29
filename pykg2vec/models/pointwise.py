@@ -15,15 +15,15 @@ class ANALOGY(PointwiseModel):
         param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
-        
+
         k = self.hidden_size
 
-        self.ent_embeddings = nn.Embedding(self.tot_entity, k)
-        self.rel_embeddings = nn.Embedding(self.tot_relation, k)
-        self.ent_embeddings_real = nn.Embedding(self.tot_entity, k // 2)
-        self.ent_embeddings_img  = nn.Embedding(self.tot_entity, k // 2)
-        self.rel_embeddings_real = nn.Embedding(self.tot_relation, k // 2)
-        self.rel_embeddings_img  = nn.Embedding(self.tot_relation, k // 2)
+        self.ent_embeddings = NamedEmbedding("ent_embedding", self.tot_entity, k)
+        self.rel_embeddings = NamedEmbedding("rel_embedding", self.tot_relation, k)
+        self.ent_embeddings_real = NamedEmbedding("emb_e_real", self.tot_entity, k // 2)
+        self.ent_embeddings_img = NamedEmbedding("emb_e_img", self.tot_entity, k // 2)
+        self.rel_embeddings_real = NamedEmbedding("emb_rel_real", self.tot_relation, k // 2)
+        self.rel_embeddings_img = NamedEmbedding("emb_rel_img", self.tot_relation, k // 2)
 
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
@@ -33,12 +33,12 @@ class ANALOGY(PointwiseModel):
         nn.init.xavier_uniform_(self.rel_embeddings_img.weight)
 
         self.parameter_list = [
-            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
-            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
-            NamedEmbedding(self.ent_embeddings_real, "emb_e_real"),
-            NamedEmbedding(self.ent_embeddings_img, "emb_e_img"),
-            NamedEmbedding(self.rel_embeddings_real, "emb_rel_real"),
-            NamedEmbedding(self.rel_embeddings_img, "emb_rel_img"),
+            self.ent_embeddings,
+            self.rel_embeddings,
+            self.ent_embeddings_real,
+            self.ent_embeddings_img,
+            self.rel_embeddings_real,
+            self.rel_embeddings_img,
         ]
 
     def embed(self, h, r, t):
@@ -70,13 +70,13 @@ class ANALOGY(PointwiseModel):
                 Tensors: Returns real and imaginary values of head, relation and tail embedding.
         """
         h_emb_real = self.ent_embeddings_real(h)
-        h_emb_img  = self.ent_embeddings_img(h)
+        h_emb_img = self.ent_embeddings_img(h)
 
         r_emb_real = self.rel_embeddings_real(r)
-        r_emb_img  = self.rel_embeddings_img(r)
+        r_emb_img = self.rel_embeddings_img(r)
 
         t_emb_real = self.ent_embeddings_real(t)
-        t_emb_img  = self.ent_embeddings_img(t)
+        t_emb_img = self.ent_embeddings_img(t)
 
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
@@ -99,11 +99,11 @@ class ANALOGY(PointwiseModel):
 
 
 class Complex(PointwiseModel):
-    """ 
+    """
         `Complex Embeddings for Simple Link Prediction`_ (ComplEx) is an enhanced version of DistMult in that it uses complex-valued embeddings
         to represent both entities and relations. Using the complex-valued embedding allows
         the defined scoring function in ComplEx to differentiate that facts with assymmetric relations.
-    
+
         Args:
             config (object): Model configuration parameters.
 
@@ -124,29 +124,29 @@ class Complex(PointwiseModel):
         param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
-                
+
         num_total_ent = self.tot_entity
         num_total_rel = self.tot_relation
         k = self.hidden_size
 
-        self.ent_embeddings_real = nn.Embedding(num_total_ent, k)
-        self.ent_embeddings_img  = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings_real = nn.Embedding(num_total_rel, k)
-        self.rel_embeddings_img  = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings_real = NamedEmbedding("emb_e_real", num_total_ent, k)
+        self.ent_embeddings_img = NamedEmbedding("emb_e_img", num_total_ent, k)
+        self.rel_embeddings_real = NamedEmbedding("emb_rel_real", num_total_rel, k)
+        self.rel_embeddings_img = NamedEmbedding("emb_rel_img", num_total_rel, k)
         nn.init.xavier_uniform_(self.ent_embeddings_real.weight)
         nn.init.xavier_uniform_(self.ent_embeddings_img.weight)
         nn.init.xavier_uniform_(self.rel_embeddings_real.weight)
         nn.init.xavier_uniform_(self.rel_embeddings_img.weight)
 
         self.parameter_list = [
-            NamedEmbedding(self.ent_embeddings_real, "emb_e_real"),
-            NamedEmbedding(self.ent_embeddings_img, "emb_e_img"),
-            NamedEmbedding(self.rel_embeddings_real, "emb_rel_real"),
-            NamedEmbedding(self.rel_embeddings_img, "emb_rel_img"),
+            self.ent_embeddings_real,
+            self.ent_embeddings_img,
+            self.rel_embeddings_real,
+            self.rel_embeddings_img,
         ]
     def embed(self, h, r, t):
         """Function to get the embedding value.
-           
+
            Args:
                h (Tensor): Head entities ids.
                r (Tensor): Relation ids of the triple.
@@ -156,34 +156,34 @@ class Complex(PointwiseModel):
                 Tensors: Returns real and imaginary values of head, relation and tail embedding.
         """
         h_emb_real = self.ent_embeddings_real(h)
-        h_emb_img  = self.ent_embeddings_img(h)
+        h_emb_img = self.ent_embeddings_img(h)
 
         r_emb_real = self.rel_embeddings_real(r)
-        r_emb_img  = self.rel_embeddings_img(r)
+        r_emb_img = self.rel_embeddings_img(r)
 
         t_emb_real = self.ent_embeddings_real(t)
-        t_emb_img  = self.ent_embeddings_img(t)
+        t_emb_img = self.ent_embeddings_img(t)
 
         return h_emb_real, h_emb_img, r_emb_real, r_emb_img, t_emb_real, t_emb_img
 
     def forward(self, h, r, t):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
-        return -torch.sum(h_e_real * t_e_real * r_e_real + h_e_img * t_e_img * r_e_real
-                          + h_e_real * t_e_img * r_e_img - h_e_img * t_e_real * r_e_img, -1)
+        return -torch.sum(h_e_real * t_e_real * r_e_real + h_e_img * t_e_img * r_e_real +
+                          h_e_real * t_e_img * r_e_img - h_e_img * t_e_real * r_e_img, -1)
 
     def get_reg(self, h, r, t):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
-        regul_term = torch.mean(torch.sum(h_e_real**2, -1) + torch.sum(h_e_img**2, -1) + torch.sum(r_e_real**2,-1)
-                                + torch.sum(r_e_img**2, -1) + torch.sum(t_e_real**2, -1) + torch.sum(t_e_img**2, -1))
+        regul_term = torch.mean(torch.sum(h_e_real**2, -1) + torch.sum(h_e_img**2, -1) + torch.sum(r_e_real**2, -1) +
+                                torch.sum(r_e_img**2, -1) + torch.sum(t_e_real**2, -1) + torch.sum(t_e_img**2, -1))
         return self.lmbda*regul_term
 
 
 class ComplexN3(Complex):
-    """ 
+    """
         `Complex Embeddings for Simple Link Prediction`_ (ComplEx) is an enhanced version of DistMult in that it uses complex-valued embeddings
         to represent both entities and relations. Using the complex-valued embedding allows
         the defined scoring function in ComplEx to differentiate that facts with assymmetric relations.
-    
+
         Args:
             config (object): Model configuration parameters.
 
@@ -206,22 +206,22 @@ class ComplexN3(Complex):
 
     def get_reg(self, h, r, t):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
-        regul_term = torch.mean(torch.sum(h_e_real.abs()**3, -1) + torch.sum(h_e_img.abs()**3, -1)
-                              + torch.sum(r_e_real.abs()**3, -1) + torch.sum(r_e_img.abs()**3, -1)
-                              + torch.sum(t_e_real.abs()**3, -1) + torch.sum(t_e_img.abs()**3, -1))
+        regul_term = torch.mean(torch.sum(h_e_real.abs()**3, -1) + torch.sum(h_e_img.abs()**3, -1) +
+                                torch.sum(r_e_real.abs()**3, -1) + torch.sum(r_e_img.abs()**3, -1) +
+                                torch.sum(t_e_real.abs()**3, -1) + torch.sum(t_e_img.abs()**3, -1))
         return self.lmbda*regul_term
 
 
 class ConvKB(PointwiseModel):
-    """ 
-        In `A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network`_ (ConvKB), 
+    """
+        In `A Novel Embedding Model for Knowledge Base Completion Based on Convolutional Neural Network`_ (ConvKB),
         each triple (head entity, relation, tail entity) is represented as a 3-column matrix where each column vector represents a triple element
-        
+
         Portion of the code based on daiquocnguyen_.
 
         Args:
             config (object): Model configuration parameters.
-    
+
         Examples:
             >>> from pykg2vec.models.ConvKB import ConvKB
             >>> from pykg2vec.utils.trainer import Trainer
@@ -229,7 +229,7 @@ class ConvKB(PointwiseModel):
             >>> trainer = Trainer(model=model)
             >>> trainer.build_model()
             >>> trainer.train_model()
-            
+
         .. _daiquocnguyen:
             https://github.com/daiquocnguyen/ConvKB
 
@@ -241,7 +241,7 @@ class ConvKB(PointwiseModel):
         param_list = ["tot_entity", "tot_relation", "hidden_size", "num_filters", "filter_sizes"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
-                
+
         num_total_ent = self.tot_entity
         num_total_rel = self.tot_relation
         k = self.hidden_size
@@ -249,14 +249,14 @@ class ConvKB(PointwiseModel):
         filter_sizes = self.filter_sizes
         device = kwargs["device"]
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings = NamedEmbedding("ent_embedding", num_total_ent, k)
+        self.rel_embeddings = NamedEmbedding("rel_embedding", num_total_rel, k)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
         self.parameter_list = [
-            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
-            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            self.ent_embeddings,
+            self.rel_embeddings,
         ]
 
         self.conv_list = [nn.Conv2d(1, num_filters, (3, filter_size), stride=(1, 1)).to(device) for filter_size in filter_sizes]
@@ -265,7 +265,7 @@ class ConvKB(PointwiseModel):
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
-           
+
            Args:
                h (Tensor): Head entities ids.
                r (Tensor): Relation ids of the triple.
@@ -282,7 +282,7 @@ class ConvKB(PointwiseModel):
     def forward(self, h, r, t):
         h_emb, r_emb, t_emb = self.embed(h, r, t)
         first_dimen = list(h_emb.shape)[0]
-        
+
         stacked_h = torch.unsqueeze(h_emb, dim=1)
         stacked_r = torch.unsqueeze(r_emb, dim=1)
         stacked_t = torch.unsqueeze(t_emb, dim=1)
@@ -304,23 +304,23 @@ class CP(PointwiseModel):
         param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
-                
+
         num_total_ent = self.tot_entity
         num_total_rel = self.tot_relation
         k = self.hidden_size
 
-        self.sub_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-        self.obj_embeddings = nn.Embedding(num_total_ent, k)
+        self.sub_embeddings = NamedEmbedding("sub_embedding", num_total_ent, k)
+        self.rel_embeddings = NamedEmbedding("rel_embedding", num_total_rel, k)
+        self.obj_embeddings = NamedEmbedding("obj_embedding", num_total_ent, k)
 
         nn.init.xavier_uniform_(self.sub_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.obj_embeddings.weight)
 
         self.parameter_list = [
-            NamedEmbedding(self.sub_embeddings, "sub_embedding"),
-            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
-            NamedEmbedding(self.obj_embeddings, "obj_embedding"),
+            self.sub_embeddings,
+            self.rel_embeddings,
+            self.obj_embeddings,
         ]
 
     def embed(self, h, r, t):
@@ -356,12 +356,12 @@ class CP(PointwiseModel):
 
 
 class DistMult(PointwiseModel):
-    """ 
+    """
         `EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES`_ (DistMult) is a simpler model comparing with RESCAL in that it simplifies
         the weight matrix used in RESCAL to a diagonal matrix. The scoring
         function used DistMult can capture the pairwise interactions between
         the head and the tail entities. However, DistMult has limitation on modeling asymmetric relations.
-        
+
         Args:
             config (object): Model configuration parameters.
 
@@ -382,24 +382,24 @@ class DistMult(PointwiseModel):
         param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
-      
+
         num_total_ent = self.tot_entity
         num_total_rel = self.tot_relation
         k = self.hidden_size
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
+        self.ent_embeddings = NamedEmbedding("ent_embedding", num_total_ent, k)
+        self.rel_embeddings = NamedEmbedding("rel_embedding", num_total_rel, k)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
 
         self.parameter_list = [
-            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
-            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
+            self.ent_embeddings,
+            self.rel_embeddings,
         ]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
-           
+
            Args:
                h (Tensor): Head entities ids.
                r (Tensor): Relation ids of the triple.
@@ -420,7 +420,7 @@ class DistMult(PointwiseModel):
 
     def get_reg(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)
-        regul_term = torch.mean(torch.sum(h_e**2, -1) + torch.sum(r_e**2, -1) + torch.sum(t_e**2,-1))
+        regul_term = torch.mean(torch.sum(h_e**2, -1) + torch.sum(r_e**2, -1) + torch.sum(t_e**2, -1))
         return self.lmbda*regul_term
 
 
@@ -431,17 +431,17 @@ class SimplE(PointwiseModel):
         param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
-        
+
         num_total_ent = self.tot_entity
         num_total_rel = self.tot_relation
         k = self.hidden_size
         self.tot_train_triples = kwargs['tot_train_triples']
         self.batch_size = kwargs['batch_size']
 
-        self.ent_head_embeddings = nn.Embedding(num_total_ent, k)
-        self.ent_tail_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-        self.rel_inv_embeddings = nn.Embedding(num_total_rel, k)
+        self.ent_head_embeddings = NamedEmbedding("ent_head_embedding", num_total_ent, k)
+        self.ent_tail_embeddings = NamedEmbedding("ent_tail_embedding", num_total_ent, k)
+        self.rel_embeddings = NamedEmbedding("rel_embedding", num_total_rel, k)
+        self.rel_inv_embeddings = NamedEmbedding("rel_inv_embedding", num_total_rel, k)
 
         nn.init.xavier_uniform_(self.ent_head_embeddings.weight)
         nn.init.xavier_uniform_(self.ent_tail_embeddings.weight)
@@ -449,10 +449,10 @@ class SimplE(PointwiseModel):
         nn.init.xavier_uniform_(self.rel_inv_embeddings.weight)
 
         self.parameter_list = [
-            NamedEmbedding(self.ent_head_embeddings, "ent_head_embedding"),
-            NamedEmbedding(self.ent_tail_embeddings, "ent_tail_embedding"),
-            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
-            NamedEmbedding(self.rel_inv_embeddings, "rel_inv_embedding"),
+            self.ent_head_embeddings,
+            self.ent_tail_embeddings,
+            self.rel_embeddings,
+            self.rel_inv_embeddings,
         ]
 
 

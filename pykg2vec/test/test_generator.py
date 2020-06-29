@@ -8,7 +8,7 @@ from pykg2vec.data.generator import Generator
 from pykg2vec.common import Importer, KGEArgParser
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 
-def test_generator_proje():
+def test_generator_projection():
     """Function to test the generator for projection based algorithm."""
     knowledge_graph = KnowledgeGraph(dataset="freebase15k")
     knowledge_graph.force_prepare_data()
@@ -17,7 +17,7 @@ def test_generator_proje():
     config = config_def(KGEArgParser().get_args([]))
     generator = Generator(model_def(**config.__dict__), config)
     generator.start_one_epoch(10)
-    for i in range(10):
+    for _ in range(10):
         data = list(next(generator))
         assert len(data) == 5
 
@@ -42,7 +42,7 @@ def test_generator_pointwise():
     config = config_def(KGEArgParser().get_args([]))
     generator = Generator(model_def(**config.__dict__), config)
     generator.start_one_epoch(10)
-    for i in range(10):
+    for _ in range(10):
         data = list(next(generator))
         assert len(data) == 4
 
@@ -65,7 +65,7 @@ def test_generator_pairwise():
     config = config_def(KGEArgParser().get_args([]))
     generator = Generator(model_def(**config.__dict__), config)
     generator.start_one_epoch(10)
-    for i in range(10):
+    for _ in range(10):
         data = list(next(generator))
         assert len(data) == 6
 

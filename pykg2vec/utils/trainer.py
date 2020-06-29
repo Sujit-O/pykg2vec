@@ -314,13 +314,15 @@ class Trainer:
 
     def infer_tails(self,h,r,topk=5):
         tails = self.evaluator.test_tail_rank(h, r, topk).cpu().numpy()
-        logs = [""]
-        logs.append("(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])))
-        logs.append("")
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
-        logs.append("head: %s" % idx2ent[h])
-        logs.append("relation: %s" % idx2rel[r])
+        logs = [
+            "",
+            "(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])),
+            "",
+            "head: %s" % idx2ent[h],
+            "relation: %s" % idx2rel[r],
+        ]
 
         for idx, tail in enumerate(tails):
             logs.append("%dth predicted tail: %s" % (idx, idx2ent[tail]))
@@ -330,13 +332,15 @@ class Trainer:
 
     def infer_heads(self,r,t,topk=5):
         heads = self.evaluator.test_head_rank(r, t, topk).cpu().numpy()
-        logs = [""]
-        logs.append("(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])))
-        logs.append("")
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
-        logs.append("tail: %s" % idx2ent[t])
-        logs.append("relation: %s" % idx2rel[r])
+        logs = [
+            "",
+            "(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])),
+            "",
+            "tail: %s" % idx2ent[t],
+            "relation: %s" % idx2rel[r],
+        ]
 
         for idx, head in enumerate(heads):
             logs.append("%dth predicted head: %s" % (idx, idx2ent[head]))
@@ -350,13 +354,15 @@ class Trainer:
             return
 
         rels = self.evaluator.test_rel_rank(h, t, topk).cpu().numpy()
-        logs = [""]
-        logs.append("(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])))
-        logs.append("")
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
-        logs.append("head: %s" % idx2ent[h])
-        logs.append("tail: %s" % idx2ent[t])
+        logs = [
+            "",
+            "(head,tail)->({},{}) :: Inferred rels->({})".format(h, t, ",".join([str(i) for i in rels])),
+            "",
+            "head: %s" % idx2ent[h],
+            "tail: %s" % idx2ent[t],
+        ]
 
         for idx, rel in enumerate(rels):
             logs.append("%dth predicted rel: %s" % (idx, idx2rel[rel]))
@@ -424,7 +430,7 @@ class Trainer:
 
             stored_name = named_embedding.name
 
-            if len(named_embedding.shape) == 2:
+            if len(named_embedding.weight.shape) == 2:
                 all_embs = named_embedding.weight.detach().cpu().numpy()
                 with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
                     for idx in all_ids:

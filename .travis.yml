@@ -12,6 +12,7 @@ python:
 
 env:
   - COVERAGE_RCFILE=".coveragerc"
+  - PYLINTRC=".pylintrc"
 
 install:
   - pip install -r requirements.txt
@@ -25,3 +26,4 @@ script:
 
 after_success:
   - coveralls
+  - pylint pykg2vec/data/*.py pykg2vec/test/test_*.py
