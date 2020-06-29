@@ -11,8 +11,7 @@ python:
   - "3.6"
 
 env:
-  - COVERAGE_RCFILE=".coveragerc"
-  - PYLINTRC=".pylintrc"
+  - COVERAGE_RCFILE=".coveragerc" PYLINTRC=".pylintrc"
 
 install:
   - pip install -r requirements.txt
