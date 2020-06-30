@@ -1,25 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os, warnings
-warnings.filterwarnings('ignore')
-
+import os
+import warnings
 import torch
-import pandas as pd
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
+import pandas as pd
 
+from tqdm import tqdm
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.data.generator import Generator
 from pykg2vec.utils.logger import Logger
 from pykg2vec.common import Monitor, TrainingStrategy
-
-from tqdm import tqdm 
+warnings.filterwarnings('ignore')
 
 
 class EarlyStopper:
-    
+
     """ Class used by trainer for handling the early stopping mechanism during the training of KGE algorithms.
 
         Args:
@@ -35,7 +34,7 @@ class EarlyStopper:
 
         self.monitor = monitor
         self.patience = patience
-        
+
         # controlling variables.
         self.previous_metrics = None
         self.patience_left = patience
@@ -55,15 +54,15 @@ class EarlyStopper:
                 self._logger.info(
                     '%s more chances before the trainer stops the training. (prev_%s, curr_%s): (%.4f, %.4f)' %
                     (self.patience_left, name, name, self.previous_metrics[value], curr_metrics[value]))
-            
+
             elif self.patience_left == 0 and is_worse:
                 self._logger.info('Stop the training.')
                 should_stop = True
-            
+
             else:
                 self._logger.info('Reset the patience count to %d' % (self.patience))
                 self.patience_left = self.patience
-                
+
         self.previous_metrics = curr_metrics
 
         return should_stop
@@ -92,8 +91,10 @@ class Trainer:
 
         self.evaluator = None
         self.generator = None
+        self.optimizer = None
+        self.early_stopper = None
 
-    def build_model(self):
+    def build_model(self, monitor=Monitor.FILTERED_MEAN_RANK):
         """function to build the model"""
         self.model.to(self.config.device)
         if self.config.optimizer == "adam":
@@ -121,9 +122,9 @@ class Trainer:
 
         self.config.summary()
 
-        self.early_stopper = EarlyStopper(self.config.patience, Monitor.FILTERED_MEAN_RANK)
+        self.early_stopper = EarlyStopper(self.config.patience, monitor)
 
-    ''' Training related functions:'''
+    # Training related functions:
     def train_step_pairwise(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
         pos_preds = self.model(pos_h, pos_r, pos_t)
         neg_preds = self.model(neg_h, neg_r, neg_t)
@@ -141,7 +142,7 @@ class Trainer:
             # others that use margin-based & pairwise loss function. (uniform or bern)
             loss = pos_preds + self.config.margin - neg_preds
             loss = torch.max(loss, torch.zeros_like(loss)).sum()
-            
+
         if hasattr(self.model, 'get_reg'):
             # now only NTN uses regularizer,
             # other pairwise based KGE methods use normalization to regularize parameters.
@@ -184,23 +185,23 @@ class Trainer:
 
         return loss
 
-    def train_model(self, monitor=Monitor.FILTERED_MEAN_RANK):
+    def train_model(self):
         """Function to train the model."""
         self.generator = Generator(self.model, self.config)
         self.evaluator = Evaluator(self.model, self.config)
 
         if self.config.load_from_data:
             self.load_model()
-        
+
         for cur_epoch_idx in range(self.config.epochs):
             self._logger.info("Epoch[%d/%d]" % (cur_epoch_idx, self.config.epochs))
-            
+
             self.train_model_epoch(cur_epoch_idx)
 
             if cur_epoch_idx % self.config.test_step == 0:
                 self.model.eval()
                 metrics = self.evaluator.mini_test(cur_epoch_idx)
-                              
+
                 if self.early_stopper.should_stop(metrics):
                     ### Early Stop Mechanism
                     ### start to check if the metric is still improving after each mini-test.
@@ -229,14 +230,14 @@ class Trainer:
 
         self.generator = Generator(self.model, self.config)
         self.evaluator = Evaluator(self.model, self.config, tuning=True)
-       
+
         for cur_epoch_idx in range(self.config.epochs):
             current_loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
 
         self.evaluator.full_test(cur_epoch_idx)
 
         self.generator.stop()
-        
+
         return current_loss
 
     def train_model_epoch(self, epoch_idx, tuning=False):
@@ -244,14 +245,14 @@ class Trainer:
         acc_loss = 0
 
         num_batch = self.config.tot_train_triples // self.config.batch_size if not self.config.debug else 10
-       
+
         self.generator.start_one_epoch(num_batch)
-        
+
         progress_bar = tqdm(range(num_batch))
 
         for _ in progress_bar:
             data = list(next(self.generator))
-            
+
             self.model.train()
             self.optimizer.zero_grad()
 
@@ -278,18 +279,18 @@ class Trainer:
                 loss = self.train_step_pairwise(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
             else:
                 raise NotImplementedError("Unknown training strategy: %s" % self.model.training_strategy)
-                
+
             loss.backward()
             self.optimizer.step()
             acc_loss += loss.item()
 
             if not tuning:
                 progress_bar.set_description('acc_loss: %f, cur_loss: %f'% (acc_loss, loss))
-            
+
         self.training_results.append([epoch_idx, acc_loss])
 
         return acc_loss
-   
+
     def enter_interactive_mode(self):
         self.build_model()
         self.load_model()
@@ -312,13 +313,13 @@ class Trainer:
     def exit_interactive_mode(self):
         self._logger.info("Thank you for trying out inference interactive script :)")
 
-    def infer_tails(self,h,r,topk=5):
+    def infer_tails(self, h, r, topk=5):
         tails = self.evaluator.test_tail_rank(h, r, topk).cpu().numpy()
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs = [
             "",
-            "(head, relation)->({},{}) :: Inferred tails->({})".format(h,r,",".join([str(i) for i in tails])),
+            "(head, relation)->({},{}) :: Inferred tails->({})".format(h, r, ",".join([str(i) for i in tails])),
             "",
             "head: %s" % idx2ent[h],
             "relation: %s" % idx2rel[r],
@@ -330,13 +331,13 @@ class Trainer:
         self._logger.info("\n".join(logs))
         return {tail: idx2ent[tail] for tail in tails}
 
-    def infer_heads(self,r,t,topk=5):
+    def infer_heads(self, r, t, topk=5):
         heads = self.evaluator.test_head_rank(r, t, topk).cpu().numpy()
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs = [
             "",
-            "(relation,tail)->({},{}) :: Inferred heads->({})".format(t,r,",".join([str(i) for i in heads])),
+            "(relation,tail)->({},{}) :: Inferred heads->({})".format(t, r, ",".join([str(i) for i in heads])),
             "",
             "tail: %s" % idx2ent[t],
             "relation: %s" % idx2rel[r],
@@ -351,7 +352,7 @@ class Trainer:
     def infer_rels(self, h, t, topk=5):
         if self.model.model_name.lower() in ["proje_pointwise", "conve", "tucker"]:
             self._logger.info("%s model doesn't support relation inference in nature.")
-            return
+            return {}
 
         rels = self.evaluator.test_rel_rank(h, t, topk).cpu().numpy()
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
@@ -369,7 +370,7 @@ class Trainer:
 
         self._logger.info("\n".join(logs))
         return {rel: idx2rel[rel] for rel in rels}
-    
+
     # ''' Procedural functions:'''
     def save_model(self):
         """Function to save the model."""
@@ -387,11 +388,11 @@ class Trainer:
     def display(self):
         """Function to display embedding."""
         options = {"ent_only_plot": True,
-                    "rel_only_plot": not self.config.plot_entity_only,
-                    "ent_and_rel_plot": not self.config.plot_entity_only}
+                   "rel_only_plot": not self.config.plot_entity_only,
+                   "ent_and_rel_plot": not self.config.plot_entity_only}
 
         if self.config.plot_embedding:
-            viz = Visualization(self.model, self.config, vis_opts = options)
+            viz = Visualization(self.model, self.config, vis_opts=options)
             viz.plot_embedding(resultpath=self.config.path_figures, algos=self.model.model_name, show_label=False)
 
         if self.config.plot_training_result:
@@ -401,7 +402,7 @@ class Trainer:
         if self.config.plot_testing_result:
             viz = Visualization(self.model, self.config)
             viz.plot_test_result()
-    
+
     def export_embeddings(self):
         """
             Export embeddings in tsv and pandas pickled format.
@@ -413,7 +414,7 @@ class Trainer:
         """
         save_path = self.config.path_embeddings / self.model.model_name
         save_path.mkdir(parents=True, exist_ok=True)
-        
+
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
 

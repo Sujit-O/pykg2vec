@@ -15,10 +15,11 @@ class _Singleton(type):
 
 
 class Singleton(_Singleton("SingletonMeta", (object,), {})):
-    pass
+    """Singleton meta"""
 
 
 class Logger(Singleton):
+    """Basic logging"""
 
     FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 

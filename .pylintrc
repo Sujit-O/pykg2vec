@@ -595,7 +595,7 @@ max-public-methods=20
 max-returns=15
 
 # Maximum number of statements in function / method body.
-max-statements=50
+max-statements=100
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=2

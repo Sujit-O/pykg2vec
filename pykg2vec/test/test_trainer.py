@@ -54,7 +54,7 @@ def test_early_stopping_on_ranks(tmpdir, monitor):
     model, config = get_model(result_path_dir, configured_epochs, 0, "complex")
 
     trainer = Trainer(model, config)
-    trainer.build_model()
-    actual_epochs = trainer.train_model(monitor=monitor)
+    trainer.build_model(monitor=monitor)
+    actual_epochs = trainer.train_model()
 
     assert actual_epochs < configured_epochs - 1

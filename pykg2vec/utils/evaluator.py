@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 class MetricCalculator:
     '''
-        MetricCalculator aims to 
+        MetricCalculator aims to
         1) address all the statistic tasks.
         2) provide interfaces for querying results.
 
@@ -23,7 +23,7 @@ class MetricCalculator:
     _logger = Logger().get_logger(__name__)
 
     def __init__(self, config):
-        self.config = config 
+        self.config = config
 
         self.hr_t = config.knowledge_graph.read_cache_data('hr_t')
         self.tr_h = config.knowledge_graph.read_cache_data('tr_h')
@@ -31,12 +31,14 @@ class MetricCalculator:
         # (f)mr  : (filtered) mean rank
         # (f)mrr : (filtered) mean reciprocal rank
         # (f)hit : (filtered) hit-k ratio
-        self.mr   = {}
-        self.fmr  = {}
-        self.mrr  = {}
+        self.mr = {}
+        self.fmr = {}
+        self.mrr = {}
         self.fmrr = {}
-        self.hit  = {}
+        self.hit = {}
         self.fhit = {}
+
+        self.epoch = None
 
         self.reset()
 
@@ -53,7 +55,7 @@ class MetricCalculator:
         predict_tail = result[0]
         predict_head = result[1]
 
-        h,r,t = result[2], result[3], result[4]
+        h, r, t = result[2], result[3], result[4]
 
         self.epoch = result[5]
 
@@ -67,7 +69,7 @@ class MetricCalculator:
 
     def get_tail_rank(self, tail_candidate, h, r, t):
         """Function to evaluate the tail rank.
-           
+
            Args:
                id_replace_tail (list): List of the predicted tails for the given head, relation pair
                h (int): head id
@@ -83,19 +85,19 @@ class MetricCalculator:
 
         for j in range(len(tail_candidate)):
             val = tail_candidate[-j - 1]
-            if val == t:
-                break
-            else:
+            if val != t:
                 trank += 1
                 ftrank += 1
                 if val in self.hr_t[(h, r)]:
                     ftrank -= 1
-        
+            else:
+                break
+
         return trank, ftrank
 
     def get_head_rank(self, head_candidate, h, r, t):
         """Function to evaluate the head rank.
-               
+
            Args:
                head_candidate (list): List of the predicted head for the given tail, relation pair
                h (int): head id
@@ -110,47 +112,47 @@ class MetricCalculator:
 
         for j in range(len(head_candidate)):
             val = head_candidate[-j - 1]
-            if val == h:
-                break
-            else:
+            if val != h:
                 hrank += 1
                 fhrank += 1
                 if val in self.tr_h[(t, r)]:
                     fhrank -= 1
+            else:
+                break
 
         return hrank, fhrank
 
     def settle(self):
-        head_ranks  = np.asarray(self.rank_head, dtype=np.float32)+1
-        tail_ranks  = np.asarray(self.rank_tail, dtype=np.float32)+1
+        head_ranks = np.asarray(self.rank_head, dtype=np.float32)+1
+        tail_ranks = np.asarray(self.rank_tail, dtype=np.float32)+1
         head_franks = np.asarray(self.f_rank_head, dtype=np.float32)+1
         tail_franks = np.asarray(self.f_rank_tail, dtype=np.float32)+1
 
-        ranks  = np.concatenate((head_ranks, tail_ranks)) 
+        ranks = np.concatenate((head_ranks, tail_ranks))
         franks = np.concatenate((head_franks, tail_franks))
 
-        self.mr[self.epoch]   = np.mean(ranks)
-        self.mrr[self.epoch]  = np.mean(np.reciprocal(ranks))
-        self.fmr[self.epoch]  = np.mean(franks)
+        self.mr[self.epoch] = np.mean(ranks)
+        self.mrr[self.epoch] = np.mean(np.reciprocal(ranks))
+        self.fmr[self.epoch] = np.mean(franks)
         self.fmrr[self.epoch] = np.mean(np.reciprocal(franks))
 
         for hit in self.config.hits:
-            self.hit[(self.epoch, hit)] = np.mean(ranks<=hit, dtype=np.float32)
-            self.fhit[(self.epoch, hit)] = np.mean(franks<=hit, dtype=np.float32)
+            self.hit[(self.epoch, hit)] = np.mean(ranks <= hit, dtype=np.float32)
+            self.fhit[(self.epoch, hit)] = np.mean(franks <= hit, dtype=np.float32)
 
     def get_curr_scores(self):
-        scores = {'mr': self.mr[self.epoch], 
+        scores = {'mr': self.mr[self.epoch],
                   'fmr':self.fmr[self.epoch],
-                  'mrr':self.mrr[self.epoch], 
+                  'mrr':self.mrr[self.epoch],
                   'fmrr':self.fmrr[self.epoch]}
         return scores
 
 
     def save_test_summary(self, model_name):
         """Function to save the test of the summary.
-               
+
             Args:
-                model_name (str): specify the name of the model. 
+                model_name (str): specify the name of the model.
 
         """
         files = os.listdir(str(self.config.path_result))
@@ -189,7 +191,7 @@ class MetricCalculator:
             columns += ['Hit-%d Ratio'%hit, 'Filtered Hit-%d Ratio'%hit]
 
         results = []
-        for epoch in self.mr.keys():
+        for epoch, _ in self.mr.items():
             res_tmp = [epoch, self.mr[epoch], self.fmr[epoch], self.mrr[epoch], self.fmrr[epoch]]
 
             for hit in self.config.hits:
@@ -200,7 +202,7 @@ class MetricCalculator:
 
         df = pd.DataFrame(results, columns=columns)
 
-        with open(str(self.config.path_result / (model_name + '_Testing_results_' + str(l) + '.csv')),'a') as fh:
+        with open(str(self.config.path_result / (model_name + '_Testing_results_' + str(l) + '.csv')), 'a') as fh:
             df.to_csv(fh)
 
     def display_summary(self):
@@ -209,7 +211,7 @@ class MetricCalculator:
         test_results = []
         test_results.append('')
         test_results.append("------Test Results for %s: Epoch: %d --- time: %.2f------------" % (self.config.dataset_name, self.epoch, stop_time - self.start_time))
-        test_results.append('--# of entities, # of relations: %d, %d'%(self.config.tot_entity, self.config.tot_relation) )
+        test_results.append('--# of entities, # of relations: %d, %d'%(self.config.tot_entity, self.config.tot_relation))
         test_results.append('--mr,  filtered mr             : %.4f, %.4f'%(self.mr[self.epoch], self.fmr[self.epoch]))
         test_results.append('--mrr, filtered mrr            : %.4f, %.4f'%(self.mrr[self.epoch], self.fmrr[self.epoch]))
         for hit in self.config.hits:
@@ -297,7 +299,7 @@ class Evaluator:
             tot_valid_to_test = len(self.eval_data)
         else:
             tot_valid_to_test = min(self.config.test_num, len(self.eval_data))
-        if self.config.debug: 
+        if self.config.debug:
             tot_valid_to_test = 10
 
         self._logger.info("Mini-Testing on [%d/%d] Triples in the valid set." % (tot_valid_to_test, len(self.eval_data)))
@@ -306,7 +308,7 @@ class Evaluator:
     def full_test(self, epoch=None):
         tot_valid_to_test = len(self.test_data)
         if self.config.debug:
-            tot_valid_to_test  = 10
+            tot_valid_to_test = 10
 
         self._logger.info("Full-Testing on [%d/%d] Triples in the test set." % (tot_valid_to_test, len(self.test_data)))
         return self.test(self.test_data, tot_valid_to_test, epoch=epoch)
@@ -317,7 +319,7 @@ class Evaluator:
         progress_bar = tqdm(range(num_of_test))
         for i in progress_bar:
             h, r, t = data[i].h, data[i].r, data[i].t
-            
+
             # generate head batch and predict heads.
             h_tensor = torch.LongTensor([h]).to(self.config.device)
             r_tensor = torch.LongTensor([r]).to(self.config.device)
