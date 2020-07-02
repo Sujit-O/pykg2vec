@@ -7,25 +7,23 @@ It provides Abstract class for the Knowledge graph models.
 """
 
 from pykg2vec.common import TrainingStrategy
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 import torch.nn as nn
 
 
 class Model:
     """ Meta Class for knowledge graph embedding models"""
 
-    __metaclass__ = ABCMeta
-
     def __init__(self):
-        super(Model, self).__init__()
+        self.database = None
 
-    @abstractmethod
     def embed(self, h, r, t):
         """Function to get the embedding value"""
+        raise NotImplementedError
 
-    @abstractmethod
     def forward(self, h, r, t):
         """Function to get the embedding value"""
+        raise NotImplementedError
 
     def load_params(self, param_list, kwargs):
         for param_name in param_list:

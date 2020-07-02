@@ -106,6 +106,7 @@ class ConvE(ProjectionModel):
         return torch.sigmoid(x) # sigmoid activation
 
     def forward(self, e, r, direction="tail"):
+        assert direction in ("head", "tail"), "Unknown forward direction"
         if direction == "head":
             e_emb, r_emb = self.embed2(e, r + self.tot_relation)
         else:
@@ -206,6 +207,8 @@ class ProjE_pointwise(ProjectionModel):
                            torch.sum(torch.abs(self.ent_embeddings.weight)) + torch.sum(torch.abs(self.rel_embeddings.weight)))
 
     def forward(self, e, r, er_e2, direction="tail"):
+        assert direction in ("head", "tail"), "Unknown forward direction"
+
         emb_hr_e = self.ent_embeddings(e)  # [m, k]
         emb_hr_r = self.rel_embeddings(r)  # [m, k]
 
@@ -330,7 +333,7 @@ class TuckER(ProjectionModel):
         self.hidden_dropout1 = nn.Dropout(self.hidden_dropout1)
         self.hidden_dropout2 = nn.Dropout(self.hidden_dropout2)
 
-    def forward(self, e1, r, direction=None):
+    def forward(self, e1, r, direction="head"):
         """Implementation of the layer.
 
             Args:
@@ -340,6 +343,7 @@ class TuckER(ProjectionModel):
             Returns:
                 Tensors: Returns the activation values.
         """
+        assert direction in ("head", "tail"), "Unknown forward direction"
         e1 = self.ent_embeddings(e1)
         e1 = F.normalize(e1, p=2, dim=1)
         e1 = self.inp_drop(e1)
@@ -358,11 +362,11 @@ class TuckER(ProjectionModel):
         return F.sigmoid(x)
 
     def predict_tail_rank(self, e, r, topk=-1):
-        _, rank = torch.topk(-self.forward(e, r), k=topk)
+        _, rank = torch.topk(-self.forward(e, r, direction="tail"), k=topk)
         return rank
 
     def predict_head_rank(self, e, r, topk=-1):
-        _, rank = torch.topk(-self.forward(e, r), k=topk)
+        _, rank = torch.topk(-self.forward(e, r, direction="head"), k=topk)
         return rank
 
     @staticmethod

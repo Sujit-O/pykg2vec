@@ -24,7 +24,7 @@ class TransE(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.TransE import TransE
+            >>> from pykg2vec.models.pairwise import TransE
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransE()
             >>> trainer = Trainer(model=model)
@@ -113,7 +113,7 @@ class TransH(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.TransH import TransH
+            >>> from pykg2vec.models.pairwise import TransH
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransH()
             >>> trainer = Trainer(model=model)
@@ -194,7 +194,7 @@ class TransH(PairwiseModel):
 
 
 class TransD(PairwiseModel):
-    """
+    r"""
         `Knowledge Graph Embedding via Dynamic Mapping Matrix`_ (TransD) is an improved version of TransR.
         For each triplet :math:`(h, r, t)`, it uses two mapping matrices :math:`M_{rh}`, :math:`M_{rt}` :math:`\in` :math:`R^{mn}` to project entities from entity space to relation space.
         TransD constructs a dynamic mapping matrix for each entity-relation pair by considering the diversity of entities and relations simultaneously.
@@ -204,7 +204,7 @@ class TransD(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.TransD import TransD
+            >>> from pykg2vec.models.pairwise import TransD
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransD()
             >>> trainer = Trainer(model=model)
@@ -306,7 +306,7 @@ class TransM(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.TransM import TransM
+            >>> from pykg2vec.models.pairwise import TransM
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransM()
             >>> trainer = Trainer(model=model)
@@ -398,7 +398,7 @@ class TransR(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.TransR import TransR
+            >>> from pykg2vec.models.pairwise import TransR
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TransR()
             >>> trainer = Trainer(model=model)
@@ -509,7 +509,7 @@ class SLM(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.SLM import SLM
+            >>> from pykg2vec.models.pairwise import SLM
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = SLM()
             >>> trainer = Trainer(model=model)
@@ -590,7 +590,7 @@ class SME(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.SME import SME
+            >>> from pykg2vec.models.pairwise import SME
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = SME()
             >>> trainer = Trainer(model=model)
@@ -716,7 +716,7 @@ class SME_BL(SME):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.SME import SME
+            >>> from pykg2vec.models.pairwise import SME
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = SME_BL()
             >>> trainer = Trainer(model=model)
@@ -789,7 +789,7 @@ class RotatE(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.RotatE import RotatE
+            >>> from pykg2vec.models.pairwise import RotatE
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = RotatE()
             >>> trainer = Trainer(model=model)
@@ -861,7 +861,7 @@ class Rescal(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.Rescal import Rescal
+            >>> from pykg2vec.models.pairwise import Rescal
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = Rescal()
             >>> trainer = Trainer(model=model)
@@ -944,7 +944,7 @@ class NTN(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.NTN import NTN
+            >>> from pykg2vec.models.pairwise import NTN
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = NTN()
             >>> trainer = Trainer(model=model)
@@ -1049,7 +1049,7 @@ class KG2E(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.KG2E import KG2E
+            >>> from pykg2vec.models.pairwise import KG2E
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = KG2E()
             >>> trainer = Trainer(model=model)
@@ -1171,7 +1171,7 @@ class HoLE(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.pairwise.HoLE import HoLE
+            >>> from pykg2vec.models.pairwise.pairwise import HoLE
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = HoLE()
             >>> trainer = Trainer(model=model)
@@ -1199,8 +1199,8 @@ class HoLE(PairwiseModel):
             self.rel_embeddings,
         ]
 
-    def forward(self, head, rel, tail):
-        h_e, r_e, t_e = self.embed(head, rel, tail)
+    def forward(self, h, r, t):
+        h_e, r_e, t_e = self.embed(h, r, t)
         r_e = F.normalize(r_e, p=2, dim=-1)
         h_e = torch.stack((h_e, torch.zeros_like(h_e)), -1)
         t_e = torch.stack((t_e, torch.zeros_like(t_e)), -1)

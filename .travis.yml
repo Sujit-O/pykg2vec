@@ -25,4 +25,4 @@ script:
 
 after_success:
   - coveralls
-  - pylint pykg2vec/*.py pykg2vec/data/*.py pykg2vec/utils/*.py pykg2vec/test/test_*.py
+  - pylint pykg2vec/*.py pykg2vec/data/*.py pykg2vec/models/*.py pykg2vec/utils/*.py pykg2vec/test/test_*.py

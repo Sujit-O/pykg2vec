@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import math
 import torch
 import torch.nn as nn
 
@@ -9,6 +8,24 @@ from pykg2vec.models.Domain import NamedEmbedding
 
 
 class ANALOGY(PointwiseModel):
+    """
+       `Analogical Inference for Multi-relational Embeddings`_
+
+       Args:
+           config (object): Model configuration parameters.
+
+       Examples:
+           >>> from pykg2vec.models.pointwise import ANALOGY
+           >>> from pykg2vec.utils.trainer import Trainer
+           >>> model = ANALOGY()
+           >>> trainer = Trainer(model=model)
+           >>> trainer.build_model()
+           >>> trainer.train_model()
+
+       .. _Analogical Inference for Multi-relational Embeddings:
+           http://proceedings.mlr.press/v70/liu17d/liu17d.pdf
+
+    """
 
     def __init__(self, **kwargs):
         super(ANALOGY, self).__init__(self.__class__.__name__.lower())
@@ -108,7 +125,7 @@ class Complex(PointwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.Complex import Complex
+            >>> from pykg2vec.models.pointwise import Complex
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = Complex()
             >>> trainer = Trainer(model=model)
@@ -188,9 +205,9 @@ class ComplexN3(Complex):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.Complex import Complex
+            >>> from pykg2vec.models.pointwise import ComplexN3
             >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = Complex()
+            >>> model = ComplexN3()
             >>> trainer = Trainer(model=model, debug=False)
             >>> trainer.build_model()
             >>> trainer.train_model()
@@ -223,7 +240,7 @@ class ConvKB(PointwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.ConvKB import ConvKB
+            >>> from pykg2vec.models.pointwise import ConvKB
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = ConvKB()
             >>> trainer = Trainer(model=model)
@@ -299,6 +316,24 @@ class ConvKB(PointwiseModel):
 
 
 class CP(PointwiseModel):
+    """
+           `Canonical Tensor Decomposition for Knowledge Base Completion`_
+
+           Args:
+               config (object): Model configuration parameters.
+
+           Examples:
+               >>> from pykg2vec.models.pointwise import CP
+               >>> from pykg2vec.utils.trainer import Trainer
+               >>> model = CP()
+               >>> trainer = Trainer(model=model)
+               >>> trainer.build_model()
+               >>> trainer.train_model()
+
+           .. _Canonical Tensor Decomposition for Knowledge Base Completion:
+               http://proceedings.mlr.press/v80/lacroix18a/lacroix18a.pdf
+
+    """
     def __init__(self, **kwargs):
         super(CP, self).__init__(self.__class__.__name__.lower())
         param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
@@ -343,14 +378,14 @@ class CP(PointwiseModel):
         h_e, r_e, t_e = self.embed(h, r, t)
         return -torch.sum(h_e * r_e * t_e, -1)
 
-    def get_reg(self, h, r, t, type='N3'):
+    def get_reg(self, h, r, t, reg_type='N3'):
         h_e, r_e, t_e = self.embed(h, r, t)
-        if type.lower() == 'f2':
+        if reg_type.lower() == 'f2':
             regul_term = torch.mean(torch.sum(h_e**2, -1) + torch.sum(r_e**2, -1) + torch.sum(t_e**2, -1))
-        elif type.lower() == 'n3':
+        elif reg_type.lower() == 'n3':
             regul_term = torch.mean(torch.sum(h_e**3, -1) + torch.sum(r_e**3, -1) + torch.sum(t_e**3, -1))
         else:
-            raise NotImplementedError('Unknown regularizer type: %s' % type)
+            raise NotImplementedError('Unknown regularizer type: %s' % reg_type)
 
         return self.lmbda * regul_term
 
@@ -366,7 +401,7 @@ class DistMult(PointwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.Complex import DistMult
+            >>> from pykg2vec.models.pointwise import DistMult
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = DistMult()
             >>> trainer = Trainer(model=model)
@@ -425,7 +460,24 @@ class DistMult(PointwiseModel):
 
 
 class SimplE(PointwiseModel):
+    """
+           `SimplE Embedding for Link Prediction in Knowledge Graphs`_
 
+           Args:
+               config (object): Model configuration parameters.
+
+           Examples:
+               >>> from pykg2vec.models.pointwise import SimplE
+               >>> from pykg2vec.utils.trainer import Trainer
+               >>> model = SimplE()
+               >>> trainer = Trainer(model=model)
+               >>> trainer.build_model()
+               >>> trainer.train_model()
+
+           .. _SimplE Embedding for Link Prediction in Knowledge Graphs:
+               https://papers.nips.cc/paper/7682-simple-embedding-for-link-prediction-in-knowledge-graphs.pdf
+
+    """
     def __init__(self, **kwargs):
         super(SimplE, self).__init__(self.__class__.__name__.lower())
         param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
@@ -481,18 +533,26 @@ class SimplE(PointwiseModel):
         init = torch.sum(h1_e*r1_e*t1_e, 1) + torch.sum(h2_e*r2_e*t2_e, 1) / 2.0
         return -torch.clamp(init, -20, 20)
 
-    def get_reg(self, h, r, t):
-        num_batch = math.ceil(self.tot_train_triples / self.batch_size)
-        regul_term = (self._get_l2_loss(self.ent_head_embeddings) + self._get_l2_loss(self.ent_tail_embeddings) +
-                      self._get_l2_loss(self.rel_embeddings) + self._get_l2_loss(self.rel_inv_embeddings)) / num_batch**2
-        return self.lmbda * regul_term
-
-    @staticmethod
-    def _get_l2_loss(embeddings):
-        return torch.sum(embeddings.weight**2) / 2
-
 
 class SimplE_ignr(SimplE):
+    """
+           `SimplE Embedding for Link Prediction in Knowledge Graphs`_
+
+           Args:
+               config (object): Model configuration parameters.
+
+           Examples:
+               >>> from pykg2vec.models.pointwise import SimplE_ignr
+               >>> from pykg2vec.utils.trainer import Trainer
+               >>> model = SimplE_ignr()
+               >>> trainer = Trainer(model=model)
+               >>> trainer.build_model()
+               >>> trainer.train_model()
+
+           .. _SimplE Embedding for Link Prediction in Knowledge Graphs:
+               https://papers.nips.cc/paper/7682-simple-embedding-for-link-prediction-in-knowledge-graphs.pdf
+
+    """
 
     def __init__(self, **kwargs):
         super(SimplE_ignr, self).__init__(**kwargs)
@@ -520,9 +580,6 @@ class SimplE_ignr(SimplE):
 
         init = torch.sum(h_e*r_e*t_e, 1)
         return -torch.clamp(init, -20, 20)
-
-    def get_reg(self, h, r, t):
-        return 2.0 * super().get_reg(h, r, t)
 
     @staticmethod
     def _concat_selected_embeddings(e1, t1, e2, t2):
