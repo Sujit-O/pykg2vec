@@ -6,7 +6,7 @@ With tune_model.py we can train and tune the existed model using command:
 
 - check all tunnable parameters. ::
 
-    $ python tune_model.py -h 
+    $ python tune_model.py -h
 
 - We are still improving the interfaces to make them more convenient to use. For now, please refer to hyperparams.py_ to manually adjust the search space of hyperparameters. ::
 
@@ -40,18 +40,18 @@ We also attached the source code of tune_model.py below for your reference.
 import sys
 
 
-from pykg2vec.hyperparams import KGETuneArgParser
+from pykg2vec.common import KGETuneArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
 
 def main():
-   	# getting the customized configurations from the command-line arguments.
+    # getting the customized configurations from the command-line arguments.
     args = KGETuneArgParser().get_args(sys.argv[1:])
 
     # initializing bayesian optimizer and prepare data.
     bays_opt = BaysOptimizer(args=args)
 
-    # perform the golden hyperparameter tuning. 
+    # perform the golden hyperparameter tuning.
     bays_opt.optimize()
 
 

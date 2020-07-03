@@ -2,7 +2,7 @@
 =========================================
 Train multiple Algorithms (experiment.py)
 =========================================
-You can also design your own expriment plans. 
+You can also design your own expriment plans.
 For example, we attached experiment.py (adjust it for your own usage) below for your reference, which trains multiple algorithms at once. ::
 
     $ python experiment.py
@@ -39,6 +39,7 @@ def experiment(model_name):
     trainer.build_model()
     trainer.train_model()
 
+
 if __name__ == "__main__":
 
     # examples of train an algorithm on a benchmark dataset.
@@ -46,5 +47,5 @@ if __name__ == "__main__":
     experiment("transh")
     experiment("transr")
 
-    # other combination we are still working on them. 
+    # other combination we are still working on them.
     # experiment("transe", "wn18_rr")
