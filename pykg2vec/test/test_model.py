@@ -14,9 +14,13 @@ from pykg2vec.data.kgcontroller import KnowledgeGraph
     'analogy',
     'complex',
     'complexn3',
+    'conve',
+    'convkb',
     'cp',
     'distmult',
     'hole',
+    'kg2e',
+    'ntn',
     'proje_pointwise',
     'rescal',
     'rotate',
@@ -28,15 +32,16 @@ from pykg2vec.data.kgcontroller import KnowledgeGraph
     'transr',
     'transd',
     'transm',
-    'kg2e',
+    'sme',
+    'sme_bl',
 ])
-def test_KGE_methods(model_name):
+def test_kge_methods(model_name):
     """Function to test a set of KGE algorithsm."""
     testing_function(model_name)
-  
+
 
 @pytest.mark.skip(reason="This is a functional method.")
-def testing_function(name, distance_measure=None, bilinear=None, display=False, ent_hidden_size=None, rel_hidden_size=None, channels=None):
+def testing_function(name):
     """Function to test the models with arguments."""
     # getting the customized configurations from the command-line arguments.
     args = KGEArgParser().get_args(['-exp', 'True'])
@@ -49,20 +54,14 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     config_def, model_def = Importer().import_model_config(name)
     config = config_def(args)
 
-    config.epochs     = 1
-    config.test_step  = 1
-    config.test_num   = 10
-    config.disp_result= display
+    config.epochs = 1
+    config.test_step = 1
+    config.test_num = 10
     config.save_model = False
-    config.debug      = True
-
-    if ent_hidden_size:
-        config.ent_hidden_size = ent_hidden_size
-    if rel_hidden_size:
-        config.rel_hidden_size = rel_hidden_size
-
-    if channels:
-        config.channels = channels
+    config.debug = True
+    config.ent_hidden_size = 10
+    config.rel_hidden_size = 10
+    config.channels = 2
 
     model = model_def(**config.__dict__)
 
@@ -70,24 +69,3 @@ def testing_function(name, distance_measure=None, bilinear=None, display=False, 
     trainer = Trainer(model, config)
     trainer.build_model()
     trainer.train_model()
-
-def test_NTN():
-    testing_function('ntn', ent_hidden_size=10, rel_hidden_size=10) # for avoiding OOM.
-
-def test_ConvE():
-    testing_function('conve', channels=2) # for avoiding OOM.
-
-def test_ConvKB():
-    testing_function('convkb', channels=2) # for avoiding OOM.
-
-def test_SMEL_args():
-    """Function to test SME Algorithm with arguments."""
-    testing_function('sme', bilinear=False)
-
-def test_SMEB_args():
-    """Function to test SME Algorithm with arguments."""
-    testing_function('sme_bl', bilinear=True)
-
-def test_transE_display():
-    """Function to test transE display."""
-    testing_function('transe', display=True)

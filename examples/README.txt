@@ -29,7 +29,7 @@ Please go through the examples for more advanced usages:
 To create and use your own dataset, these steps are required:
 
 1. Store all of triples in a text-format with each line as below, using tab space ("\t") to seperate entities and relations.::
-    
+
     head\trelation\ttail
 
 2. For the text file, separate it into three files according to your reference give names as follows, ::

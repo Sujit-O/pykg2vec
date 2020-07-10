@@ -7,11 +7,34 @@ It provides Abstract class for the Knowledge graph models.
 """
 
 from pykg2vec.common import TrainingStrategy
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 import torch.nn as nn
 
-class PairwiseModel(nn.Module):
-    """ Meta Class for knowledge graph embedding algorithms"""
+
+class Model:
+    """ Meta Class for knowledge graph embedding models"""
+
+    def __init__(self):
+        self.database = None
+
+    def embed(self, h, r, t):
+        """Function to get the embedding value"""
+        raise NotImplementedError
+
+    def forward(self, h, r, t):
+        """Function to get the embedding value"""
+        raise NotImplementedError
+
+    def load_params(self, param_list, kwargs):
+        for param_name in param_list:
+            if param_name not in kwargs:
+                raise Exception("hyperparameter %s not found!" % param_name)
+            self.database[param_name] = kwargs[param_name]
+        return self.database
+
+
+class PairwiseModel(nn.Module, Model):
+    """ Meta Class for KGE models with translational distance"""
 
     __metaclass__ = ABCMeta
 
@@ -21,28 +44,11 @@ class PairwiseModel(nn.Module):
 
         self.model_name = model_name
         self.training_strategy = TrainingStrategy.PAIRWISE_BASED
-        self.database = {} # dict to store model-specific hyperparameter
-
-    @abstractmethod
-    def embed(self, h, r, t):
-        """Function to get the embedding value"""
-        pass
-
-    @abstractmethod
-    def forward(self, h, r, t):
-        """Function to get the embedding value"""
-        pass
-
-    def load_params(self, param_list, kwargs):
-        for param_name in param_list:
-            if param_name not in kwargs:
-                raise Exception("hyperparameter %s not found!" % param_name)
-            self.database[param_name] = kwargs[param_name]
-        return self.database
+        self.database = {}  # dict to store model-specific hyperparameter
 
 
-class PointwiseModel(nn.Module):
-    """ Meta Class for knowledge graph embedding algorithms"""
+class PointwiseModel(nn.Module, Model):
+    """ Meta Class for KGE models with semantic matching"""
 
     __metaclass__ = ABCMeta
 
@@ -52,27 +58,11 @@ class PointwiseModel(nn.Module):
 
         self.model_name = model_name
         self.training_strategy = TrainingStrategy.POINTWISE_BASED
-        self.database = {} # dict to store model-specific hyperparameter
+        self.database = {}  # dict to store model-specific hyperparameter
 
-    @abstractmethod
-    def embed(self, h, r, t):
-        """Function to get the embedding value"""
-        pass
 
-    @abstractmethod
-    def forward(self, h, r, t):
-        """Function to get the embedding value"""
-        pass
-
-    def load_params(self, param_list, kwargs):
-        for param_name in param_list:
-            if param_name not in kwargs:
-                raise Exception("hyperparameter %s not found!" % param_name)
-            self.database[param_name] = kwargs[param_name]
-        return self.database
-
-class ProjectionModel(nn.Module):
-    """ Meta Class for knowledge graph embedding algorithms"""
+class ProjectionModel(nn.Module, Model):
+    """ Meta Class for KGE models with neural network"""
 
     __metaclass__ = ABCMeta
 
@@ -82,21 +72,4 @@ class ProjectionModel(nn.Module):
 
         self.model_name = model_name
         self.training_strategy = TrainingStrategy.PROJECTION_BASED
-        self.database = {} # dict to store model-specific hyperparameter
-
-    @abstractmethod
-    def embed(self, h, r, t):
-        """Function to get the embedding value"""
-        pass
-
-    @abstractmethod
-    def forward(self, h, r, t):
-        """Function to get the embedding value"""
-        pass
-
-    def load_params(self, param_list, kwargs):
-        for param_name in param_list:
-            if param_name not in kwargs:
-                raise Exception("hyperparameter %s not found!" % param_name)
-            self.database[param_name] = kwargs[param_name]
-        return self.database
+        self.database = {}  # dict to store model-specific hyperparameter

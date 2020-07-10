@@ -6,10 +6,10 @@ You can train a single KGE algorithm with train.py by using the following comman
 
 - check all tunnable parameters: ::
 
-    $ python train.py -h 
+    $ python train.py -h
 
 - Train TransE on FB15k benchmark dataset: ::
-    
+
     $ python train.py -mn TransE
 
 - Train using different KGE methods. Check `Implemented KGE Algorithms`__ for more details: ::
@@ -25,12 +25,12 @@ You can train a single KGE algorithm with train.py by using the following comman
 
     $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|
                                     ks|nations|umls|dl50a|nell_955]
-                                    
+
 - Train KGE method with the hyperparameters used in original papers: (FB15k supported only)::
 
     $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complexn3|CP|RotatE|Analogy|
                         distmult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise] -exp true -ds fb15k
-    
+
 .. _LINK1: ../kge.html#implemented-kge-algorithms
 __ LINK1_
 
@@ -57,7 +57,7 @@ from pykg2vec.utils.trainer import Trainer
 def main():
     # getting the customized configurations from the command-line arguments.
     args = KGEArgParser().get_args(sys.argv[1:])
-    
+
     # Preparing data and cache the data for later usage
     knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
     knowledge_graph.prepare_data()

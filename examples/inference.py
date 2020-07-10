@@ -8,7 +8,7 @@ With inference.py, you can perform inference tasks with learned KGE model. Some 
     $ python inference.py -mn TransE -ld true # pykg2vec will look for the location of cached pretrained parameters in your local.
 
     # Once interactive mode is reached, you can execute instruction manually like
-    # Example 1: trainer.infer_tails(1,10,topk=5) => give the list of top-5 predicted tails. 
+    # Example 1: trainer.infer_tails(1,10,topk=5) => give the list of top-5 predicted tails.
     # Example 2: trainer.infer_heads(10,20,topk=5) => give the list of top-5 predicted heads.
     # Example 3: trainer.infer_rels(1,20,topk=5) => give the list of top-5 predicted relations.
 
@@ -20,11 +20,12 @@ We also attached the source code of inference.py below for your reference.
 # Author: Sujit Rokka Chhetri and Shiy Yuan Yu
 # License: MIT
 
-import sys, code
+import sys
+import code
 
 
 from pykg2vec.data.kgcontroller import KnowledgeGraph
-from pykg2vec.config import Importer, KGEArgParser
+from pykg2vec.common import Importer, KGEArgParser
 from pykg2vec.utils.trainer import Trainer
 
 
@@ -45,13 +46,14 @@ def main():
     trainer = Trainer(model, config)
     trainer.build_model()
     trainer.train_model()
-    
+
     #can perform all the inference here after training the model
     trainer.enter_interactive_mode()
-    
+
     code.interact(local=locals())
 
     trainer.exit_interactive_mode()
+
 
 if __name__ == "__main__":
     main()

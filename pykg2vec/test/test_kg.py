@@ -1,43 +1,54 @@
-import os, pytest
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+This module is for testing unit functions of KnowledgeGraph
+"""
+
+import os
+import pytest
 from pathlib import Path
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.data.datasets import KnownDataset
 
-@pytest.mark.parametrize("dataset_name", ["freebase15k", "wordnet18", "wordnet18_rr", "yago3_10"])
-def test_benchmarks(dataset_name):
+
+@pytest.mark.parametrize("dataset_name", [
+    "freebase15k",
+    "deeplearning50a",
+    "wordnet18",
+    "wordnet18_rr",
+    "yago3_10",
+    "freebase15k_237",
+    "kinship",
+    "nations",
+    "umls",
+    "nell_995",
+])
+def test_known_datasets(dataset_name):
     """Function to test the the knowledge graph parse for Freebase."""
     knowledge_graph = KnowledgeGraph(dataset=dataset_name)
     knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
 
-def test_fb15k_manipulate():
-    """Function to test the the knowledge graph parse for Freebase and basic operations."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
-    knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
-
-    knowledge_graph.read_cache_data('triplets_train')
-    knowledge_graph.read_cache_data('triplets_test')
-    knowledge_graph.read_cache_data('triplets_valid')
-    knowledge_graph.read_cache_data('hr_t')
-    knowledge_graph.read_cache_data('tr_h')
-    knowledge_graph.read_cache_data('idx2entity')
-    knowledge_graph.read_cache_data('idx2relation')
-    knowledge_graph.read_cache_data('entity2idx')
-    knowledge_graph.read_cache_data('relation2idx')
-
-def test_fb15k_meta():
-    """Function to test the the knowledge graph parse for Freebase and basic operations."""
-    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
-    knowledge_graph.force_prepare_data()
-    knowledge_graph.dump()
-
+    assert len(knowledge_graph.dump()) == 9
     assert knowledge_graph.is_cache_exists()
-    knowledge_graph.prepare_data()
 
-    knowledge_graph.dataset.read_metadata()
-    knowledge_graph.dataset.dump()
+    kg_metadata = knowledge_graph.dataset.read_metadata()
 
+    assert kg_metadata.tot_triple > 0
+    assert kg_metadata.tot_valid_triples > 0
+    assert kg_metadata.tot_test_triples > 0
+    assert kg_metadata.tot_train_triples > 0
+    assert kg_metadata.tot_relation > 0
+    assert kg_metadata.tot_entity > 0
+
+    assert len(knowledge_graph.read_cache_data('triplets_train')) > 0
+    assert len(knowledge_graph.read_cache_data('triplets_test')) > 0
+    assert len(knowledge_graph.read_cache_data('triplets_valid')) > 0
+    assert len(knowledge_graph.read_cache_data('hr_t')) > 0
+    assert len(knowledge_graph.read_cache_data('tr_h')) > 0
+    assert len(knowledge_graph.read_cache_data('idx2entity')) > 0
+    assert len(knowledge_graph.read_cache_data('idx2relation')) > 0
+    assert len(knowledge_graph.read_cache_data('entity2idx')) > 0
+    assert len(knowledge_graph.read_cache_data('relation2idx')) > 0
 
 def test_userdefined_dataset():
     custom_dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resource', 'custom_dataset')
@@ -63,6 +74,7 @@ def test_userdefined_dataset():
     assert knowledge_graph.kg_meta.tot_valid_triples == 1
     assert knowledge_graph.kg_meta.tot_entity == 6
     assert knowledge_graph.kg_meta.tot_relation == 3
+
 
 @pytest.mark.parametrize('file_name, new_ext', [
     ('dataset.tar.gz', 'tgz'),

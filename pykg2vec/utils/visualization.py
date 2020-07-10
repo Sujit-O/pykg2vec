@@ -17,13 +17,13 @@ from pykg2vec.utils.logger import Logger
 
 seaborn.set_style("darkgrid")
 
-class Visualization(object):
+class Visualization:
     """Class to aid in visualizing the results and embddings.
 
         Args:
             model (object): Model object
             vis_opts (list): Options for visualization.
-            sess (object): TensorFlow session object, initialized by the trainer. 
+            sess (object): TensorFlow session object, initialized by the trainer.
 
         Examples:
             >>> from pykg2vec.utils.visualization import Visualization
@@ -49,7 +49,7 @@ class Visualization(object):
             self.ent_and_rel_plot = False
 
         self.model = model
-        self.config = config 
+        self.config = config
 
         self.algo_list = ['ANALOGY', 'Complex', 'ComplexN3', 'ConvE', 'CP', 'DistMult', 'DistMult2', 'HoLE',
                           'KG2E', 'NTN', 'ProjE_pointwise', 'Rescal', 'RotatE', 'SimplE_avg',
@@ -68,7 +68,7 @@ class Visualization(object):
         self.r_proj_emb = []
         self.t_proj_emb = []
 
-        if self.model != None:
+        if self.model is not None:
             self.validation_triples_ids = self.config.knowledge_graph.read_cache_data('triplets_valid')
             self.idx2entity = self.config.knowledge_graph.read_cache_data('idx2entity')
             self.idx2relation = self.config.knowledge_graph.read_cache_data('idx2relation')
@@ -77,10 +77,10 @@ class Visualization(object):
 
     def get_idx_n_emb(self):
         """Function to get the integer ids and the embedding."""
-        
+
         idx = np.random.choice(len(self.validation_triples_ids), self.config.disp_triple_num)
         triples = []
-        for i in range(len(idx)):
+        for i, _ in enumerate(idx):
             triples.append(self.validation_triples_ids[idx[i]])
 
         for t in triples:
@@ -88,7 +88,7 @@ class Visualization(object):
             self.r_name.append(self.idx2relation[t.r])
             self.t_name.append(self.idx2entity[t.t])
 
-            emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]).to(self.config.device), torch.tensor([t.r]).to(self.config.device), torch.tensor([t.t]).to(self.config.device))
+            emb_h, emb_r, emb_t = self.model.embed(torch.LongTensor([t.h]).to(self.config.device), torch.LongTensor([t.r]).to(self.config.device), torch.LongTensor([t.t]).to(self.config.device))
 
             self.h_emb.append(emb_h)
             self.r_emb.append(emb_r)
@@ -96,18 +96,18 @@ class Visualization(object):
 
             if self.ent_and_rel_plot:
                 try:
-                    emb_h, emb_r, emb_t = self.model.embed(torch.tensor([t.h]).to(self.config.device), torch.tensor([t.r]).to(self.config.device), torch.tensor([t.t]).to(self.config.device))
+                    emb_h, emb_r, emb_t = self.model.embed(torch.LongTensor([t.h]).to(self.config.device), torch.LongTensor([t.r]).to(self.config.device), torch.LongTensor([t.t]).to(self.config.device))
                     self.h_proj_emb.append(emb_h)
                     self.r_proj_emb.append(emb_r)
                     self.t_proj_emb.append(emb_t)
                 except Exception as e:
-                    self._logger.error(e.args)
+                    self._logger.exception(e)
 
     def plot_embedding(self,
                        resultpath=None,
                        algos=None,
                        show_label=False,
-                       disp_num_r_n_e = 20):
+                       disp_num_r_n_e=20):
         """Function to plot the embedding.
 
             Args:
@@ -117,8 +117,7 @@ class Visualization(object):
                 disp_num_r_n_e (int): Total number of entities to display for head, tail and relation.
 
         """
-        if not self.model:
-            raise NotImplementedError('Please provide a model!')
+        assert self.model is not None, 'Please provide a model!'
 
         if self.ent_only_plot:
             x = torch.cat(self.h_emb + self.t_emb, dim=0)
@@ -147,12 +146,12 @@ class Visualization(object):
             t_embs = x[2 * length:3 * length, :]
 
             self.draw_embedding_rel_space(h_embs[:disp_num_r_n_e],
-                                     r_embs[:disp_num_r_n_e],
-                                     t_embs[:disp_num_r_n_e],
-                                     self.h_name[:disp_num_r_n_e],
-                                     self.r_name[:disp_num_r_n_e],
-                                     self.t_name[:disp_num_r_n_e],
-                                     resultpath, algos + '_ent_n_rel_plot', show_label)
+                                          r_embs[:disp_num_r_n_e],
+                                          t_embs[:disp_num_r_n_e],
+                                          self.h_name[:disp_num_r_n_e],
+                                          self.r_name[:disp_num_r_n_e],
+                                          self.t_name[:disp_num_r_n_e],
+                                          resultpath, algos + '_ent_n_rel_plot', show_label)
 
     def plot_train_result(self):
         """Function to plot the training result."""
@@ -160,7 +159,7 @@ class Visualization(object):
         path = self.config.path_result
         result = self.config.path_figures
         data = [self.config.dataset_name]
-        
+
         files = os.listdir(str(path))
         files_lwcase = [f.lower() for f in files]
         for d in data:
@@ -185,7 +184,7 @@ class Visualization(object):
                         frames = [df, df_3]
                         df = pd.concat(frames)
             plt.figure()
-            ax = seaborn.lineplot(x="Epochs", y="Loss", hue="Algorithm", markers=True, dashes=False, data=df)
+            seaborn.lineplot(x="Epochs", y="Loss", hue="Algorithm", markers=True, dashes=False, data=df)
             files = os.listdir(str(result))
             files_lwcase = [f.lower() for f in files]
             file_no = len([c for c in files_lwcase if d.lower() in c if 'training' in c])
@@ -199,8 +198,7 @@ class Visualization(object):
         result = self.config.path_figures
         data = [self.config.dataset_name]
         hits = self.config.hits
-        if path is None or algo is None or data is None:
-            raise NotImplementedError('Please provide valid path, algorithm and dataset!')
+        assert path is not None and algo is not None and data is not None, 'Please provide valid path, algorithm and dataset!'
         files = os.listdir(str(path))
         # files_lwcase = [f.lower() for f in files if 'Testing' in f]
         # self._logger.info(files_lwcase)
@@ -269,7 +267,7 @@ class Visualization(object):
                     frame = [df_5, df_t]
                     df_5 = pd.concat(frame)
 
-            df_6 = df_5[df_5['Metrics'].str.contains('Hits') == False]
+            df_6 = df_5[~df_5['Metrics'].str.contains('Hits')]
             plt.figure()
             flatui = ["#d46a7e", "#d5b60a", "#9b59b6", "#3498db", "#95a5a6", "#34495e", "#2ecc71", "#e74c3c"]
             g = seaborn.barplot(x="Metrics", y='Score', hue="Algorithm", palette=flatui, data=df_6)
@@ -284,7 +282,7 @@ class Visualization(object):
                         dpi=300)
             # plt.show()
 
-            df_6 = df_5[df_5['Metrics'].str.contains('Hits') == True]
+            df_6 = df_5[df_5['Metrics'].str.contains('Hits')]
             plt.figure()
             flatui = ["#3498db", "#95a5a6", "#34495e", "#2ecc71", "#e74c3c", "#d46a7e", "#d5b60a", "#9b59b6"]
             g = seaborn.barplot(x="Metrics", y='Score', hue="Algorithm", palette=flatui, data=df_6)
@@ -408,7 +406,7 @@ class Visualization(object):
         tail_nodes = []
         rel_nodes = []
 
-        for i in range(len(h_name)):
+        for i, _ in enumerate(h_name):
             G.add_edge(idx, idx + 1)
             G.add_edge(idx + 1, idx + 2)
 

@@ -13,7 +13,7 @@ def test_logger():
     logger = log.get_logger(logger_name)
     captured = io.StringIO()
     test_handler = logging.StreamHandler(captured)
-    test_handler.setFormatter(logging.Formatter(Logger._FORMAT))
+    test_handler.setFormatter(logging.Formatter(Logger.FORMAT))
     logger.addHandler(test_handler)
     message = "This is a log message"
 

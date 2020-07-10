@@ -2,7 +2,7 @@
 config.py
 ==========
 
-This module consists of definition of the necessary configuration parameters for all the 
+This module consists of definition of the necessary configuration parameters for all the
 core algorithms. The parameters are seprated into global parameters which are common
 across all the algorithms, and local parameters which are specific to the algorithms.
 
@@ -17,7 +17,7 @@ from pykg2vec.common import HyperparamterLoader
 class Config:
     """ The class defines the basic configuration for the pykg2vec.
 
-        Config consists of the necessary parameter description used by all the 
+        Config consists of the necessary parameter description used by all the
         modules including the algorithms and utility functions.
 
         Args:
@@ -39,7 +39,7 @@ class Config:
             hits (List): Gives the list of integer for calculating hits.
             knowledge_graph (Object): It prepares and holds the instance of the knowledge graph dataset.
             kg_meta (object): Stores the statistics metadata of the knowledge graph.
-    
+
     """
     _logger = Logger().get_logger(__name__)
 
@@ -52,9 +52,9 @@ class Config:
         self.hits = [1, 3, 5, 10]
         self.disp_result = False
         self.patience = 3 # should make this configurable as well.
-        
-        # Visualization related, 
-        # p.s. the visualizer is disable for most of the KGE methods for now. 
+
+        # Visualization related,
+        # p.s. the visualizer is disable for most of the KGE methods for now.
         self.disp_triple_num = 20
         self.plot_training_result = True
         self.plot_testing_result = True
@@ -63,11 +63,11 @@ class Config:
         self.knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
         for key in self.knowledge_graph.kg_meta.__dict__:
             self.__dict__[key] = self.knowledge_graph.kg_meta.__dict__[key]
-        
-        # The results of training will be stored in the following folders 
+
+        # The results of training will be stored in the following folders
         # which are relative to the parent folder (the path of the dataset).
         dataset_path = self.knowledge_graph.dataset.dataset_path
-        self.path_tmp =  dataset_path / 'intermediate'
+        self.path_tmp = dataset_path / 'intermediate'
         self.path_tmp.mkdir(parents=True, exist_ok=True)
         self.path_result = dataset_path / 'results'
         self.path_result.mkdir(parents=True, exist_ok=True)
@@ -83,17 +83,15 @@ class Config:
 
     def summary(self):
         """Function to print the summary."""
-        summary = []
-        summary.append("")
-        summary.append("------------------Global Setting--------------------")
+        summary = ["", "------------------Global Setting--------------------"]
         # Acquire the max length and add four more spaces
-        maxspace = len(max([k for k in self.__dict__.keys()])) +20
+        maxspace = len(max(self.__dict__.keys())) + 20
         for key, val in self.__dict__.items():
             if isinstance(val, (KGMetaData, KnowledgeGraph)):
                 continue
 
             if len(key) < maxspace:
-                for i in range(maxspace - len(key)):
+                for _ in range(maxspace - len(key)):
                     key = ' ' + key
             summary.append("%s : %s"%(key, val))
         summary.append("---------------------------------------------------")

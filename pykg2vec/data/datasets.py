@@ -1,4 +1,8 @@
-import shutil, tarfile, pickle, os, zipfile
+import shutil
+import tarfile
+import pickle
+import os
+import zipfile
 import urllib.request
 from pathlib import Path
 from pykg2vec.utils.logger import Logger
@@ -7,7 +11,7 @@ from pykg2vec.utils.logger import Logger
 def extract_tar(tar_path, extract_path='.'):
     """This function extracts the tar file.
 
-        Most of the knowledge graph dataset are donwloaded in a compressed
+        Most of the knowledge graph datasets are downloaded in a compressed
         tar format. This function is used to extract them
 
         Args:
@@ -27,7 +31,7 @@ def extract_tar(tar_path, extract_path='.'):
 def extract_zip(zip_path, extract_path='.'):
     """This function extracts the zip file.
 
-        Most of the knowledge graph dataset are donwloaded in a compressed
+        Most of the knowledge graph datasets are downloaded in a compressed
         zip format. This function is used to extract them
 
         Args:
@@ -98,9 +102,9 @@ class KnownDataset:
             self.dataset_path = self.root_path / self.name
 
         self.data_paths = {
-            'train': self.dataset_path / ('%strain.txt'%self.prefix),
-            'test': self.dataset_path / ('%stest.txt'%self.prefix),
-            'valid': self.dataset_path / ('%svalid.txt'%self.prefix)
+            'train': self.dataset_path / ('%strain.txt' % self.prefix),
+            'test': self.dataset_path / ('%stest.txt' % self.prefix),
+            'valid': self.dataset_path / ('%svalid.txt' % self.prefix)
         }
 
         self.cache_triplet_paths = {
@@ -138,17 +142,18 @@ class KnownDataset:
         ''' Extract the downloaded file under the folder with the given dataset name'''
 
         try:
-            if (os.path.exists(self.tar)):
+            if os.path.exists(self.tar):
                 self._logger.info("Extracting the downloaded dataset from %s to %s" % (self.tar, self.root_path))
                 extract_tar(str(self.tar), str(self.root_path))
                 return
-            if (os.path.exists(self.zip)):
+            if os.path.exists(self.zip):
                 self._logger.info("Extracting the downloaded dataset from %s to %s" % (self.zip, self.root_path))
                 extract_zip(str(self.zip), str(self.root_path))
                 return
         except Exception as e:
             self._logger.error("Could not extract the target file!")
-            self._logger.error("%s %s" % (type(e), e.args))
+            self._logger.exception(e)
+            raise
 
     def read_metadata(self):
         ''' Reads the metadata of the knowledge graph if available'''
@@ -366,7 +371,7 @@ class NELL_995(KnownDataset):
         KnownDataset.__init__(self, name, url, prefix)
 
 
-class UserDefinedDataset(object):
+class UserDefinedDataset():
     """The class consists of modules to handle the user defined datasets.
 
       User may define their own datasets to be processed with the

@@ -8,14 +8,14 @@ from pykg2vec.models.Domain import NamedEmbedding
 
 
 class ConvE(ProjectionModel):
-    """ 
+    """
         `Convolutional 2D Knowledge Graph Embeddings`_ (ConvE) is a multi-layer convolutional network model for link prediction,
         it is a embedding model which is highly parameter efficient.
         ConvE is the first non-linear model that uses a global 2D convolution operation on the combined and head entity and relation embedding vectors. The obtained feature maps are made flattened and then transformed through a fully connected layer. The projected target vector is then computed by performing linear transformation (passing through the fully connected layer) and activation function, and finally an inner product with the latent representation of every entities.
 
         Args:
             config (object): Model configuration parameters.
-    
+
         Examples:
             >>> from pykg2vec.models.Complex import ConvE
             >>> from pykg2vec.utils.trainer import Trainer
@@ -31,7 +31,7 @@ class ConvE(ProjectionModel):
 
     def __init__(self, **kwargs):
         super(ConvE, self).__init__(self.__class__.__name__.lower())
-        param_list = ["tot_entity", "tot_relation", "hidden_size", "hidden_size_1", 
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "hidden_size_1",
                       "lmbda", "input_dropout", "feature_map_dropout", "hidden_dropout"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
@@ -42,13 +42,13 @@ class ConvE(ProjectionModel):
         num_total_rel = self.tot_relation
         k = self.hidden_size
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        
+        self.ent_embeddings = NamedEmbedding("ent_embedding", num_total_ent, k)
+
         # because conve considers the reciprocal relations,
         # so every rel should have its mirrored rev_rel in ConvE.
-        self.rel_embeddings = nn.Embedding(num_total_rel*2, k)
-        
-        self.b = nn.Embedding(1, num_total_ent)
+        self.rel_embeddings = NamedEmbedding("rel_embedding", num_total_rel*2, k)
+
+        self.b = NamedEmbedding("b", 1, num_total_ent)
 
         self.bn0 = nn.BatchNorm2d(1)
         self.inp_drop = nn.Dropout(self.input_dropout)
@@ -60,14 +60,14 @@ class ConvE(ProjectionModel):
         self.bn2 = nn.BatchNorm1d(k)
 
         self.parameter_list = [
-            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
-            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
-            NamedEmbedding(self.b, "b"),
+            self.ent_embeddings,
+            self.rel_embeddings,
+            self.b,
         ]
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
-           
+
            Args:
                h (Tensor): Head entities ids.
                r (Tensor): Relation ids of the triple.
@@ -106,17 +106,18 @@ class ConvE(ProjectionModel):
         return torch.sigmoid(x) # sigmoid activation
 
     def forward(self, e, r, direction="tail"):
+        assert direction in ("head", "tail"), "Unknown forward direction"
         if direction == "head":
             e_emb, r_emb = self.embed2(e, r + self.tot_relation)
         else:
             e_emb, r_emb = self.embed2(e, r)
-        
+
         stacked_e = e_emb.view(-1, 1, self.hidden_size_2, self.hidden_size_1)
         stacked_r = r_emb.view(-1, 1, self.hidden_size_2, self.hidden_size_1)
         stacked_er = torch.cat([stacked_e, stacked_r], 2)
 
         preds = self.inner_forward(stacked_er, list(e.shape)[0])
-    
+
         return preds
 
     def predict_tail_rank(self, e, r, topk=-1):
@@ -134,7 +135,7 @@ class ConvE(ProjectionModel):
 
 
 class ProjE_pointwise(ProjectionModel):
-    """ 
+    """
         `ProjE-Embedding Projection for Knowledge Graph Completion`_. (ProjE) Instead of measuring the distance or matching scores between the pair of the
         head entity and relation and then tail entity in embedding space ((h,r) vs (t)).
         ProjE projects the entity candidates onto a target vector representing the
@@ -143,7 +144,7 @@ class ProjE_pointwise(ProjectionModel):
         entities will have value 0 if in negative sample set and value 1 if in
         positive sample set.
         Instead of measuring the distance or matching scores between the pair of the head entity and relation and then tail entity in embedding space ((h,r) vs (t)). ProjE projects the entity candidates onto a target vector representing the input data. The loss in ProjE is computed by the cross-entropy between the projected target vector and binary label vector, where the included entities will have value 0 if in negative sample set and value 1 if in positive sample set.
-        
+
 
         Args:
             config (object): Model configuration parameters.
@@ -172,14 +173,14 @@ class ProjE_pointwise(ProjectionModel):
         k = self.hidden_size
         self.device = kwargs["device"]
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, k)
-        self.rel_embeddings = nn.Embedding(num_total_rel, k)
-        self.bc1 = nn.Embedding(1, k)
-        self.De1 = nn.Embedding(1, k)
-        self.Dr1 = nn.Embedding(1, k)
-        self.bc2 = nn.Embedding(1, k)
-        self.De2 = nn.Embedding(1, k)
-        self.Dr2 = nn.Embedding(1, k)
+        self.ent_embeddings = NamedEmbedding("ent_embedding", num_total_ent, k)
+        self.rel_embeddings = NamedEmbedding("rel_embedding", num_total_rel, k)
+        self.bc1 = NamedEmbedding("bc1", 1, k)
+        self.De1 = NamedEmbedding("De1", 1, k)
+        self.Dr1 = NamedEmbedding("Dr1", 1, k)
+        self.bc2 = NamedEmbedding("bc2", 1, k)
+        self.De2 = NamedEmbedding("De2", 1, k)
+        self.Dr2 = NamedEmbedding("Dr2", 1, k)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.bc1.weight)
@@ -190,24 +191,27 @@ class ProjE_pointwise(ProjectionModel):
         nn.init.xavier_uniform_(self.Dr2.weight)
 
         self.parameter_list = [
-            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
-            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
-            NamedEmbedding(self.bc1, "bc1"),
-            NamedEmbedding(self.De1, "De1"),
-            NamedEmbedding(self.Dr1, "Dr1"),
-            NamedEmbedding(self.bc2, "bc2"),
-            NamedEmbedding(self.De2, "De2"),
-            NamedEmbedding(self.Dr2, "Dr2"),
+            self.ent_embeddings,
+            self.rel_embeddings,
+            self.bc1,
+            self.De1,
+            self.Dr1,
+            self.bc2,
+            self.De2,
+            self.Dr2,
         ]
 
     def get_reg(self):
-        return self.lmbda*(torch.sum(torch.abs(self.De1.weight) + torch.abs(self.Dr1.weight)) + torch.sum(torch.abs(self.De2.weight)
-               + torch.abs(self.Dr2.weight)) + torch.sum(torch.abs(self.ent_embeddings.weight)) + torch.sum(torch.abs(self.rel_embeddings.weight)))
+        return self.lmbda*(torch.sum(torch.abs(self.De1.weight) + torch.abs(self.Dr1.weight)) +
+                           torch.sum(torch.abs(self.De2.weight) + torch.abs(self.Dr2.weight)) +
+                           torch.sum(torch.abs(self.ent_embeddings.weight)) + torch.sum(torch.abs(self.rel_embeddings.weight)))
 
     def forward(self, e, r, er_e2, direction="tail"):
+        assert direction in ("head", "tail"), "Unknown forward direction"
+
         emb_hr_e = self.ent_embeddings(e)  # [m, k]
         emb_hr_r = self.rel_embeddings(r)  # [m, k]
-        
+
         if direction == "tail":
             ere2_sigmoid = self.g(torch.dropout(self.f1(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
         else:
@@ -251,7 +255,7 @@ class ProjE_pointwise(ProjectionModel):
     def predict_tail_rank(self, h, r, topk=-1):
         emb_h = self.ent_embeddings(h)  # [1, k]
         emb_r = self.rel_embeddings(r)  # [1, k]
-        
+
         hrt_sigmoid = -self.g(self.f1(emb_h, emb_r), self.ent_embeddings.weight)
         _, rank = torch.topk(hrt_sigmoid, k=topk)
 
@@ -260,7 +264,7 @@ class ProjE_pointwise(ProjectionModel):
     def predict_head_rank(self, t, r, topk=-1):
         emb_t = self.ent_embeddings(t)  # [m, k]
         emb_r = self.rel_embeddings(r)  # [m, k]
-        
+
         hrt_sigmoid = -self.g(self.f2(emb_t, emb_r), self.ent_embeddings.weight)
         _, rank = torch.topk(hrt_sigmoid, k=topk)
 
@@ -273,15 +277,15 @@ class ProjE_pointwise(ProjectionModel):
 
 
 class TuckER(ProjectionModel):
-    """ 
-        `TuckER-Tensor Factorization for Knowledge Graph Completion`_ (TuckER) 
+    """
+        `TuckER-Tensor Factorization for Knowledge Graph Completion`_ (TuckER)
         is a Tensor-factorization-based embedding technique based on
         the Tucker decomposition of a third-order binary tensor of triplets. Although
         being fully expressive, the number of parameters used in Tucker only grows linearly
         with respect to embedding dimension as the number of entities or relations in a
         knowledge graph increases.
         TuckER is a Tensor-factorization-based embedding technique based on the Tucker decomposition of a third-order binary tensor of triplets. Although being fully expressive, the number of parameters used in Tucker only grows linearly with respect to embedding dimension as the number of entities or relations in a knowledge graph increases. The author also showed in paper that the models, such as RESCAL, DistMult, ComplEx, are all special case of TuckER.
-        
+
 
         Args:
             config (object): Model configuration parameters.
@@ -301,9 +305,9 @@ class TuckER(ProjectionModel):
 
     def __init__(self, **kwargs):
         super(TuckER, self).__init__(self.__class__.__name__.lower())
-        param_list = ["tot_entity", "tot_relation", "ent_hidden_size", 
-                        "rel_hidden_size", "lmbda", "input_dropout", 
-                        "hidden_dropout1", "hidden_dropout2"]
+        param_list = ["tot_entity", "tot_relation", "ent_hidden_size",
+                      "rel_hidden_size", "lmbda", "input_dropout",
+                      "hidden_dropout1", "hidden_dropout2"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
 
@@ -312,24 +316,24 @@ class TuckER(ProjectionModel):
         self.d1 = self.ent_hidden_size
         self.d2 = self.rel_hidden_size
 
-        self.ent_embeddings = nn.Embedding(num_total_ent, self.d1)
-        self.rel_embeddings = nn.Embedding(num_total_rel, self.d2)
-        self.W = nn.Embedding(self.d2, self.d1 * self.d1)
+        self.ent_embeddings = NamedEmbedding("ent_embedding", num_total_ent, self.d1)
+        self.rel_embeddings = NamedEmbedding("rel_embedding", num_total_rel, self.d2)
+        self.W = NamedEmbedding("W", self.d2, self.d1 * self.d1)
         nn.init.xavier_uniform_(self.ent_embeddings.weight)
         nn.init.xavier_uniform_(self.rel_embeddings.weight)
         nn.init.xavier_uniform_(self.W.weight)
 
         self.parameter_list = [
-            NamedEmbedding(self.ent_embeddings, "ent_embedding"),
-            NamedEmbedding(self.rel_embeddings, "rel_embedding"),
-            NamedEmbedding(self.W, "W"),
+            self.ent_embeddings,
+            self.rel_embeddings,
+            self.W,
         ]
 
         self.inp_drop = nn.Dropout(self.input_dropout)
         self.hidden_dropout1 = nn.Dropout(self.hidden_dropout1)
         self.hidden_dropout2 = nn.Dropout(self.hidden_dropout2)
 
-    def forward(self, e1, r, direction=None):
+    def forward(self, e1, r, direction="head"):
         """Implementation of the layer.
 
             Args:
@@ -339,6 +343,7 @@ class TuckER(ProjectionModel):
             Returns:
                 Tensors: Returns the activation values.
         """
+        assert direction in ("head", "tail"), "Unknown forward direction"
         e1 = self.ent_embeddings(e1)
         e1 = F.normalize(e1, p=2, dim=1)
         e1 = self.inp_drop(e1)
@@ -357,11 +362,11 @@ class TuckER(ProjectionModel):
         return F.sigmoid(x)
 
     def predict_tail_rank(self, e, r, topk=-1):
-        _, rank = torch.topk(-self.forward(e, r), k=topk)
+        _, rank = torch.topk(-self.forward(e, r, direction="tail"), k=topk)
         return rank
 
     def predict_head_rank(self, e, r, topk=-1):
-        _, rank = torch.topk(-self.forward(e, r), k=topk)
+        _, rank = torch.topk(-self.forward(e, r, direction="head"), k=topk)
         return rank
 
     @staticmethod

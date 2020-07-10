@@ -3,13 +3,27 @@
 """
 This module is for controlling knowledge graph
 """
-import shutil, pickle, time
+import shutil
+import pickle
+import time
 from collections import defaultdict
-from pykg2vec.utils.logger import Logger
 import numpy as np
-from pykg2vec.data.datasets import FreebaseFB15k, DeepLearning50a, WordNet18, WordNet18_RR, YAGO3_10, FreebaseFB15k_237, Kinship, Nations, UMLS, NELL_995, UserDefinedDataset
+from pykg2vec.utils.logger import Logger
+from pykg2vec.data.datasets import (
+    FreebaseFB15k,
+    DeepLearning50a,
+    WordNet18,
+    WordNet18_RR,
+    YAGO3_10,
+    FreebaseFB15k_237,
+    Kinship,
+    Nations,
+    UMLS,
+    NELL_995,
+    UserDefinedDataset,
+)
 
-class Triple(object):
+class Triple:
     """ The class defines the datastructure of the knowledge graph triples.
 
         Triple class is used to store the head, tail and relation triple in both its numerical id and
@@ -44,7 +58,7 @@ class Triple(object):
         self.t = t
 
 
-class KGMetaData(object):
+class KGMetaData:
     """The class store the metadata of the knowledge graph.
 
        Instance of KGMetaData is used later to build the algorithms based of number
@@ -78,7 +92,7 @@ class KGMetaData(object):
         self.tot_entity = tot_entity
 
 
-class KnowledgeGraph(object):
+class KnowledgeGraph:
     """ The class is the main module that handles the knowledge graph.
 
         KnowledgeGraph is responsible for downloading, parsing, processing and preparing
@@ -145,9 +159,9 @@ class KnowledgeGraph(object):
 
         # KG data structure stored in triplet format
         self.triplets = {'train': [], 'test': [], 'valid': []}
-        self.triple_store = self.triplets 
+        self.triple_store = self.triplets
 
-        # TODO: should also have graph-based data structure for a KG. 
+        # TODO: should also have graph-based data structure for a KG.
         self.relations = []
         self.entities = []
 
@@ -310,6 +324,8 @@ class KnowledgeGraph(object):
                 relation_property = pickle.load(f)
 
                 return relation_property
+        else:
+            raise ValueError('Unknown cache data key %s' % key)
 
     def is_cache_exists(self):
         """Function to check if the dataset is cached in the memory"""
@@ -444,7 +460,7 @@ class KnowledgeGraph(object):
             self.tr_h_valid[(t.t, t.r)].add(t.h)
 
         return self.tr_h_valid
-    
+
     def read_relation_property(self):
         """ Function to read the relation property.
 
@@ -462,29 +478,31 @@ class KnowledgeGraph(object):
         for x in relation_property_head.keys():
             value_up = len(set(relation_property_tail[x]))
 
-            value_bot= len(set(relation_property_head[x])) + len(set(relation_property_tail[x]))
+            value_bot = len(set(relation_property_head[x])) + len(set(relation_property_tail[x]))
 
             if value_bot == 0:
                 value = 0
-            else: 
+            else:
                 value = value_up / value_bot
 
             self.relation_property[x] = value
 
         return self.relation_property
 
-    ''' reserved for debugging '''
+    # reserved for debugging
     def dump(self):
         """ Function to dump statistic information of a dataset """
-        ''' dump key information'''
-        dump = []
-        dump.append("")
-        dump.append("----------Metadata Info for Dataset:%s----------------" % self.dataset_name)
-        dump.append("Total Training Triples   :%s" % self.kg_meta.tot_train_triples)
-        dump.append("Total Testing Triples    :%s" % self.kg_meta.tot_test_triples)
-        dump.append("Total validation Triples :%s" % self.kg_meta.tot_valid_triples)
-        dump.append("Total Entities           :%s" % self.kg_meta.tot_entity)
-        dump.append("Total Relations          :%s" % self.kg_meta.tot_relation)
-        dump.append("---------------------------------------------")
-        dump.append("")
-        self._logger.info(("\n".join(dump)))
+        # dump key information
+        dump = [
+            "",
+            "----------Metadata Info for Dataset:%s----------------" % self.dataset_name,
+            "Total Training Triples   :%s" % self.kg_meta.tot_train_triples,
+            "Total Testing Triples    :%s" % self.kg_meta.tot_test_triples,
+            "Total validation Triples :%s" % self.kg_meta.tot_valid_triples,
+            "Total Entities           :%s" % self.kg_meta.tot_entity,
+            "Total Relations          :%s" % self.kg_meta.tot_relation,
+            "---------------------------------------------",
+            "",
+        ]
+        self._logger.info("\n".join(dump))
+        return dump
