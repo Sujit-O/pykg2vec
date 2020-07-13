@@ -13,7 +13,7 @@ With tune_model.py we can train and tune the existed model using command:
     # in hyperparams.py#xxxParams
     self.search_space = {
         'learning_rate': hp.loguniform('learning_rate', np.log(0.00001), np.log(0.1)),
-        'L1_flag': hp.choice('L1_flag', [True, False]),
+        'l1_flag': hp.choice('l1_flag', [True, False]),
         'hidden_size': scope.int(hp.qloguniform('hidden_size', np.log(8), np.log(256),1)),
         'batch_size': scope.int(hp.qloguniform('batch_size', np.log(8), np.log(4096),1)),
         'margin': hp.uniform('margin', 0.0, 2.0),

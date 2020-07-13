@@ -29,7 +29,7 @@ def testing_function_with_args(name, l1_flag, display=False):
     config.test_num = 10
     config.disp_result = display
     config.save_model = True
-    config.L1_flag = l1_flag
+    config.l1_flag = l1_flag
     config.debug = True
 
     model = model_def(**config.__dict__)

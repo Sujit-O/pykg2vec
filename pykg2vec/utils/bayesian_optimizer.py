@@ -9,7 +9,7 @@ import pandas as pd
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.logger import Logger
-from pykg2vec.common import KGEArgParser, Importer
+from pykg2vec.common import KGEArgParser, Importer, HyperparamterLoader
 
 
 class BaysOptimizer:
@@ -25,7 +25,7 @@ class BaysOptimizer:
 
 
       Examples:
-        >>> from pykg2vec.hyperparams import KGETuneArgParser
+        >>> from pykg2vec.common import KGETuneArgParser
         >>> from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
         >>> model = Complex()
         >>> args = KGETuneArgParser().get_args(sys.argv[1:])
@@ -36,7 +36,7 @@ class BaysOptimizer:
 
     def __init__(self, args):
         """store the information of database"""
-        if args.model.lower() in ["tucker", "tucker_v2", "conve", "convkb", "proje_pointwise"]:
+        if args.model.lower() in ["tucker", "conve", "convkb", "proje_pointwise"]:
             raise Exception("Model %s has not been supported in tuning hyperparameters!" % args.model)
 
         self.model_name = args.model
@@ -48,8 +48,7 @@ class BaysOptimizer:
 
         self.config_obj, self.model_obj = Importer().import_model_config(self.model_name.lower())
         self.config_local = self.config_obj(self.kge_args)
-        self.hyper_params = Importer().import_hyperparam(self.model_name.lower())()
-        self.search_space = self.hyper_params.search_space
+        self.search_space = HyperparamterLoader(args).load_search_space(self.model_name.lower())
         self._best_result = None
         self.trainer = None
 

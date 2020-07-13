@@ -4,7 +4,7 @@ Programming Examples
 =====================================
 
 We developed `several programming examples`__ for users to start working with pykg2vec.
-The examples are in /examples folder. ::
+The examples are in ./examples folder. ::
 
     (pykg2vec) $ cd ./examples
     # train TransE using benchmark dataset fb15k
@@ -20,7 +20,14 @@ Please go through the examples for more advanced usages:
 - Train multiple algorithms: (experiment.py_)
 - Full pykg2vec pipeline: (kgpipeline.py_)
 
+====
 
+**Use Your Own Hyperparameters**
+To experiment with your own hyperparameters, tweak the values inside YAML files under ./examples/hyperparams or create your own files.
+
+$ python train.py -mn TransE -ds [name] -exp True -hpd ./examples/hyperparams
+
+Make sure you also pass in the dataset name. Otherwise, Freebase15k will be used no matter whatever dataset you specified in the YAML file.
 
 ====
 

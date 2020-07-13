@@ -1,7 +1,12 @@
+import os
+import yaml
 import importlib
+import numpy as np
 from enum import Enum
 from argparse import ArgumentParser
 from pykg2vec.utils.logger import Logger
+from hyperopt import hp
+from hyperopt.pyll.base import scope
 
 class Monitor(Enum):
     """Training monitor enums"""
@@ -29,7 +34,7 @@ class KGETuneArgParser:
          debug (bool): If True, tunes the model in debugging mode.
 
       Examples:
-          >>> from pykg2vec.hyperparams import KGETuneArgParser
+          >>> from pykg2vec.common import KGETuneArgParser
           >>> from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
           >>> args = KGETuneArgParser().get_args()
           >>> bays_opt = BaysOptimizer(args=args)
@@ -103,7 +108,7 @@ class KGEArgParser:
         self.general_group = self.parser.add_argument_group('Generic')
         self.general_group.add_argument('-mn', dest='model_name', default='TransE', type=str, help='Name of model')
         self.general_group.add_argument('-db', dest='debug', default=False, type=lambda x: (str(x).lower() == 'true'), help='To use debug mode or not.')
-        self.general_group.add_argument('-exp', dest='exp', default=False, type=lambda x: (str(x).lower() == 'true'), help='Use Experimental setting extracted from original paper. (use with -ds or FB15k in default)')
+        self.general_group.add_argument('-exp', dest='exp', default=False, type=lambda x: (str(x).lower() == 'true'), help='Use Experimental setting extracted from original paper. (use Freebase15k by default)')
         self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
         self.general_group.add_argument('-dsp', dest='dataset_path', default=None, type=str, help='The path to custom dataset.')
         self.general_group.add_argument('-ld', dest='load_from_data', default=False, type=lambda x: (str(x).lower() == 'true'), help='load from tensroflow saved data!')
@@ -117,6 +122,7 @@ class KGEArgParser:
         self.general_group.add_argument('-plot', dest='plot_entity_only', default=False, type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.general_group.add_argument('-device', dest='device', default='cpu', type=str, choices=['cpu', 'cuda'], help="Device to run pykg2vec (cpu or cuda).")
         self.general_group.add_argument('-npg', dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
+        self.general_group.add_argument('-hpd', dest='hp_abs_dir', default=None, type=str, help='The path to the directory of hyperparameter configuration YAML files.')
 
 
     def get_args(self, args):
@@ -132,45 +138,90 @@ class KGEArgParser:
 
 class HyperparamterLoader:
     """Hyper parameters loading based datasets and embedding algorithms"""
-    def __init__(self):
-        # This hyperparameter setting aims to reproduce the experimental setup in its original papers.
-        self.hyperparams_paper = {
-            'freebase15k': {
-                'transe': {'learning_rate': 0.01, 'L1_flag': True, 'hidden_size': 50, 'batch_size': 128, 'epochs': 1000, 'margin': 1.00, 'optimizer': 'sgd', 'sampling':"uniform", 'neg_rate': 1},
-                'transh': {'learning_rate': 0.005, 'L1_flag': False, 'hidden_size': 50, 'batch_size':1200, 'epochs': 1000, 'margin': 0.5, 'optimizer': 'sgd', 'sampling':"uniform", 'neg_rate': 1},
-                'hole': {'learning_rate': 0.1, 'hidden_size': 150, 'batch_size': 5000, 'epochs':1000, 'margin': 0.2, 'optimizer': 'sgd', 'sampling': "uniform", 'neg_rate': 1},
-                'transm': {'learning_rate': 0.001, 'L1_flag': True, 'hidden_size': 50, 'batch_size': 128, 'epochs': 1000, 'margin': 1.0, 'optimizer': 'adam', 'sampling':"uniform", 'neg_rate': 1},
-                'rescal': {'learning_rate': 0.001, 'L1_flag': True, 'hidden_size': 50, 'batch_size': 128, 'epochs': 1000, 'margin': 1.0, 'optimizer': 'adam', 'sampling':"uniform", 'neg_rate': 1},
-                'rotate': {'learning_rate':0.0001, 'hidden_size': 1000, 'batch_size': 1024, 'epochs': 1000, 'margin': 24.0, 'optimizer': 'adam', 'sampling':"adversarial_negative_sampling", 'alpha': 1.0, 'neg_rate': 16},
-                'sme': {'learning_rate': 0.1, 'L1_flag': True, 'hidden_size': 50, 'batch_size':50000, 'epochs':1000, 'optimizer': 'adam'},
-                'transr': {'learning_rate': 0.001, 'L1_flag': True, 'ent_hidden_size': 50, 'rel_hidden_size':50, 'batch_size': 4800, 'epochs': 1000, 'margin': 1.0, 'optimizer': 'sgd', 'sampling': "bern", 'neg_rate': 1},
-                'transd': {'learning_rate': 0.001, 'L1_flag':False, 'ent_hidden_size': 50, 'rel_hidden_size':50, 'batch_size': 200, 'epochs': 1000, 'margin': 1.0, 'optimizer': 'sgd', 'sampling':"uniform", 'neg_rate': 1},
-                'ntn': {'learning_rate': 0.01, 'ent_hidden_size': 100, 'rel_hidden_size': 100, 'batch_size': 128, 'epochs': 1000, 'margin': 1.0, 'optimizer': 'adam', 'sampling':"uniform", 'neg_rate': 1, 'lmbda': 0.0001}, # problematic
-                'slm': {'learning_rate': 0.01, 'L1_flag': True, 'ent_hidden_size': 64, 'rel_hidden_size': 32, 'batch_size': 128, 'epochs': 1000, 'margin': 1.0, 'optimizer': 'adam', 'sampling':"uniform", 'neg_rate': 1},
-                'kg2e': {'learning_rate': 0.01, 'L1_flag': True, 'hidden_size': 50, 'batch_size':1440, 'epochs': 1000, 'margin': 4.0, 'optimizer': 'sgd', 'sampling':"uniform", 'cmax': 0.05, 'cmin': 5.00, 'neg_rate': 1},
-                'complex': {'learning_rate': 0.05, 'hidden_size': 200, 'batch_size': 5000, 'epochs':1000, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate':1, 'lmbda': 0.0001},
-                'distmult': {'learning_rate': 0.1, 'hidden_size': 100, 'batch_size': 50000, 'epochs':1000, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate':1, 'lmbda': 0.0001},
-                'proje_po': {'learning_rate': 0.01, 'hidden_dropout': 0.5, 'hidden_size': 200, 'batch_size': 200, ' epochs':100, 'optimizer': 'adam', 'lmbda':0.00001},
-                'conve': {'learning_rate': 0.003, 'optimizer': 'adam', 'label_smoothing': 0.1, 'batch_size': 128, 'hidden_size': 200, 'hidden_size_1': 20, 'input_dropout': 0.2, 'feature_map_dropout': 0.2, 'hidden_dropout': 0.3, 'neg_rate': 0},
-                'convkb': {'lmbda': 0.001, 'filter_sizes': [1, 2], 'num_filters': 50, 'learning_rate': 0.0001, 'optimizer': 'adam', 'hidden_size': 100, 'batch_size': 128, 'epochs':200, 'neg_rate':1},
-                'cp': {'learning_rate': 0.01, 'hidden_size': 50, 'batch_size': 128, 'epochs': 50, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.0001},
-                'analogy': {'learning_rate': 0.1, 'hidden_size': 200, 'batch_size': 128, 'epochs': 500, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.0001},
-                'simple': {'learning_rate': 0.05, 'hidden_size': 100, 'batch_size': 128, 'epochs': 1000, 'optimizer': 'adagrad', 'sampling': "uniform", 'neg_rate': 1, 'lmbda': 0.1}
-            }
-        }
 
-        self.hyperparams_paper['fb15k'] = self.hyperparams_paper['freebase15k']
+    _logger = Logger().get_logger(__name__)
+
+    def __init__(self, args):
+        self.hyperparams, self.search_space = self._load_parameter_config(args.hp_abs_dir) if hasattr(args, "hp_abs_dir") else self._load_parameter_config(None)
 
     def load_hyperparameter(self, dataset_name, algorithm):
         d_name = dataset_name.lower()
         a_name = algorithm.lower()
 
-        if d_name in self.hyperparams_paper and a_name in self.hyperparams_paper[d_name]:
-            params = self.hyperparams_paper[d_name][a_name]
+        if d_name in self.hyperparams and a_name in self.hyperparams[d_name]:
+            params = self.hyperparams[d_name][a_name]
             return params
 
-        raise Exception("We have not explored this experimental setting! (%s, %s)"%(dataset_name, algorithm))
+        raise Exception("This experimental setting for (%s, %s) has not been configured" % (dataset_name, algorithm))
 
+    def load_search_space(self, algorithm):
+        if algorithm in self.search_space:
+            return self.search_space[algorithm]
+        raise ValueError("Hyperparameter search space is not configured for %s" % algorithm)
+
+    @staticmethod
+    def _load_parameter_config(config_abs_dir):
+        default_config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "hyperparams")
+        hyperparams, search_space = HyperparamterLoader._load_yaml_config(default_config_dir, {}, {})
+        if config_abs_dir is not None:
+            hyperparams, search_space = HyperparamterLoader._load_yaml_config(config_abs_dir, hyperparams, search_space)
+
+        return hyperparams, search_space
+
+    @staticmethod
+    def _load_yaml_config(config_dir, hyperparams, search_space):
+        for config_file in os.listdir(config_dir):
+            if config_file.endswith("yaml") or config_file.endswith("yml"):
+                with open(os.path.abspath(os.path.join(config_dir, config_file)), "r") as file:
+                    try:
+                        config = yaml.safe_load(file)
+                        algorithm = os.path.splitext(config_file)[0].lower()
+                        if config["dataset"] in hyperparams:
+                            hyperparams[config["dataset"]][algorithm] = config["parameters"]
+                        else:
+                            hyperparams = {**hyperparams, **{config["dataset"]: {algorithm: config["parameters"]}}}
+                        search_space = {**search_space, **{algorithm: HyperparamterLoader._config_tuning_space(config["search_space"])}}
+                    except yaml.YAMLError:
+                        HyperparamterLoader._logger.error("Cannot load configuration: %s" % config_file)
+                        raise
+            else:
+                HyperparamterLoader._logger.warn("Skipped non YAML file: %s" % config_file)
+        return hyperparams, search_space
+
+    @staticmethod
+    def _config_tuning_space(tuning_space_raw):
+        if tuning_space_raw is None:
+            return None
+
+        hyper_obj = {}
+        if "learning_rate" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"learning_rate": hp.loguniform('learning_rate', np.log(tuning_space_raw['learning_rate']['min']), np.log(tuning_space_raw['learning_rate']['max']))}}
+        if "hidden_size" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"hidden_size": scope.int(hp.qloguniform('hidden_size', np.log(tuning_space_raw['hidden_size']['min']), np.log(tuning_space_raw['hidden_size']['max']), 1))}}
+        if "ent_hidden_size" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"ent_hidden_size": scope.int(hp.qloguniform("ent_hidden_size", np.log(tuning_space_raw['ent_hidden_size']['min']), np.log(tuning_space_raw['ent_hidden_size']['max']), 1))}}
+        if "rel_hidden_size" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"rel_hidden_size": scope.int(hp.qloguniform("rel_hidden_size", np.log(tuning_space_raw['rel_hidden_size']['min']), np.log(tuning_space_raw['rel_hidden_size']['max']), 1))}}
+        if "batch_size" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"batch_size": scope.int(hp.qloguniform("batch_size", np.log(tuning_space_raw['batch_size']['min']), np.log(tuning_space_raw['batch_size']['max']), 1))}}
+        if "margin" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"margin": hp.uniform("margin", tuning_space_raw["margin"]["min"], tuning_space_raw["margin"]["max"])}}
+        if "lmbda" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"lmbda": hp.loguniform('lmbda', np.log(tuning_space_raw["lmbda"]["min"]), np.log(tuning_space_raw["lmbda"]["max"]))}}
+        if "distance_measure" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"distance_measure": hp.choice('distance_measure', tuning_space_raw["distance_measure"])}}
+        if "cmax" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"cmax": hp.loguniform('cmax', np.log(tuning_space_raw["cmax"]["min"]), np.log(tuning_space_raw["cmax"]["max"]))}}
+        if "cmin" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"cmin": hp.loguniform('cmin', np.log(tuning_space_raw["cmin"]["min"]), np.log(tuning_space_raw["cmin"]["max"]))}}
+        if "optimizer" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"optimizer": hp.choice("optimizer", tuning_space_raw["optimizer"])}}
+        if "bilinear" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"bilinear": hp.choice('bilinear', tuning_space_raw["bilinear"])}}
+        if "epochs" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"epochs": hp.choice("epochs", tuning_space_raw["epochs"])}}
+
+        return hyper_obj
 
 class Importer:
     """The class defines methods for importing pykg2vec modules.
@@ -196,8 +247,6 @@ class Importer:
     def __init__(self):
         self.model_path = "pykg2vec.models"
         self.config_path = "pykg2vec.config"
-        self.hyper_path = "pykg2vec.hyperparams"
-
         self.modelMap = {"analogy": "pointwise.ANALOGY",
                          "complex": "pointwise.Complex",
                          "complexn3": "pointwise.ComplexN3",
@@ -223,40 +272,6 @@ class Importer:
                          "transr": "pairwise.TransR",
                          "tucker": "projection.TuckER"}
 
-        self.hyperparamMap = {"analogy": "ANALOGYParams",
-                              "complex": "ComplexParams",
-                              "complexn3": "ComplexParams",
-                              "conve": "ConvEParams",
-                              "cp": "CPParams",
-                              "hole": "HoLEParams",
-                              "distmult": "DistMultParams",
-                              "kg2e": "KG2EParams",
-                              "ntn": "NTNParams",
-                              "proje_pointwise": "ProjE_pointwiseParams",
-                              "rescal": "RescalParams",
-                              "rotate": "RotatEParams",
-                              "simple": "SimplEParams",
-                              "simple_ignr": "SimplEParams",
-                              "slm": "SLMParams",
-                              "sme": "SMEParams",
-                              "sme_bl": "SMEParams",
-                              "transd": "TransDParams",
-                              "transe": "TransEParams",
-                              "transh": "TransHParams",
-                              "transm": "TransMParams",
-                              "transr": "TransRParams",
-                              "tucker": "TuckERParams"}
-
-    def import_hyperparam(self, name):
-        hyper_obj = None
-
-        try:
-            hyper_obj = getattr(importlib.import_module(self.hyper_path), self.hyperparamMap[name])
-        except ModuleNotFoundError:
-            self._logger.error("%s model has not been implemented. please select from: %s" % (name, ' '.join(map(str, self.hyperparamMap.values()))))
-
-        return hyper_obj
-
     def import_model_config(self, name):
         """This function imports models and configuration.
 
@@ -280,7 +295,6 @@ class Importer:
         try:
             splited_path = self.modelMap[name].split('.')
             model_obj = getattr(importlib.import_module(self.model_path + ".%s" % splited_path[0]), splited_path[1])
-
         except ModuleNotFoundError:
             self._logger.error("%s model  has not been implemented. please select from: %s" % (name, ' '.join(map(str, self.modelMap.values()))))
 

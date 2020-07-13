@@ -1,0 +1,12 @@
+dataset: "freebase15k"
+parameters:
+  lmbda: 0.001
+  filter_sizes: [1, 2]
+  num_filters: 50
+  learning_rate: 0.0001
+  optimizer: "adam"
+  hidden_size: 100
+  batch_size: 128
+  epochs: 200
+  neg_rate: 1
+search_space: null

@@ -1,0 +1,14 @@
+dataset: "freebase15k"
+parameters:
+  learning_rate: 0.003
+  l1_flag': True
+  hidden_size: 200
+  hidden_size_1: 20
+  input_dropout: 0.2
+  feature_map_dropout: 0.2
+  hidden_dropout: 0.3
+  label_smoothing: 0.1
+  batch_size: 128
+  optimizer: "adam"
+  neg_rate: 0
+search_space: null

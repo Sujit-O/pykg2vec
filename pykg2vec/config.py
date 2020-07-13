@@ -77,7 +77,7 @@ class Config:
         self.path_embeddings.mkdir(parents=True, exist_ok=True)
 
         if args.exp is True:
-            paper_params = HyperparamterLoader().load_hyperparameter(args.dataset_name, args.model_name)
+            paper_params = HyperparamterLoader(args).load_hyperparameter(args.dataset_name, args.model_name)
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
 

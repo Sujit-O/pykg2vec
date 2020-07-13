@@ -8,6 +8,7 @@ import pytest
 from unittest.mock import patch
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.common import KGETuneArgParser
+from pykg2vec.common import HyperparamterLoader
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
 
@@ -36,11 +37,14 @@ def tunning_function(name):
     'analogy',
     'complex',
     'complexn3',
+    # 'conve',
+    # 'convkb',
     'cp',
     'distmult',
     'hole',
     'kg2e',
     'ntn',
+    # 'proje_pointwise',
     'rescal',
     'rotate',
     'simple',
@@ -57,6 +61,78 @@ def tunning_function(name):
 def test_tuning(model_name):
     """Function to test the tuning function."""
     tunning_function(model_name)
+
+@pytest.mark.parametrize('model_name', [
+    'analogy',
+    'complex',
+    'complexn3',
+    'conve',
+    'convkb',
+    'cp',
+    'distmult',
+    'hole',
+    'kg2e',
+    'ntn',
+    'proje_pointwise',
+    'rescal',
+    'rotate',
+    'simple',
+    'simple_ignr',
+    'slm',
+    'sme',
+    'sme_bl',
+    'transe',
+    'transh',
+    'transm',
+    'transd',
+    'transr',
+])
+def test_hyperparamter_loader(model_name):
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
+    knowledge_graph.prepare_data()
+
+    # getting the customized configurations from the command-line arguments.
+    args = KGETuneArgParser().get_args([])
+
+    hyperparams = HyperparamterLoader(args).load_hyperparameter("freebase15k", model_name)
+
+    assert hyperparams["optimizer"] is not None
+
+@pytest.mark.parametrize('model_name', [
+    'analogy',
+    'complex',
+    'complexn3',
+    # 'conve',
+    # 'convkb',
+    'cp',
+    'distmult',
+    'hole',
+    'kg2e',
+    'ntn',
+    # 'proje_pointwise',
+    'rescal',
+    'rotate',
+    'simple',
+    'simple_ignr',
+    'slm',
+    'sme',
+    'sme_bl',
+    'transe',
+    'transh',
+    'transm',
+    'transd',
+    'transr',
+])
+def test_search_space_loader(model_name):
+    knowledge_graph = KnowledgeGraph(dataset="freebase15k")
+    knowledge_graph.prepare_data()
+
+    # getting the customized configurations from the command-line arguments.
+    args = KGETuneArgParser().get_args([])
+
+    hyperparams = HyperparamterLoader(args).load_search_space(model_name)
+
+    assert hyperparams["epochs"] is not None
 
 @patch('pykg2vec.utils.bayesian_optimizer.fmin')
 def test_return_empty_before_optimization(mocked_fmin):
