@@ -533,6 +533,10 @@ class SimplE(PointwiseModel):
         init = torch.sum(h1_e*r1_e*t1_e, 1) + torch.sum(h2_e*r2_e*t2_e, 1) / 2.0
         return -torch.clamp(init, -20, 20)
 
+    def get_reg(self, h, r, t):
+        regul_term = torch.mean(torch.sum(h.type(torch.FloatTensor) ** 2, -1) + torch.sum(r.type(torch.FloatTensor) ** 2, -1) + torch.sum(t.type(torch.FloatTensor) ** 2, -1))
+        return self.lmbda * regul_term
+
 
 class SimplE_ignr(SimplE):
     """

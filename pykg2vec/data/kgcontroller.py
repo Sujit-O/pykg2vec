@@ -151,11 +151,13 @@ class KnowledgeGraph:
             self.dataset = UMLS()
         elif dataset.lower() == 'nell_995':
             self.dataset = NELL_995()
-        else:
+        elif custom_dataset_path is not None:
             # if the dataset does not match with existing one, check if it exists in user's local space.
             # if it still can't find corresponding folder, raise exception in UserDefinedDataset.__init__()
 
             self.dataset = UserDefinedDataset(dataset, custom_dataset_path)
+        else:
+            raise ValueError("Unknown dataset: %s" % dataset)
 
         # KG data structure stored in triplet format
         self.triplets = {'train': [], 'test': [], 'valid': []}

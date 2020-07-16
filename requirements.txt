@@ -12,3 +12,4 @@ numpydoc>=0.9.1
 sphinx-gallery>=0.3.1
 sphinx-rtd-theme>=0.4.3
 pytest>=3.6
+pyyaml>=5.3.1

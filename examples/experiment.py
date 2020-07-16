@@ -22,8 +22,9 @@ from pykg2vec.utils.trainer import Trainer
 
 def experiment(model_name):
     args = KGEArgParser().get_args([])
+
     args.exp = True
-    args.dataset_name = "fb15k"
+    args.dataset_name = "freebase15k"
 
     # Preparing data and cache the data for later usage
     knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
