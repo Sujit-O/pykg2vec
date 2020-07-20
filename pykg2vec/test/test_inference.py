@@ -91,7 +91,7 @@ def test_inference_on_pretrained_model():
     args = KGEArgParser().get_args([])
     config_def, model_def = Importer().import_model_config("transe")
     config = config_def(args)
-    config.load_from_data = os.path.join(os.path.dirname(__file__), "resource", "pretrained", "transe", Trainer.TRAINED_MODEL_FILE_NAME)
+    config.load_from_data = os.path.join(os.path.dirname(__file__), "resource", "pretrained", "TransE", Trainer.TRAINED_MODEL_FILE_NAME)
 
     model = model_def(**config.__dict__)
 
