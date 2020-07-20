@@ -248,10 +248,7 @@ class Evaluator:
 
     def test_tail_rank(self, h, r, topk=-1):
         if hasattr(self.model, 'predict_tail_rank'):
-            # TODO: this broke training on ProjE_pointwise
-            # h = h.unsqueeze(0).to(self.config.device)
-            # r = r.unsqueeze(0).to(self.config.device)
-            rank = self.model.predict_tail_rank(h, r, topk=topk)
+            rank = self.model.predict_tail_rank(torch.LongTensor([h]), torch.LongTensor([r]), topk=topk)
             return rank.squeeze(0)
 
         h_batch = torch.LongTensor([h]).repeat([self.config.tot_entity]).to(self.config.device)
@@ -264,10 +261,7 @@ class Evaluator:
 
     def test_head_rank(self, r, t, topk=-1):
         if hasattr(self.model, 'predict_head_rank'):
-            # TODO: this broke training on ProjE_pointwise
-            # t = t.unsqueeze(0).to(self.config.device)
-            # r = r.unsqueeze(0).to(self.config.device)
-            rank = self.model.predict_head_rank(t, r, topk=topk)
+            rank = self.model.predict_head_rank(torch.LongTensor([t]), torch.LongTensor([r]), topk=topk)
             return rank.squeeze(0)
 
         entity_array = torch.LongTensor(list(range(self.config.tot_entity))).to(self.config.device)
@@ -280,9 +274,7 @@ class Evaluator:
 
     def test_rel_rank(self, h, t, topk=-1):
         if hasattr(self.model, 'predict_rel_rank'):
-            # TODO: this broke training on ProjE_pointwise
-            # h = h.unsqueeze(0).to(self.config.device)
-            # t = t.unsqueeze(0).to(self.config.device)
+            # TODO: This is not implemented for conve, convkb, proje_pointwise and tucker
             rank = self.model.predict_rel_rank(h, t, topk=topk)
             return rank.squeeze(0)
 

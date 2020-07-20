@@ -27,7 +27,7 @@ class Config:
             tmp (Path Object): Path where temporary model information is stored.
             result (Path Object): Gives the path where the result will be saved.
             figures (Path Object): Gives the path where the figures will be saved.
-            load_from_data (bool): If True, loads the model parameters if available from memory.
+            load_from_data (string): If set, loads the model parameters if available from disk.
             save_model (True): If True, store the trained model parameters.
             disp_summary (bool): If True, display the summary before and after training the algorithm.
             disp_result (bool): If True, displays result while training.
