@@ -39,6 +39,11 @@ def test_kge_methods(model_name):
     """Function to test a set of KGE algorithsm."""
     testing_function(model_name)
 
+def test_error_on_importing_model():
+    with pytest.raises(ValueError) as e:
+        Importer().import_model_config("unknown")
+    assert "unknown model has not been implemented. please select from" in str(e)
+
 
 @pytest.mark.skip(reason="This is a functional method.")
 def testing_function(name):

@@ -111,7 +111,7 @@ class KGEArgParser:
         self.general_group.add_argument('-exp', dest='exp', default=False, type=lambda x: (str(x).lower() == 'true'), help='Use Experimental setting extracted from original paper. (use Freebase15k by default)')
         self.general_group.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
         self.general_group.add_argument('-dsp', dest='dataset_path', default=None, type=str, help='The path to custom dataset.')
-        self.general_group.add_argument('-ld', dest='load_from_data', default=False, type=lambda x: (str(x).lower() == 'true'), help='load from tensroflow saved data!')
+        self.general_group.add_argument('-ld', dest='load_from_data', default=None, type=str, help='The path to the pretrained model.')
         self.general_group.add_argument('-sv', dest='save_model', default=True, type=lambda x: (str(x).lower() == 'true'), help='Save the model!')
         self.general_group.add_argument('-tn', dest='test_num', default=1000, type=int, help='The total number of test triples')
         self.general_group.add_argument('-ts', dest='test_step', default=10, type=int, help='Test every _ epochs')
@@ -185,7 +185,7 @@ class HyperparamterLoader:
                         HyperparamterLoader._logger.error("Cannot load configuration: %s" % config_file)
                         raise
             else:
-                HyperparamterLoader._logger.warn("Skipped non YAML file: %s" % config_file)
+                HyperparamterLoader._logger.warning("Skipped non YAML file: %s" % config_file)
         return hyperparams, search_space
 
     @staticmethod
@@ -293,9 +293,13 @@ class Importer:
         config_obj = getattr(importlib.import_module(self.config_path), "Config")
         model_obj = None
         try:
-            splited_path = self.modelMap[name].split('.')
+            if name in self.modelMap:
+                splited_path = self.modelMap[name].split('.')
+            else:
+                raise ValueError("%s model has not been implemented. please select from: %s" % (name, ' '.join(map(lambda x: str(x).split(".")[1], self.modelMap.values()))))
             model_obj = getattr(importlib.import_module(self.model_path + ".%s" % splited_path[0]), splited_path[1])
         except ModuleNotFoundError:
-            self._logger.error("%s model  has not been implemented. please select from: %s" % (name, ' '.join(map(str, self.modelMap.values()))))
+            self._logger.error("%s model has not been implemented. please select from: %s" % (name, ' '.join(map(str.split(".")[1], self.modelMap.values()))))
+            raise ValueError("%s model has not been implemented. please select from: %s" % (name, ' '.join(map(str.split(".")[1], self.modelMap.values()))))
 
         return config_obj, model_obj

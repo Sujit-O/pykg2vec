@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import pandas as pd
 
 from tqdm import tqdm
+from pathlib import Path
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
 from pykg2vec.data.generator import Generator
@@ -81,6 +82,7 @@ class Trainer:
             >>> trainer.build_model()
             >>> trainer.train_model()
     """
+    TRAINED_MODEL_FILE_NAME = "model.vec.pt"
     _logger = Logger().get_logger(__name__)
 
     def __init__(self, model, config):
@@ -96,7 +98,13 @@ class Trainer:
 
     def build_model(self, monitor=Monitor.FILTERED_MEAN_RANK):
         """function to build the model"""
+        if self.config.load_from_data is not None:
+            self.load_model(self.config.load_from_data)
+
+        self.evaluator = Evaluator(self.model, self.config)
+
         self.model.to(self.config.device)
+
         if self.config.optimizer == "adam":
             self.optimizer = optim.Adam(
                 self.model.parameters(),
@@ -188,10 +196,6 @@ class Trainer:
     def train_model(self):
         """Function to train the model."""
         self.generator = Generator(self.model, self.config)
-        self.evaluator = Evaluator(self.model, self.config)
-
-        if self.config.load_from_data:
-            self.load_model()
 
         for cur_epoch_idx in range(self.config.epochs):
             self._logger.info("Epoch[%d/%d]" % (cur_epoch_idx, self.config.epochs))
@@ -295,7 +299,6 @@ class Trainer:
         self.build_model()
         self.load_model()
 
-        self.evaluator = Evaluator(self.model, self.config)
         self._logger.info("""The training/loading of the model has finished!
                                     Now enter interactive mode :)
                                     -----
@@ -376,14 +379,20 @@ class Trainer:
         """Function to save the model."""
         saved_path = self.config.path_tmp / self.model.model_name
         saved_path.mkdir(parents=True, exist_ok=True)
-        torch.save(self.model.state_dict(), str(saved_path / 'model.vec.pt'))
+        torch.save(self.model.state_dict(), str(saved_path / self.TRAINED_MODEL_FILE_NAME))
 
-    def load_model(self):
+    def load_model(self, model_path=None):
         """Function to load the model."""
-        saved_path = self.config.path_tmp / self.model.model_name
-        if saved_path.exists():
-            self.model.load_state_dict(torch.load(str(saved_path / 'model.vec.pt')))
+        if model_path is None:
+            model_path = self.config.path_tmp / self.model.model_name / self.TRAINED_MODEL_FILE_NAME
+        else:
+            model_path = Path(model_path)
+
+        if model_path.exists():
+            self.model.load_state_dict(torch.load(str(model_path)))
             self.model.eval()
+        else:
+            raise ValueError("Cannot load model from %s" % model_path)
 
     def display(self):
         """Function to display embedding."""
