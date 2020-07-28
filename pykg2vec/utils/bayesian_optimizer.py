@@ -44,6 +44,7 @@ class BaysOptimizer:
         self.kge_args = KGEArgParser().get_args([])
         self.kge_args.dataset_name = args.dataset_name
         self.kge_args.debug = args.debug
+        self.kge_args.device = args.device
         self.max_evals = args.max_number_trials if not args.debug else 3
 
         self.config_obj, self.model_obj = Importer().import_model_config(self.model_name.lower())
@@ -89,7 +90,7 @@ class BaysOptimizer:
         # copy the hyperparameters to trainer config and hyperparameter set.
         for key, value in params.items():
             self.config_local.__dict__[key] = value
-
+        self.config_local.__dict__['device'] = self.kge_args.device
         model = self.model_obj(**self.config_local.__dict__)
 
         self.trainer = Trainer(model, self.config_local)

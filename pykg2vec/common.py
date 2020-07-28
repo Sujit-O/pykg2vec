@@ -53,7 +53,7 @@ class KGETuneArgParser:
         self.parser.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
         self.parser.add_argument('-dsp', dest='dataset_path', default=None, type=str, help='The path to custom dataset.')
         self.parser.add_argument('-mt', dest='max_number_trials', default=100, type=int, help='The maximum times of trials for bayesian optimizer.')
-
+        self.parser.add_argument('-device', dest='device', default='cpu', type=str, choices=['cpu', 'cuda'], help="Device to run pykg2vec (cpu or cuda).")
     def get_args(self, args):
         """Gets the arguments from the console and parses it."""
         return self.parser.parse_args(args)
