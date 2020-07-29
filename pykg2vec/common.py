@@ -161,7 +161,8 @@ class HyperparamterLoader:
 
     @staticmethod
     def _load_parameter_config(config_abs_dir):
-        default_config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "hyperparams")
+        default_config_dir = os.path.join(os.getcwd(), "hyperparams")
+        default_config_dir_old = os.path.join(os.path.dirname(os.path.realpath(__file__)), "hyperparams")
         hyperparams, search_space = HyperparamterLoader._load_yaml_config(default_config_dir, {}, {})
         if config_abs_dir is not None:
             hyperparams, search_space = HyperparamterLoader._load_yaml_config(config_abs_dir, hyperparams, search_space)
