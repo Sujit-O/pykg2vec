@@ -142,51 +142,101 @@ class HyperparamterLoader:
     _logger = Logger().get_logger(__name__)
 
     def __init__(self, args):
-        self.hyperparams, self.search_space = self._load_parameter_config(args.hp_abs_dir) if hasattr(args, "hp_abs_dir") else self._load_parameter_config(None)
+        self.hp_abs_dir = args.hp_abs_dir if hasattr(args, "hp_abs_dir") else None
+        #self.hyperparams, self.search_space = self._load_parameter_config(args.hp_abs_dir) if hasattr(args, "hp_abs_dir") else self._load_parameter_config(None)
 
     def load_hyperparameter(self, dataset_name, algorithm):
+        # load the hyperparameter sets using dataset_name and algorithm. 
         d_name = dataset_name.lower()
         a_name = algorithm.lower()
+        hyperparam_path = self.hp_abs_dir
+        hyperparams = {}
+        if hyperparam_path is None:
+            hyperparam_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "hyperparams")
+            for files in os.listdir(hyperparam_dir):
+                if os.path.splitext(files)[0].lower() == algorithm.lower():
+                    hyperparam_path = os.path.abspath(os.path.join(hyperparam_dir, files))
+                    print(hyperparam_path)
+                    break
+        if os.path.isfile(hyperparam_path):
+            with open(os.path.abspath(hyperparam_path), "r") as file:
+                try:
+                    config = yaml.safe_load(file)
+                    if config["dataset"] in hyperparams:
+                        hyperparams[config["dataset"]][algorithm.lower()] = config["parameters"]
+                    else:
+                        hyperparams = {**hyperparams, **{config["dataset"]: {algorithm.lower(): config["parameters"]}}}
+                except yaml.YAMLError:
+                    HyperparamterLoader._logger.error("Cannot load configuration: %s" % hyperparam_path)
+                    raise
+        else:
+            raise FileNotFoundError("Hyper-parameter file does not exist! Please store hyper-parameters as yaml files in a \"hyperparams\" folder with your main or caller program.")
 
-        if d_name in self.hyperparams and a_name in self.hyperparams[d_name]:
-            params = self.hyperparams[d_name][a_name]
+        if d_name in hyperparams and a_name in hyperparams[d_name]:
+            params = hyperparams[d_name][a_name]
             return params
 
         raise Exception("This experimental setting for (%s, %s) has not been configured" % (dataset_name, algorithm))
 
     def load_search_space(self, algorithm):
-        if algorithm in self.search_space:
-            return self.search_space[algorithm]
+        a_name = algorithm.lower()
+        search_space_path = None
+        search_space = {}
+        search_space_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "searchspaces")
+        for files in os.listdir(search_space_dir):
+            if os.path.splitext(files)[0].lower() == a_name:
+                search_space_path = os.path.abspath(os.path.join(search_space_dir, files))
+                print(search_space_path)
+                break
+        if search_space_path is None:
+            raise FileNotFoundError("search_space file does not exist! Please store hyper-parameters as yaml files in a \"hyperparams\" folder with your main or caller program.")
+
+        if os.path.isfile(search_space_path):
+            with open(os.path.abspath(search_space_path), "r") as file:
+                try:
+                    config = yaml.safe_load(file)
+                    algorithm = a_name
+                    search_space = {**search_space, **{algorithm: HyperparamterLoader._config_tuning_space(config["search_space"])}}
+                except yaml.YAMLError:
+                    HyperparamterLoader._logger.error("Cannot load configuration: %s" % search_space_path)
+                    raise
+
+        if a_name in search_space:
+            return search_space[a_name]
         raise ValueError("Hyperparameter search space is not configured for %s" % algorithm)
 
     @staticmethod
     def _load_parameter_config(config_abs_dir):
-        default_config_dir = os.path.join(os.getcwd(), "hyperparams")
-        default_config_dir_old = os.path.join(os.path.dirname(os.path.realpath(__file__)), "hyperparams")
+        default_config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "hyperparams")
         hyperparams, search_space = HyperparamterLoader._load_yaml_config(default_config_dir, {}, {})
         if config_abs_dir is not None:
-            hyperparams, search_space = HyperparamterLoader._load_yaml_config(config_abs_dir, hyperparams, search_space)
+            hyperparams, search_space = HyperparamterLoader._load_yaml_config(config_abs_dir, {}, {})
 
         return hyperparams, search_space
 
+
     @staticmethod
     def _load_yaml_config(config_dir, hyperparams, search_space):
-        for config_file in os.listdir(config_dir):
-            if config_file.endswith("yaml") or config_file.endswith("yml"):
-                with open(os.path.abspath(os.path.join(config_dir, config_file)), "r") as file:
-                    try:
-                        config = yaml.safe_load(file)
-                        algorithm = os.path.splitext(config_file)[0].lower()
-                        if config["dataset"] in hyperparams:
-                            hyperparams[config["dataset"]][algorithm] = config["parameters"]
-                        else:
-                            hyperparams = {**hyperparams, **{config["dataset"]: {algorithm: config["parameters"]}}}
-                        search_space = {**search_space, **{algorithm: HyperparamterLoader._config_tuning_space(config["search_space"])}}
-                    except yaml.YAMLError:
-                        HyperparamterLoader._logger.error("Cannot load configuration: %s" % config_file)
-                        raise
-            else:
-                HyperparamterLoader._logger.warn("Skipped non YAML file: %s" % config_file)
+        try:
+            for config_file in os.listdir(config_dir):
+                if config_file.endswith("yaml") or config_file.endswith("yml"):
+                    with open(os.path.abspath(os.path.join(config_dir, config_file)), "r") as file:
+                        try:
+                            config = yaml.safe_load(file)
+                            algorithm = os.path.splitext(config_file)[0].lower()
+                            if config["dataset"] in hyperparams:
+                                hyperparams[config["dataset"]][algorithm] = config["parameters"]
+                            else:
+                                hyperparams = {**hyperparams, **{config["dataset"]: {algorithm: config["parameters"]}}}
+                            # return config["dataset"], config["para"]
+                            search_space = {**search_space, **{algorithm: HyperparamterLoader._config_tuning_space(config["search_space"])}}
+                        except yaml.YAMLError:
+                            HyperparamterLoader._logger.error("Cannot load configuration: %s" % config_file)
+                            raise
+                else:
+                    HyperparamterLoader._logger.warn("Skipped non YAML file: %s" % config_file)
+        except FileNotFoundError:
+            raise FileNotFoundError("Hyper-parameter file does not exist! Please store hyper-parameters as yaml files in a \"hyperparams\" folder with your main or caller program.")
         return hyperparams, search_space
 
     @staticmethod

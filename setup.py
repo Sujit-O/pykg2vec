@@ -29,7 +29,7 @@ setuptools.setup(
     url="https://github.com/Sujit-O/pykg2vec.git",
     packages=setuptools.find_packages(exclude=['dataset', 'py-env', 'build', 'dist', 'pykg2vec.egg-info']),
     package_dir={DISTNAME: 'pykg2vec'},
-    package_data={'pykg2vec': ['hyperparams/*.yaml']},
+    package_data={'pykg2vec': ['hyperparams/*.yaml', 'searchspaces/*.yaml']},
     setup_requires=['sphinx>=2.1.2'],
     install_requires=INSTALL_REQUIRES,
     classifiers=[

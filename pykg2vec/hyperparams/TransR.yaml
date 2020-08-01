@@ -1,12 +1,12 @@
 dataset: "freebase15k"
 parameters:
   learning_rate: 0.001
-  l1_flag: False
+  l1_flag: True
   ent_hidden_size: 50
   rel_hidden_size: 50
-  batch_size: 200
+  batch_size: 4800
   epochs: 1000
   margin: 1.0
   optimizer: "sgd"
-  sampling: "uniform"
+  sampling: "bern"
   neg_rate: 1

@@ -8,22 +8,3 @@ parameters:
   sampling: "uniform"
   neg_rate: 1
   lmbda: 0.1
-search_space:
-  learning_rate:
-    min: 0.00001
-    max: 0.1
-  hidden_size:
-    min: 8
-    max: 256
-  batch_size:
-    min: 8
-    max: 4096
-  lmbda:
-    min: 0.00001
-    max: 0.001
-  optimizer:
-    - "adam"
-    - "sgd"
-    - "rms"
-  epochs:
-    - 10
