@@ -8,7 +8,7 @@ import pytest
 from unittest.mock import patch
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.common import KGETuneArgParser
-from pykg2vec.common import HyperparamterLoader
+from pykg2vec.common import HyperparameterLoader
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
 
@@ -94,7 +94,7 @@ def test_hyperparamter_loader(model_name):
     # getting the customized configurations from the command-line arguments.
     args = KGETuneArgParser().get_args([])
 
-    hyperparams = HyperparamterLoader(args).load_hyperparameter("freebase15k", model_name)
+    hyperparams = HyperparameterLoader(args).load_hyperparameter("freebase15k", model_name)
 
     assert hyperparams["optimizer"] is not None
 
@@ -130,7 +130,7 @@ def test_search_space_loader(model_name):
     # getting the customized configurations from the command-line arguments.
     args = KGETuneArgParser().get_args([])
 
-    hyperparams = HyperparamterLoader(args).load_search_space(model_name)
+    hyperparams = HyperparameterLoader(args).load_search_space(model_name)
 
     assert hyperparams["epochs"] is not None
 

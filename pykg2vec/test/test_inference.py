@@ -123,4 +123,3 @@ def test_error_on_building_pretrained_model():
         trainer.build_model()
 
     assert "Cannot load model from %s" % config.load_from_data in str(e)
-

@@ -1,3 +1,4 @@
+model_name: "ConvKB"
 dataset: "freebase15k"
 parameters:
   lmbda: 0.001

@@ -11,7 +11,7 @@ across all the algorithms, and local parameters which are specific to the algori
 
 from pykg2vec.data.kgcontroller import KnowledgeGraph, KGMetaData
 from pykg2vec.utils.logger import Logger
-from pykg2vec.common import HyperparamterLoader
+from pykg2vec.common import HyperparameterLoader
 
 
 class Config:
@@ -77,7 +77,7 @@ class Config:
         self.path_embeddings.mkdir(parents=True, exist_ok=True)
 
         if args.exp is True:
-            paper_params = HyperparamterLoader(args).load_hyperparameter(args.dataset_name, args.model_name)
+            paper_params = HyperparameterLoader(args).load_hyperparameter(args.dataset_name, args.model_name)
             for key, value in paper_params.items():
                 self.__dict__[key] = value # copy all the setting from the paper.
 
