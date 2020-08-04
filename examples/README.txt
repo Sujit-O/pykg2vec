@@ -23,17 +23,66 @@ Please go through the examples for more advanced usages:
 ====
 
 **Use Your Own Hyperparameters**
-To experiment with your own hyperparameters, tweak the values inside ./examples/hyperparams/custom.yaml or create your own files.
 
-$ python train.py -exp True -mn TransE -ds fb15k -hpf ./examples/hyperparams/custom.yaml
+- To experiment with your own hyperparameters, tweak the values inside ./examples/custom_hp.yaml or create your own files. ::
 
-For loading hyperparameters for multiple models altogether, you can pass in the path to the folder containing all your YAML configurations:
+    $ python train.py -exp True -mn TransE -ds fb15k -hpf ./examples/custom_hp.yaml
 
-$ python train.py -exp True -mn TransE -ds fb15k -hpd ./examples/hyperparams
+- YAML formatting example (The file is also provided in /examples folder named custom_hp.yaml): ::
 
-NB: To make sure the loaded hyperparameters will be actually used for training, you need to pass in the same model_name
-value via -mn and the same dataset value via -ds as already specified in the YAML file from where those hyperparameters
-are originated. If both -hpf and -hpd are present, the hyperparameters specified in the file following -hpf will take precedence.
+    model_name: "TransE"
+    dataset: "freebase15k"
+    parameters:
+        learning_rate: 0.01
+        l1_flag: True
+        hidden_size: 50
+        batch_size: 128
+        epochs: 1000
+        margin: 1.00
+        optimizer: "sgd"
+        sampling: "uniform"
+        neg_rate: 1
+    
+- NB: To make sure the loaded hyperparameters will be actually used for training, you need to pass in the same model_name value via -mn and the same dataset value via -ds as already specified in the YAML file from where those hyperparameters are originated.
+
+====
+
+**Use Your Own Search Spaces**
+
+- To tune a model with your own search space, tweak the values inside ./examples/custom_ss.yaml or create your own files. ::
+
+    $ python tune_model.py -exp True -mn TransE -ds fb15k -ssf ./examples/custom_ss.yaml
+
+- YAML formatting example (THe file is also provided in /examples folder named custom_ss.yaml): ::
+
+    model_name: "TransE"
+    dataset: "freebase15k"
+    search_space:
+        learning_rate:
+            min: 0.00001
+            max: 0.1
+        l1_flag:
+            - True
+            - False
+        hidden_size:
+            min: 8
+            max: 256
+        batch_size:
+            min: 8
+            max: 4096
+        margin:
+            min: 0.0
+            max: 10.0
+        optimizer:
+            - "adam"
+            - "sgd"
+            - "rms"
+        epochs:
+            - 10
+
+- NB: To make sure the loaded search space will be actually used for tune_model.py, you need to pass in the same model_name value via -mn and the same dataset value via -ds as already specified in the YAML file that aligned with the parameters included in yaml.
+
+
 ====
 
 **Use Your Own Dataset**

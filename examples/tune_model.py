@@ -25,7 +25,14 @@ With tune_model.py we can train and tune the existed model using command:
 
     $ python tune_model.py -mn TransE -ds fb15k
 
+- Tune an algorithm using your own search space (algorithm_name and the algorithm name specified in YAML file should align): ::
 
+    $ python tune_model.py -mn [algorithm_name] -ds fb15k -ssf [path_to_file].yaml
+
+
+- Please refer here_ for details of YAML format.
+
+.. _here: index.html
 .. _hyperparams.py: https://github.com/Sujit-O/pykg2vec/blob/master/pykg2vec/config/hyperparams.py
 
 ====

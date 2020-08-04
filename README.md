@@ -100,9 +100,8 @@ $ python train.py -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of process
 $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|ks|nations|umls|dl50a|nell_955]
 
 # Train TransE model using different hyperparameters.
-$ python train.py -exp True -mn TransE -ds fb15k -hpf ./examples/hyperparams/custom.yaml
-or
-$ python train.py -exp True -mn TransE -ds fb15k -hpd ./examples/hyperparams
+$ python train.py -exp True -mn TransE -ds fb15k -hpf ./examples/custom_hp.yaml
+
 ```
 
 For more other pykg2vec usage, please check the [programming examples](https://pykg2vec.readthedocs.io/en/latest/auto_examples/index.html).

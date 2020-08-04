@@ -31,6 +31,14 @@ You can train a single KGE algorithm with train.py by using the following comman
     $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|ComplexN3|CP|RotatE|Analogy|
                         distmult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise] -exp true -ds fb15k
 
+- Train KGE method with your own set of hyperparameters stored (algorithm_name and the algorithm name specified in YAML file should align): ::
+
+    $ python train.py -mn [algorithm_name] -exp true -ds fb15k -hpf [path_to_file].yaml
+
+
+- Please refer here_ for details of YAML format.
+
+.. _here: index.html
 .. _LINK1: ../kge.html#implemented-kge-algorithms
 __ LINK1_
 
