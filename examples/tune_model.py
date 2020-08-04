@@ -40,13 +40,13 @@ We also attached the source code of tune_model.py below for your reference.
 import sys
 
 
-from pykg2vec.common import KGETuneArgParser
+from pykg2vec.common import KGEArgParser
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
 
 def main():
     # getting the customized configurations from the command-line arguments.
-    args = KGETuneArgParser().get_args(sys.argv[1:])
+    args = KGEArgParser().get_args(sys.argv[1:])
 
     # initializing bayesian optimizer and prepare data.
     bays_opt = BaysOptimizer(args=args)

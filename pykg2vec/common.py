@@ -24,42 +24,6 @@ class TrainingStrategy(Enum):
     POINTWISE_BASED = "pointwise_based"     # semantic matching models
 
 
-class KGETuneArgParser:
-    """The class defines the arguements accepted for the bayesian optimizer.
-
-      KGETuneArgParser utilizes the ArgumentParser module and add the arguments
-      accepted for tuning the model.
-
-      Args:
-         model (str): Name of the model/algorithm to be tuned.
-         debug (bool): If True, tunes the model in debugging mode.
-
-      Examples:
-          >>> from pykg2vec.common import KGETuneArgParser
-          >>> from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
-          >>> args = KGETuneArgParser().get_args()
-          >>> bays_opt = BaysOptimizer(args=args)
-
-       Todo:
-         * Add more arguments!.
-    """
-
-    def __init__(self):
-        self.parser = ArgumentParser(description='Knowledge Graph Embedding tunable configs.')
-
-        ''' basic configs '''
-        self.parser.add_argument('-mn', dest='model', default='TransE', type=str, help='Model to tune')
-        self.parser.add_argument('-db', dest='debug', default=False, type=lambda x: (str(x).lower() == 'true'),
-                                 help='To use debug mode or not.')
-        self.parser.add_argument('-ds', dest='dataset_name', default='Freebase15k', type=str, help='The dataset name (choice: fb15k/wn18/wn18_rr/yago/fb15k_237/ks/nations/umls)')
-        self.parser.add_argument('-dsp', dest='dataset_path', default=None, type=str, help='The path to custom dataset.')
-        self.parser.add_argument('-mt', dest='max_number_trials', default=100, type=int, help='The maximum times of trials for bayesian optimizer.')
-        self.parser.add_argument('-device', dest='device', default='cpu', type=str, choices=['cpu', 'cuda'], help="Device to run pykg2vec (cpu or cuda).")
-    def get_args(self, args):
-        """Gets the arguments from the console and parses it."""
-        return self.parser.parse_args(args)
-
-
 class KGEArgParser:
     """The class implements the argument parser for the pykg2vec.
 
@@ -125,8 +89,7 @@ class KGEArgParser:
         self.general_group.add_argument('-npg', dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
         self.general_group.add_argument('-hpf', dest='hp_abs_file', default=None, type=str, help='The path to the hyperparameter configuration YAML file.')
         self.general_group.add_argument('-ssf', dest='ss_abs_file', default=None, type=str, help='The path to the search space configuration YAML file.')
-
-
+        self.general_group.add_argument('-mt', dest='max_number_trials', default=100, type=int, help='The maximum times of trials for bayesian optimizer.')
 
     def get_args(self, args):
         """This function parses the necessary arguments.
