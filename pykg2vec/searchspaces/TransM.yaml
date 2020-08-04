@@ -1,0 +1,24 @@
+model_name: "TransM"
+dataset: "freebase15k"
+search_space:
+  learning_rate:
+    min: 0.00001
+    max: 0.1
+  l1_flag:
+    - True
+    - False
+  hidden_size:
+    min: 8
+    max: 256
+  batch_size:
+    min: 8
+    max: 4096
+  margin:
+    min: 0.0
+    max: 2.0
+  optimizer:
+    - "adam"
+    - "sgd"
+    - "rms"
+  epochs:
+    - 10

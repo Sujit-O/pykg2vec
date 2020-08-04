@@ -12,4 +12,3 @@ parameters:
   batch_size: 128
   optimizer: "adam"
   neg_rate: 0
-search_space: null
