@@ -1,15 +1,5 @@
 model_name: "TransE"
 dataset: "freebase15k"
-parameters:
-  learning_rate: 0.01
-  l1_flag: True
-  hidden_size: 50
-  batch_size: 128
-  epochs: 1000
-  margin: 1.00
-  optimizer: "sgd"
-  sampling: "uniform"
-  neg_rate: 1
 search_space:
   learning_rate:
     min: 0.00001
