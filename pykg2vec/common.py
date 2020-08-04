@@ -7,6 +7,8 @@ from argparse import ArgumentParser
 from pykg2vec.utils.logger import Logger
 from hyperopt import hp
 from hyperopt.pyll.base import scope
+import pdb
+from pathlib import Path
 
 class Monitor(Enum):
     """Training monitor enums"""
@@ -122,8 +124,9 @@ class KGEArgParser:
         self.general_group.add_argument('-plot', dest='plot_entity_only', default=False, type=lambda x: (str(x).lower() == 'true'), help='Plot the entity only!')
         self.general_group.add_argument('-device', dest='device', default='cpu', type=str, choices=['cpu', 'cuda'], help="Device to run pykg2vec (cpu or cuda).")
         self.general_group.add_argument('-npg', dest='num_process_gen', default=2, type=int, help='number of processes used in the Generator.')
-        self.general_group.add_argument('-hpd', dest='hp_abs_dir', default=None, type=str, help='The path to the directory of hyperparameter configuration YAML files.')
         self.general_group.add_argument('-hpf', dest='hp_abs_file', default=None, type=str, help='The path to the hyperparameter configuration YAML file.')
+        self.general_group.add_argument('-ssf', dest='ss_abs_file', default=None, type=str, help='The path to the search space configuration YAML file.')
+
 
 
     def get_args(self, args):
@@ -143,12 +146,22 @@ class HyperparameterLoader:
     _logger = Logger().get_logger(__name__)
 
     def __init__(self, args):
+        self.hyperparams  = {}
+        self.search_space = {}
+        
+        # load hyperparameters from options (file, dir or with pkg.)
+        default_search_space_dir = (Path(__file__).resolve().parent)/"searchspaces"
+        for config_file in default_search_space_dir.glob('**/*.yaml'):
+            self.search_space = self._load_ss_yaml(config_file, self.search_space)
+        default_hyperparam_dir = (Path(__file__).resolve().parent)/"hyperparams"
+        for config_file in default_hyperparam_dir.glob('**/*.yaml'):
+            self.hyperparams = self._load_hp_yaml(config_file, self.hyperparams)
+
+        # load search spaces from options (file, dir or with pkg.)
         if hasattr(args, "hp_abs_file") and args.hp_abs_file is not None:
-            self.hyperparams, self.search_space = self._load_parameter_from_file(args.hp_abs_file)
-        elif hasattr(args, "hp_abs_dir") and args.hp_abs_dir is not None:
-            self.hyperparams, self.search_space = self._load_parameter_from_dir(args.hp_abs_dir)
-        else:
-            self.hyperparams, self.search_space = self._load_default_parameter()
+            self.hyperparams = self._load_hp_yaml(args.hp_abs_file, self.hyperparams)
+        if hasattr(args, "ss_abs_file") and args.ss_abs_file is not None:
+            self.search_space = self._load_ss_yaml(args.ss_abs_file, self.search_space)
 
     def load_hyperparameter(self, dataset_name, algorithm):
         d_name = dataset_name.lower()
@@ -166,70 +179,32 @@ class HyperparameterLoader:
         raise ValueError("Hyperparameter search space is not configured for %s" % algorithm)
 
     @staticmethod
-    def _load_parameter_from_file(config_abs_file):
-        hyperparams, search_space = HyperparameterLoader._load_default_parameter()
-        if os.path.isfile(config_abs_file):
-            hyperparams, search_space = HyperparameterLoader._load_yaml_config_file(config_abs_file, hyperparams,
-                                                                                    search_space)
-        else:
-            raise FileNotFoundError("Cannot find configuration file %s" % config_abs_file)
-
-        return hyperparams, search_space
-
-    @staticmethod
-    def _load_parameter_from_dir(config_abs_dir):
-        hyperparams, search_space = HyperparameterLoader._load_default_parameter()
-        if os.path.isdir(config_abs_dir):
-            hyperparams, search_space = HyperparameterLoader._load_yaml_config_dir(config_abs_dir, hyperparams, search_space)
-        else:
-            raise NotADirectoryError("Cannot find configuration directory %s" % config_abs_dir)
-
-        return hyperparams, search_space
+    def _load_hp_yaml(config_file, hyperparams):
+        with open(os.path.abspath(config_file), "r") as file:
+            try:
+                config = yaml.safe_load(file)
+                algorithm = config["model_name"].lower()
+                if config["dataset"] in hyperparams:
+                    hyperparams[config["dataset"]][algorithm] = config["parameters"]
+                else:
+                    hyperparams = {**hyperparams, **{config["dataset"]: {algorithm: config["parameters"]}}}
+            except yaml.YAMLError:
+                HyperparameterLoader._logger.error("Cannot load configuration: %s" % config_file)
+                raise
+        return hyperparams
 
     @staticmethod
-    def _load_default_parameter():
-        default_config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "hyperparams")
-        hyperparams, search_space = HyperparameterLoader._load_yaml_config_dir(default_config_dir, {}, {})
-        return hyperparams, search_space
-
-    @staticmethod
-    def _load_yaml_config_file(config_file, hyperparams, search_space):
-        if config_file.endswith("yaml") or config_file.endswith("yml"):
-            with open(os.path.abspath(config_file), "r") as file:
-                try:
-                    config = yaml.safe_load(file)
-                    algorithm = config["model_name"].lower()
-                    if config["dataset"] in hyperparams:
-                        hyperparams[config["dataset"]][algorithm] = config["parameters"]
-                    else:
-                        hyperparams = {**hyperparams, **{config["dataset"]: {algorithm: config["parameters"]}}}
-                    search_space = {**search_space, **{algorithm: HyperparameterLoader._config_tuning_space(config["search_space"])}}
-                except yaml.YAMLError:
-                    HyperparameterLoader._logger.error("Cannot load configuration: %s" % config_file)
-                    raise
-        else:
-            raise ValueError("Configuration file must have .yaml or .yml extension: %s" % config_file)
-        return hyperparams, search_space
-
-    @staticmethod
-    def _load_yaml_config_dir(config_dir, hyperparams, search_space):
-        for config_file in os.listdir(config_dir):
-            if config_file.endswith("yaml") or config_file.endswith("yml"):
-                with open(os.path.abspath(os.path.join(config_dir, config_file)), "r") as file:
-                    try:
-                        config = yaml.safe_load(file)
-                        algorithm = config["model_name"].lower()
-                        if config["dataset"] in hyperparams:
-                            hyperparams[config["dataset"]][algorithm] = config["parameters"]
-                        else:
-                            hyperparams = {**hyperparams, **{config["dataset"]: {algorithm: config["parameters"]}}}
-                        search_space = {**search_space, **{algorithm: HyperparameterLoader._config_tuning_space(config["search_space"])}}
-                    except yaml.YAMLError:
-                        HyperparameterLoader._logger.error("Cannot load configuration: %s" % config_file)
-                        raise
-            else:
-                HyperparameterLoader._logger.warning("Skipped non YAML file: %s" % config_file)
-        return hyperparams, search_space
+    def _load_ss_yaml(config_file, search_space):
+        ''' loading search space configurationfrom yaml file'''
+        with open(os.path.abspath(config_file), "r") as file:
+            try:
+                config = yaml.safe_load(file)
+                algorithm = config["model_name"].lower()
+                search_space = {**search_space, **{algorithm: HyperparameterLoader._config_tuning_space(config["search_space"])}}
+            except yaml.YAMLError:
+                HyperparameterLoader._logger.error("Cannot load configuration: %s" % config_file)
+                raise
+        return search_space
 
     @staticmethod
     def _config_tuning_space(tuning_space_raw):
