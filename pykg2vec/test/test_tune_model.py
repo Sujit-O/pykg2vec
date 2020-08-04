@@ -7,7 +7,7 @@ import pytest
 
 from unittest.mock import patch
 from pykg2vec.data.kgcontroller import KnowledgeGraph
-from pykg2vec.common import KGETuneArgParser
+from pykg2vec.common import KGEArgParser
 from pykg2vec.common import HyperparameterLoader
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 
@@ -19,11 +19,11 @@ def tunning_function(name):
     knowledge_graph.prepare_data()
 
     # getting the customized configurations from the command-line arguments.
-    args = KGETuneArgParser().get_args([])
+    args = KGEArgParser().get_args([])
 
     # initializing bayesian optimizer and prepare data.
     args.debug = True
-    args.model = name
+    args.model_name = name
 
     bays_opt = BaysOptimizer(args=args)
     bays_opt.config_local.test_num = 10
@@ -92,7 +92,7 @@ def test_hyperparamter_loader(model_name):
     knowledge_graph.prepare_data()
 
     # getting the customized configurations from the command-line arguments.
-    args = KGETuneArgParser().get_args([])
+    args = KGEArgParser().get_args([])
 
     hyperparams = HyperparameterLoader(args).load_hyperparameter("freebase15k", model_name)
 
@@ -128,7 +128,7 @@ def test_search_space_loader(model_name):
     knowledge_graph.prepare_data()
 
     # getting the customized configurations from the command-line arguments.
-    args = KGETuneArgParser().get_args([])
+    args = KGEArgParser().get_args([])
 
     hyperparams = HyperparameterLoader(args).load_search_space(model_name)
 
@@ -141,11 +141,11 @@ def test_return_empty_before_optimization(mocked_fmin):
     knowledge_graph.prepare_data()
 
     # getting the customized configurations from the command-line arguments.
-    args = KGETuneArgParser().get_args([])
+    args = KGEArgParser().get_args([])
 
     # initializing bayesian optimizer and prepare data.
     args.debug = True
-    args.model = 'analogy'
+    args.model_name = 'analogy'
 
     bays_opt = BaysOptimizer(args=args)
     bays_opt.config_local.test_num = 10
