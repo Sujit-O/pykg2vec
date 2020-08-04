@@ -7,7 +7,6 @@ from argparse import ArgumentParser
 from pykg2vec.utils.logger import Logger
 from hyperopt import hp
 from hyperopt.pyll.base import scope
-import pdb
 from pathlib import Path
 
 class Monitor(Enum):
