@@ -36,10 +36,10 @@ class BaysOptimizer:
 
     def __init__(self, args):
         """store the information of database"""
-        if args.model.lower() in ["tucker", "conve", "convkb", "proje_pointwise"]:
+        if args.model_name.lower() in ["tucker", "conve", "convkb", "proje_pointwise"]:
             raise Exception("Model %s has not been supported in tuning hyperparameters!" % args.model)
 
-        self.model_name = args.model
+        self.model_name = args.model_name
         self.knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
         self.kge_args = KGEArgParser().get_args([])
         self.kge_args.dataset_name = args.dataset_name

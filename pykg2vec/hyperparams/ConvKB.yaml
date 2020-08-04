@@ -10,4 +10,3 @@ parameters:
   batch_size: 128
   epochs: 200
   neg_rate: 1
-search_space: null

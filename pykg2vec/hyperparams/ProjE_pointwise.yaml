@@ -9,4 +9,3 @@ parameters:
   optimizer: "adam"
   sampling: "uniform"
   lmbda: 0.00001
-search_space: null
