@@ -1,33 +1,30 @@
+model_name: "ANALOGY"
 dataset: "freebase15k"
 parameters:
-  learning_rate: 0.001
-  l1_flag: True
-  hidden_size: 50
+  learning_rate: 0.01
+  hidden_size: 200
   batch_size: 128
-  epochs: 1000
-  margin: 1.0
-  optimizer: "adam"
+  epochs: 500
+  optimizer: "adagrad"
   sampling: "uniform"
   neg_rate: 1
+  lmbda: 0.0001
 search_space:
   learning_rate:
     min: 0.00001
     max: 0.1
-  l1_flag:
-    - True
-    - False
   hidden_size:
     min: 8
-    max: 128
+    max: 256
   batch_size:
     min: 8
     max: 4096
-  margin:
-    min: 0.0
-    max: 2.0
+  lmbda:
+    min: 0.00001
+    max: 0.001
   optimizer:
     - "adam"
     - "sgd"
     - "rms"
   epochs:
-    - 10
+    - 100

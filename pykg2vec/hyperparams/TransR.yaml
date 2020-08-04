@@ -1,3 +1,4 @@
+model_name: "TransR"
 dataset: "freebase15k"
 parameters:
   learning_rate: 0.001

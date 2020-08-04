@@ -1,3 +1,4 @@
+model_name: "ConvE"
 dataset: "freebase15k"
 parameters:
   learning_rate: 0.003

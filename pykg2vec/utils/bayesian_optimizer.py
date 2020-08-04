@@ -9,7 +9,7 @@ import pandas as pd
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.logger import Logger
-from pykg2vec.common import KGEArgParser, Importer, HyperparamterLoader
+from pykg2vec.common import KGEArgParser, Importer, HyperparameterLoader
 
 
 class BaysOptimizer:
@@ -49,7 +49,7 @@ class BaysOptimizer:
 
         self.config_obj, self.model_obj = Importer().import_model_config(self.model_name.lower())
         self.config_local = self.config_obj(self.kge_args)
-        self.search_space = HyperparamterLoader(args).load_search_space(self.model_name.lower())
+        self.search_space = HyperparameterLoader(args).load_search_space(self.model_name.lower())
         self._best_result = None
         self.trainer = None
 

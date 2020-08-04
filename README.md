@@ -90,7 +90,7 @@ $ python train.py -h
 $ python train.py -mn TransE
 
 # Train using different KGE methods.
-$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|Complexn3|CP|RotatE|Analogy|
+$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|ComplexN3|CP|RotatE|Analogy|
                        DistMult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise]
 
 # For KGE using projection-based loss function, use more processes for batch generation.
@@ -100,7 +100,9 @@ $ python train.py -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of process
 $ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|ks|nations|umls|dl50a|nell_955]
 
 # Train TransE model using different hyperparameters.
-$ python train.py -mn TransE -ds fb15k -exp True -hpd examples/hyperparams
+$ python train.py -exp True -mn TransE -ds fb15k -hpf ./examples/hyperparams/custom.yaml
+or
+$ python train.py -exp True -mn TransE -ds fb15k -hpd ./examples/hyperparams
 ```
 
 For more other pykg2vec usage, please check the [programming examples](https://pykg2vec.readthedocs.io/en/latest/auto_examples/index.html).

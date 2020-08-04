@@ -23,12 +23,17 @@ Please go through the examples for more advanced usages:
 ====
 
 **Use Your Own Hyperparameters**
-To experiment with your own hyperparameters, tweak the values inside YAML files under ./examples/hyperparams or create your own files.
+To experiment with your own hyperparameters, tweak the values inside ./examples/hyperparams/custom.yaml or create your own files.
 
-$ python train.py -mn TransE -ds [name] -exp True -hpd ./examples/hyperparams
+$ python train.py -exp True -mn TransE -ds fb15k -hpf ./examples/hyperparams/custom.yaml
 
-Make sure you also pass in the dataset name. Otherwise, Freebase15k will be used no matter whatever dataset you specified in the YAML file.
+For loading hyperparameters for multiple models altogether, you can pass in the path to the folder containing all your YAML configurations:
 
+$ python train.py -exp True -mn TransE -ds fb15k -hpd ./examples/hyperparams
+
+NB: To make sure the loaded hyperparameters will be actually used for training, you need to pass in the same model_name
+value via -mn and the same dataset value via -ds as already specified in the YAML file from where those hyperparameters
+are originated. If both -hpf and -hpd are present, the hyperparameters specified in the file following -hpf will take precedence.
 ====
 
 **Use Your Own Dataset**
