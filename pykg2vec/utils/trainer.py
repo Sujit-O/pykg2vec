@@ -211,6 +211,8 @@ class Trainer:
                     ### start to check if the metric is still improving after each mini-test.
                     ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
                     break
+                
+                # TODO: Add function to store the best model weights.
 
         self.evaluator.full_test(cur_epoch_idx)
         self.evaluator.metric_calculator.save_test_summary(self.model.model_name)

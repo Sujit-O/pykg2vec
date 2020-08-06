@@ -142,30 +142,40 @@ class HyperparameterLoader:
 
     @staticmethod
     def _load_hp_yaml(config_file, hyperparams):
-        with open(os.path.abspath(config_file), "r") as file:
-            try:
-                config = yaml.safe_load(file)
-                algorithm = config["model_name"].lower()
-                if config["dataset"] in hyperparams:
-                    hyperparams[config["dataset"]][algorithm] = config["parameters"]
-                else:
-                    hyperparams = {**hyperparams, **{config["dataset"]: {algorithm: config["parameters"]}}}
-            except yaml.YAMLError:
-                HyperparameterLoader._logger.error("Cannot load configuration: %s" % config_file)
-                raise
+        if not os.path.isfile(config_file):
+            raise FileNotFoundError("Cannot find configuration file %s" % config_file)
+        if str(config_file).endswith("yaml") or str(config_file).endswith("yml"):
+            with open(os.path.abspath(config_file), "r") as file:
+                try:
+                    config = yaml.safe_load(file)
+                    algorithm = config["model_name"].lower()
+                    if config["dataset"] in hyperparams:
+                        hyperparams[config["dataset"]][algorithm] = config["parameters"]
+                    else:
+                        hyperparams = {**hyperparams, **{config["dataset"]: {algorithm: config["parameters"]}}}
+                except yaml.YAMLError:
+                    HyperparameterLoader._logger.error("Cannot load configuration: %s" % config_file)
+                    raise
+        else:
+            raise ValueError("Configuration file must have .yaml or .yml extension: %s" % config_file)
         return hyperparams
 
     @staticmethod
     def _load_ss_yaml(config_file, search_space):
         ''' loading search space configurationfrom yaml file'''
-        with open(os.path.abspath(config_file), "r") as file:
-            try:
-                config = yaml.safe_load(file)
-                algorithm = config["model_name"].lower()
-                search_space = {**search_space, **{algorithm: HyperparameterLoader._config_tuning_space(config["search_space"])}}
-            except yaml.YAMLError:
-                HyperparameterLoader._logger.error("Cannot load configuration: %s" % config_file)
-                raise
+        if not os.path.isfile(config_file):
+            raise FileNotFoundError("Cannot find configuration file %s" % config_file)
+        if str(config_file).endswith("yaml") or str(config_file).endswith("yml"):
+            with open(os.path.abspath(config_file), "r") as file:
+                try:
+                    config = yaml.safe_load(file)
+                    algorithm = config["model_name"].lower()
+                    search_space = {**search_space, **{algorithm: HyperparameterLoader._config_tuning_space(config["search_space"])}}
+                except yaml.YAMLError:
+                    HyperparameterLoader._logger.error("Cannot load configuration: %s" % config_file)
+                    raise
+        else:
+            raise ValueError("Configuration file must have .yaml or .yml extension: %s" % config_file)
         return search_space
 
     @staticmethod
