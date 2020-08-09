@@ -89,6 +89,9 @@ class Trainer:
         self.model = model
         self.config = config
 
+        self.best_metric = None
+        self.monitor = None
+
         self.training_results = []
 
         self.evaluator = None
@@ -196,7 +199,7 @@ class Trainer:
     def train_model(self):
         """Function to train the model."""
         self.generator = Generator(self.model, self.config)
-
+        self.monitor = Monitor.FILTERED_MEAN_RANK
         for cur_epoch_idx in range(self.config.epochs):
             self._logger.info("Epoch[%d/%d]" % (cur_epoch_idx, self.config.epochs))
 
@@ -211,8 +214,20 @@ class Trainer:
                     ### start to check if the metric is still improving after each mini-test.
                     ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
                     break
-                
+
                 # TODO: Add function to store the best model weights.
+                if self.config.save_model:
+                    if self.best_metric is None:
+                        self.best_metric = metrics
+                        self.save_model()
+                    else:
+                        if self.monitor == Monitor.MEAN_RANK or self.monitor == Monitor.FILTERED_MEAN_RANK:
+                            is_better = self.best_metric[self.monitor.value] > metrics[self.monitor.value]
+                        else:
+                            is_better = self.best_metric[self.monitor.value] < metrics[self.monitor.value]
+                        if is_better:
+                            self.save_model()
+                            self.best_metric = metrics
 
         self.evaluator.full_test(cur_epoch_idx)
         self.evaluator.metric_calculator.save_test_summary(self.model.model_name)
@@ -220,8 +235,8 @@ class Trainer:
         self.generator.stop()
         self.save_training_result()
 
-        if self.config.save_model:
-            self.save_model()
+        # if self.config.save_model:
+        #     self.save_model()
 
         if self.config.disp_result:
             self.display()
