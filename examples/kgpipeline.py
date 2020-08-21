@@ -26,12 +26,11 @@ from pykg2vec.utils.trainer import Trainer
 def main():
     model_name = "transe"
     dataset_name = "Freebase15k"
-    dataset_path = "/test"
+    # dataset_path = "path_to_dataset"
 
     # 1. Tune the hyper-parameters for the selected model and dataset.
     # p.s. this is using training and validation set.
-    args = args = KGEArgParser().get_args(['-mn', model_name, '-ds', dataset_name, "-dsp", dataset_path])
-    print(args)
+    args = args = KGEArgParser().get_args(['-mn', model_name, '-ds', dataset_name])
 
     # initializing bayesian optimizer and prepare data.
     bays_opt = BaysOptimizer(args=args)
