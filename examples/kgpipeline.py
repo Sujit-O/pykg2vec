@@ -30,7 +30,7 @@ def main():
 
     # 1. Tune the hyper-parameters for the selected model and dataset.
     # p.s. this is using training and validation set.
-    args = args = KGEArgParser().get_args(['-mn', model_name, '-ds', dataset_name])
+    args = KGEArgParser().get_args(['-mn', model_name, '-ds', dataset_name])
 
     # initializing bayesian optimizer and prepare data.
     bays_opt = BaysOptimizer(args=args)
