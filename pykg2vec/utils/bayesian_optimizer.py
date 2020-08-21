@@ -25,10 +25,10 @@ class BaysOptimizer:
 
 
       Examples:
-        >>> from pykg2vec.common import KGETuneArgParser
+        >>> from pykg2vec.common import KGEArgParser
         >>> from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
         >>> model = Complex()
-        >>> args = KGETuneArgParser().get_args(sys.argv[1:])
+        >>> args = KGEArgParser().get_args(sys.argv[1:])
         >>> bays_opt = BaysOptimizer(args=args)
         >>> bays_opt.optimize()
     """
@@ -41,10 +41,7 @@ class BaysOptimizer:
 
         self.model_name = args.model_name
         self.knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
-        self.kge_args = KGEArgParser().get_args([])
-        self.kge_args.dataset_name = args.dataset_name
-        self.kge_args.debug = args.debug
-        self.kge_args.device = args.device
+        self.kge_args = args
         self.max_evals = args.max_number_trials if not args.debug else 3
 
         self.config_obj, self.model_obj = Importer().import_model_config(self.model_name.lower())
