@@ -17,7 +17,7 @@ You can adjust to fit your usage.
 # Author: Sujit Rokka Chhetri and Shih Yuan Yu
 # License: MIT
 
-from pykg2vec.common import Importer, KGEArgParser, KGETuneArgParser
+from pykg2vec.common import Importer, KGEArgParser
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.bayesian_optimizer import BaysOptimizer
 from pykg2vec.utils.trainer import Trainer
@@ -26,10 +26,11 @@ from pykg2vec.utils.trainer import Trainer
 def main():
     model_name = "transe"
     dataset_name = "Freebase15k"
+    # dataset_path = "path_to_dataset"
 
     # 1. Tune the hyper-parameters for the selected model and dataset.
     # p.s. this is using training and validation set.
-    args = KGETuneArgParser().get_args(['-mn', model_name, '-ds', dataset_name])
+    args = KGEArgParser().get_args(['-mn', model_name, '-ds', dataset_name])
 
     # initializing bayesian optimizer and prepare data.
     bays_opt = BaysOptimizer(args=args)
