@@ -3,6 +3,9 @@
 import os
 import warnings
 import torch
+import numpy as np
+import json
+import pdb
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
@@ -83,6 +86,8 @@ class Trainer:
             >>> trainer.train_model()
     """
     TRAINED_MODEL_FILE_NAME = "model.vec.pt"
+    TRAINED_MODEL_CONFIG_NAME = "config.npy"
+    TRAINED_MODEL_PL_NAME = "model.npy"
     _logger = Logger().get_logger(__name__)
 
     def __init__(self, model, config):
@@ -197,6 +202,12 @@ class Trainer:
         return loss
 
     def train_model(self):
+
+        # for key, value in self.config.__dict__.items():
+        #     print(key," ",value)
+        #print(self.config.__dict__[""])
+        # pdb.set_trace()
+
         """Function to train the model."""
         self.generator = Generator(self.model, self.config)
         self.monitor = Monitor.FILTERED_MEAN_RANK
@@ -215,7 +226,7 @@ class Trainer:
                     ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
                     break
 
-                # TODO: Add function to store the best model weights.
+                # store the best model weights.
                 if self.config.save_model:
                     if self.best_metric is None:
                         self.best_metric = metrics
@@ -398,18 +409,55 @@ class Trainer:
         saved_path.mkdir(parents=True, exist_ok=True)
         torch.save(self.model.state_dict(), str(saved_path / self.TRAINED_MODEL_FILE_NAME))
 
+        """Save hyper-parameters into a yaml file with the model"""
+        save_path_config = saved_path / self.TRAINED_MODEL_CONFIG_NAME
+        save_path_model = saved_path / self.TRAINED_MODEL_PL_NAME
+        np.save(save_path_config, self.config)
+        np.save(save_path_model, self.model)
+        # print(self.config.__dict__)
+        # for items in self.model.parameter_list:
+        #     print(items)
+        #     print("hahaha")
+
     def load_model(self, model_path=None):
         """Function to load the model."""
         if model_path is None:
             model_path = self.config.path_tmp / self.model.model_name / self.TRAINED_MODEL_FILE_NAME
+            model_path_file = self.config.path_tmp / self.model.model_name / self.TRAINED_MODEL_FILE_NAME
+            model_path_config = self.config.path_tmp / self.model.model_name / self.TRAINED_MODEL_CONFIG_NAME
+            model_path_model = self.config.path_tmp / self.model.model_name / self.TRAINED_MODEL_PL_NAME
         else:
             model_path = Path(model_path)
+            model_path_file = model_path / self.TRAINED_MODEL_FILE_NAME
+            model_path_config = model_path / self.TRAINED_MODEL_CONFIG_NAME
+            model_path_model = model_path / self.TRAINED_MODEL_PL_NAME
 
-        if model_path.exists():
-            self.model.load_state_dict(torch.load(str(model_path)))
+        if model_path_file.exists() and model_path_config.exists():
+            # TODO: adjust model setting
+            config_temp = np.load(model_path_config, allow_pickle=True).item()
+            model_temp = np.load(model_path_model, allow_pickle=True).item()
+            # for key, value in config_temp.__dict__.items():
+            #     print(key, " ", value)
+            # pdb.set_trace()
+            """Should I do this?"""
+            self.model = model_temp
+                        
+            self.config.__dict__['lmbda'] = config_temp.__dict__['lmbda']
+            self.config.__dict__['l1_flag'] = config_temp.__dict__['l1_flag']
+            self.config.__dict__['learning_rate'] = config_temp.__dict__['learning_rate']
+            self.config.__dict__['hidden_size'] = config_temp.__dict__['hidden_size']
+            self.config.__dict__['batch_size'] = config_temp.__dict__['batch_size']
+            self.config.__dict__['epochs'] = config_temp.__dict__['epochs']
+            self.config.__dict__['margin'] = config_temp.__dict__['margin']
+            self.config.__dict__['optimizer'] = config_temp.__dict__['optimizer']
+            self.config.__dict__['sampling'] = config_temp.__dict__['sampling']
+            self.config.__dict__['neg_rate'] = config_temp.__dict__['neg_rate']
+            # pdb.set_trace()
+
+            self.model.load_state_dict(torch.load(str(model_path_file)))
             self.model.eval()
         else:
-            raise ValueError("Cannot load model from %s" % model_path)
+            raise ValueError("Cannot load model from %s" % model_path_file)
 
     def display(self):
         """Function to display embedding."""

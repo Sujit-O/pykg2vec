@@ -437,8 +437,7 @@ class Visualization:
                                             nodelist=rel_nodes,
                                             node_color=rel_colors,
                                             node_size=50,
-                                            node_shape='D',
-                                            with_labels=show_label)
+                                            node_shape='D')
         nodes_draw.set_edgecolor('k')
 
         nodes_draw = nx.draw_networkx_nodes(G,
