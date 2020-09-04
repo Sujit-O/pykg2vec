@@ -435,7 +435,7 @@ class Trainer:
             self.config.__dict__['optimizer'] = config_temp.__dict__['optimizer']
             self.config.__dict__['sampling'] = config_temp.__dict__['sampling']
             self.config.__dict__['neg_rate'] = config_temp.__dict__['neg_rate']
-            
+
             self.model.__init__(**self.config.__dict__)
 
             self.model.load_state_dict(torch.load(str(model_path_file)))
