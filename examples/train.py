@@ -56,7 +56,6 @@ We also attached the source code of train.py below for your reference.
 
 import sys
 
-
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.common import Importer, KGEArgParser
 from pykg2vec.utils.trainer import Trainer

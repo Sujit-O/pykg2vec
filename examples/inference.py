@@ -5,7 +5,7 @@ Inference task for one KGE method (inference.py)
 With inference.py, you can perform inference tasks with learned KGE model. Some available commands are: ::
 
     $ python inference.py -mn TransE # train a model on FK15K dataset and enter interactive CMD for manual inference tasks.
-    $ python inference.py -mn TransE -ld examples/pretrained/TransE/model.vec.pt # pykg2vec will load the pretrained model from the specified path.
+    $ python inference.py -mn TransE -ld examples/pretrained/TransE # pykg2vec will load the pretrained model from the specified directory.
 
     # Once interactive mode is reached, you can execute instruction manually like
     # Example 1: trainer.infer_tails(1,10,topk=5) => give the list of top-5 predicted tails.

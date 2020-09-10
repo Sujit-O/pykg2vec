@@ -110,7 +110,7 @@ class HyperparameterLoader:
     def __init__(self, args):
         self.hyperparams  = {}
         self.search_space = {}
-        
+
         # load hyperparameters from options (file, dir or with pkg.)
         default_search_space_dir = (Path(__file__).resolve().parent)/"searchspaces"
         for config_file in default_search_space_dir.glob('**/*.yaml'):
