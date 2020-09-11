@@ -1,12 +1,13 @@
 model_name: "Rescal"
-dataset: "freebase15k"
-parameters:
-  learning_rate: 0.001
-  l1_flag: True
-  hidden_size: 50
-  batch_size: 128
-  epochs: 1000
-  margin: 1.0
-  optimizer: "adam"
-  sampling: "uniform"
-  neg_rate: 1
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.001
+      l1_flag: True
+      hidden_size: 50
+      batch_size: 128
+      epochs: 1000
+      margin: 1.0
+      optimizer: "adam"
+      sampling: "uniform"
+      neg_rate: 1

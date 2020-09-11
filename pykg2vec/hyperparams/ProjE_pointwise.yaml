@@ -1,11 +1,12 @@
 model_name: "ProjE_pointwise"
-dataset: "freebase15k"
-parameters:
-  learning_rate: 0.01
-  hidden_dropout: 0.5
-  hidden_size: 200
-  batch_size: 200
-  epochs: 100
-  optimizer: "adam"
-  sampling: "uniform"
-  lmbda: 0.00001
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.01
+      hidden_dropout: 0.5
+      hidden_size: 200
+      batch_size: 200
+      epochs: 100
+      optimizer: "adam"
+      sampling: "uniform"
+      lmbda: 0.00001

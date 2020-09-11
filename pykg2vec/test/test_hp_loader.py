@@ -18,8 +18,9 @@ def test_load_default_hyperparameter_file():
     assert str(search_space["epochs"].inputs()[1]) == "0 Literal{10}"
 
 def test_load_custom_hyperparameter_file():
-    custom_hyperparamter_file = os.path.join(os.path.dirname(__file__), "resource", "custom_hyperparams", "custom.yaml")
-    hp_loader = HyperparameterLoader(KGEArgParser().get_args(["-hpf", custom_hyperparamter_file, "-ssf", custom_hyperparamter_file]))
+    custom_hyperparamter_file = os.path.join(os.path.dirname(__file__), "resource", "custom_hyperparams", "custom_hpf.yaml")
+    custom_ss_file = os.path.join(os.path.dirname(__file__), "resource", "custom_hyperparams", "custom_ssf.yaml")
+    hp_loader = HyperparameterLoader(KGEArgParser().get_args(["-hpf", custom_hyperparamter_file, "-ssf", custom_ss_file]))
     hyperparams = hp_loader.load_hyperparameter("freebase15k", "analogy")
     search_space = hp_loader.load_search_space("analogy")
 

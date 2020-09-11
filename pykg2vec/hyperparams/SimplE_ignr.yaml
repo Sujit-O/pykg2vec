@@ -1,11 +1,12 @@
 model_name: "SimplE_ignr"
-dataset: "freebase15k"
-parameters:
-  learning_rate: 0.05
-  hidden_size: 100
-  batch_size: 128
-  epochs: 1000
-  optimizer: "adagrad"
-  sampling: "uniform"
-  neg_rate: 1
-  lmbda: 0.1
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.05
+      hidden_size: 100
+      batch_size: 128
+      epochs: 1000
+      optimizer: "adagrad"
+      sampling: "uniform"
+      neg_rate: 1
+      lmbda: 0.1

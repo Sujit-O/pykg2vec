@@ -1,12 +1,13 @@
 model_name: "TransM"
-dataset: "freebase15k"
-parameters:
-  learning_rate: 0.005
-  l1_flag: False
-  hidden_size: 50
-  batch_size: 1200
-  epochs: 1000
-  margin: 0.5
-  optimizer: "sgd"
-  sampling: "uniform"
-  neg_rate: 1
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.005
+      l1_flag: False
+      hidden_size: 50
+      batch_size: 1200
+      epochs: 1000
+      margin: 0.5
+      optimizer: "sgd"
+      sampling: "uniform"
+      neg_rate: 1

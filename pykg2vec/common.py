@@ -149,10 +149,11 @@ class HyperparameterLoader:
                 try:
                     config = yaml.safe_load(file)
                     algorithm = config["model_name"].lower()
-                    if config["dataset"] in hyperparams:
-                        hyperparams[config["dataset"]][algorithm] = config["parameters"]
-                    else:
-                        hyperparams = {**hyperparams, **{config["dataset"]: {algorithm: config["parameters"]}}}
+                    for dataset in config["datasets"]:
+                        if dataset["dataset"] in hyperparams:
+                            hyperparams[dataset["dataset"]][algorithm] = dataset["parameters"]
+                        else:
+                            hyperparams = {**hyperparams, **{dataset["dataset"]: {algorithm: dataset["parameters"]}}}
                 except yaml.YAMLError:
                     HyperparameterLoader._logger.error("Cannot load configuration: %s" % config_file)
                     raise

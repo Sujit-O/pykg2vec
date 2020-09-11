@@ -1,11 +1,12 @@
 model_name: "HoLE"
-dataset: "freebase15k"
-parameters:
-  learning_rate: 0.1
-  hidden_size: 150
-  batch_size: 1200
-  epochs: 1000
-  margin: 0.2
-  optimizer: "sgd"
-  sampling: "uniform"
-  neg_rate: 1
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.1
+      hidden_size: 150
+      batch_size: 1200
+      epochs: 1000
+      margin: 0.2
+      optimizer: "sgd"
+      sampling: "uniform"
+      neg_rate: 1

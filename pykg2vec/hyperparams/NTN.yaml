@@ -1,13 +1,14 @@
 model_name: "NTN"
-dataset: "freebase15k"
-parameters:
-  learning_rate: 0.01
-  ent_hidden_size: 100
-  rel_hidden_size: 100
-  batch_size: 128
-  epochs: 1000
-  margin: 1.0
-  optimizer: "adam"
-  sampling: "uniform"
-  neg_rate: 1
-  lmbda: 0.0001
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.01
+      ent_hidden_size: 100
+      rel_hidden_size: 100
+      batch_size: 128
+      epochs: 1000
+      margin: 1.0
+      optimizer: "adam"
+      sampling: "uniform"
+      neg_rate: 1
+      lmbda: 0.0001
