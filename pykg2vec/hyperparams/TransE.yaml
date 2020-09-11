@@ -12,7 +12,7 @@ datasets:
       sampling: "bern"
       neg_rate: 1
 
-  - dataset: "fb15k"
+  - dataset: "freebase15k"
     parameters:
       learning_rate: 0.01
       l1_flag: True
