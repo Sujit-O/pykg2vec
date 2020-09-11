@@ -1,13 +1,14 @@
 model_name: "SLM"
-dataset: "freebase15k"
-parameters:
-  learning_rate: 0.01
-  l1_flag: True
-  ent_hidden_size: 64
-  rel_hidden_size: 32
-  batch_size: 128
-  epochs: 1000
-  margin: 1.0
-  optimizer: "adam"
-  sampling: "uniform"
-  neg_rate: 1
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.01
+      l1_flag: True
+      ent_hidden_size: 64
+      rel_hidden_size: 32
+      batch_size: 128
+      epochs: 1000
+      margin: 1.0
+      optimizer: "adam"
+      sampling: "uniform"
+      neg_rate: 1

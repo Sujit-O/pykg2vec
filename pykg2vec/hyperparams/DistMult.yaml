@@ -1,11 +1,12 @@
 model_name: "DistMult"
-dataset: "freebase15k"
-parameters:
-  learning_rate: 0.1
-  hidden_size: 100
-  batch_size: 50000
-  epochs: 1000
-  optimizer: "adagrad"
-  sampling: "uniform"
-  neg_rate: 1
-  lmbda: 0.0001
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.1
+      hidden_size: 100
+      batch_size: 50000
+      epochs: 1000
+      optimizer: "adagrad"
+      sampling: "uniform"
+      neg_rate: 1
+      lmbda: 0.0001

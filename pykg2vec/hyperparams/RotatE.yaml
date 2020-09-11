@@ -1,12 +1,13 @@
 model_name: "RotatE"
-dataset: "freebase15k"
-parameters:
-  learning_rate: 0.0001
-  hidden_size: 1000
-  batch_size: 1024
-  epochs: 1000
-  margin: 24.0
-  optimizer: "adam"
-  sampling: "adversarial_negative_sampling"
-  alpha: 1.0
-  neg_rate: 16
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.0001
+      hidden_size: 1000
+      batch_size: 1024
+      epochs: 1000
+      margin: 24.0
+      optimizer: "adam"
+      sampling: "adversarial_negative_sampling"
+      alpha: 1.0
+      neg_rate: 16
