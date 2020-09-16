@@ -248,7 +248,7 @@ class Evaluator:
 
     def test_tail_rank(self, h, r, topk=-1):
         if hasattr(self.model, 'predict_tail_rank'):
-            rank = self.model.predict_tail_rank(torch.LongTensor([h]), torch.LongTensor([r]), topk=topk)
+            rank = self.model.predict_tail_rank(torch.LongTensor([h]).to(self.config.device), torch.LongTensor([r]).to(self.config.device), topk=topk)
             return rank.squeeze(0)
 
         h_batch = torch.LongTensor([h]).repeat([self.config.tot_entity]).to(self.config.device)
@@ -261,7 +261,7 @@ class Evaluator:
 
     def test_head_rank(self, r, t, topk=-1):
         if hasattr(self.model, 'predict_head_rank'):
-            rank = self.model.predict_head_rank(torch.LongTensor([t]), torch.LongTensor([r]), topk=topk)
+            rank = self.model.predict_head_rank(torch.LongTensor([t]).to(self.config.device), torch.LongTensor([r]).to(self.config.device), topk=topk)
             return rank.squeeze(0)
 
         entity_array = torch.LongTensor(list(range(self.config.tot_entity))).to(self.config.device)
@@ -275,7 +275,7 @@ class Evaluator:
     def test_rel_rank(self, h, t, topk=-1):
         if hasattr(self.model, 'predict_rel_rank'):
             # TODO: This is not implemented for conve, convkb, proje_pointwise and tucker
-            rank = self.model.predict_rel_rank(h, t, topk=topk)
+            rank = self.model.predict_rel_rank(h.to(self.config.device), t.to(self.config.device), topk=topk)
             return rank.squeeze(0)
 
         h_batch = torch.LongTensor([h]).repeat([self.config.tot_relation]).to(self.config.device)
@@ -313,9 +313,9 @@ class Evaluator:
             h, r, t = data[i].h, data[i].r, data[i].t
 
             # generate head batch and predict heads.
-            h_tensor = torch.LongTensor([h]).to(self.config.device)
-            r_tensor = torch.LongTensor([r]).to(self.config.device)
-            t_tensor = torch.LongTensor([t]).to(self.config.device)
+            h_tensor = torch.LongTensor([h])
+            r_tensor = torch.LongTensor([r])
+            t_tensor = torch.LongTensor([t])
 
             hrank = self.test_head_rank(r_tensor, t_tensor, self.config.tot_entity)
             trank = self.test_tail_rank(h_tensor, r_tensor, self.config.tot_entity)
