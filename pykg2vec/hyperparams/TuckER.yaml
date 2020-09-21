@@ -1,0 +1,21 @@
+model_name: "TuckER"
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.0005
+      rel_hidden_size: 200
+      ent_hidden_size: 200
+      input_dropout: 0.3
+      hidden_dropout1: 0.4
+      hidden_dropout2: 0.5
+      label_smoothing: 0
+      l1_flag: True
+      batch_size: 128
+      epochs: 500
+      optimizer: "adam"
+      sampling: "uniform"
+      neg_rate: 0
+      lmbda: 0.1
+
+
+

@@ -211,6 +211,22 @@ class HyperparameterLoader:
             hyper_obj = {**hyper_obj, **{"bilinear": hp.choice('bilinear', tuning_space_raw["bilinear"])}}
         if "epochs" in tuning_space_raw:
             hyper_obj = {**hyper_obj, **{"epochs": hp.choice("epochs", tuning_space_raw["epochs"])}}
+        if "feature_map_dropout" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"feature_map_dropout": hp.choice('feature_map_dropout', tuning_space_raw["feature_map_dropout"])}}
+        if "input_dropout" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"input_dropout": hp.choice('input_dropout', tuning_space_raw["input_dropout"])}}
+        if "hidden_dropout" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"hidden_dropout": hp.choice('hidden_dropout', tuning_space_raw["hidden_dropout"])}}
+        if "use_bias" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"use_bias": hp.choice('use_bias', tuning_space_raw["use_bias"])}}
+        if "label_smoothing" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"label_smoothing": hp.choice('label_smoothing', tuning_space_raw["label_smoothing"])}}
+        if "lr_decay" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"lr_decay": hp.choice('lr_decay', tuning_space_raw["lr_decay"])}}
+        if "l1_flag" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"l1_flag": hp.choice('l1_flag', tuning_space_raw["l1_flag"])}}
+        if "sampling" in tuning_space_raw:
+            hyper_obj = {**hyper_obj, **{"sampling": hp.choice('sampling', tuning_space_raw["sampling"])}}
 
         return hyper_obj
 

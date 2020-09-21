@@ -253,8 +253,6 @@ class Visualization:
             df_5 = pd.DataFrame(columns=['Metrics', 'Algorithm', 'Score'])
             metrics = [f for f in df_4.columns if f != 'Algorithm']
             for i in range(len(df_4)):
-                # import pdb
-                # pdb.set_trace()
                 if df_5.empty:
                     df_5['Algorithm'] = [df_4.iloc[i]['Algorithm']] * len(metrics)
                     df_5['Metrics'] = metrics

@@ -57,6 +57,7 @@ def tunning_function(name):
     'transm',
     'transd',
     'transr',
+    'tucker',
 ])
 def test_tuning(model_name):
     """Function to test the tuning function."""
@@ -86,6 +87,7 @@ def test_tuning(model_name):
     'transm',
     'transd',
     'transr',
+    'tucker',
 ])
 def test_hyperparamter_loader(model_name):
     knowledge_graph = KnowledgeGraph(dataset="freebase15k")
@@ -122,6 +124,7 @@ def test_hyperparamter_loader(model_name):
     'transm',
     'transd',
     'transr',
+    'tucker',
 ])
 def test_search_space_loader(model_name):
     knowledge_graph = KnowledgeGraph(dataset="freebase15k")

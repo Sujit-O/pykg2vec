@@ -36,7 +36,7 @@ class BaysOptimizer:
 
     def __init__(self, args):
         """store the information of database"""
-        if args.model_name.lower() in ["tucker", "conve", "convkb", "proje_pointwise"]:
+        if args.model_name.lower() in ["conve", "convkb", "proje_pointwise"]:
             raise Exception("Model %s has not been supported in tuning hyperparameters!" % args.model)
 
         self.model_name = args.model_name
