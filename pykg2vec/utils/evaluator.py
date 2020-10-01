@@ -320,7 +320,7 @@ class Evaluator:
             hrank = self.test_head_rank(r_tensor, t_tensor, self.config.tot_entity)
             trank = self.test_tail_rank(h_tensor, r_tensor, self.config.tot_entity)
 
-            result_data = [trank.cpu().numpy(), hrank.cpu().numpy(), h, r, t, epoch]
+            result_data = [trank.detach().cpu().numpy(), hrank.detach().cpu().numpy(), h, r, t, epoch]
 
             self.metric_calculator.append_result(result_data)
 

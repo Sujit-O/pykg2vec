@@ -3,16 +3,17 @@
 import os
 import warnings
 import torch
-import numpy as np
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
 from pathlib import Path
 from pykg2vec.utils.evaluator import Evaluator
 from pykg2vec.utils.visualization import Visualization
+from pykg2vec.utils.riemannian_optimizer import RiemannianOptimizer
 from pykg2vec.data.generator import Generator
 from pykg2vec.utils.logger import Logger
 from pykg2vec.common import Monitor, TrainingStrategy
@@ -129,6 +130,13 @@ class Trainer:
             self.optimizer = optim.RMSprop(
                 self.model.parameters(),
                 lr=self.config.learning_rate,
+            )
+        elif self.config.optimizer == "riemannian":
+            param_names = [name for name, param in self.model.named_parameters()]
+            self.optimizer = RiemannianOptimizer(
+                self.model.parameters(),
+                lr=self.config.learning_rate,
+                param_names=param_names
             )
         else:
             raise NotImplementedError("No support for %s optimizer" % self.config.optimizer)
@@ -292,7 +300,7 @@ class Trainer:
                 hr_t = data[3].to(self.config.device)
                 tr_h = data[4].to(self.config.device)
                 loss = self.train_step_projection(h, r, t, hr_t, tr_h)
-            elif self.model.training_strategy == TrainingStrategy.POINTWISE_BASED:
+            elif self.model.training_strategy in (TrainingStrategy.POINTWISE_BASED, TrainingStrategy.HYPERBOLIC_SPACE_BASED):
                 h = torch.LongTensor(data[0]).to(self.config.device)
                 r = torch.LongTensor(data[1]).to(self.config.device)
                 t = torch.LongTensor(data[2]).to(self.config.device)
@@ -342,7 +350,7 @@ class Trainer:
         self._logger.info("Thank you for trying out inference interactive script :)")
 
     def infer_tails(self, h, r, topk=5):
-        tails = self.evaluator.test_tail_rank(h, r, topk).cpu().numpy()
+        tails = self.evaluator.test_tail_rank(h, r, topk).detach().cpu().numpy()
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs = [
@@ -360,7 +368,7 @@ class Trainer:
         return {tail: idx2ent[tail] for tail in tails}
 
     def infer_heads(self, r, t, topk=5):
-        heads = self.evaluator.test_head_rank(r, t, topk).cpu().numpy()
+        heads = self.evaluator.test_head_rank(r, t, topk).detach().cpu().numpy()
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs = [
@@ -382,7 +390,7 @@ class Trainer:
             self._logger.info("%s model doesn't support relation inference in nature.")
             return {}
 
-        rels = self.evaluator.test_rel_rank(h, t, topk).cpu().numpy()
+        rels = self.evaluator.test_rel_rank(h, t, topk).detach().cpu().numpy()
         idx2ent = self.config.knowledge_graph.read_cache_data('idx2entity')
         idx2rel = self.config.knowledge_graph.read_cache_data('idx2relation')
         logs = [
@@ -406,7 +414,7 @@ class Trainer:
         saved_path.mkdir(parents=True, exist_ok=True)
         torch.save(self.model.state_dict(), str(saved_path / self.TRAINED_MODEL_FILE_NAME))
 
-        """Save hyper-parameters into a yaml file with the model"""
+        # Save hyper-parameters into a yaml file with the model
         save_path_config = saved_path / self.TRAINED_MODEL_CONFIG_NAME
         np.save(save_path_config, self.config)
 
@@ -490,7 +498,7 @@ class Trainer:
             stored_name = named_embedding.name
 
             if len(named_embedding.weight.shape) == 2:
-                all_embs = named_embedding.weight.detach().cpu().numpy()
+                all_embs = named_embedding.weight.detach().detach().cpu().numpy()
                 with open(str(save_path / ("%s.tsv" % stored_name)), 'w') as v_export_file:
                     for idx in all_ids:
                         v_export_file.write("\t".join([str(x) for x in all_embs[idx]]) + "\n")
