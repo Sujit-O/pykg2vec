@@ -37,4 +37,9 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    scripts=[
+        "scripts/pykg2vec-train.py",
+        "scripts/pykg2vec-infer.py",
+        "scripts/pykg2vec-tune.py"
+    ],
 )

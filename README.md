@@ -49,62 +49,50 @@ For beginners, these papers, [A Review of Relational Machine Learning for Knowle
 The documentation is [here](https://pykg2vec.readthedocs.io/). 
 
 ## Usage Examples
-With pykg2vec, you can 
+With pykg2vec command-line interface, you can
 1. Run a single algorithm with various models and datasets (customized dataset also supported).
-2. Tune a single algorithm. 
+    ```
+    # Check all tunnable parameters.
+    (pykg2vec) $ pykg2vec-train -h
+
+    # Train TransE on FB15k benchmark dataset.
+    (pykg2vec) $ pykg2vec-train -mn TransE
+
+    # Train using different KGE methods.
+    (pykg2vec) $ pykg2vec-train -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|ComplexN3|CP|RotatE|Analogy|
+                           DistMult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise]
+
+    # For KGE using projection-based loss function, use more processes for batch generation.
+    (pykg2vec) $ pykg2vec-train -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of processes, 4 or 6]
+
+    # Train TransE model using different benchmark datasets.
+    (pykg2vec) $ pykg2vec-train -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|ks|nations|umls|dl50a|nell_955]
+
+    # Train TransE model using your own hyperparameters.
+    (pykg2vec) $ pykg2vec-train -exp True -mn TransE -ds fb15k -hpf ./examples/custom_hp.yaml
+
+    # Use your own dataset
+    (pykg2vec) $ pykg2vec-train -mn TransE -ds [name] -dsp [path to the custom dataset]
+    ```
+2. Tune a single algorithm.
+    ```
+    # Tune TransE using the benchmark dataset.
+    (pykg2vec) $ pykg2vec-tune -mn [TransE] -ds [dataset name]
+
+    # Tune TransE with your own search space
+    (pykg2vec) $ pykg2vec-tune -exp True -mn TransE -ds fb15k -ssf ./examples/custom_ss.yaml
+    ```
 3. Perform Inference Tasks (more advanced).
+    ```
+    # Train a model and perform inference tasks.
+    (pykg2vec) $ pykg2vec-infer -mn TransE
 
-We pasted one programming example (train.py) as below, 
-```python
-from pykg2vec.data.kgcontroller import KnowledgeGraph
-from pykg2vec.common import Importer, KGEArgParser
-from pykg2vec.utils.trainer import Trainer
+    # Perform inference tasks over a pretrained model.
+    (pykg2vec) $ pykg2vec-infer -mn TransE -ld [path to the pretrained model]
+    ```
+\* NB: On Windows, use `pykg2vec-train.py`, `pykg2vec-tune.py` and `pykg2vec-infer.py` instead.
 
-def main():
-    # getting the customized configurations from the command-line arguments.
-    args = KGEArgParser().get_args(sys.argv[1:])
-    
-    # Preparing data and cache the data for later usage
-    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
-    knowledge_graph.prepare_data()
-
-    # Extracting the corresponding model config and definition from Importer().
-    config_def, model_def = Importer().import_model_config(args.model_name.lower())
-    config = config_def(args)
-    model = model_def(**config.__dict__)
-
-    # Create, Compile and Train the model. While training, several evaluation will be performed.
-    trainer = Trainer(model, config)
-    trainer.build_model()
-    trainer.train_model()
-
-if __name__ == "__main__":
-    main()
-```
-With train.py you can try KGE methods using the following commands: 
-```bash
-# check all tunnable parameters.
-$ python train.py -h 
-
-# Train TransE on FB15k benchmark dataset.
-$ python train.py -mn TransE
-
-# Train using different KGE methods.
-$ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|ComplexN3|CP|RotatE|Analogy|
-                       DistMult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise]
-
-# For KGE using projection-based loss function, use more processes for batch generation.
-$ python train.py -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of processes, 4 or 6]
-
-# Train TransE model using different benchmark datasets.
-$ python train.py -mn TransE -ds [fb15k|wn18|wn18_rr|yago3_10|fb15k_237|ks|nations|umls|dl50a|nell_955]
-
-# Train TransE model using different hyperparameters.
-$ python train.py -exp True -mn TransE -ds fb15k -hpf ./examples/custom_hp.yaml
-
-```
-
-For more other pykg2vec usage, please check the [programming examples](https://pykg2vec.readthedocs.io/en/latest/auto_examples/index.html).
+For more usage of pykg2vec APIs, please check the [programming examples](https://pykg2vec.readthedocs.io/en/latest/auto_examples/index.html).
 
 ## Citation
 Please kindly consider citing our paper if you find pykg2vec useful for your research. 
