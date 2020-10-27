@@ -19,9 +19,10 @@ class Monitor(Enum):
 
 class TrainingStrategy(Enum):
     """Training strategy enums"""
-    PROJECTION_BASED = "projection_based"   # matching models with neural network
-    PAIRWISE_BASED = "pairwise_based"       # translational distance models
-    POINTWISE_BASED = "pointwise_based"     # semantic matching models
+    PROJECTION_BASED = "projection_based"               # matching models with neural network
+    PAIRWISE_BASED = "pairwise_based"                   # translational distance models
+    POINTWISE_BASED = "pointwise_based"                 # semantic matching models
+    HYPERBOLIC_SPACE_BASED = "hyperbolic_space_based"   # models of hyperbolic space
 
 
 class KGEArgParser:
@@ -108,7 +109,7 @@ class HyperparameterLoader:
     _logger = Logger().get_logger(__name__)
 
     def __init__(self, args):
-        self.hyperparams  = {}
+        self.hyperparams = {}
         self.search_space = {}
 
         # load hyperparameters from options (file, dir or with pkg.)
@@ -277,7 +278,8 @@ class Importer:
                          "transh": "pairwise.TransH",
                          "transm": "pairwise.TransM",
                          "transr": "pairwise.TransR",
-                         "tucker": "projection.TuckER"}
+                         "tucker": "projection.TuckER",
+                         "murp": "hyperbolic.MuRP"}
 
     def import_model_config(self, name):
         """This function imports models and configuration.

@@ -1,0 +1,18 @@
+model_name: "MuRP"
+dataset: "freebase15k"
+search_space:
+  learning_rate:
+    min: 0.00001
+    max: 50
+  hidden_size:
+    min: 40
+    max: 200
+  batch_size:
+    min: 8
+    max: 4096
+  optimizer:
+    - "adam"
+    - "sgd"
+    - "riemannian"
+  epochs:
+    - 10

@@ -9,7 +9,7 @@ import pandas as pd
 from pykg2vec.data.kgcontroller import KnowledgeGraph
 from pykg2vec.utils.trainer import Trainer
 from pykg2vec.utils.logger import Logger
-from pykg2vec.common import KGEArgParser, Importer, HyperparameterLoader
+from pykg2vec.common import Importer, HyperparameterLoader
 
 
 class BaysOptimizer:

@@ -44,7 +44,6 @@ class Config:
     _logger = Logger().get_logger(__name__)
 
     def __init__(self, args):
-
         for arg_name in vars(args):
             self.__dict__[arg_name] = getattr(args, arg_name)
 

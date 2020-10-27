@@ -1,0 +1,21 @@
+model_name: "MuRP"
+datasets:
+  - dataset: "wordnet18_rr"
+    parameters:
+      learning_rate: 50
+      hidden_size: 40
+      batch_size: 128
+      epochs: 500
+      optimizer: "riemannian"
+      sampling: "uniform"
+      neg_rate: 1
+
+  - dataset: "freebase15k_237"
+    parameters:
+      learning_rate: 50
+      hidden_size: 40
+      batch_size: 128
+      epochs: 500
+      optimizer: "riemannian"
+      sampling: "uniform"
+      neg_rate: 1
