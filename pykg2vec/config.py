@@ -50,7 +50,7 @@ class Config:
         # Training and evaluating related variables
         self.hits = [1, 3, 5, 10]
         self.disp_result = False
-        self.patience = 3 # should make this configurable as well.
+        self.patience = 100 # should make this configurable as well.
 
         # Visualization related,
         # p.s. the visualizer is disable for most of the KGE methods for now.

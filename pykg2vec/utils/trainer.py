@@ -79,7 +79,7 @@ class Trainer:
 
         Examples:
             >>> from pykg2vec.utils.trainer import Trainer
-            >>> from pykg2vec.models.TransE import TransE
+            >>> from pykg2vec.models.pairwise import TransE
             >>> trainer = Trainer(TransE())
             >>> trainer.build_model()
             >>> trainer.train_model()
@@ -206,6 +206,17 @@ class Trainer:
 
         return loss
 
+    def train_step_hyperbolic(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
+        heads = torch.cat((pos_h, neg_h), dim=-1)
+        rels = torch.cat((pos_r, neg_r), dim=-1)
+        tails = torch.cat((pos_t, neg_t), dim=-1)
+        preds = self.model(heads, rels, tails)
+        targets = torch.cat((torch.ones(pos_h.shape), torch.zeros(neg_h.shape)), dim=-1)
+        targets = torch.FloatTensor(targets)
+        loss = torch.nn.BCEWithLogitsLoss()(preds, targets)
+
+        return loss
+
     def train_model(self):
 
         # for key, value in self.config.__dict__.items():
@@ -223,29 +234,33 @@ class Trainer:
 
             if cur_epoch_idx % self.config.test_step == 0:
                 self.model.eval()
-                metrics = self.evaluator.mini_test(cur_epoch_idx)
+                with torch.no_grad():
+                    metrics = self.evaluator.mini_test(cur_epoch_idx)
 
-                if self.early_stopper.should_stop(metrics):
-                    ### Early Stop Mechanism
-                    ### start to check if the metric is still improving after each mini-test.
-                    ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
-                    break
+                    if self.early_stopper.should_stop(metrics):
+                        ### Early Stop Mechanism
+                        ### start to check if the metric is still improving after each mini-test.
+                        ### Example, if test_step == 5, the trainer will check metrics every 5 epoch.
+                        break
 
-                # store the best model weights.
-                if self.config.save_model:
-                    if self.best_metric is None:
-                        self.best_metric = metrics
-                        self.save_model()
-                    else:
-                        if self.monitor == Monitor.MEAN_RANK or self.monitor == Monitor.FILTERED_MEAN_RANK:
-                            is_better = self.best_metric[self.monitor.value] > metrics[self.monitor.value]
-                        else:
-                            is_better = self.best_metric[self.monitor.value] < metrics[self.monitor.value]
-                        if is_better:
-                            self.save_model()
+                    # store the best model weights.
+                    if self.config.save_model:
+                        if self.best_metric is None:
                             self.best_metric = metrics
+                            self.save_model()
+                        else:
+                            if self.monitor == Monitor.MEAN_RANK or self.monitor == Monitor.FILTERED_MEAN_RANK:
+                                is_better = self.best_metric[self.monitor.value] > metrics[self.monitor.value]
+                            else:
+                                is_better = self.best_metric[self.monitor.value] < metrics[self.monitor.value]
+                            if is_better:
+                                self.save_model()
+                                self.best_metric = metrics
 
-        self.evaluator.full_test(cur_epoch_idx)
+        self.model.eval()
+        with torch.no_grad():
+            self.evaluator.full_test(cur_epoch_idx)
+
         self.evaluator.metric_calculator.save_test_summary(self.model.model_name)
 
         self.generator.stop()
@@ -271,7 +286,9 @@ class Trainer:
         for cur_epoch_idx in range(self.config.epochs):
             current_loss = self.train_model_epoch(cur_epoch_idx, tuning=True)
 
-        self.evaluator.full_test(cur_epoch_idx)
+        self.model.eval()
+        with torch.no_grad():
+            self.evaluator.full_test(cur_epoch_idx)
 
         self.generator.stop()
 
@@ -289,7 +306,6 @@ class Trainer:
 
         for _ in progress_bar:
             data = list(next(self.generator))
-
             self.model.train()
             self.optimizer.zero_grad()
 
@@ -300,7 +316,7 @@ class Trainer:
                 hr_t = data[3].to(self.config.device)
                 tr_h = data[4].to(self.config.device)
                 loss = self.train_step_projection(h, r, t, hr_t, tr_h)
-            elif self.model.training_strategy in (TrainingStrategy.POINTWISE_BASED, TrainingStrategy.HYPERBOLIC_SPACE_BASED):
+            elif self.model.training_strategy == TrainingStrategy.POINTWISE_BASED:
                 h = torch.LongTensor(data[0]).to(self.config.device)
                 r = torch.LongTensor(data[1]).to(self.config.device)
                 t = torch.LongTensor(data[2]).to(self.config.device)
@@ -314,6 +330,14 @@ class Trainer:
                 neg_r = torch.LongTensor(data[4]).to(self.config.device)
                 neg_t = torch.LongTensor(data[5]).to(self.config.device)
                 loss = self.train_step_pairwise(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
+            elif self.model.training_strategy == TrainingStrategy.HYPERBOLIC_SPACE_BASED:
+                pos_h = torch.LongTensor(data[0]).to(self.config.device)
+                pos_r = torch.LongTensor(data[1]).to(self.config.device)
+                pos_t = torch.LongTensor(data[2]).to(self.config.device)
+                neg_h = torch.LongTensor(data[3]).to(self.config.device)
+                neg_r = torch.LongTensor(data[4]).to(self.config.device)
+                neg_t = torch.LongTensor(data[5]).to(self.config.device)
+                loss = self.train_step_hyperbolic(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
             else:
                 raise NotImplementedError("Unknown training strategy: %s" % self.model.training_strategy)
 

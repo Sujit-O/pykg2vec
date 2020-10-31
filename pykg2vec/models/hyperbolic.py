@@ -44,7 +44,6 @@ class MuRP(HyperbolicSpaceModel):
         self.wu = nn.Parameter(torch.tensor(np.random.uniform(-1, 1, (self.tot_relation, k)), dtype=torch.double, requires_grad=True, device=self.device))
         self.bs = nn.Parameter(torch.zeros(self.tot_entity, dtype=torch.double, requires_grad=True, device=self.device))
         self.bo = nn.Parameter(torch.zeros(self.tot_entity, dtype=torch.double, requires_grad=True, device=self.device))
-        self.loss = torch.nn.BCEWithLogitsLoss()
 
         self.parameter_list = [
             self.ent_embeddings,
@@ -69,56 +68,62 @@ class MuRP(HyperbolicSpaceModel):
         return h_emb, r_emb, t_emb
 
     def forward(self, h, r, t):
-        u = self.ent_embeddings.weight[h]
-        v = self.ent_embeddings.weight[h]
-        ru = self.wu[r]
-        rvh = self.rel_embeddings.weight[r]
+        return self._poincare_forward(h, r, t)
 
-        u = torch.where(torch.norm(u, 2, dim=-1, keepdim=True) >= 1, u / (torch.norm(u, 2, dim=-1, keepdim=True) - 1e-5), u)
-        v = torch.where(torch.norm(v, 2, dim=-1, keepdim=True) >= 1, v / (torch.norm(v, 2, dim=-1, keepdim=True) - 1e-5), v)
-        rvh = torch.where(torch.norm(rvh, 2, dim=-1, keepdim=True) >= 1, rvh / (torch.norm(rvh, 2, dim=-1, keepdim=True) - 1e-5), rvh)
-        u_e = self.p_log_map(u)
+    def predict_tail_rank(self, h, r, topk=None):
+        _, rank = torch.sort(self.forward(h, r, torch.LongTensor(list(range(self.tot_entity))).to(self.device)))
+        return rank
+
+    def predict_head_rank(self, t, r, topk=None):
+        _, rank = torch.sort(self.forward(torch.LongTensor(list(range(self.tot_entity))).to(self.device), r, t))
+        return rank
+
+    def predict_rel_rank(self, h, t, topk=None):
+        _, rank = torch.sort(self.forward(h, torch.LongTensor(list(range(self.tot_relation))).to(self.device), t))
+        return rank
+
+    def _poincare_forward(self, h, r, t):
+        h_emb, r_emb, t_emb = self.embed(h, r, t)
+        ru = self.wu[r]
+
+        h_emb = torch.where(torch.norm(h_emb, 2, dim=-1, keepdim=True) >= 1, h_emb / (torch.norm(h_emb, 2, dim=-1, keepdim=True) - 1e-5), h_emb)
+        t_emb = torch.where(torch.norm(t_emb, 2, dim=-1, keepdim=True) >= 1, t_emb / (torch.norm(t_emb, 2, dim=-1, keepdim=True) - 1e-5), t_emb)
+        r_emb = torch.where(torch.norm(r_emb, 2, dim=-1, keepdim=True) >= 1, r_emb / (torch.norm(r_emb, 2, dim=-1, keepdim=True) - 1e-5), r_emb)
+        u_e = self._p_log_map(h_emb)
         u_w = u_e * ru
-        u_m = self.p_exp_map(u_w)
-        v_m = self.p_sum(v, rvh)
+        u_m = self._p_exp_map(u_w)
+        v_m = self._p_sum(t_emb, r_emb)
         u_m = torch.where(torch.norm(u_m, 2, dim=-1, keepdim=True) >= 1, u_m / (torch.norm(u_m, 2, dim=-1, keepdim=True) - 1e-5), u_m)
         v_m = torch.where(torch.norm(v_m, 2, dim=-1, keepdim=True) >= 1, v_m / (torch.norm(v_m, 2, dim=-1, keepdim=True) - 1e-5), v_m)
+        sqdist = (2. * self._arsech(torch.clamp(torch.norm(self._p_sum(-u_m, v_m), 2, dim=-1), 1e-10, 1 - 1e-5))) ** 2
+        return -(sqdist - self.bs[h] - self.bo[t])
 
-        sqdist = (2. * self.artanh(torch.clamp(torch.norm(self.p_sum(-u_m, v_m), 2), 1e-10, 1 - 1e-5))) ** 2
-
-        # targets = np.ones(h.shape)
-        # targets = torch.DoubleTensor(targets)
-        # return self.loss(-sqdist + self.bs[h] + self.bo[t], targets)
-        return -sqdist + self.bs[h] + self.bo[t]
-
-    def forward_euclidean(self, h, r, t):
-        u = self.ent_embeddings.weight[h]
-        v = self.ent_embeddings.weight[t]
+    def _euclidean_forward(self, h, r, t):
+        h_emb, r_emb, t_emb = self.embed(h, r, t)
         ru = self.wu[r]
-        rvh = self.rel_embeddings.weight[r]
-        u_w = u * ru
+        u_w = h_emb * ru
 
-        sqdist = torch.sum(torch.pow(u_w - (v + rvh), 2), dim=-1)
-        return -sqdist + self.bs[h] + self.bo[t]
-
-    @staticmethod
-    def artanh(x):
-        return 0.5 * torch.log((1 + x) / (1 - x))
+        sqdist = torch.sum(torch.pow(u_w - (t_emb + r_emb), 2), dim=-1)
+        return -(sqdist - self.bs[h] - self.bo[t])
 
     @staticmethod
-    def p_exp_map(v):
+    def _arsech(x):
+        return torch.log((1 + torch.sqrt(1 - x.pow(2))) / x)
+
+    @staticmethod
+    def _p_exp_map(v):
         normv = torch.clamp(torch.norm(v, 2, dim=-1, keepdim=True), min=1e-10)
         return torch.tanh(normv) * v / normv
 
     @staticmethod
-    def p_log_map(v):
-        normv = torch.clamp(torch.norm(v, 2, dim=-1, keepdim=True), 1e-10, 1 - 1e-5)
-        return MuRP.artanh(normv) * v / normv
+    def _p_log_map(v):
+        normv = torch.clamp(torch.norm(v, 2, dim=-1, keepdim=True), 1e-10, 1-1e-5)
+        return MuRP._arsech(normv) * v / normv
 
     @staticmethod
-    def p_sum(x, y):
-        sqxnorm = torch.clamp(torch.sum(x * x, dim=-1, keepdim=True), 0, 1 - 1e-5)
-        sqynorm = torch.clamp(torch.sum(y * y, dim=-1, keepdim=True), 0, 1 - 1e-5)
+    def _p_sum(x, y):
+        sqxnorm = torch.clamp(torch.sum(x * x, dim=-1, keepdim=True), 0, 1-1e-5)
+        sqynorm = torch.clamp(torch.sum(y * y, dim=-1, keepdim=True), 0, 1-1e-5)
         dotxy = torch.sum(x * y, dim=-1, keepdim=True)
         numerator = (1 + 2 * dotxy + sqynorm) * x + (1 - sqxnorm) * y
         denominator = 1 + 2 * dotxy + sqxnorm * sqynorm

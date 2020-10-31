@@ -1,6 +1,6 @@
 model_name: "TransE"
 datasets:
-  - dataset: "fb15k_237"
+  - dataset: "freebase15k_237"
     parameters:
       learning_rate: 1.0
       l1_flag: True
