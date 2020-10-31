@@ -23,3 +23,15 @@ datasets:
       optimizer: "sgd"
       sampling: "bern"
       neg_rate: 1
+
+  - dataset: "wordnet18"
+    parameters:
+      learning_rate: 0.01
+      l1_flag: True
+      hidden_size: 20
+      batch_size: 128
+      epochs: 1000
+      margin: 2.00
+      optimizer: "sgd"
+      sampling: "uniform"
+      neg_rate: 1
