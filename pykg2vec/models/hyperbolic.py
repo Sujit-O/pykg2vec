@@ -70,15 +70,18 @@ class MuRP(HyperbolicSpaceModel):
     def forward(self, h, r, t):
         return self._poincare_forward(h, r, t)
 
-    def predict_tail_rank(self, h, r, topk=None):
+    def predict_tail_rank(self, h, r, topk):
+        del topk
         _, rank = torch.sort(self.forward(h, r, torch.LongTensor(list(range(self.tot_entity))).to(self.device)))
         return rank
 
-    def predict_head_rank(self, t, r, topk=None):
+    def predict_head_rank(self, t, r, topk):
+        del topk
         _, rank = torch.sort(self.forward(torch.LongTensor(list(range(self.tot_entity))).to(self.device), r, t))
         return rank
 
-    def predict_rel_rank(self, h, t, topk=None):
+    def predict_rel_rank(self, h, t, topk):
+        del topk
         _, rank = torch.sort(self.forward(h, torch.LongTensor(list(range(self.tot_relation))).to(self.device), t))
         return rank
 
@@ -95,6 +98,7 @@ class MuRP(HyperbolicSpaceModel):
         v_m = self._p_sum(t_emb, r_emb)
         u_m = torch.where(torch.norm(u_m, 2, dim=-1, keepdim=True) >= 1, u_m / (torch.norm(u_m, 2, dim=-1, keepdim=True) - 1e-5), u_m)
         v_m = torch.where(torch.norm(v_m, 2, dim=-1, keepdim=True) >= 1, v_m / (torch.norm(v_m, 2, dim=-1, keepdim=True) - 1e-5), v_m)
+
         sqdist = (2. * self._arsech(torch.clamp(torch.norm(self._p_sum(-u_m, v_m), 2, dim=-1), 1e-10, 1 - 1e-5))) ** 2
         return -(sqdist - self.bs[h] - self.bo[t])
 
@@ -113,7 +117,7 @@ class MuRP(HyperbolicSpaceModel):
     @staticmethod
     def _p_exp_map(v):
         normv = torch.clamp(torch.norm(v, 2, dim=-1, keepdim=True), min=1e-10)
-        return torch.tanh(normv) * v / normv
+        return (1 / torch.cosh(normv)) * v / normv
 
     @staticmethod
     def _p_log_map(v):
