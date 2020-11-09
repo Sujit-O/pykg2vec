@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
+import numpy as np
+from numpy.random import RandomState
 
 from pykg2vec.models.KGMeta import PointwiseModel
 from pykg2vec.models.Domain import NamedEmbedding
@@ -588,3 +590,436 @@ class SimplE_ignr(SimplE):
     @staticmethod
     def _concat_selected_embeddings(e1, t1, e2, t2):
         return torch.cat([torch.index_select(e1.weight, 0, t1), torch.index_select(e2.weight, 0, t2)], 1)
+
+
+class QuatE(PointwiseModel):
+    """
+        `Quaternion Knowledge Graph Embeddings`_
+
+        Args:
+            config (object): Model configuration parameters.
+
+        Examples:
+            >>> from pykg2vec.models.pointwise import QuatE
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = QuatE()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+
+        .. _cheungdaven: https://github.com/cheungdaven/QuatE.git
+
+        .. _Quaternion Knowledge Graph Embeddings:
+            https://arxiv.org/abs/1904.10281
+
+    """
+
+    def __init__(self, **kwargs):
+        super(QuatE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
+
+        self.ent_s_embedding = NamedEmbedding("ent_s_embedding", num_total_ent, k)
+        self.ent_x_embedding = NamedEmbedding("ent_x_embedding", num_total_ent, k)
+        self.ent_y_embedding = NamedEmbedding("ent_y_embedding", num_total_ent, k)
+        self.ent_z_embedding = NamedEmbedding("ent_z_embedding", num_total_ent, k)
+        self.rel_s_embedding = NamedEmbedding("rel_s_embedding", num_total_rel, k)
+        self.rel_x_embedding = NamedEmbedding("rel_x_embedding", num_total_rel, k)
+        self.rel_y_embedding = NamedEmbedding("rel_y_embedding", num_total_rel, k)
+        self.rel_z_embedding = NamedEmbedding("rel_z_embedding", num_total_rel, k)
+        self.rel_w_embedding = NamedEmbedding("rel_w_embedding", num_total_rel, k)
+        self.fc = nn.Linear(100, 50, bias=False)
+        self.ent_dropout = nn.Dropout(0)
+        self.rel_dropout = nn.Dropout(0)
+        self.bn = nn.BatchNorm1d(k)
+
+        r, i, j, k = QuatE._quaternion_init(self.tot_entity, self.hidden_size)
+        r, i, j, k = torch.from_numpy(r), torch.from_numpy(i), torch.from_numpy(j), torch.from_numpy(k)
+        self.ent_s_embedding.weight.data = r.type_as(self.ent_s_embedding.weight.data)
+        self.ent_x_embedding.weight.data = i.type_as(self.ent_x_embedding.weight.data)
+        self.ent_y_embedding.weight.data = j.type_as(self.ent_y_embedding.weight.data)
+        self.ent_z_embedding.weight.data = k.type_as(self.ent_z_embedding.weight.data)
+
+        s, x, y, z = QuatE._quaternion_init(self.tot_entity, self.hidden_size)
+        s, x, y, z = torch.from_numpy(s), torch.from_numpy(x), torch.from_numpy(y), torch.from_numpy(z)
+        self.rel_s_embedding.weight.data = s.type_as(self.rel_s_embedding.weight.data)
+        self.rel_x_embedding.weight.data = x.type_as(self.rel_x_embedding.weight.data)
+        self.rel_y_embedding.weight.data = y.type_as(self.rel_y_embedding.weight.data)
+        self.rel_z_embedding.weight.data = z.type_as(self.rel_z_embedding.weight.data)
+
+        nn.init.xavier_uniform_(self.ent_s_embedding.weight.data)
+        nn.init.xavier_uniform_(self.ent_x_embedding.weight.data)
+        nn.init.xavier_uniform_(self.ent_y_embedding.weight.data)
+        nn.init.xavier_uniform_(self.ent_z_embedding.weight.data)
+        nn.init.xavier_uniform_(self.rel_s_embedding.weight.data)
+        nn.init.xavier_uniform_(self.rel_x_embedding.weight.data)
+        nn.init.xavier_uniform_(self.rel_y_embedding.weight.data)
+        nn.init.xavier_uniform_(self.rel_z_embedding.weight.data)
+        nn.init.xavier_uniform_(self.rel_w_embedding.weight.data)
+
+        self.parameter_list = [
+            self.ent_s_embedding,
+            self.ent_x_embedding,
+            self.ent_y_embedding,
+            self.ent_z_embedding,
+            self.rel_s_embedding,
+            self.rel_x_embedding,
+            self.rel_y_embedding,
+            self.rel_z_embedding,
+            self.rel_w_embedding,
+        ]
+
+    def embed(self, h, r, t):
+        s_emb_h = self.ent_s_embedding(h)
+        x_emb_h = self.ent_x_embedding(h)
+        y_emb_h = self.ent_y_embedding(h)
+        z_emb_h = self.ent_z_embedding(h)
+
+        s_emb_t = self.ent_s_embedding(t)
+        x_emb_t = self.ent_x_embedding(t)
+        y_emb_t = self.ent_y_embedding(t)
+        z_emb_t = self.ent_z_embedding(t)
+
+        s_emb_r = self.rel_s_embedding(r)
+        x_emb_r = self.rel_x_embedding(r)
+        y_emb_r = self.rel_y_embedding(r)
+        z_emb_r = self.rel_z_embedding(r)
+
+        return s_emb_h, x_emb_h, y_emb_h, z_emb_h, s_emb_t, x_emb_t, y_emb_t, z_emb_t, s_emb_r, x_emb_r, y_emb_r, z_emb_r
+
+    def forward(self, h, r, t):
+        s_emb_h, x_emb_h, y_emb_h, z_emb_h, s_emb_t, x_emb_t, y_emb_t, z_emb_t, s_emb_r, x_emb_r, y_emb_r, z_emb_r = self.embed(h, r, t)
+
+        denominator_b = torch.sqrt(s_emb_r ** 2 + x_emb_r ** 2 + y_emb_r ** 2 + z_emb_r ** 2)
+        s_emb_r = s_emb_r / denominator_b
+        x_emb_r = x_emb_r / denominator_b
+        y_emb_r = y_emb_r / denominator_b
+        z_emb_r = z_emb_r / denominator_b
+
+        a = s_emb_h * s_emb_r - x_emb_h * x_emb_r - y_emb_h * y_emb_r - z_emb_h * z_emb_r
+        b = s_emb_h * x_emb_r + s_emb_r * x_emb_h + y_emb_h * z_emb_r - y_emb_r * z_emb_h
+        c = s_emb_h * y_emb_r + s_emb_r * y_emb_h + z_emb_h * x_emb_r - z_emb_r * x_emb_h
+        d = s_emb_h * z_emb_r + s_emb_r * z_emb_h + x_emb_h * y_emb_r - x_emb_r * y_emb_h
+
+        score_r = (a * s_emb_t + b * x_emb_t + c * y_emb_t + d * z_emb_t)
+
+        return -torch.sum(score_r, -1)
+
+    def get_reg(self, h, r, t, reg_type='N3'):
+        s_emb_h, x_emb_h, y_emb_h, z_emb_h, s_emb_t, x_emb_t, y_emb_t, z_emb_t, s_emb_r, x_emb_r, y_emb_r, z_emb_r = self.embed(h, r, t)
+        if reg_type.lower() == 'f2':
+            regul = (torch.mean(torch.abs(s_emb_h) ** 2)
+                     + torch.mean(torch.abs(x_emb_h) ** 2)
+                     + torch.mean(torch.abs(y_emb_h) ** 2)
+                     + torch.mean(torch.abs(z_emb_h) ** 2)
+                     + torch.mean(torch.abs(s_emb_t) ** 2)
+                     + torch.mean(torch.abs(x_emb_t) ** 2)
+                     + torch.mean(torch.abs(y_emb_t) ** 2)
+                     + torch.mean(torch.abs(z_emb_t) ** 2)
+                     )
+            regul2 = (torch.mean(torch.abs(s_emb_r) ** 2)
+                      + torch.mean(torch.abs(x_emb_r) ** 2)
+                      + torch.mean(torch.abs(y_emb_r) ** 2)
+                      + torch.mean(torch.abs(z_emb_r) ** 2))
+        elif reg_type.lower() == 'n3':
+            regul = (torch.mean(torch.abs(s_emb_h) ** 3)
+                     + torch.mean(torch.abs(x_emb_h) ** 3)
+                     + torch.mean(torch.abs(y_emb_h) ** 3)
+                     + torch.mean(torch.abs(z_emb_h) ** 3)
+                     + torch.mean(torch.abs(s_emb_t) ** 3)
+                     + torch.mean(torch.abs(x_emb_t) ** 3)
+                     + torch.mean(torch.abs(y_emb_t) ** 3)
+                     + torch.mean(torch.abs(z_emb_t) ** 3)
+                     )
+            regul2 = (torch.mean(torch.abs(s_emb_r) ** 3)
+                      + torch.mean(torch.abs(x_emb_r) ** 3)
+                      + torch.mean(torch.abs(y_emb_r) ** 3)
+                      + torch.mean(torch.abs(z_emb_r) ** 3))
+        else:
+            raise NotImplementedError('Unknown regularizer type: %s' % reg_type)
+
+        return self.lmbda * (regul + regul2)
+
+    @staticmethod
+    def _quaternion_init(in_features, out_features, criterion='he'):
+
+        fan_in = in_features
+        fan_out = out_features
+
+        if criterion == 'glorot':
+            s = 1. / np.sqrt(2 * (fan_in + fan_out))
+        elif criterion == 'he':
+            s = 1. / np.sqrt(2 * fan_in)
+        else:
+            raise ValueError('Invalid criterion: ', criterion)
+        rng = RandomState(123)
+
+        kernel_shape = (in_features, out_features)
+
+        number_of_weights = np.prod(kernel_shape)
+        v_i = np.random.uniform(0.0, 1.0, number_of_weights)
+        v_j = np.random.uniform(0.0, 1.0, number_of_weights)
+        v_k = np.random.uniform(0.0, 1.0, number_of_weights)
+
+        for i in range(0, number_of_weights):
+            norm = np.sqrt(v_i[i] ** 2 + v_j[i] ** 2 + v_k[i] ** 2) + 0.0001
+            v_i[i] /= norm
+            v_j[i] /= norm
+            v_k[i] /= norm
+        v_i = v_i.reshape(kernel_shape)
+        v_j = v_j.reshape(kernel_shape)
+        v_k = v_k.reshape(kernel_shape)
+
+        modulus = rng.uniform(low=-s, high=s, size=kernel_shape)
+        phase = rng.uniform(low=-np.pi, high=np.pi, size=kernel_shape)
+
+        weight_r = modulus * np.cos(phase)
+        weight_i = modulus * v_i * np.sin(phase)
+        weight_j = modulus * v_j * np.sin(phase)
+        weight_k = modulus * v_k * np.sin(phase)
+
+        return weight_r, weight_i, weight_j, weight_k
+
+
+class OctonionE(PointwiseModel):
+    """
+        `Quaternion Knowledge Graph Embeddings`_
+
+        Args:
+            config (object): Model configuration parameters.
+
+        Examples:
+            >>> from pykg2vec.models.pointwise import OctonionE
+            >>> from pykg2vec.utils.trainer import Trainer
+            >>> model = OctonionE()
+            >>> trainer = Trainer(model=model)
+            >>> trainer.build_model()
+            >>> trainer.train_model()
+
+        .. _cheungdaven: https://github.com/cheungdaven/QuatE.git
+
+        .. _Quaternion Knowledge Graph Embeddings:
+            https://arxiv.org/abs/1904.10281
+
+    """
+
+    def __init__(self, **kwargs):
+        super(OctonionE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "lmbda"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
+
+        self.ent_embedding_1 = NamedEmbedding("ent_embedding_1", num_total_ent, k)
+        self.ent_embedding_2 = NamedEmbedding("ent_embedding_2", num_total_ent, k)
+        self.ent_embedding_3 = NamedEmbedding("ent_embedding_3", num_total_ent, k)
+        self.ent_embedding_4 = NamedEmbedding("ent_embedding_4", num_total_ent, k)
+        self.ent_embedding_5 = NamedEmbedding("ent_embedding_5", num_total_ent, k)
+        self.ent_embedding_6 = NamedEmbedding("ent_embedding_6", num_total_ent, k)
+        self.ent_embedding_7 = NamedEmbedding("ent_embedding_7", num_total_ent, k)
+        self.ent_embedding_8 = NamedEmbedding("ent_embedding_8", num_total_ent, k)
+        self.rel_embedding_1 = NamedEmbedding("rel_embedding_1", num_total_rel, k)
+        self.rel_embedding_2 = NamedEmbedding("rel_embedding_2", num_total_rel, k)
+        self.rel_embedding_3 = NamedEmbedding("rel_embedding_3", num_total_rel, k)
+        self.rel_embedding_4 = NamedEmbedding("rel_embedding_4", num_total_rel, k)
+        self.rel_embedding_5 = NamedEmbedding("rel_embedding_5", num_total_rel, k)
+        self.rel_embedding_6 = NamedEmbedding("rel_embedding_6", num_total_rel, k)
+        self.rel_embedding_7 = NamedEmbedding("rel_embedding_7", num_total_rel, k)
+        self.rel_embedding_8 = NamedEmbedding("rel_embedding_8", num_total_rel, k)
+        self.rel_w_embedding = NamedEmbedding("rel_w_embedding", num_total_rel, k)
+
+        nn.init.xavier_uniform_(self.ent_embedding_1.weight.data)
+        nn.init.xavier_uniform_(self.ent_embedding_2.weight.data)
+        nn.init.xavier_uniform_(self.ent_embedding_3.weight.data)
+        nn.init.xavier_uniform_(self.ent_embedding_4.weight.data)
+        nn.init.xavier_uniform_(self.ent_embedding_5.weight.data)
+        nn.init.xavier_uniform_(self.ent_embedding_6.weight.data)
+        nn.init.xavier_uniform_(self.ent_embedding_7.weight.data)
+        nn.init.xavier_uniform_(self.ent_embedding_8.weight.data)
+        nn.init.xavier_uniform_(self.rel_embedding_1.weight.data)
+        nn.init.xavier_uniform_(self.rel_embedding_2.weight.data)
+        nn.init.xavier_uniform_(self.rel_embedding_3.weight.data)
+        nn.init.xavier_uniform_(self.rel_embedding_4.weight.data)
+        nn.init.xavier_uniform_(self.rel_embedding_5.weight.data)
+        nn.init.xavier_uniform_(self.rel_embedding_6.weight.data)
+        nn.init.xavier_uniform_(self.rel_embedding_7.weight.data)
+        nn.init.xavier_uniform_(self.rel_embedding_8.weight.data)
+        nn.init.xavier_uniform_(self.rel_w_embedding.weight.data)
+
+        self.parameter_list = [
+            self.ent_embedding_1,
+            self.ent_embedding_2,
+            self.ent_embedding_3,
+            self.ent_embedding_4,
+            self.ent_embedding_5,
+            self.ent_embedding_6,
+            self.ent_embedding_7,
+            self.ent_embedding_8,
+            self.rel_embedding_1,
+            self.rel_embedding_2,
+            self.rel_embedding_3,
+            self.rel_embedding_4,
+            self.rel_embedding_5,
+            self.rel_embedding_6,
+            self.rel_embedding_7,
+            self.rel_embedding_8,
+            self.rel_w_embedding,
+        ]
+
+    def embed(self, h, r, t):
+        e_1_h = self.ent_embedding_1(h)
+        e_2_h = self.ent_embedding_2(h)
+        e_3_h = self.ent_embedding_3(h)
+        e_4_h = self.ent_embedding_4(h)
+        e_5_h = self.ent_embedding_5(h)
+        e_6_h = self.ent_embedding_6(h)
+        e_7_h = self.ent_embedding_7(h)
+        e_8_h = self.ent_embedding_8(h)
+
+        e_1_t = self.ent_embedding_1(t)
+        e_2_t = self.ent_embedding_2(t)
+        e_3_t = self.ent_embedding_3(t)
+        e_4_t = self.ent_embedding_4(t)
+        e_5_t = self.ent_embedding_5(t)
+        e_6_t = self.ent_embedding_6(t)
+        e_7_t = self.ent_embedding_7(t)
+        e_8_t = self.ent_embedding_8(t)
+
+        r_1 = self.rel_embedding_1(r)
+        r_2 = self.rel_embedding_2(r)
+        r_3 = self.rel_embedding_3(r)
+        r_4 = self.rel_embedding_4(r)
+        r_5 = self.rel_embedding_5(r)
+        r_6 = self.rel_embedding_6(r)
+        r_7 = self.rel_embedding_7(r)
+        r_8 = self.rel_embedding_8(r)
+
+        return e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h, \
+              e_1_t, e_2_t, e_3_t, e_4_t, e_5_t, e_6_t, e_7_t, e_8_t, \
+              r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8
+
+    def forward(self, h, r, t):
+        e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h, \
+        e_1_t, e_2_t, e_3_t, e_4_t, e_5_t, e_6_t, e_7_t, e_8_t, \
+        r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8 = self.embed(h, r, t)
+
+        r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8 = OctonionE._onorm(r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8)
+
+        o_1, o_2, o_3, o_4, o_5, o_6, o_7, o_8 = OctonionE._omult(e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h,
+                                                                  r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8)
+
+        score_r = (o_1 * e_1_t + o_2 * e_2_t + o_3 * e_3_t + o_4 * e_4_t
+                   + o_5 * e_5_t + o_6 * e_6_t + o_7 * e_7_t + o_8 * e_8_t)
+
+        return -torch.sum(score_r, -1)
+
+    def get_reg(self, h, r, t, reg_type='N3'):
+        e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h, \
+        e_1_t, e_2_t, e_3_t, e_4_t, e_5_t, e_6_t, e_7_t, e_8_t, \
+        r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8 = self.embed(h, r, t)
+        if reg_type.lower() == 'f2':
+            regul = (torch.mean(torch.abs(e_1_h) ** 2)
+                     + torch.mean(torch.abs(e_2_h) ** 2)
+                     + torch.mean(torch.abs(e_3_h) ** 2)
+                     + torch.mean(torch.abs(e_4_h) ** 2)
+                     + torch.mean(torch.abs(e_5_h) ** 2)
+                     + torch.mean(torch.abs(e_6_h) ** 2)
+                     + torch.mean(torch.abs(e_7_h) ** 2)
+                     + torch.mean(torch.abs(e_8_h) ** 2)
+                     + torch.mean(torch.abs(e_1_t) ** 2)
+                     + torch.mean(torch.abs(e_2_t) ** 2)
+                     + torch.mean(torch.abs(e_3_t) ** 2)
+                     + torch.mean(torch.abs(e_4_t) ** 2)
+                     + torch.mean(torch.abs(e_5_t) ** 2)
+                     + torch.mean(torch.abs(e_6_t) ** 2)
+                     + torch.mean(torch.abs(e_7_t) ** 2)
+                     + torch.mean(torch.abs(e_8_t) ** 2)
+                     )
+            regul2 = (torch.mean(torch.abs(r_1) ** 2)
+                      + torch.mean(torch.abs(r_2) ** 2)
+                      + torch.mean(torch.abs(r_3) ** 2)
+                      + torch.mean(torch.abs(r_4) ** 2)
+                      + torch.mean(torch.abs(r_5) ** 2)
+                      + torch.mean(torch.abs(r_6) ** 2)
+                      + torch.mean(torch.abs(r_7) ** 2)
+                      + torch.mean(torch.abs(r_8) ** 2))
+        elif reg_type.lower() == 'n3':
+            regul = (torch.mean(torch.abs(e_1_h) ** 3)
+                     + torch.mean(torch.abs(e_2_h) ** 3)
+                     + torch.mean(torch.abs(e_3_h) ** 3)
+                     + torch.mean(torch.abs(e_4_h) ** 3)
+                     + torch.mean(torch.abs(e_5_h) ** 3)
+                     + torch.mean(torch.abs(e_6_h) ** 3)
+                     + torch.mean(torch.abs(e_7_h) ** 3)
+                     + torch.mean(torch.abs(e_8_h) ** 3)
+                     + torch.mean(torch.abs(e_1_t) ** 3)
+                     + torch.mean(torch.abs(e_2_t) ** 3)
+                     + torch.mean(torch.abs(e_3_t) ** 3)
+                     + torch.mean(torch.abs(e_4_t) ** 3)
+                     + torch.mean(torch.abs(e_5_t) ** 3)
+                     + torch.mean(torch.abs(e_6_t) ** 3)
+                     + torch.mean(torch.abs(e_7_t) ** 3)
+                     + torch.mean(torch.abs(e_8_t) ** 3)
+                     )
+            regul2 = (torch.mean(torch.abs(r_1) ** 3)
+                      + torch.mean(torch.abs(r_2) ** 3)
+                      + torch.mean(torch.abs(r_3) ** 3)
+                      + torch.mean(torch.abs(r_4) ** 3)
+                      + torch.mean(torch.abs(r_5) ** 3)
+                      + torch.mean(torch.abs(r_6) ** 3)
+                      + torch.mean(torch.abs(r_7) ** 3)
+                      + torch.mean(torch.abs(r_8) ** 3))
+        else:
+            raise NotImplementedError('Unknown regularizer type: %s' % reg_type)
+
+        return self.lmbda * (regul + regul2)
+
+    @staticmethod
+    def _qmult(s_a, x_a, y_a, z_a, s_b, x_b, y_b, z_b):
+        a = s_a * s_b - x_a * x_b - y_a * y_b - z_a * z_b
+        b = s_a * x_b + s_b * x_a + y_a * z_b - y_b * z_a
+        c = s_a * y_b + s_b * y_a + z_a * x_b - z_b * x_a
+        d = s_a * z_b + s_b * z_a + x_a * y_b - x_b * y_a
+        return a, b, c, d
+
+    @staticmethod
+    def _qstar(a, b, c, d):
+        return a, -b, -c, -d
+
+    @staticmethod
+    def _omult(a_1, a_2, a_3, a_4, b_1, b_2, b_3, b_4, c_1, c_2, c_3, c_4, d_1, d_2, d_3, d_4):
+
+        d_1_star, d_2_star, d_3_star, d_4_star = OctonionE._qstar(d_1, d_2, d_3, d_4)
+        c_1_star, c_2_star, c_3_star, c_4_star = OctonionE._qstar(c_1, c_2, c_3, c_4)
+
+        o_1, o_2, o_3, o_4 = OctonionE._qmult(a_1, a_2, a_3, a_4, c_1, c_2, c_3, c_4)
+        o_1s, o_2s, o_3s, o_4s = OctonionE._qmult(d_1_star, d_2_star, d_3_star, d_4_star, b_1, b_2, b_3, b_4)
+
+        o_5, o_6, o_7, o_8 = OctonionE._qmult(d_1, d_2, d_3, d_4, a_1, a_2, a_3, a_4)
+        o_5s, o_6s, o_7s, o_8s = OctonionE._qmult(b_1, b_2, b_3, b_4, c_1_star, c_2_star, c_3_star, c_4_star)
+
+        return o_1 - o_1s, o_2 - o_2s, o_3 - o_3s, o_4 - o_4s, \
+                o_5 + o_5s, o_6 + o_6s, o_7 + o_7s, o_8 + o_8s
+
+    @staticmethod
+    def _onorm(r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8):
+        denominator = torch.sqrt(r_1 ** 2 + r_2 ** 2 + r_3 ** 2 + r_4 ** 2
+                                 + r_5 ** 2 + r_6 ** 2 + r_7 ** 2 + r_8 ** 2)
+        r_1 = r_1 / denominator
+        r_2 = r_2 / denominator
+        r_3 = r_3 / denominator
+        r_4 = r_4 / denominator
+        r_5 = r_5 / denominator
+        r_6 = r_6 / denominator
+        r_7 = r_7 / denominator
+        r_8 = r_8 / denominator
+
+        return r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8

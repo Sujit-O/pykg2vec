@@ -1,0 +1,15 @@
+model_name: "OctonionE"
+datasets:
+  - dataset: "freebase15k_237"
+    parameters:
+      learning_rate: 0.1
+      l1_flag: True
+      hidden_size: 50
+      batch_size: 100
+      epochs: 10000
+      margin: 1.0
+      optimizer: "adagrad"
+      sampling: "uniform"
+      neg_rate: 1
+      lmbda: 0.2
+      alpha: 0.1
