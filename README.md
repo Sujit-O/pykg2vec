@@ -61,7 +61,7 @@ With pykg2vec command-line interface, you can
     # Train using different KGE methods.
     (pykg2vec) $ pykg2vec-train -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|ComplexN3|
                         CP|RotatE|Analogy|DistMult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|
-                        ConvE|ConvKB|Proje_pointwise|MuRP|QuatE|OctonionE]
+                        ConvE|ConvKB|Proje_pointwise|MuRP|QuatE|OctonionE|InteractE]
 
     # For KGE using projection-based loss function, use more processes for batch generation.
     (pykg2vec) $ pykg2vec-train -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of processes, 4 or 6]
