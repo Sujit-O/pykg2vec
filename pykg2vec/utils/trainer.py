@@ -201,19 +201,14 @@ class Trainer:
         preds = self.model(h, r, t)
         loss = F.softplus(y*preds).mean()
 
-        if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult & CP & ANALOGY
+        if hasattr(self.model, 'get_reg'):  # for complex & complex-N3 & DistMult & CP & ANALOGY
             loss += self.model.get_reg(h, r, t)
 
         return loss
 
-    def train_step_hyperbolic(self, pos_h, pos_r, pos_t, neg_h, neg_r, neg_t):
-        heads = torch.cat((pos_h, neg_h), dim=-1)
-        rels = torch.cat((pos_r, neg_r), dim=-1)
-        tails = torch.cat((pos_t, neg_t), dim=-1)
-        preds = self.model(heads, rels, tails)
-        targets = torch.cat((torch.ones(pos_h.shape), torch.zeros(neg_h.shape)), dim=-1)
-        targets = torch.FloatTensor(targets)
-        loss = torch.nn.BCEWithLogitsLoss()(preds, targets)
+    def train_step_hyperbolic(self, h, r, t, y):
+        preds = self.model(h, r, t)
+        loss = torch.nn.BCEWithLogitsLoss()(preds, y)
 
         return loss
 
@@ -331,13 +326,12 @@ class Trainer:
                 neg_t = torch.LongTensor(data[5]).to(self.config.device)
                 loss = self.train_step_pairwise(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
             elif self.model.training_strategy == TrainingStrategy.HYPERBOLIC_SPACE_BASED:
-                pos_h = torch.LongTensor(data[0]).to(self.config.device)
-                pos_r = torch.LongTensor(data[1]).to(self.config.device)
-                pos_t = torch.LongTensor(data[2]).to(self.config.device)
-                neg_h = torch.LongTensor(data[3]).to(self.config.device)
-                neg_r = torch.LongTensor(data[4]).to(self.config.device)
-                neg_t = torch.LongTensor(data[5]).to(self.config.device)
-                loss = self.train_step_hyperbolic(pos_h, pos_r, pos_t, neg_h, neg_r, neg_t)
+                h = torch.cat((torch.LongTensor(data[0]).to(self.config.device), torch.LongTensor(data[3]).to(self.config.device)), dim=-1)
+                r = torch.cat((torch.LongTensor(data[1]).to(self.config.device), torch.LongTensor(data[4]).to(self.config.device)), dim=-1)
+                t = torch.cat((torch.LongTensor(data[2]).to(self.config.device), torch.LongTensor(data[5]).to(self.config.device)), dim=-1)
+                y = torch.cat((torch.ones(np.array(data[0]).shape).to(self.config.device), torch.zeros(np.array(data[3]).shape).to(self.config.device)), dim=-1)
+                y = torch.FloatTensor(y).to(self.config.device)
+                loss = self.train_step_hyperbolic(h, r, t, y)
             else:
                 raise NotImplementedError("Unknown training strategy: %s" % self.model.training_strategy)
 
