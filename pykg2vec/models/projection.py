@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pykg2vec.models.KGMeta import ProjectionModel
 from pykg2vec.models.Domain import NamedEmbedding
+from pykg2vec.utils.criterion import Criterion
 
 
 class ConvE(ProjectionModel):
@@ -65,6 +66,8 @@ class ConvE(ProjectionModel):
             self.b,
         ]
 
+        self.criterion = Criterion.dnn
+
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
@@ -101,7 +104,7 @@ class ConvE(ProjectionModel):
         if self.training:
             x = self.bn2(x) # batch normalization across the last axis
         x = torch.relu(x)
-        x = torch.matmul(x, self.transpose(self.ent_embeddings.weight)) # [b, k] * [k, tot_ent] => [b, tot_ent]
+        x = torch.matmul(x, self.ent_embeddings.weight.T) # [b, k] * [k, tot_ent] => [b, tot_ent]
         x = torch.add(x, self.b.weight) # add a bias value
         return torch.sigmoid(x) # sigmoid activation
 
@@ -127,11 +130,6 @@ class ConvE(ProjectionModel):
     def predict_head_rank(self, e, r, topk=-1):
         _, rank = torch.topk(-self.forward(e, r, direction="head"), k=topk)
         return rank
-
-    @staticmethod
-    def transpose(tensor):
-        dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
-        return tensor.permute(dims)
 
 
 class ProjE_pointwise(ProjectionModel):
@@ -201,6 +199,8 @@ class ProjE_pointwise(ProjectionModel):
             self.Dr2,
         ]
 
+        self.criterion = Criterion.sum
+
     def get_reg(self):
         return self.lmbda*(torch.sum(torch.abs(self.De1.weight) + torch.abs(self.Dr1.weight)) +
                            torch.sum(torch.abs(self.De2.weight) + torch.abs(self.Dr2.weight)) +
@@ -250,7 +250,7 @@ class ProjE_pointwise(ProjectionModel):
                W (Tensor): Matrix for multiplication.
         """
         # [b, k] [k, tot_ent]
-        return torch.sigmoid(torch.matmul(f, self.transpose(w)))
+        return torch.sigmoid(torch.matmul(f, w.T))
 
     def predict_tail_rank(self, h, r, topk=-1):
         emb_h = self.ent_embeddings(h)  # [1, k]
@@ -269,11 +269,6 @@ class ProjE_pointwise(ProjectionModel):
         _, rank = torch.topk(hrt_sigmoid, k=topk)
 
         return rank
-
-    @staticmethod
-    def transpose(tensor):
-        dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
-        return tensor.permute(dims)
 
 
 class TuckER(ProjectionModel):
@@ -333,6 +328,8 @@ class TuckER(ProjectionModel):
         self.hidden_dropout1 = nn.Dropout(self.hidden_dropout1)
         self.hidden_dropout2 = nn.Dropout(self.hidden_dropout2)
 
+        self.criterion = Criterion.dnn
+
     def forward(self, e1, r, direction="head"):
         """Implementation of the layer.
 
@@ -358,7 +355,7 @@ class TuckER(ProjectionModel):
         x = x.view(-1, self.d1)
         x = F.normalize(x, p=2, dim=1)
         x = self.hidden_dropout2(x)
-        x = torch.matmul(x, self.transpose(self.ent_embeddings.weight))
+        x = torch.matmul(x, self.ent_embeddings.weight.T)
         return F.sigmoid(x)
 
     def predict_tail_rank(self, e, r, topk=-1):
@@ -368,8 +365,3 @@ class TuckER(ProjectionModel):
     def predict_head_rank(self, e, r, topk=-1):
         _, rank = torch.topk(-self.forward(e, r, direction="head"), k=topk)
         return rank
-
-    @staticmethod
-    def transpose(tensor):
-        dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
-        return tensor.permute(dims)

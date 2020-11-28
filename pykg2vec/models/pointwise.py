@@ -5,6 +5,7 @@ import torch.nn as nn
 
 from pykg2vec.models.KGMeta import PointwiseModel
 from pykg2vec.models.Domain import NamedEmbedding
+from pykg2vec.utils.criterion import Criterion
 
 
 class ANALOGY(PointwiseModel):
@@ -58,6 +59,8 @@ class ANALOGY(PointwiseModel):
             self.rel_embeddings_img,
         ]
 
+        self.criterion = Criterion.pointwise
+
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
@@ -106,12 +109,19 @@ class ANALOGY(PointwiseModel):
 
         return complex_loss + distmult_loss
 
-    def get_reg(self, h, r, t):
+    def get_reg(self, h, r, t, reg_type="F2"):
         h_e, r_e, t_e = self.embed(h, r, t)
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed_complex(h, r, t)
 
-        regul_term = (h_e_real**2+h_e_img**2+r_e_real**2+r_e_img**2+t_e_real**2+t_e_img**2).sum(axis=-1).mean()
-        regul_term += (h_e**2+r_e**2+t_e**2).sum(axis=-1).mean()
+        if reg_type.lower() == 'f2':
+            regul_term = (h_e_real ** 2 + h_e_img ** 2 + r_e_real ** 2 + r_e_img ** 2 + t_e_real ** 2 + t_e_img ** 2).sum(axis=-1).mean()
+            regul_term += (h_e ** 2 + r_e ** 2 + t_e ** 2).sum(axis=-1).mean()
+        elif reg_type.lower() == 'n3':
+            regul_term = (h_e_real ** 3 + h_e_img ** 3 + r_e_real ** 3 + r_e_img ** 3 + t_e_real ** 3 + t_e_img ** 3).sum(axis=-1).mean()
+            regul_term += (h_e ** 3 + r_e ** 3 + t_e ** 3).sum(axis=-1).mean()
+        else:
+            raise NotImplementedError('Unknown regularizer type: %s' % reg_type)
+
         return self.lmbda*regul_term
 
 
@@ -161,6 +171,9 @@ class Complex(PointwiseModel):
             self.rel_embeddings_real,
             self.rel_embeddings_img,
         ]
+
+        self.criterion = Criterion.pointwise
+
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
@@ -188,10 +201,18 @@ class Complex(PointwiseModel):
         return -torch.sum(h_e_real * t_e_real * r_e_real + h_e_img * t_e_img * r_e_real +
                           h_e_real * t_e_img * r_e_img - h_e_img * t_e_real * r_e_img, -1)
 
-    def get_reg(self, h, r, t):
+    def get_reg(self, h, r, t, reg_type="F2"):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
-        regul_term = torch.mean(torch.sum(h_e_real**2, -1) + torch.sum(h_e_img**2, -1) + torch.sum(r_e_real**2, -1) +
-                                torch.sum(r_e_img**2, -1) + torch.sum(t_e_real**2, -1) + torch.sum(t_e_img**2, -1))
+
+        if reg_type.lower() == 'f2':
+            regul_term = torch.mean(torch.sum(h_e_real ** 2, -1) + torch.sum(h_e_img ** 2, -1) + torch.sum(r_e_real ** 2, -1) +
+                torch.sum(r_e_img ** 2, -1) + torch.sum(t_e_real ** 2, -1) + torch.sum(t_e_img ** 2, -1))
+        elif reg_type.lower() == 'n3':
+            regul_term = torch.mean(torch.sum(h_e_real ** 3, -1) + torch.sum(h_e_img ** 3, -1) + torch.sum(r_e_real ** 3, -1) +
+                torch.sum(r_e_img ** 3, -1) + torch.sum(t_e_real ** 3, -1) + torch.sum(t_e_img ** 3, -1))
+        else:
+            raise NotImplementedError('Unknown regularizer type: %s' % reg_type)
+
         return self.lmbda*regul_term
 
 
@@ -220,12 +241,22 @@ class ComplexN3(Complex):
     def __init__(self, **kwargs):
         super(ComplexN3, self).__init__(**kwargs)
         self.model_name = 'complexn3'
+        self.criterion = Criterion.pointwise
 
-    def get_reg(self, h, r, t):
+    def get_reg(self, h, r, t, reg_type="N3"):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
-        regul_term = torch.mean(torch.sum(h_e_real.abs()**3, -1) + torch.sum(h_e_img.abs()**3, -1) +
-                                torch.sum(r_e_real.abs()**3, -1) + torch.sum(r_e_img.abs()**3, -1) +
-                                torch.sum(t_e_real.abs()**3, -1) + torch.sum(t_e_img.abs()**3, -1))
+
+        if reg_type.lower() == 'f2':
+            regul_term = torch.mean(torch.sum(h_e_real.abs() ** 2, -1) + torch.sum(h_e_img.abs() ** 2, -1) +
+                                    torch.sum(r_e_real.abs() ** 2, -1) + torch.sum(r_e_img.abs() ** 2, -1) +
+                                    torch.sum(t_e_real.abs() ** 2, -1) + torch.sum(t_e_img.abs() ** 2, -1))
+        elif reg_type.lower() == 'n3':
+            regul_term = torch.mean(torch.sum(h_e_real.abs() ** 3, -1) + torch.sum(h_e_img.abs() ** 3, -1) +
+                                    torch.sum(r_e_real.abs() ** 3, -1) + torch.sum(r_e_img.abs() ** 3, -1) +
+                                    torch.sum(t_e_real.abs() ** 3, -1) + torch.sum(t_e_img.abs() ** 3, -1))
+        else:
+            raise NotImplementedError('Unknown regularizer type: %s' % reg_type)
+
         return self.lmbda*regul_term
 
 
@@ -279,6 +310,8 @@ class ConvKB(PointwiseModel):
         self.conv_list = [nn.Conv2d(1, num_filters, (3, filter_size), stride=(1, 1)).to(device) for filter_size in filter_sizes]
         conv_out_dim = num_filters*sum([(k-filter_size+1) for filter_size in filter_sizes])
         self.fc1 = nn.Linear(in_features=conv_out_dim, out_features=1, bias=True)
+
+        self.criterion = Criterion.pointwise
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -358,6 +391,8 @@ class CP(PointwiseModel):
             self.obj_embeddings,
         ]
 
+        self.criterion = Criterion.pointwise
+
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
@@ -380,6 +415,7 @@ class CP(PointwiseModel):
 
     def get_reg(self, h, r, t, reg_type='N3'):
         h_e, r_e, t_e = self.embed(h, r, t)
+
         if reg_type.lower() == 'f2':
             regul_term = torch.mean(torch.sum(h_e**2, -1) + torch.sum(r_e**2, -1) + torch.sum(t_e**2, -1))
         elif reg_type.lower() == 'n3':
@@ -432,6 +468,8 @@ class DistMult(PointwiseModel):
             self.rel_embeddings,
         ]
 
+        self.criterion = Criterion.pointwise
+
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
@@ -453,9 +491,16 @@ class DistMult(PointwiseModel):
         h_e, r_e, t_e = self.embed(h, r, t)
         return -torch.sum(h_e*r_e*t_e, -1)
 
-    def get_reg(self, h, r, t):
+    def get_reg(self, h, r, t, reg_type="F2"):
         h_e, r_e, t_e = self.embed(h, r, t)
-        regul_term = torch.mean(torch.sum(h_e**2, -1) + torch.sum(r_e**2, -1) + torch.sum(t_e**2, -1))
+
+        if reg_type.lower() == 'f2':
+            regul_term = torch.mean(torch.sum(h_e ** 2, -1) + torch.sum(r_e ** 2, -1) + torch.sum(t_e ** 2, -1))
+        elif reg_type.lower() == 'n3':
+            regul_term = torch.mean(torch.sum(h_e ** 3, -1) + torch.sum(r_e ** 3, -1) + torch.sum(t_e ** 3, -1))
+        else:
+            raise NotImplementedError('Unknown regularizer type: %s' % reg_type)
+
         return self.lmbda*regul_term
 
 
@@ -507,6 +552,7 @@ class SimplE(PointwiseModel):
             self.rel_inv_embeddings,
         ]
 
+        self.criterion = Criterion.pointwise
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -533,8 +579,14 @@ class SimplE(PointwiseModel):
         init = torch.sum(h1_e*r1_e*t1_e, 1) + torch.sum(h2_e*r2_e*t2_e, 1) / 2.0
         return -torch.clamp(init, -20, 20)
 
-    def get_reg(self, h, r, t):
-        regul_term = torch.mean(torch.sum(h.type(torch.FloatTensor) ** 2, -1) + torch.sum(r.type(torch.FloatTensor) ** 2, -1) + torch.sum(t.type(torch.FloatTensor) ** 2, -1))
+    def get_reg(self, h, r, t, reg_type="F2"):
+        if reg_type.lower() == 'f2':
+            regul_term = torch.mean(torch.sum(h.type(torch.FloatTensor) ** 2, -1) + torch.sum(r.type(torch.FloatTensor) ** 2, -1) + torch.sum(t.type(torch.FloatTensor) ** 2, -1))
+        elif reg_type.lower() == 'n3':
+            regul_term = torch.mean(torch.sum(h.type(torch.FloatTensor) ** 3, -1) + torch.sum(r.type(torch.FloatTensor) ** 3, -1) + torch.sum(t.type(torch.FloatTensor) ** 3, -1))
+        else:
+            raise NotImplementedError('Unknown regularizer type: %s' % reg_type)
+
         return self.lmbda * regul_term
 
 
@@ -561,6 +613,7 @@ class SimplE_ignr(SimplE):
     def __init__(self, **kwargs):
         super(SimplE_ignr, self).__init__(**kwargs)
         self.model_name = 'simple_ignr'
+        self.criterion = Criterion.pointwise
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
