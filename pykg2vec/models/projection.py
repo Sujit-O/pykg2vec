@@ -17,7 +17,7 @@ class ConvE(ProjectionModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.Complex import ConvE
+            >>> from pykg2vec.models.projection import ConvE
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = ConvE()
             >>> trainer = Trainer(model=model)
@@ -150,7 +150,7 @@ class ProjE_pointwise(ProjectionModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.ProjE_pointwise import ProjE_pointwise
+            >>> from pykg2vec.models.projection import ProjE_pointwise
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = ProjE_pointwise()
             >>> trainer = Trainer(model=model)
@@ -247,7 +247,7 @@ class ProjE_pointwise(ProjectionModel):
 
             Args:
                f (Tensor): output of the forward layers.
-               W (Tensor): Matrix for multiplication.
+               w (Tensor): Matrix for multiplication.
         """
         # [b, k] [k, tot_ent]
         return torch.sigmoid(torch.matmul(f, self.transpose(w)))
@@ -291,7 +291,7 @@ class TuckER(ProjectionModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.TuckER import TuckER
+            >>> from pykg2vec.models.projection import TuckER
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = TuckER()
             >>> trainer = Trainer(model=model)

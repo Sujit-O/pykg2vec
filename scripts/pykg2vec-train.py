@@ -26,4 +26,3 @@ def main(cmd_args):
 if __name__ == "__main__":
     __spec__ = None
     main(sys.argv[1:])
-

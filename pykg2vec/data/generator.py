@@ -12,11 +12,9 @@ def raw_data_generator(command_queue, raw_queue, config):
     """Function to feed  triples to raw queue for multiprocessing.
 
         Args:
+            command_queue (Queue) : Each enqueued is either a command or a number of batch size.
             raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
-            data (list) : List of integer ids denoting positive triples.
-            batch_size (int) : Size of each batch.
-            number_of_batch (int) : Total number of batch.
-
+            config (pykg2vec.Config) : Consists of the necessary parameters for training configuration.
     """
     data = config.knowledge_graph.read_cache_data('triplets_train')
 
@@ -47,12 +45,7 @@ def process_function_pairwise(raw_queue, processed_queue, config):
         Args:
             raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
             processed_queue (Queue) : Multiprocessing Queue to put the processed data.
-            te (int): Total number of entities
-            bs (int): Total size of each batch.
-            positive_triplets (list) : List of positive triples.
-            lh (int): Id of the last processed head.
-            lr (int): Id of the last processed relation.
-            lt (int): Id of the last processed tail.
+            config (pykg2vec.Config) : Consists of the necessary parameters for training configuration.
     """
     data = config.knowledge_graph.read_cache_data('triplets_train')
     relation_property = config.knowledge_graph.read_cache_data('relationproperty')
@@ -109,12 +102,7 @@ def process_function_pointwise(raw_queue, processed_queue, config):
         Args:
             raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
             processed_queue (Queue) : Multiprocessing Queue to put the processed data.
-            te (int): Total number of entities
-            bs (int): Total size of each batch.
-            positive_triplets (list) : List of positive triples.
-            lh (int): Id of the last processed head.
-            lr (int): Id of the last processed relation.
-            lt (int): Id of the last processed tail.
+            config (pykg2vec.Config) : Consists of the necessary parameters for training configuration.
     """
     data = config.knowledge_graph.read_cache_data('triplets_train')
     relation_property = config.knowledge_graph.read_cache_data('relationproperty')
@@ -176,9 +164,7 @@ def process_function_multiclass(raw_queue, processed_queue, config):
         Args:
             raw_queue (Queue) : Multiprocessing Queue to put the raw data to be processed.
             processed_queue (Queue) : Multiprocessing Queue to put the processed data.
-            te (int): Total number of entities
-            bs (int): Total size of each batch.
-            neg_rate (int): Ratio of negative to positive samples.
+            config (pykg2vec.Config) : Consists of the necessary parameters for training configuration.
     """
 
     def _to_sparse_i(indices):
@@ -320,7 +306,7 @@ class Generator:
             elif self.training_strategy == TrainingStrategy.POINTWISE_BASED:
                 process_worker = Process(target=process_function_pointwise, args=(self.raw_queue, self.processed_queue, self.config))
             elif self.training_strategy == TrainingStrategy.HYPERBOLIC_SPACE_BASED:
-                process_worker = Process(target=process_function_pointwise, args=(self.raw_queue, self.processed_queue, self.config))
+                process_worker = Process(target=process_function_pairwise, args=(self.raw_queue, self.processed_queue, self.config))
             else:
                 raise NotImplementedError("This strategy is not supported.")
             self.process_list.append(process_worker)
