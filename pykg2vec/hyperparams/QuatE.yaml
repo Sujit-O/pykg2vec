@@ -1,0 +1,57 @@
+model_name: "QuatE"
+datasets:
+  - dataset: "freebase15k_237"
+    parameters:
+      learning_rate: 0.1
+      l1_flag: True
+      hidden_size: 100
+      batch_size: 100
+      epochs: 15000
+      margin: 1.0
+      optimizer: "adagrad"
+      sampling: "uniform"
+      neg_rate: 1
+      lmbda: 0.2
+      alpha: 0.1
+
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.1
+      l1_flag: True
+      hidden_size: 200
+      batch_size: 100
+      epochs: 5000
+      margin: 1.0
+      optimizer: "adagrad"
+      sampling: "uniform"
+      neg_rate: 1
+      lmbda: 0.1
+      alpha: 0.1
+
+  - dataset: "wordnet18_rr"
+    parameters:
+      learning_rate: 0.1
+      l1_flag: True
+      hidden_size: 100
+      batch_size: 100
+      epochs: 40000
+      margin: 1.0
+      optimizer: "adagrad"
+      sampling: "bern"
+      neg_rate: 1
+      lmbda: 0.1
+      alpha: 0.1
+
+  - dataset: "wordnet18"
+    parameters:
+      learning_rate: 0.1
+      l1_flag: True
+      hidden_size: 300
+      batch_size: 100
+      epochs: 3000
+      margin: 1.0
+      optimizer: "adagrad"
+      sampling: "bern"
+      neg_rate: 1
+      lmbda: 0.05
+      alpha: 0.1

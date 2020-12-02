@@ -264,8 +264,11 @@ class Importer:
                          "hole": "pairwise.HoLE",
                          "distmult": "pointwise.DistMult",
                          "kg2e": "pairwise.KG2E",
+                         "murp": "hyperbolic.MuRP",
                          "ntn": "pairwise.NTN",
+                         "octonione": "pointwise.OctonionE",
                          "proje_pointwise": "projection.ProjE_pointwise",
+                         "quate": "pointwise.QuatE",
                          "rescal": "pairwise.Rescal",
                          "rotate": "pairwise.RotatE",
                          "simple": "pointwise.SimplE",
@@ -279,7 +282,7 @@ class Importer:
                          "transm": "pairwise.TransM",
                          "transr": "pairwise.TransR",
                          "tucker": "projection.TuckER",
-                         "murp": "hyperbolic.MuRP"}
+                         }
 
     def import_model_config(self, name):
         """This function imports models and configuration.

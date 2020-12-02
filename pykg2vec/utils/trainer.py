@@ -201,7 +201,7 @@ class Trainer:
         preds = self.model(h, r, t)
         loss = F.softplus(y*preds).mean()
 
-        if hasattr(self.model, 'get_reg'):  # for complex & complex-N3 & DistMult & CP & ANALOGY
+        if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult & CP & ANALOGY & QuatE & OctonionE
             loss += self.model.get_reg(h, r, t)
 
         return loss
