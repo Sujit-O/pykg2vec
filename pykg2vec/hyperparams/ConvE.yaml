@@ -3,7 +3,7 @@ datasets:
   - dataset: "freebase15k"
     parameters:
       learning_rate: 0.003
-      l1_flag': True
+      l1_flag: True
       hidden_size: 200
       hidden_size_1: 20
       input_dropout: 0.2

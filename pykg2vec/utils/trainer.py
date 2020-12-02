@@ -172,7 +172,7 @@ class Trainer:
         return loss
 
     def train_step_projection(self, h, r, t, hr_t, tr_h):
-        if self.model.model_name.lower() == "conve" or self.model.model_name.lower() == "tucker":
+        if self.model.model_name.lower() in ["conve", "tucker", "interacte"]:
             if hasattr(self.config, 'label_smoothing'):
                 hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.tot_entity
                 tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.tot_entity
@@ -184,7 +184,6 @@ class Trainer:
             loss_heads = torch.mean(F.binary_cross_entropy(pred_heads, tr_h))
 
             loss = loss_tails + loss_heads
-
         else:
             loss_tails = self.model(h, r, hr_t, direction="tail")  # (h, r) -> hr_t forward
             loss_heads = self.model(t, r, tr_h, direction="head")  # (t, r) -> tr_h backward

@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 from pykg2vec.models.KGMeta import ProjectionModel
 from pykg2vec.models.Domain import NamedEmbedding
 
@@ -373,3 +374,172 @@ class TuckER(ProjectionModel):
     def transpose(tensor):
         dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
         return tensor.permute(dims)
+
+
+class InteractE(ProjectionModel):
+    """
+           `InteractE: Improving Convolution-based Knowledge Graph Embeddings by Increasing Feature Interactions`_
+
+           Args:
+               config (object): Model configuration parameters.
+
+           Examples:
+               >>> from pykg2vec.models.projection import InteractE
+               >>> from pykg2vec.utils.trainer import Trainer
+               >>> model = InteractE()
+               >>> trainer = Trainer(model=model)
+               >>> trainer.build_model()
+               >>> trainer.train_model()
+
+           .. _malllabiisc: https://github.com/malllabiisc/InteractE.git
+
+           .. _InteractE: Improving Convolution-based Knowledge Graph Embeddings by Increasing Feature Interactions:
+               https://arxiv.org/abs/1911.00219
+
+        """
+
+    def __init__(self, **kwargs):
+        super(InteractE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "input_dropout", "hidden_dropout", "feature_map_dropout",
+                      "feature_permutation", "num_filters", "kernel_size", "reshape_height", "reshape_width"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+
+        self.hidden_size = self.reshape_width * self.reshape_height
+        self.device = kwargs["device"]
+
+        self.ent_embeddings = NamedEmbedding("ent_embeddings", self.tot_entity, self.hidden_size, padding_idx=None)
+        self.rel_embeddings = NamedEmbedding("rel_embeddings", self.tot_relation, self.hidden_size, padding_idx=None)
+        self.bceloss = nn.BCELoss()
+
+        self.inp_drop = nn.Dropout(self.input_dropout)
+        self.hidden_drop = nn.Dropout(self.hidden_dropout)
+        self.feature_map_drop = nn.Dropout2d(self.feature_map_dropout)
+        self.bn0 = nn.BatchNorm2d(self.feature_permutation)
+
+        flat_sz_h = self.reshape_height
+        flat_sz_w = 2 * self.reshape_width
+        self.padding = 0
+
+        self.bn1 = nn.BatchNorm2d(self.num_filters * self.feature_permutation)
+        self.flat_sz = flat_sz_h * flat_sz_w * self.num_filters * self.feature_permutation
+
+        self.bn2 = nn.BatchNorm1d(self.hidden_size)
+        self.fc = nn.Linear(self.flat_sz, self.hidden_size)
+        self.chequer_perm = self._get_chequer_perm()
+
+        self.register_parameter("bias", nn.Parameter(torch.zeros(self.tot_entity)))
+        self.register_parameter("conv_filt", nn.Parameter(torch.zeros(self.num_filters, 1, self.kernel_size, self.kernel_size)))
+
+        nn.init.xavier_uniform_(self.ent_embeddings.weight)
+        nn.init.xavier_uniform_(self.rel_embeddings.weight)
+        nn.init.xavier_uniform_(self.conv_filt)
+
+        self.parameter_list = [
+            self.ent_embeddings,
+            self.rel_embeddings,
+        ]
+
+    def embed(self, h, r, t):
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
+        emb_h = self.ent_embeddings(h)
+        emb_r = self.rel_embeddings(r)
+        emb_t = self.ent_embeddings(t)
+
+        return emb_h, emb_r, emb_t
+
+    def embed2(self, e, r):
+        emb_e = self.ent_embeddings(e)
+        emb_r = self.rel_embeddings(r)
+        return emb_e, emb_r
+
+    def forward(self, e, r, direction="tail"):
+        assert direction in ("head", "tail"), "Unknown forward direction"
+        emb_e, emb_r = self.embed2(e, r)
+        emb_comb = torch.cat([emb_e, emb_r], dim=-1)
+        chequer_perm = emb_comb[:, self.chequer_perm]
+        stack_inp = chequer_perm.reshape((-1, self.feature_permutation, 2 * self.reshape_width, self.reshape_height))
+        stack_inp = self.bn0(stack_inp)
+        x = self.inp_drop(stack_inp)
+        x = InteractE._circular_padding_chw(x, self.kernel_size // 2)
+        x = F.conv2d(x, self.conv_filt.repeat(self.feature_permutation, 1, 1, 1), padding=self.padding, groups=self.feature_permutation)
+        x = self.bn1(x)
+        x = F.relu(x)
+        x = self.feature_map_drop(x)
+        x = x.view(-1, self.flat_sz)
+        x = self.fc(x)
+        x = self.hidden_drop(x)
+        x = self.bn2(x)
+        x = F.relu(x)
+
+        x = torch.mm(x, self.ent_embeddings.weight.transpose(1, 0))
+        x += self.bias.expand_as(x)
+
+        return torch.sigmoid(x)
+
+    def predict_tail_rank(self, e, r, topk=-1):
+        _, rank = torch.topk(-self.forward(e, r, direction="tail"), k=topk)
+        return rank
+
+    def predict_head_rank(self, e, r, topk=-1):
+        _, rank = torch.topk(-self.forward(e, r, direction="head"), k=topk)
+        return rank
+
+    @staticmethod
+    def _circular_padding_chw(batch, padding):
+        upper_pad = batch[..., -padding:, :]
+        lower_pad = batch[..., :padding, :]
+        temp = torch.cat([upper_pad, batch, lower_pad], dim=2)
+
+        left_pad = temp[..., -padding:]
+        right_pad = temp[..., :padding]
+        padded = torch.cat([left_pad, temp, right_pad], dim=3)
+        return padded
+
+    def _get_chequer_perm(self):
+        ent_perm = np.int32([np.random.permutation(self.hidden_size) for _ in range(self.feature_permutation)])
+        rel_perm = np.int32([np.random.permutation(self.hidden_size) for _ in range(self.feature_permutation)])
+
+        comb_idx = []
+        for k in range(self.feature_permutation):
+            temp = []
+            ent_idx, rel_idx = 0, 0
+
+            for i in range(self.reshape_height):
+                for _ in range(self.reshape_width):
+                    if k % 2 == 0:
+                        if i % 2 == 0:
+                            temp.append(ent_perm[k, ent_idx])
+                            ent_idx += 1
+                            temp.append(rel_perm[k, rel_idx] + self.hidden_size)
+                            rel_idx += 1
+                        else:
+                            temp.append(rel_perm[k, rel_idx] + self.hidden_size)
+                            rel_idx += 1
+                            temp.append(ent_perm[k, ent_idx])
+                            ent_idx += 1
+                    else:
+                        if i % 2 == 0:
+                            temp.append(rel_perm[k, rel_idx] + self.hidden_size)
+                            rel_idx += 1
+                            temp.append(ent_perm[k, ent_idx])
+                            ent_idx += 1
+                        else:
+                            temp.append(ent_perm[k, ent_idx])
+                            ent_idx += 1
+                            temp.append(rel_perm[k, rel_idx] + self.hidden_size)
+                            rel_idx += 1
+
+            comb_idx.append(temp)
+
+        chequer_perm = torch.LongTensor(np.int32(comb_idx)).to(self.device)
+        return chequer_perm
