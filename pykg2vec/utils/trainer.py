@@ -329,7 +329,6 @@ class Trainer:
                 r = torch.cat((torch.LongTensor(data[1]).to(self.config.device), torch.LongTensor(data[4]).to(self.config.device)), dim=-1)
                 t = torch.cat((torch.LongTensor(data[2]).to(self.config.device), torch.LongTensor(data[5]).to(self.config.device)), dim=-1)
                 y = torch.cat((torch.ones(np.array(data[0]).shape).to(self.config.device), torch.zeros(np.array(data[3]).shape).to(self.config.device)), dim=-1)
-                y = torch.FloatTensor(y).to(self.config.device)
                 loss = self.train_step_hyperbolic(h, r, t, y)
             else:
                 raise NotImplementedError("Unknown training strategy: %s" % self.model.training_strategy)
