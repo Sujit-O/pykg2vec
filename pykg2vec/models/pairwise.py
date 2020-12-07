@@ -1190,7 +1190,7 @@ class HoLE(PairwiseModel):
             config (object): Model configuration parameters.
 
         Examples:
-            >>> from pykg2vec.models.pairwise.pairwise import HoLE
+            >>> from pykg2vec.models.pairwise import HoLE
             >>> from pykg2vec.utils.trainer import Trainer
             >>> model = HoLE()
             >>> trainer = Trainer(model=model)

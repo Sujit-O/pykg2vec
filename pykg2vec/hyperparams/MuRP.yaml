@@ -8,7 +8,7 @@ datasets:
       epochs: 500
       optimizer: "riemannian"
       sampling: "uniform"
-      neg_rate: 1
+      neg_rate: 50
 
   - dataset: "freebase15k_237"
     parameters:
@@ -18,4 +18,4 @@ datasets:
       epochs: 500
       optimizer: "riemannian"
       sampling: "uniform"
-      neg_rate: 1
+      neg_rate: 50

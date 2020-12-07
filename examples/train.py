@@ -14,8 +14,9 @@ You can train a single KGE algorithm with train.py by using the following comman
 
 - Train using different KGE methods. Check `Implemented KGE Algorithms`__ for more details: ::
 
-    $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|ComplexN3|CP|RotatE|Analogy|
-                        DistMult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|ConvE|ConvKB|Proje_pointwise]
+    $ python train.py -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|ComplexN3|
+                        CP|RotatE|Analogy|DistMult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|
+                        ConvE|ConvKB|Proje_pointwise|MuRP|QuatE|OctonionE|InteractE]
 
 - For KGE using projection-based loss function, use more processes for batch generation: ::
 
