@@ -46,7 +46,7 @@ All dependent packages (requirements.txt_) will be installed automatically when 
 
 4. **Validate the Installation**: try the examples under /examples folder. ::
 
-    # train TransE using benchmark dataset fb15k (use pykg2vec-train.py on Windows)
+    # train TransE using benchmark dataset fb15k (use pykg2vec-train.exe on Windows)
     (pykg2vec) $ pykg2vec-train -mn transe -ds fb15k
 
 .. _GitHub: https://github.com/Sujit-O/pykg2vec/pulls

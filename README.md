@@ -91,7 +91,7 @@ With pykg2vec command-line interface, you can
     # Perform inference tasks over a pretrained model.
     (pykg2vec) $ pykg2vec-infer -mn TransE -ld [path to the pretrained model]
     ```
-\* NB: On Windows, use `pykg2vec-train.py`, `pykg2vec-tune.py` and `pykg2vec-infer.py` instead.
+\* NB: On Windows, use `pykg2vec-train.exe`, `pykg2vec-tune.exe` and `pykg2vec-infer.exe` instead.
 
 For more usage of pykg2vec APIs, please check the [programming examples](https://pykg2vec.readthedocs.io/en/latest/auto_examples/index.html).
 
