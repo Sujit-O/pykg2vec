@@ -1,0 +1,57 @@
+model_name: "HypER"
+datasets:
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.005
+      l1_flag: True
+      input_dropout: 0.2
+      feature_map_dropout: 0.2
+      hidden_dropout: 0.3
+      label_smoothing: 0.0
+      batch_size: 128
+      ent_vec_dim: 200
+      rel_vec_dim: 200
+      optimizer: "adam"
+      neg_rate: 0
+
+  - dataset: "wordnet18"
+    parameters:
+      learning_rate: 0.001
+      l1_flag: True
+      input_dropout: 0.2
+      feature_map_dropout: 0.2
+      hidden_dropout: 0.3
+      label_smoothing: 0.1
+      batch_size: 128
+      ent_vec_dim: 200
+      rel_vec_dim: 200
+      optimizer: "adam"
+      neg_rate: 0
+
+  - dataset: "freebase15k_237"
+    parameters:
+      learning_rate: 0.0001
+      l1_flag: True
+      input_dropout: 0.3
+      feature_map_dropout: 0.2
+      hidden_dropout: 0.3
+      label_smoothing: 0.1
+      batch_size: 128
+      ent_vec_dim: 200
+      rel_vec_dim: 200
+      optimizer: "adam"
+      neg_rate: 0
+
+  - dataset: "wordnet18_rr"
+    parameters:
+      learning_rate: 0.005
+      l1_flag: True
+      input_dropout: 0.2
+      feature_map_dropout: 0.2
+      hidden_dropout: 0.3
+      label_smoothing: 0.1
+      batch_size: 128
+      ent_vec_dim: 200
+      rel_vec_dim: 200
+      optimizer: "adam"
+      neg_rate: 0

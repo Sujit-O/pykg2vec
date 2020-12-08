@@ -274,7 +274,7 @@ class Evaluator:
 
     def test_rel_rank(self, h, t, topk=-1):
         if hasattr(self.model, 'predict_rel_rank'):
-            # TODO: This is not implemented for conve, convkb, proje_pointwise, tucker and interacte
+            # TODO: This is not implemented for conve, convkb, proje_pointwise, tucker, interacte and hyper
             rank = self.model.predict_rel_rank(h.to(self.config.device), t.to(self.config.device), topk=topk)
             return rank.squeeze(0)
 

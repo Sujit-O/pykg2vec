@@ -172,7 +172,7 @@ class Trainer:
         return loss
 
     def train_step_projection(self, h, r, t, hr_t, tr_h):
-        if self.model.model_name.lower() in ["conve", "tucker", "interacte"]:
+        if self.model.model_name.lower() in ["conve", "tucker", "interacte", "hyper"]:
             if hasattr(self.config, 'label_smoothing'):
                 hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.tot_entity
                 tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.tot_entity
@@ -329,7 +329,6 @@ class Trainer:
                 r = torch.cat((torch.LongTensor(data[1]).to(self.config.device), torch.LongTensor(data[4]).to(self.config.device)), dim=-1)
                 t = torch.cat((torch.LongTensor(data[2]).to(self.config.device), torch.LongTensor(data[5]).to(self.config.device)), dim=-1)
                 y = torch.cat((torch.ones(np.array(data[0]).shape).to(self.config.device), torch.zeros(np.array(data[3]).shape).to(self.config.device)), dim=-1)
-                y = torch.FloatTensor(y).to(self.config.device)
                 loss = self.train_step_hyperbolic(h, r, t, y)
             else:
                 raise NotImplementedError("Unknown training strategy: %s" % self.model.training_strategy)
