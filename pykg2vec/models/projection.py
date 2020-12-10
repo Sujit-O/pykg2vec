@@ -214,9 +214,9 @@ class ProjE_pointwise(ProjectionModel):
         emb_hr_r = self.rel_embeddings(r)  # [m, k]
 
         if direction == "tail":
-            ere2_sigmoid = self.g(torch.dropout(self.f1(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
+            ere2_sigmoid = ProjE_pointwise.g(torch.dropout(self.f1(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
         else:
-            ere2_sigmoid = self.g(torch.dropout(self.f2(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
+            ere2_sigmoid = ProjE_pointwise.g(torch.dropout(self.f2(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
 
         ere2_loss_left = -torch.sum((torch.log(torch.clamp(ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.device), er_e2)))
         ere2_loss_right = -torch.sum((torch.log(torch.clamp(1 - ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.device), torch.neg(er_e2))))
@@ -243,21 +243,11 @@ class ProjE_pointwise(ProjectionModel):
         """
         return torch.tanh(t * self.De2.weight + r * self.Dr2.weight + self.bc2.weight)
 
-    def g(self, f, w):
-        """Defines activation layer.
-
-            Args:
-               f (Tensor): output of the forward layers.
-               w (Tensor): Matrix for multiplication.
-        """
-        # [b, k] [k, tot_ent]
-        return torch.sigmoid(torch.matmul(f, w.T))
-
     def predict_tail_rank(self, h, r, topk=-1):
         emb_h = self.ent_embeddings(h)  # [1, k]
         emb_r = self.rel_embeddings(r)  # [1, k]
 
-        hrt_sigmoid = -self.g(self.f1(emb_h, emb_r), self.ent_embeddings.weight)
+        hrt_sigmoid = -ProjE_pointwise.g(self.f1(emb_h, emb_r), self.ent_embeddings.weight)
         _, rank = torch.topk(hrt_sigmoid, k=topk)
 
         return rank
@@ -266,11 +256,21 @@ class ProjE_pointwise(ProjectionModel):
         emb_t = self.ent_embeddings(t)  # [m, k]
         emb_r = self.rel_embeddings(r)  # [m, k]
 
-        hrt_sigmoid = -self.g(self.f2(emb_t, emb_r), self.ent_embeddings.weight)
+        hrt_sigmoid = -ProjE_pointwise.g(self.f2(emb_t, emb_r), self.ent_embeddings.weight)
         _, rank = torch.topk(hrt_sigmoid, k=topk)
 
         return rank
 
+    @staticmethod
+    def g(f, w):
+        """Defines activation layer.
+
+            Args:
+               f (Tensor): output of the forward layers.
+               w (Tensor): Matrix for multiplication.
+        """
+        # [b, k] [k, tot_ent]
+        return torch.sigmoid(torch.matmul(f, w.T))
 
 class TuckER(ProjectionModel):
     """
