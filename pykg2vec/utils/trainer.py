@@ -149,51 +149,40 @@ class Trainer:
         neg_preds = self.model(neg_h, neg_r, neg_t)
 
         if self.model.model_name.lower() == "rotate":
-            # RotatE: Adversarial Negative Sampling and alpha is the temperature.
-            loss = self.model.criterion(pos_preds, neg_preds, self.config.neg_rate, self.config.alpha)
+            loss = self.model.loss(pos_preds, neg_preds, self.config.neg_rate, self.config.alpha)
         else:
-            # others that use margin-based & pairwise loss function. (uniform or bern)
-            loss = self.model.criterion(pos_preds, neg_preds, self.config.margin)
-
-        # now only NTN uses regularizer,
-        # other pairwise based KGE methods use normalization to regularize parameters.
-        loss += self.model.get_reg()
+            loss = self.model.loss(pos_preds, neg_preds, self.config.margin)
+        loss += self.model.get_reg(None, None, None)
 
         return loss
 
     def train_step_projection(self, h, r, t, hr_t, tr_h):
-        if self.model.model_name.lower() in ["conve", "tucker", "interacte"]:
+        if self.model.model_name.lower() in ["conve", "tucker", "interacte", "hyper"]:
             pred_tails = self.model(h, r, direction="tail")  # (h, r) -> hr_t forward
             pred_heads = self.model(t, r, direction="head")  # (t, r) -> tr_h backward
-            loss = self.model.criterion(pred_heads, pred_tails, tr_h, hr_t, self.config.label_smoothing,
-                                        self.config.tot_entity)
+
+            if hasattr(self.config, 'label_smoothing'):
+                loss = self.model.loss(pred_heads, pred_tails, tr_h, hr_t, self.config.label_smoothing, self.config.tot_entity)
+            else:
+                loss = self.model.loss(pred_heads, pred_tails, tr_h, hr_t, None, None)
         else:
             pred_tails = self.model(h, r, hr_t, direction="tail")  # (h, r) -> hr_t forward
             pred_heads = self.model(t, r, tr_h, direction="head")  # (t, r) -> tr_h backward
-            loss = self.model.criterion(pred_heads, pred_tails)
-
-        loss += self.model.get_reg()
+            loss = self.model.loss(pred_heads, pred_tails)
+        loss += self.model.get_reg(h, r, t)
 
         return loss
 
     def train_step_pointwise(self, h, r, t, target):
         preds = self.model(h, r, t)
-        loss = self.model.criterion(preds, target)
-
-        # for complex & complex-N3 & DistMult & CP & ANALOGY & QuatE & OctonionE
+        loss = self.model.loss(preds, target)
         loss += self.model.get_reg(h, r, t)
         return loss
 
     def train_step_hyperbolic(self, h, r, t, target):
         preds = self.model(h, r, t)
-        loss = self.model.criterion(preds, target)
-        loss += self.model.get_reg()
-        return loss
-
-    def train_step_hyperbolic(self, h, r, t, y):
-        preds = self.model(h, r, t)
-        loss = torch.nn.BCEWithLogitsLoss()(preds, y)
-
+        loss = self.model.loss(preds, target)
+        loss += self.model.get_reg(h, r, t)
         return loss
 
     def train_model(self):
@@ -314,7 +303,6 @@ class Trainer:
                 r = torch.cat((torch.LongTensor(data[1]).to(self.config.device), torch.LongTensor(data[4]).to(self.config.device)), dim=-1)
                 t = torch.cat((torch.LongTensor(data[2]).to(self.config.device), torch.LongTensor(data[5]).to(self.config.device)), dim=-1)
                 y = torch.cat((torch.ones(np.array(data[0]).shape).to(self.config.device), torch.zeros(np.array(data[3]).shape).to(self.config.device)), dim=-1)
-                y = torch.FloatTensor(y).to(self.config.device)
                 loss = self.train_step_hyperbolic(h, r, t, y)
             else:
                 raise NotImplementedError("Unknown training strategy: %s" % self.model.training_strategy)

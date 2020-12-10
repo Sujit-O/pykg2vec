@@ -61,7 +61,7 @@ With pykg2vec command-line interface, you can
     # Train using different KGE methods.
     (pykg2vec) $ pykg2vec-train -mn [TransE|TransD|TransH|TransG|TransM|TransR|Complex|ComplexN3|
                         CP|RotatE|Analogy|DistMult|KG2E|KG2E_EL|NTN|Rescal|SLM|SME|SME_BL|HoLE|
-                        ConvE|ConvKB|Proje_pointwise|MuRP|QuatE|OctonionE|InteractE]
+                        ConvE|ConvKB|Proje_pointwise|MuRP|QuatE|OctonionE|InteractE|HypER]
 
     # For KGE using projection-based loss function, use more processes for batch generation.
     (pykg2vec) $ pykg2vec-train -mn [ConvE|ConvKB|Proje_pointwise] -npg [the number of processes, 4 or 6]
@@ -91,7 +91,7 @@ With pykg2vec command-line interface, you can
     # Perform inference tasks over a pretrained model.
     (pykg2vec) $ pykg2vec-infer -mn TransE -ld [path to the pretrained model]
     ```
-\* NB: On Windows, use `pykg2vec-train.py`, `pykg2vec-tune.py` and `pykg2vec-infer.py` instead.
+\* NB: On Windows, use `pykg2vec-train.exe`, `pykg2vec-tune.exe` and `pykg2vec-infer.exe` instead.
 
 For more usage of pykg2vec APIs, please check the [programming examples](https://pykg2vec.readthedocs.io/en/latest/auto_examples/index.html).
 

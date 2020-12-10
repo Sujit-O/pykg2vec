@@ -73,6 +73,9 @@ class KGEArgParser:
         self.general_hyper_group.add_argument('-rh', dest='reshape_height', default=20, type=int, help='The height of the reshaped matrix for InteractE.')
         self.general_hyper_group.add_argument('-rw', dest='reshape_width', default=10, type=int, help='The width of the reshaped matrix for InteractE.')
         self.general_hyper_group.add_argument('-ks', dest='kernel_size', default=9, type=int, help='The kernel size to use for InteractE.')
+        self.general_hyper_group.add_argument('-ic', dest='in_channels', default=9, type=int, help='The kernel size to use for InteractE.')
+        self.general_hyper_group.add_argument('-evd', dest='ent_vec_dim', default=200, type=int, help='.')
+        self.general_hyper_group.add_argument('-rvd', dest='rel_vec_dim', default=200, type=int, help='.')
 
         # basic configs
         self.general_group = self.parser.add_argument_group('Generic')
@@ -266,6 +269,7 @@ class Importer:
                          "cp": "pointwise.CP",
                          "distmult": "pointwise.DistMult",
                          "hole": "pairwise.HoLE",
+                         "hyper": "projection.HypER",
                          "interacte": "projection.InteractE",
                          "kg2e": "pairwise.KG2E",
                          "murp": "hyperbolic.MuRP",

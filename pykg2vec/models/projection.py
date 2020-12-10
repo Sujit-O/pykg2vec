@@ -67,7 +67,7 @@ class ConvE(ProjectionModel):
             self.b,
         ]
 
-        self.criterion = Criterion.dnn
+        self.loss = Criterion.multi_class_bce
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -200,9 +200,9 @@ class ProjE_pointwise(ProjectionModel):
             self.Dr2,
         ]
 
-        self.criterion = Criterion.sum
+        self.loss = Criterion.multi_class
 
-    def get_reg(self):
+    def get_reg(self, h, r, t):
         return self.lmbda*(torch.sum(torch.abs(self.De1.weight) + torch.abs(self.Dr1.weight)) +
                            torch.sum(torch.abs(self.De2.weight) + torch.abs(self.Dr2.weight)) +
                            torch.sum(torch.abs(self.ent_embeddings.weight)) + torch.sum(torch.abs(self.rel_embeddings.weight)))
@@ -329,7 +329,7 @@ class TuckER(ProjectionModel):
         self.hidden_dropout1 = nn.Dropout(self.hidden_dropout1)
         self.hidden_dropout2 = nn.Dropout(self.hidden_dropout2)
 
-        self.criterion = Criterion.dnn
+        self.loss = Criterion.multi_class_bce
 
     def forward(self, e1, r, direction="head"):
         """Implementation of the layer.
@@ -432,7 +432,7 @@ class InteractE(ProjectionModel):
             self.rel_embeddings,
         ]
 
-        self.criterion = Criterion.dnn
+        self.loss = Criterion.multi_class_bce
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -537,3 +537,126 @@ class InteractE(ProjectionModel):
 
         chequer_perm = torch.LongTensor(np.int32(comb_idx)).to(self.device)
         return chequer_perm
+
+
+class HypER(ProjectionModel):
+    """
+           `HypER: Hypernetwork Knowledge Graph Embeddings`_
+
+           Args:
+               config (object): Model configuration parameters.
+
+           Examples:
+               >>> from pykg2vec.models.projection import HypER
+               >>> from pykg2vec.utils.trainer import Trainer
+               >>> model = HypER()
+               >>> trainer = Trainer(model=model)
+               >>> trainer.build_model()
+               >>> trainer.train_model()
+
+           .. _ibalazevic: https://github.com/ibalazevic/HypER.git
+
+           .. _HypER: Hypernetwork Knowledge Graph Embeddings:
+               https://arxiv.org/abs/1808.07018
+
+        """
+
+    def __init__(self, **kwargs):
+        super(HypER, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "ent_vec_dim", "rel_vec_dim", "input_dropout", "hidden_dropout", "feature_map_dropout"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+        self.device = kwargs["device"]
+        self.filt_h = 1
+        self.filt_w = 9
+        self.in_channels = 1
+        self.out_channels = 32
+
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+
+        self.ent_embeddings = NamedEmbedding("ent_embeddings", num_total_ent, self.ent_vec_dim, padding_idx=0)
+        self.rel_embeddings = NamedEmbedding("rel_embeddings", num_total_rel, self.rel_vec_dim, padding_idx=0)
+        self.inp_drop = nn.Dropout(self.input_dropout)
+        self.hidden_drop = nn.Dropout(self.hidden_dropout)
+        self.feature_map_drop = nn.Dropout2d(self.feature_map_dropout)
+
+        self.bn0 = torch.nn.BatchNorm2d(self.in_channels)
+        self.bn1 = torch.nn.BatchNorm2d(self.out_channels)
+        self.bn2 = torch.nn.BatchNorm1d(self.ent_vec_dim)
+        self.register_parameter("b", nn.Parameter(torch.zeros(num_total_ent)))
+        fc_length = (1 - self.filt_h + 1) * (self.ent_vec_dim - self.filt_w + 1) * self.out_channels
+        self.fc = torch.nn.Linear(fc_length, self.ent_vec_dim)
+        fc1_length = self.in_channels * self.out_channels * self.filt_h * self.filt_w
+        self.fc1 = torch.nn.Linear(self.rel_vec_dim, fc1_length)
+
+        nn.init.xavier_uniform_(self.ent_embeddings.weight.data)
+        nn.init.xavier_uniform_(self.rel_embeddings.weight.data)
+
+        self.parameter_list = [
+            self.ent_embeddings,
+            self.rel_embeddings,
+        ]
+
+        self.loss = Criterion.multi_class_bce
+
+    def embed(self, h, r, t):
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
+        emb_h = self.ent_embeddings(h)
+        emb_r = self.rel_embeddings(r)
+        emb_t = self.ent_embeddings(t)
+
+        return emb_h, emb_r, emb_t
+
+    def embed2(self, e, r):
+        emb_e = self.ent_embeddings(e)
+        emb_r = self.rel_embeddings(r)
+        return emb_e, emb_r
+
+    def forward(self, e, r, direction="tail"):
+        assert direction in ("head", "tail"), "Unknown forward direction"
+        e_emb, r_emb = self.embed2(e, r)
+        e_emb = e_emb.view(-1, 1, 1, self.ent_embeddings.weight.size(1))
+        x = self.bn0(e_emb)
+        x = self.inp_drop(x)
+
+        k = self.fc1(r_emb)
+        k = k.view(-1, self.in_channels, self.out_channels, self.filt_h, self.filt_w)
+        k = k.view(e_emb.size(0) * self.in_channels * self.out_channels, 1, self.filt_h, self.filt_w)
+
+        x = x.permute(1, 0, 2, 3)
+
+        x = F.conv2d(x, k, groups=e_emb.size(0))
+        x = x.view(e_emb.size(0), 1, self.out_channels, 1 - self.filt_h + 1, e_emb.size(3) - self.filt_w + 1)
+        x = x.permute(0, 3, 4, 1, 2)
+        x = torch.sum(x, dim=3)
+        x = x.permute(0, 3, 1, 2).contiguous()
+
+        x = self.bn1(x)
+        x = self.feature_map_drop(x)
+        x = x.view(e_emb.size(0), -1)
+        x = self.fc(x)
+        x = self.hidden_drop(x)
+        x = self.bn2(x)
+        x = F.relu(x)
+        x = torch.mm(x, self.ent_embeddings.weight.transpose(1, 0))
+        x += self.b.expand_as(x)
+        pred = F.sigmoid(x)
+        return pred
+
+    def predict_tail_rank(self, e, r, topk=-1):
+        _, rank = torch.topk(-self.forward(e, r, direction="tail"), k=topk)
+        return rank
+
+    def predict_head_rank(self, e, r, topk=-1):
+        _, rank = torch.topk(-self.forward(e, r, direction="head"), k=topk)
+        return rank

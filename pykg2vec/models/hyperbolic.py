@@ -51,7 +51,7 @@ class MuRP(HyperbolicSpaceModel):
             self.rel_embeddings,
         ]
 
-        self.criterion = Criterion.hyperbolic
+        self.loss = Criterion.bce
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

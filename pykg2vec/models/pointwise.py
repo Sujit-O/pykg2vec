@@ -61,7 +61,7 @@ class ANALOGY(PointwiseModel):
             self.rel_embeddings_img,
         ]
 
-        self.criterion = Criterion.pointwise
+        self.loss = Criterion.pointwise_logistic
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -174,7 +174,7 @@ class Complex(PointwiseModel):
             self.rel_embeddings_img,
         ]
 
-        self.criterion = Criterion.pointwise
+        self.loss = Criterion.pointwise_logistic
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -243,7 +243,7 @@ class ComplexN3(Complex):
     def __init__(self, **kwargs):
         super(ComplexN3, self).__init__(**kwargs)
         self.model_name = 'complexn3'
-        self.criterion = Criterion.pointwise
+        self.loss = Criterion.pointwise_logistic
 
     def get_reg(self, h, r, t, reg_type="N3"):
         h_e_real, h_e_img, r_e_real, r_e_img, t_e_real, t_e_img = self.embed(h, r, t)
@@ -313,7 +313,7 @@ class ConvKB(PointwiseModel):
         conv_out_dim = num_filters*sum([(k-filter_size+1) for filter_size in filter_sizes])
         self.fc1 = nn.Linear(in_features=conv_out_dim, out_features=1, bias=True)
 
-        self.criterion = Criterion.pointwise
+        self.loss = Criterion.pointwise_logistic
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -393,7 +393,7 @@ class CP(PointwiseModel):
             self.obj_embeddings,
         ]
 
-        self.criterion = Criterion.pointwise
+        self.loss = Criterion.pointwise_logistic
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -470,7 +470,7 @@ class DistMult(PointwiseModel):
             self.rel_embeddings,
         ]
 
-        self.criterion = Criterion.pointwise
+        self.loss = Criterion.pointwise_logistic
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -554,7 +554,7 @@ class SimplE(PointwiseModel):
             self.rel_inv_embeddings,
         ]
 
-        self.criterion = Criterion.pointwise
+        self.loss = Criterion.pointwise_logistic
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -615,7 +615,7 @@ class SimplE_ignr(SimplE):
     def __init__(self, **kwargs):
         super(SimplE_ignr, self).__init__(**kwargs)
         self.model_name = 'simple_ignr'
-        self.criterion = Criterion.pointwise
+        self.loss = Criterion.pointwise_logistic
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -727,7 +727,7 @@ class QuatE(PointwiseModel):
             self.rel_w_embedding,
         ]
 
-        self.criterion = Criterion.pointwise
+        self.loss = Criterion.pointwise_logistic
 
     def embed(self, h, r, t):
         s_emb_h = self.ent_s_embedding(h)
@@ -929,7 +929,7 @@ class OctonionE(PointwiseModel):
             self.rel_w_embedding,
         ]
 
-        self.criterion = Criterion.pointwise
+        self.loss = Criterion.pointwise_logistic
 
     def embed(self, h, r, t):
         e_1_h = self.ent_embedding_1(h)

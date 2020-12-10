@@ -26,11 +26,16 @@ class Model:
         raise NotImplementedError
 
     def load_params(self, param_list, kwargs):
+        """Function to load the hyperparameters"""
         for param_name in param_list:
             if param_name not in kwargs:
                 raise Exception("hyperparameter %s not found!" % param_name)
             self.database[param_name] = kwargs[param_name]
         return self.database
+
+    def get_reg(self, h, r, t, **kwargs):
+        """Function to override if regularization is needed"""
+        return 0.0
 
 
 class PairwiseModel(nn.Module, Model):
@@ -46,9 +51,6 @@ class PairwiseModel(nn.Module, Model):
         self.training_strategy = TrainingStrategy.PAIRWISE_BASED
         self.database = {}  # dict to store model-specific hyperparameter
 
-    def get_reg(self):
-        return 0.0
-
 
 class PointwiseModel(nn.Module, Model):
     """ Meta Class for KGE models with semantic matching"""
@@ -62,9 +64,6 @@ class PointwiseModel(nn.Module, Model):
         self.model_name = model_name
         self.training_strategy = TrainingStrategy.POINTWISE_BASED
         self.database = {}  # dict to store model-specific hyperparameter
-
-    def get_reg(self, h, r, t, reg_type='N3'):
-        return 0.0
 
 
 class ProjectionModel(nn.Module, Model):
@@ -80,8 +79,6 @@ class ProjectionModel(nn.Module, Model):
         self.training_strategy = TrainingStrategy.PROJECTION_BASED
         self.database = {}  # dict to store model-specific hyperparameter
 
-    def get_reg(self):
-        return 0.0
 
 class HyperbolicSpaceModel(nn.Module, Model):
     """ Meta Class for KGE models of hyperbolic space"""
@@ -95,6 +92,3 @@ class HyperbolicSpaceModel(nn.Module, Model):
         self.model_name = model_name
         self.training_strategy = TrainingStrategy.HYPERBOLIC_SPACE_BASED
         self.database = {}  # dict to store model-specific hyperparameter
-
-    def get_reg(self):
-        return 0.0
