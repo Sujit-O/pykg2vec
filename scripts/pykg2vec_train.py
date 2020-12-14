@@ -11,7 +11,7 @@ from pykg2vec.utils.trainer import Trainer
 def main():
     args = KGEArgParser().get_args(sys.argv[1:])
 
-    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name)
+    knowledge_graph = KnowledgeGraph(dataset=args.dataset_name, custom_dataset_path=args.dataset_path)
     knowledge_graph.prepare_data()
 
     config_def, model_def = Importer().import_model_config(args.model_name.lower())
