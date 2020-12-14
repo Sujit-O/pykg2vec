@@ -4,8 +4,6 @@ import os
 import warnings
 import torch
 import torch.optim as optim
-import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 
@@ -150,65 +148,35 @@ class Trainer:
         pos_preds = self.model(pos_h, pos_r, pos_t)
         neg_preds = self.model(neg_h, neg_r, neg_t)
 
-        if self.config.sampling == 'adversarial_negative_sampling':
-            # RotatE: Adversarial Negative Sampling and alpha is the temperature.
-            pos_preds = -pos_preds
-            neg_preds = -neg_preds
-            pos_preds = F.logsigmoid(pos_preds)
-            neg_preds = neg_preds.view((-1, self.config.neg_rate))
-            softmax = nn.Softmax(dim=1)(neg_preds*self.config.alpha).detach()
-            neg_preds = torch.sum(softmax * (F.logsigmoid(-neg_preds)), dim=-1)
-            loss = -neg_preds.mean() - pos_preds.mean()
+        if self.model.model_name.lower() == "rotate":
+            loss = self.model.loss(pos_preds, neg_preds, self.config.neg_rate, self.config.alpha)
         else:
-            # others that use margin-based & pairwise loss function. (uniform or bern)
-            loss = pos_preds + self.config.margin - neg_preds
-            loss = torch.max(loss, torch.zeros_like(loss)).sum()
-
-        if hasattr(self.model, 'get_reg'):
-            # now only NTN uses regularizer,
-            # other pairwise based KGE methods use normalization to regularize parameters.
-            loss += self.model.get_reg()
+            loss = self.model.loss(pos_preds, neg_preds, self.config.margin)
+        loss += self.model.get_reg(None, None, None)
 
         return loss
 
     def train_step_projection(self, h, r, t, hr_t, tr_h):
         if self.model.model_name.lower() in ["conve", "tucker", "interacte", "hyper"]:
-            if hasattr(self.config, 'label_smoothing'):
-                hr_t = hr_t * (1.0 - self.config.label_smoothing) + 1.0 / self.config.tot_entity
-                tr_h = tr_h * (1.0 - self.config.label_smoothing) + 1.0 / self.config.tot_entity
-
             pred_tails = self.model(h, r, direction="tail")  # (h, r) -> hr_t forward
             pred_heads = self.model(t, r, direction="head")  # (t, r) -> tr_h backward
 
-            loss_tails = torch.mean(F.binary_cross_entropy(pred_tails, hr_t))
-            loss_heads = torch.mean(F.binary_cross_entropy(pred_heads, tr_h))
-
-            loss = loss_tails + loss_heads
+            if hasattr(self.config, 'label_smoothing'):
+                loss = self.model.loss(pred_heads, pred_tails, tr_h, hr_t, self.config.label_smoothing, self.config.tot_entity)
+            else:
+                loss = self.model.loss(pred_heads, pred_tails, tr_h, hr_t, None, None)
         else:
-            loss_tails = self.model(h, r, hr_t, direction="tail")  # (h, r) -> hr_t forward
-            loss_heads = self.model(t, r, tr_h, direction="head")  # (t, r) -> tr_h backward
-
-            loss = loss_tails + loss_heads
-
-            if hasattr(self.model, 'get_reg'):
-                # now only complex distmult uses regularizer in algorithms,
-                loss += self.model.get_reg()
+            pred_tails = self.model(h, r, hr_t, direction="tail")  # (h, r) -> hr_t forward
+            pred_heads = self.model(t, r, tr_h, direction="head")  # (t, r) -> tr_h backward
+            loss = self.model.loss(pred_heads, pred_tails)
+        loss += self.model.get_reg(h, r, t)
 
         return loss
 
-    def train_step_pointwise(self, h, r, t, y):
+    def train_step_pointwise_hyperbolic(self, h, r, t, target):
         preds = self.model(h, r, t)
-        loss = F.softplus(y*preds).mean()
-
-        if hasattr(self.model, 'get_reg'): # for complex & complex-N3 & DistMult & CP & ANALOGY & QuatE & OctonionE
-            loss += self.model.get_reg(h, r, t)
-
-        return loss
-
-    def train_step_hyperbolic(self, h, r, t, y):
-        preds = self.model(h, r, t)
-        loss = torch.nn.BCEWithLogitsLoss()(preds, y)
-
+        loss = self.model.loss(preds, target)
+        loss += self.model.get_reg(h, r, t)
         return loss
 
     def train_model(self):
@@ -315,7 +283,7 @@ class Trainer:
                 r = torch.LongTensor(data[1]).to(self.config.device)
                 t = torch.LongTensor(data[2]).to(self.config.device)
                 y = torch.LongTensor(data[3]).to(self.config.device)
-                loss = self.train_step_pointwise(h, r, t, y)
+                loss = self.train_step_pointwise_hyperbolic(h, r, t, y)
             elif self.model.training_strategy == TrainingStrategy.PAIRWISE_BASED:
                 pos_h = torch.LongTensor(data[0]).to(self.config.device)
                 pos_r = torch.LongTensor(data[1]).to(self.config.device)
@@ -329,7 +297,7 @@ class Trainer:
                 r = torch.cat((torch.LongTensor(data[1]).to(self.config.device), torch.LongTensor(data[4]).to(self.config.device)), dim=-1)
                 t = torch.cat((torch.LongTensor(data[2]).to(self.config.device), torch.LongTensor(data[5]).to(self.config.device)), dim=-1)
                 y = torch.cat((torch.ones(np.array(data[0]).shape).to(self.config.device), torch.zeros(np.array(data[3]).shape).to(self.config.device)), dim=-1)
-                loss = self.train_step_hyperbolic(h, r, t, y)
+                loss = self.train_step_pointwise_hyperbolic(h, r, t, y)
             else:
                 raise NotImplementedError("Unknown training strategy: %s" % self.model.training_strategy)
 

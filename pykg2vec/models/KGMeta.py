@@ -26,11 +26,16 @@ class Model:
         raise NotImplementedError
 
     def load_params(self, param_list, kwargs):
+        """Function to load the hyperparameters"""
         for param_name in param_list:
             if param_name not in kwargs:
                 raise Exception("hyperparameter %s not found!" % param_name)
             self.database[param_name] = kwargs[param_name]
         return self.database
+
+    def get_reg(self, h, r, t, **kwargs):
+        """Function to override if regularization is needed"""
+        return 0.0
 
 
 class PairwiseModel(nn.Module, Model):
@@ -73,6 +78,7 @@ class ProjectionModel(nn.Module, Model):
         self.model_name = model_name
         self.training_strategy = TrainingStrategy.PROJECTION_BASED
         self.database = {}  # dict to store model-specific hyperparameter
+
 
 class HyperbolicSpaceModel(nn.Module, Model):
     """ Meta Class for KGE models of hyperbolic space"""

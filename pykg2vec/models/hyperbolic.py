@@ -4,6 +4,7 @@ import numpy as np
 
 from pykg2vec.models.KGMeta import HyperbolicSpaceModel
 from pykg2vec.models.Domain import NamedEmbedding
+from pykg2vec.utils.criterion import Criterion
 
 
 class MuRP(HyperbolicSpaceModel):
@@ -49,6 +50,8 @@ class MuRP(HyperbolicSpaceModel):
             self.ent_embeddings,
             self.rel_embeddings,
         ]
+
+        self.loss = Criterion.bce
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

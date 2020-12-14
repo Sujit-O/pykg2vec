@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import numpy as np
 from pykg2vec.models.KGMeta import ProjectionModel
 from pykg2vec.models.Domain import NamedEmbedding
+from pykg2vec.utils.criterion import Criterion
 
 
 class ConvE(ProjectionModel):
@@ -66,6 +67,8 @@ class ConvE(ProjectionModel):
             self.b,
         ]
 
+        self.loss = Criterion.multi_class_bce
+
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
@@ -102,7 +105,7 @@ class ConvE(ProjectionModel):
         if self.training:
             x = self.bn2(x) # batch normalization across the last axis
         x = torch.relu(x)
-        x = torch.matmul(x, self.transpose(self.ent_embeddings.weight)) # [b, k] * [k, tot_ent] => [b, tot_ent]
+        x = torch.matmul(x, self.ent_embeddings.weight.T) # [b, k] * [k, tot_ent] => [b, tot_ent]
         x = torch.add(x, self.b.weight) # add a bias value
         return torch.sigmoid(x) # sigmoid activation
 
@@ -128,11 +131,6 @@ class ConvE(ProjectionModel):
     def predict_head_rank(self, e, r, topk=-1):
         _, rank = torch.topk(-self.forward(e, r, direction="head"), k=topk)
         return rank
-
-    @staticmethod
-    def transpose(tensor):
-        dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
-        return tensor.permute(dims)
 
 
 class ProjE_pointwise(ProjectionModel):
@@ -202,7 +200,9 @@ class ProjE_pointwise(ProjectionModel):
             self.Dr2,
         ]
 
-    def get_reg(self):
+        self.loss = Criterion.multi_class
+
+    def get_reg(self, h, r, t):
         return self.lmbda*(torch.sum(torch.abs(self.De1.weight) + torch.abs(self.Dr1.weight)) +
                            torch.sum(torch.abs(self.De2.weight) + torch.abs(self.Dr2.weight)) +
                            torch.sum(torch.abs(self.ent_embeddings.weight)) + torch.sum(torch.abs(self.rel_embeddings.weight)))
@@ -214,9 +214,9 @@ class ProjE_pointwise(ProjectionModel):
         emb_hr_r = self.rel_embeddings(r)  # [m, k]
 
         if direction == "tail":
-            ere2_sigmoid = self.g(torch.dropout(self.f1(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
+            ere2_sigmoid = ProjE_pointwise.g(torch.dropout(self.f1(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
         else:
-            ere2_sigmoid = self.g(torch.dropout(self.f2(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
+            ere2_sigmoid = ProjE_pointwise.g(torch.dropout(self.f2(emb_hr_e, emb_hr_r), p=self.hidden_dropout, train=True), self.ent_embeddings.weight)
 
         ere2_loss_left = -torch.sum((torch.log(torch.clamp(ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.device), er_e2)))
         ere2_loss_right = -torch.sum((torch.log(torch.clamp(1 - ere2_sigmoid, 1e-10, 1.0)) * torch.max(torch.FloatTensor([0]).to(self.device), torch.neg(er_e2))))
@@ -243,21 +243,11 @@ class ProjE_pointwise(ProjectionModel):
         """
         return torch.tanh(t * self.De2.weight + r * self.Dr2.weight + self.bc2.weight)
 
-    def g(self, f, w):
-        """Defines activation layer.
-
-            Args:
-               f (Tensor): output of the forward layers.
-               w (Tensor): Matrix for multiplication.
-        """
-        # [b, k] [k, tot_ent]
-        return torch.sigmoid(torch.matmul(f, self.transpose(w)))
-
     def predict_tail_rank(self, h, r, topk=-1):
         emb_h = self.ent_embeddings(h)  # [1, k]
         emb_r = self.rel_embeddings(r)  # [1, k]
 
-        hrt_sigmoid = -self.g(self.f1(emb_h, emb_r), self.ent_embeddings.weight)
+        hrt_sigmoid = -ProjE_pointwise.g(self.f1(emb_h, emb_r), self.ent_embeddings.weight)
         _, rank = torch.topk(hrt_sigmoid, k=topk)
 
         return rank
@@ -266,16 +256,21 @@ class ProjE_pointwise(ProjectionModel):
         emb_t = self.ent_embeddings(t)  # [m, k]
         emb_r = self.rel_embeddings(r)  # [m, k]
 
-        hrt_sigmoid = -self.g(self.f2(emb_t, emb_r), self.ent_embeddings.weight)
+        hrt_sigmoid = -ProjE_pointwise.g(self.f2(emb_t, emb_r), self.ent_embeddings.weight)
         _, rank = torch.topk(hrt_sigmoid, k=topk)
 
         return rank
 
     @staticmethod
-    def transpose(tensor):
-        dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
-        return tensor.permute(dims)
+    def g(f, w):
+        """Defines activation layer.
 
+            Args:
+               f (Tensor): output of the forward layers.
+               w (Tensor): Matrix for multiplication.
+        """
+        # [b, k] [k, tot_ent]
+        return torch.sigmoid(torch.matmul(f, w.T))
 
 class TuckER(ProjectionModel):
     """
@@ -334,6 +329,8 @@ class TuckER(ProjectionModel):
         self.hidden_dropout1 = nn.Dropout(self.hidden_dropout1)
         self.hidden_dropout2 = nn.Dropout(self.hidden_dropout2)
 
+        self.loss = Criterion.multi_class_bce
+
     def forward(self, e1, r, direction="head"):
         """Implementation of the layer.
 
@@ -359,7 +356,7 @@ class TuckER(ProjectionModel):
         x = x.view(-1, self.d1)
         x = F.normalize(x, p=2, dim=1)
         x = self.hidden_dropout2(x)
-        x = torch.matmul(x, self.transpose(self.ent_embeddings.weight))
+        x = torch.matmul(x, self.ent_embeddings.weight.T)
         return F.sigmoid(x)
 
     def predict_tail_rank(self, e, r, topk=-1):
@@ -369,11 +366,6 @@ class TuckER(ProjectionModel):
     def predict_head_rank(self, e, r, topk=-1):
         _, rank = torch.topk(-self.forward(e, r, direction="head"), k=topk)
         return rank
-
-    @staticmethod
-    def transpose(tensor):
-        dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
-        return tensor.permute(dims)
 
 
 class InteractE(ProjectionModel):
@@ -439,6 +431,8 @@ class InteractE(ProjectionModel):
             self.ent_embeddings,
             self.rel_embeddings,
         ]
+
+        self.loss = Criterion.multi_class_bce
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -586,7 +580,6 @@ class HypER(ProjectionModel):
         self.inp_drop = nn.Dropout(self.input_dropout)
         self.hidden_drop = nn.Dropout(self.hidden_dropout)
         self.feature_map_drop = nn.Dropout2d(self.feature_map_dropout)
-        self.loss = nn.BCELoss()
 
         self.bn0 = torch.nn.BatchNorm2d(self.in_channels)
         self.bn1 = torch.nn.BatchNorm2d(self.out_channels)
@@ -604,6 +597,8 @@ class HypER(ProjectionModel):
             self.ent_embeddings,
             self.rel_embeddings,
         ]
+
+        self.loss = Criterion.multi_class_bce
 
     def embed(self, h, r, t):
         """Function to get the embedding value.

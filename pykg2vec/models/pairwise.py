@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import numpy as np
 from pykg2vec.models.KGMeta import PairwiseModel
 from pykg2vec.models.Domain import NamedEmbedding
+from pykg2vec.utils.criterion import Criterion
 
 
 class TransE(PairwiseModel):
@@ -57,6 +58,8 @@ class TransE(PairwiseModel):
             self.ent_embeddings,
             self.rel_embeddings,
         ]
+
+        self.loss = Criterion.pairwise_hinge
 
     def forward(self, h, r, t):
         """Function to get the embedding value.
@@ -151,6 +154,8 @@ class TransH(PairwiseModel):
             self.w,
         ]
 
+        self.loss = Criterion.pairwise_hinge
+
     def forward(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)
 
@@ -242,6 +247,8 @@ class TransD(PairwiseModel):
             self.ent_mappings,
             self.rel_mappings,
         ]
+
+        self.loss = Criterion.pairwise_hinge
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -345,6 +352,8 @@ class TransM(PairwiseModel):
             self.rel_embeddings,
         ]
 
+        self.loss = Criterion.pairwise_hinge
+
     def forward(self, h, r, t):
         """Function to get the embedding value.
 
@@ -430,6 +439,8 @@ class TransR(PairwiseModel):
             self.rel_embeddings,
             self.rel_matrix,
         ]
+
+        self.loss = Criterion.pairwise_hinge
 
     def transform(self, e, matrix):
         matrix = matrix.view(-1, self.ent_hidden_size, self.rel_hidden_size)
@@ -541,6 +552,8 @@ class SLM(PairwiseModel):
             self.mr2,
         ]
 
+        self.loss = Criterion.pairwise_hinge
+
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
@@ -639,6 +652,8 @@ class SME(PairwiseModel):
             self.bv,
         ]
 
+        self.loss = Criterion.pairwise_hinge
+
     def embed(self, h, r, t):
         """Function to get the embedding value.
 
@@ -665,9 +680,9 @@ class SME(PairwiseModel):
             Returns:
                 Tensors: Returns the bilinear loss.
         """
-        mu1h = torch.matmul(self.mu1.weight, self.transpose(h)) # [k, b]
-        mu2r = torch.matmul(self.mu2.weight, self.transpose(r)) # [k, b]
-        return self.transpose(mu1h + mu2r + self.bu.weight)  # [b, k]
+        mu1h = torch.matmul(self.mu1.weight, h.T)  # [k, b]
+        mu2r = torch.matmul(self.mu2.weight, r.T)  # [k, b]
+        return (mu1h + mu2r + self.bu.weight).T  # [b, k]
 
     def _gv_linear(self, r, t):
         """Function to calculate linear loss.
@@ -679,9 +694,9 @@ class SME(PairwiseModel):
             Returns:
                 Tensors: Returns the bilinear loss.
         """
-        mv1t = torch.matmul(self.mv1.weight, self.transpose(t)) # [k, b]
-        mv2r = torch.matmul(self.mv2.weight, self.transpose(r)) # [k, b]
-        return self.transpose(mv1t + mv2r + self.bv.weight)  # [b, k]
+        mv1t = torch.matmul(self.mv1.weight, t.T)  # [k, b]
+        mv2r = torch.matmul(self.mv2.weight, r.T)  # [k, b]
+        return (mv1t + mv2r + self.bv.weight).T  # [b, k]
 
     def forward(self, h, r, t):
         """Function to that performs semanting matching.
@@ -700,11 +715,6 @@ class SME(PairwiseModel):
         norm_t = F.normalize(t_e, p=2, dim=-1)
 
         return -torch.sum(self._gu_linear(norm_h, norm_r) * self._gv_linear(norm_r, norm_t), 1)
-
-    @staticmethod
-    def transpose(tensor):
-        dims = tuple(range(len(tensor.shape)-1, -1, -1))    # (rank-1...0)
-        return tensor.permute(dims)
 
 
 class SME_BL(SME):
@@ -729,6 +739,7 @@ class SME_BL(SME):
     def __init__(self, **kwargs):
         super(SME_BL, self).__init__(**kwargs)
         self.model_name = self.__class__.__name__.lower()
+        self.loss = Criterion.pairwise_hinge
 
     def _gu_bilinear(self, h, r):
         """Function to calculate bilinear loss.
@@ -740,9 +751,9 @@ class SME_BL(SME):
             Returns:
                 Tensors: Returns the bilinear loss.
         """
-        mu1h = torch.matmul(self.mu1.weight, self.transpose(h)) # [k, b]
-        mu2r = torch.matmul(self.mu2.weight, self.transpose(r)) # [k, b]
-        return self.transpose(mu1h * mu2r + self.bu.weight)  # [b, k]
+        mu1h = torch.matmul(self.mu1.weight, h.T)  # [k, b]
+        mu2r = torch.matmul(self.mu2.weight, r.T)  # [k, b]
+        return (mu1h * mu2r + self.bu.weight).T  # [b, k]
 
     def _gv_bilinear(self, r, t):
         """Function to calculate bilinear loss.
@@ -754,9 +765,9 @@ class SME_BL(SME):
             Returns:
                 Tensors: Returns the bilinear loss.
         """
-        mv1t = torch.matmul(self.mv1.weight, self.transpose(t)) # [k, b]
-        mv2r = torch.matmul(self.mv2.weight, self.transpose(r)) # [k, b]
-        return self.transpose(mv1t * mv2r + self.bv.weight)  # [b, k]
+        mv1t = torch.matmul(self.mv1.weight, t.T)  # [k, b]
+        mv2r = torch.matmul(self.mv2.weight, r.T)  # [k, b]
+        return (mv1t * mv2r + self.bv.weight).T  # [b, k]
 
     def forward(self, h, r, t):
         """Function to that performs semanting matching.
@@ -820,6 +831,8 @@ class RotatE(PairwiseModel):
             self.ent_embeddings_imag,
             self.rel_embeddings,
         ]
+
+        self.loss = Criterion.pariwise_logistic
 
     def embed(self, h, r, t):
         """Function to get the embedding value.
@@ -890,6 +903,8 @@ class Rescal(PairwiseModel):
             self.ent_embeddings,
             self.rel_matrices,
         ]
+
+        self.loss = Criterion.pairwise_hinge
 
     def embed(self, h, r, t):
         """ Function to get the embedding value.
@@ -987,6 +1002,8 @@ class NTN(PairwiseModel):
             self.mr,
         ]
 
+        self.loss = Criterion.pairwise_hinge
+
     def train_layer(self, h, t):
         """ Defines the forward pass training layers of the algorithm.
 
@@ -1030,7 +1047,7 @@ class NTN(PairwiseModel):
         norm_t = F.normalize(t_e, p=2, dim=-1)
         return -torch.sum(norm_r*self.train_layer(norm_h, norm_t), -1)
 
-    def get_reg(self):
+    def get_reg(self, h, r, t):
         return self.lmbda*torch.sqrt(sum([torch.sum(torch.pow(var.weight, 2)) for var in self.parameter_list]))
 
 
@@ -1094,6 +1111,8 @@ class KG2E(PairwiseModel):
         self.ent_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.ent_embeddings_sigma.weight.shape, self.cmin), min_ent))
         min_rel = torch.min(torch.FloatTensor().new_full(self.rel_embeddings_sigma.weight.shape, self.cmax), torch.add(self.rel_embeddings_sigma.weight, 1.0))
         self.rel_embeddings_sigma.weight = nn.Parameter(torch.max(torch.FloatTensor().new_full(self.rel_embeddings_sigma.weight.shape, self.cmin), min_rel))
+
+        self.loss = Criterion.pairwise_hinge
 
     def forward(self, h, r, t):
         h_mu, h_sigma, r_mu, r_sigma, t_mu, t_sigma = self.embed(h, r, t)
@@ -1198,6 +1217,8 @@ class HoLE(PairwiseModel):
             self.ent_embeddings,
             self.rel_embeddings,
         ]
+
+        self.loss = Criterion.pairwise_hinge
 
     def forward(self, h, r, t):
         h_e, r_e, t_e = self.embed(h, r, t)
