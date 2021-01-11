@@ -34,6 +34,11 @@ class Criterion:
         return loss
 
     @staticmethod
+    def pointwise_bce(preds, target):
+        loss = torch.nn.BCEWithLogitsLoss()(preds, torch.clamp(target, min=0.0, max=1.0))
+        return loss
+
+    @staticmethod
     def multi_class_bce(pred_heads, pred_tails, tr_h, hr_t, label_smoothing, tot_entity):
         if label_smoothing is not None and tot_entity is not None:
             hr_t = hr_t * (1.0 - label_smoothing) + 1.0 / tot_entity
@@ -46,9 +51,4 @@ class Criterion:
     @staticmethod
     def multi_class(pred_heads, pred_tails):
         loss = pred_heads + pred_tails
-        return loss
-
-    @staticmethod
-    def bce(preds, target):
-        loss = torch.nn.BCEWithLogitsLoss()(preds, target)
         return loss
