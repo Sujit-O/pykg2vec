@@ -370,25 +370,23 @@ class TuckER(ProjectionModel):
 
 class InteractE(ProjectionModel):
     """
-           `InteractE: Improving Convolution-based Knowledge Graph Embeddings by Increasing Feature Interactions`_
+       `InteractE\: Improving Convolution-based Knowledge Graph Embeddings by Increasing Feature Interactions`_
 
-           Args:
-               config (object): Model configuration parameters.
+       Args:
+           config (object): Model configuration parameters.
 
-           Examples:
-               >>> from pykg2vec.models.projection import InteractE
-               >>> from pykg2vec.utils.trainer import Trainer
-               >>> model = InteractE()
-               >>> trainer = Trainer(model=model)
-               >>> trainer.build_model()
-               >>> trainer.train_model()
+       Examples:
+           >>> from pykg2vec.models.projection import InteractE
+           >>> from pykg2vec.utils.trainer import Trainer
+           >>> model = InteractE()
+           >>> trainer = Trainer(model=model)
+           >>> trainer.build_model()
+           >>> trainer.train_model()
 
-           .. _malllabiisc: https://github.com/malllabiisc/InteractE.git
+       .. _InteractE\: Improving Convolution-based Knowledge Graph Embeddings by Increasing Feature Interactions:
+            https://arxiv.org/abs/1911.00219
 
-           .. _InteractE: Improving Convolution-based Knowledge Graph Embeddings by Increasing Feature Interactions:
-               https://arxiv.org/abs/1911.00219
-
-        """
+    """
 
     def __init__(self, **kwargs):
         super(InteractE, self).__init__(self.__class__.__name__.lower())
@@ -541,25 +539,15 @@ class InteractE(ProjectionModel):
 
 class HypER(ProjectionModel):
     """
-           `HypER: Hypernetwork Knowledge Graph Embeddings`_
+       `HypER\: Hypernetwork Knowledge Graph Embeddings`_
 
-           Args:
-               config (object): Model configuration parameters.
+       Args:
+           config (object): Model configuration parameters.
 
-           Examples:
-               >>> from pykg2vec.models.projection import HypER
-               >>> from pykg2vec.utils.trainer import Trainer
-               >>> model = HypER()
-               >>> trainer = Trainer(model=model)
-               >>> trainer.build_model()
-               >>> trainer.train_model()
+       .. _HypER\: Hypernetwork Knowledge Graph Embeddings:
+            https://arxiv.org/abs/1808.07018
 
-           .. _ibalazevic: https://github.com/ibalazevic/HypER.git
-
-           .. _HypER: Hypernetwork Knowledge Graph Embeddings:
-               https://arxiv.org/abs/1808.07018
-
-        """
+    """
 
     def __init__(self, **kwargs):
         super(HypER, self).__init__(self.__class__.__name__.lower())

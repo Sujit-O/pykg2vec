@@ -31,17 +31,18 @@ Please go through the examples for more advanced usages:
 - YAML formatting example (The file is also provided in /examples folder named custom_hp.yaml): ::
 
     model_name: "TransE"
-    dataset: "freebase15k"
-    parameters:
-        learning_rate: 0.01
-        l1_flag: True
-        hidden_size: 50
-        batch_size: 128
-        epochs: 1000
-        margin: 1.00
-        optimizer: "sgd"
-        sampling: "uniform"
-        neg_rate: 1
+    datasets:
+      - dataset: "freebase15k"
+        parameters:
+          learning_rate: 0.01
+          l1_flag: True
+          hidden_size: 50
+          batch_size: 128
+          epochs: 1000
+          margin: 1.00
+          optimizer: "sgd"
+          sampling: "bern"
+          neg_rate: 1
     
 - NB: To make sure the loaded hyperparameters will be actually used for training, you need to pass in the same model_name value via -mn and the same dataset value via -ds as already specified in the YAML file from where those hyperparameters are originated.
 
@@ -98,9 +99,26 @@ To create and use your own dataset, these steps are required:
     [name]-train.txt, [name]-valid.txt, [name]-test.txt
 
 3. For those three files, create a folder [path_storing_text_files] to include them.
-4. Once finished, you then can use your own dataset to train a KGE model using command:::
+4. Create a new custom hyperparameter YAML file (detailed in "Use Your Own Hyperparameters"). For example, ::
 
-    $ python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] 
+    model_name: "TransE"
+    datasets:
+      - dataset: "[name]"
+        parameters:
+          learning_rate: 0.01
+          l1_flag: True
+          hidden_size: 50
+          batch_size: 128
+          epochs: 1000
+          margin: 1.00
+          optimizer: "sgd"
+          sampling: "bern"
+          neg_rate: 1
+
+5. Once finished, you then can use your own dataset to train a KGE model or tune its hyperparameters using commands:::
+
+    $ python train.py -mn TransE -ds [name] -dsp [path_storing_text_files] -hpf [path_to_hyperparameter_yaml]
+    $ python tune_model.py -mn TransE -ds [name] -dsp [path_storing_text_files] -hpf [path_to_hyperparameter_yaml]
 
 
 .. _LinkToEx: https://github.com/Sujit-O/pykg2vec/tree/master/examples

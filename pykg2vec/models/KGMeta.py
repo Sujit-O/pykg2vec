@@ -78,17 +78,3 @@ class ProjectionModel(nn.Module, Model):
         self.model_name = model_name
         self.training_strategy = TrainingStrategy.PROJECTION_BASED
         self.database = {}  # dict to store model-specific hyperparameter
-
-
-class HyperbolicSpaceModel(nn.Module, Model):
-    """ Meta Class for KGE models of hyperbolic space"""
-
-    __metaclass__ = ABCMeta
-
-    def __init__(self, model_name):
-        """Initialize and create the model to be trained and inferred"""
-        super(HyperbolicSpaceModel, self).__init__()
-
-        self.model_name = model_name
-        self.training_strategy = TrainingStrategy.HYPERBOLIC_SPACE_BASED
-        self.database = {}  # dict to store model-specific hyperparameter

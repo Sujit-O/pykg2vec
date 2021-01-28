@@ -74,6 +74,18 @@ pykg2vec.models.projection
 .. automodule:: pykg2vec.models.projection
    :members:
 
+pykg2vec.models.Domain
+------------------------
+
+.. automodule:: pykg2vec.models.Domain
+   :members:
+
+pykg2vec.models.KGMeta
+------------------------
+
+.. automodule:: pykg2vec.models.KGMeta
+   :members:
+
 ====
 
 pykg2vec.utils
@@ -85,10 +97,28 @@ pykg2vec.utils.bayesian_optimizer
 .. automodule:: pykg2vec.utils.bayesian_optimizer
    :members:
 
+pykg2vec.utils.criterion
+---------------------------------
+
+.. automodule:: pykg2vec.utils.criterion
+   :members:
+
 pykg2vec.utils.evaluator
 ------------------------
 
 .. automodule:: pykg2vec.utils.evaluator
+   :members:
+
+pykg2vec.utils.logger
+------------------------
+
+.. automodule:: pykg2vec.utils.logger
+   :members:
+
+pykg2vec.utils.riemannian_optimizer
+------------------------
+
+.. automodule:: pykg2vec.utils.riemannian_optimizer
    :members:
 
 pykg2vec.utils.trainer
@@ -118,17 +148,40 @@ pykg2vec.test.test_generator
 .. automodule:: pykg2vec.test.test_generator
    :members:
 
+pykg2vec.test.test_hp_loader
+----------------------------
+
+.. automodule:: pykg2vec.test.test_hp_loader
+   :members:
+
+pykg2vec.test.test_inference
+----------------------------
+
+.. automodule:: pykg2vec.test.test_inference
+   :members:
+
 pykg2vec.test.test_kg
 ---------------------
 
 .. automodule:: pykg2vec.test.test_kg
    :members:
 
+pykg2vec.test.test_logger
+---------------------
+
+.. automodule:: pykg2vec.test.test_logger
+   :members:
 
 pykg2vec.test.test_model
 ------------------------
 
 .. automodule:: pykg2vec.test.test_model
+   :members:
+
+pykg2vec.test.test_trainer
+------------------------
+
+.. automodule:: pykg2vec.test.test_trainer
    :members:
 
 pykg2vec.test.test_tune_model
@@ -140,5 +193,5 @@ pykg2vec.test.test_tune_model
 pykg2vec.test.test_inference
 ----------------------------
 
-.. automodule:: pykg2vec.test.test_inference
+.. automodule:: pykg2vec.test.test_visualization
    :members:

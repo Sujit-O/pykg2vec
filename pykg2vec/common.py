@@ -22,7 +22,6 @@ class TrainingStrategy(Enum):
     PROJECTION_BASED = "projection_based"               # matching models with neural network
     PAIRWISE_BASED = "pairwise_based"                   # translational distance models
     POINTWISE_BASED = "pointwise_based"                 # semantic matching models
-    HYPERBOLIC_SPACE_BASED = "hyperbolic_space_based"   # models of hyperbolic space
 
 
 class KGEArgParser:
@@ -272,7 +271,7 @@ class Importer:
                          "hyper": "projection.HypER",
                          "interacte": "projection.InteractE",
                          "kg2e": "pairwise.KG2E",
-                         "murp": "hyperbolic.MuRP",
+                         "murp": "pointwise.MuRP",
                          "ntn": "pairwise.NTN",
                          "octonione": "pointwise.OctonionE",
                          "proje_pointwise": "projection.ProjE_pointwise",
