@@ -17,7 +17,7 @@ def main():
     trainer = Trainer(model, config)
     trainer.build_model()
 
-    if config.load_from_data is not None:
+    if config.load_from_data is None:
         trainer.train_model()
 
     trainer.infer_tails(1, 10, topk=5)
