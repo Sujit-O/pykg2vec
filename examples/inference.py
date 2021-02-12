@@ -38,7 +38,9 @@ def main():
     # Create the model and load the trained weights.
     trainer = Trainer(model, config)
     trainer.build_model()
-    trainer.train_model()
+
+    if config.load_from_data is not None:
+        trainer.train_model()
 
     trainer.infer_tails(1, 10, topk=5)
     trainer.infer_heads(10, 20, topk=5)

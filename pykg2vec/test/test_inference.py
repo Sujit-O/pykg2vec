@@ -15,7 +15,7 @@ from pykg2vec.data.kgcontroller import KnowledgeGraph
 def testing_function_with_args(name, l1_flag, display=False):
     """Function to test the models with arguments."""
     # getting the customized configurations from the command-line arguments.
-    args = KGEArgParser().get_args([])
+    args = KGEArgParser().get_args(["-mn", name])
 
     # Preparing data and cache the data for later usage
     knowledge_graph = KnowledgeGraph(dataset=args.dataset_name)
@@ -91,12 +91,22 @@ def test_inference_on_pretrained_model():
     args = KGEArgParser().get_args([])
     config_def, model_def = Importer().import_model_config("transe")
     config = config_def(args)
-    config.load_from_data = os.path.join(os.path.dirname(__file__), "resource", "pretrained", "TransE")
-
+    config.epochs = 1
+    config.test_step = 1
+    config.test_num = 1
+    config.disp_result = False
+    config.save_model = False
+    config.debug = True
     model = model_def(**config.__dict__)
+    trainer = Trainer(model, config)
+    trainer.build_model()
+    trainer.train_model()
+
+    config.load_from_data = os.path.join(config.path_tmp, model.model_name)
+    trained_model = model_def(**config.__dict__)
 
     # Create the model and load the trained weights.
-    trainer = Trainer(model, config)
+    trainer = Trainer(trained_model, config)
     trainer.build_model()
 
     #takes head, relation

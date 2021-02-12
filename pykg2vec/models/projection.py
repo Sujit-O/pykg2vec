@@ -18,14 +18,6 @@ class ConvE(ProjectionModel):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.projection import ConvE
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = ConvE()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _Convolutional 2D Knowledge Graph Embeddings:
             https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/download/17366/15884
 
@@ -147,14 +139,6 @@ class ProjE_pointwise(ProjectionModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.projection import ProjE_pointwise
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = ProjE_pointwise()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         .. _ProjE-Embedding Projection for Knowledge Graph Completion:
             https://arxiv.org/abs/1611.05425
@@ -286,14 +270,6 @@ class TuckER(ProjectionModel):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.projection import TuckER
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = TuckER()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _TuckER-Tensor Factorization for Knowledge Graph Completion:
             https://arxiv.org/pdf/1901.09590.pdf
 
@@ -374,14 +350,6 @@ class InteractE(ProjectionModel):
 
        Args:
            config (object): Model configuration parameters.
-
-       Examples:
-           >>> from pykg2vec.models.projection import InteractE
-           >>> from pykg2vec.utils.trainer import Trainer
-           >>> model = InteractE()
-           >>> trainer = Trainer(model=model)
-           >>> trainer.build_model()
-           >>> trainer.train_model()
 
        .. _InteractE\: Improving Convolution-based Knowledge Graph Embeddings by Increasing Feature Interactions:
             https://arxiv.org/abs/1911.00219
