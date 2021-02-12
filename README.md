@@ -89,7 +89,7 @@ With pykg2vec command-line interface, you can
     (pykg2vec) $ pykg2vec-infer -mn TransE
 
     # Perform inference tasks over a pretrained model.
-    (pykg2vec) $ pykg2vec-infer -mn TransE -ld [path to the pretrained model]
+    (pykg2vec) $ pykg2vec-infer -ld [path to the pretrained model]
     ```
 \* NB: On Windows, use `pykg2vec-train.exe`, `pykg2vec-tune.exe` and `pykg2vec-infer.exe` instead.
 

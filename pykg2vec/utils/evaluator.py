@@ -303,6 +303,7 @@ class Evaluator:
             tot_valid_to_test = 10
 
         self._logger.info("Full-Testing on [%d/%d] Triples in the test set." % (tot_valid_to_test, len(self.test_data)))
+
         return self.test(self.test_data, tot_valid_to_test, epoch=epoch)
 
     def test(self, data, num_of_test, epoch=None):

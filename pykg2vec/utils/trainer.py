@@ -14,7 +14,7 @@ from pykg2vec.utils.visualization import Visualization
 from pykg2vec.utils.riemannian_optimizer import RiemannianOptimizer
 from pykg2vec.data.generator import Generator
 from pykg2vec.utils.logger import Logger
-from pykg2vec.common import Monitor, TrainingStrategy
+from pykg2vec.common import Importer, Monitor, TrainingStrategy
 warnings.filterwarnings('ignore')
 
 
@@ -399,7 +399,6 @@ class Trainer:
     def load_model(self, model_path=None):
         """Function to load the model."""
         if model_path is None:
-            model_path = self.config.path_tmp / self.model.model_name / self.TRAINED_MODEL_FILE_NAME
             model_path_file = self.config.path_tmp / self.model.model_name / self.TRAINED_MODEL_FILE_NAME
             model_path_config = self.config.path_tmp / self.model.model_name / self.TRAINED_MODEL_CONFIG_NAME
         else:
@@ -409,21 +408,11 @@ class Trainer:
 
         if model_path_file.exists() and model_path_config.exists():
             config_temp = np.load(model_path_config, allow_pickle=True).item()
-            # for key, value in config_temp.__dict__.items():
-            #     print(key, " ", value)
-            self.config.__dict__['lmbda'] = config_temp.__dict__['lmbda']
-            self.config.__dict__['l1_flag'] = config_temp.__dict__['l1_flag']
-            self.config.__dict__['learning_rate'] = config_temp.__dict__['learning_rate']
-            self.config.__dict__['hidden_size'] = config_temp.__dict__['hidden_size']
-            self.config.__dict__['batch_size'] = config_temp.__dict__['batch_size']
-            self.config.__dict__['epochs'] = config_temp.__dict__['epochs']
-            self.config.__dict__['margin'] = config_temp.__dict__['margin']
-            self.config.__dict__['optimizer'] = config_temp.__dict__['optimizer']
-            self.config.__dict__['sampling'] = config_temp.__dict__['sampling']
-            self.config.__dict__['neg_rate'] = config_temp.__dict__['neg_rate']
+            config_temp.__dict__['load_from_data'] = self.config.__dict__['load_from_data']
+            self.config = config_temp
 
-            self.model.__init__(**self.config.__dict__)
-
+            _, model_def = Importer().import_model_config(self.config.model_name.lower())
+            self.model = model_def(**self.config.__dict__)
             self.model.load_state_dict(torch.load(str(model_path_file)))
             self.model.eval()
         else:
