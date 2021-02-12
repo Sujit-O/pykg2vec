@@ -18,7 +18,7 @@ def main():
     trainer.build_model()
 
     trainer.model.eval()
-    trainer.evaluator.mini_test(0)
+    trainer.evaluator.full_test(0)
 
 
 if __name__ == "__main__":
