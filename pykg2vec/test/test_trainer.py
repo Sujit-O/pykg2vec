@@ -27,6 +27,7 @@ def get_model(result_path_dir, configured_epochs, patience, config_key):
     config.path_result = result_path_dir
     config.debug = True
     config.patience = patience
+    config.hidden_size = 200
 
     return model_def(**config.__dict__), config
 
