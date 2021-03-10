@@ -72,8 +72,9 @@ def testing_function(name):
     config.debug = True
     config.ent_hidden_size = 10
     config.rel_hidden_size = 10
-    config.hidden_size = 200
     config.channels = 2
+    if name == "acre":
+        config.hidden_size = 200
 
     model = model_def(**config.__dict__)
 

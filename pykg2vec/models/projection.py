@@ -712,7 +712,7 @@ class AcrE(ProjectionModel):
         x = torch.mm(x, self.ent_embeddings.weight.transpose(1, 0))
         x += self.bias.expand_as(x)
 
-        return -torch.sigmoid(x)
+        return torch.sigmoid(x)
 
     def predict_tail_rank(self, e, r, topk=-1):
         _, rank = torch.topk(-self.forward(e, r, direction="tail"), k=topk)
