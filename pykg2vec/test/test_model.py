@@ -11,7 +11,6 @@ from pykg2vec.data.kgcontroller import KnowledgeGraph
 
 
 @pytest.mark.parametrize("model_name", [
-    'acre',
     'analogy',
     'complex',
     'complexn3',
@@ -73,8 +72,6 @@ def testing_function(name):
     config.ent_hidden_size = 10
     config.rel_hidden_size = 10
     config.channels = 2
-    if name == "acre":
-        config.hidden_size = 200
 
     model = model_def(**config.__dict__)
 
