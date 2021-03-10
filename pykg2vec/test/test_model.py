@@ -11,6 +11,7 @@ from pykg2vec.data.kgcontroller import KnowledgeGraph
 
 
 @pytest.mark.parametrize("model_name", [
+    'acre',
     'analogy',
     'complex',
     'complexn3',
@@ -39,7 +40,6 @@ from pykg2vec.data.kgcontroller import KnowledgeGraph
     'transr',
     'transd',
     'transm',
-
 ])
 def test_kge_methods(model_name):
     """Function to test a set of KGE algorithsm."""
@@ -72,6 +72,7 @@ def testing_function(name):
     config.debug = True
     config.ent_hidden_size = 10
     config.rel_hidden_size = 10
+    config.hidden_size = 200
     config.channels = 2
 
     model = model_def(**config.__dict__)

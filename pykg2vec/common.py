@@ -73,8 +73,11 @@ class KGEArgParser:
         self.general_hyper_group.add_argument('-rw', dest='reshape_width', default=10, type=int, help='The width of the reshaped matrix for InteractE.')
         self.general_hyper_group.add_argument('-ks', dest='kernel_size', default=9, type=int, help='The kernel size to use for InteractE.')
         self.general_hyper_group.add_argument('-ic', dest='in_channels', default=9, type=int, help='The kernel size to use for InteractE.')
-        self.general_hyper_group.add_argument('-evd', dest='ent_vec_dim', default=200, type=int, help='.')
-        self.general_hyper_group.add_argument('-rvd', dest='rel_vec_dim', default=200, type=int, help='.')
+        self.general_hyper_group.add_argument('-w', dest='way', default="parallel", type=str, choices=["serial", "parallel"], help='The way used by AcrE to organize standard convolution and atrous convolutions.')
+        self.general_hyper_group.add_argument('-fa', dest='first_atrous', default=1, type=int, help='The first layer expansion coefficient to use for Acre')
+        self.general_hyper_group.add_argument('-sa', dest='second_atrous', default=2, type=int, help='The second layer expansion coefficient to use for Acre')
+        self.general_hyper_group.add_argument('-ta', dest='third_atrous', default=2, type=int, help='The third layer expansion coefficient to use for Acre')
+        self.general_hyper_group.add_argument('-ab', dest='acre_bias', default=True, action='store_true', help='Whether to use bias in the Acre model')
 
         # basic configs
         self.general_group = self.parser.add_argument_group('Generic')
@@ -260,7 +263,9 @@ class Importer:
 
     def __init__(self):
         self.model_path = "pykg2vec.models"
-        self.modelMap = {"analogy": "pointwise.ANALOGY",
+        self.modelMap = {
+                         "acre": "projection.AcrE",
+                         "analogy": "pointwise.ANALOGY",
                          "complex": "pointwise.Complex",
                          "complexn3": "pointwise.ComplexN3",
                          "conve": "projection.ConvE",

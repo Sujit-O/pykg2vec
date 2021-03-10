@@ -157,7 +157,7 @@ class Trainer:
         return loss
 
     def train_step_projection(self, h, r, t, hr_t, tr_h):
-        if self.model.model_name.lower() in ["conve", "tucker", "interacte", "hyper"]:
+        if self.model.model_name.lower() in ["conve", "tucker", "interacte", "hyper", "acre"]:
             pred_tails = self.model(h, r, direction="tail")  # (h, r) -> hr_t forward
             pred_heads = self.model(t, r, direction="head")  # (t, r) -> tr_h backward
 
