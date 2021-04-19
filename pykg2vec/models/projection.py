@@ -681,10 +681,33 @@ class AcrE(ProjectionModel):
 
         self.loss = Criterion.multi_class_bce
 
+    def embed(self, h, r, t):
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
+        emb_h = self.ent_embeddings(h)
+        emb_r = self.rel_embeddings(r)
+        emb_t = self.ent_embeddings(t)
+
+        return emb_h, emb_r, emb_t
+
+    def embed2(self, e, r):
+        emb_e = self.ent_embeddings(e)
+        emb_r = self.rel_embeddings(r)
+        return emb_e, emb_r
+
     def forward(self, e, r, direction="tail"):
         assert direction in ("head", "tail"), "Unknown forward direction"
-        sub_emb = self.ent_embeddings(e).view(-1, 1, 10, 20)
-        rel_emb = self.rel_embeddings(r).view(-1, 1, 10, 20)
+        emb_e, emb_r = self.embed2(e, r)
+        sub_emb = emb_e.view(-1, 1, 10, 20)
+        rel_emb = emb_r.view(-1, 1, 10, 20)
         comb_emb = torch.cat([sub_emb, rel_emb], dim=2)
         stack_inp = self.bn0(comb_emb)
         x = self.inp_drop(stack_inp)

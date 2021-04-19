@@ -315,16 +315,14 @@ class Importer:
         Raises:
           ModuleNotFoundError: It raises a module not found error if the configuration or the model cannot be found.
         """
-        config_obj = getattr(importlib.import_module(self.config_path), "Config")
-        model_obj = None
         try:
+            config_obj = getattr(importlib.import_module(self.config_path), "Config")
             if name in self.modelMap:
                 splited_path = self.modelMap[name].split('.')
             else:
                 raise ValueError("%s model has not been implemented. please select from: %s" % (name, ' '.join(map(lambda x: str(x).split(".")[1], self.modelMap.values()))))
             model_obj = getattr(importlib.import_module(self.model_path + ".%s" % splited_path[0]), splited_path[1])
+            return config_obj, model_obj
         except ModuleNotFoundError:
             self._logger.error("%s model has not been implemented. please select from: %s" % (name, ' '.join(map(str.split(".")[1], self.modelMap.values()))))
             raise ValueError("%s model has not been implemented. please select from: %s" % (name, ' '.join(map(str.split(".")[1], self.modelMap.values()))))
-
-        return config_obj, model_obj

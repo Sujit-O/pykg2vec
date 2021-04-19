@@ -4,7 +4,7 @@ Start With pykg2vec
 
 In order to install pykg2vec, you will need setup the following libraries:
 
-* python >=3.6 (recommended)
+* python >=3.7 (recommended)
 * pytorch_>= 1.5
 
 ##############################
@@ -28,7 +28,7 @@ All dependent packages (requirements.txt_) will be installed automatically when 
 
 1. **Setup a Virtual Environment**: we encourage you to use anaconda_ to work with pykg2vec::
 
-    (base) $ conda create --name pykg2vec python=3.6
+    (base) $ conda create --name pykg2vec python=3.7
     (base) $ conda activate pykg2vec
 
 2. **Setup Pytorch**: we encourage to use pytorch_ with GPU support for good training performance. However, a CPU version also runs. The following sample commands are for setting up pytorch::

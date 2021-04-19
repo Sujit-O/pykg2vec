@@ -8,7 +8,7 @@ os:
   - linux
 
 python:
-  - "3.6"
+  - "3.7"
 
 env:
   - COVERAGE_RCFILE=".coveragerc" PYLINTRC=".pylintrc"
