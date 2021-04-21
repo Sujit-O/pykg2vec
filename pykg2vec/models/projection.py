@@ -18,14 +18,6 @@ class ConvE(ProjectionModel):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.projection import ConvE
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = ConvE()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _Convolutional 2D Knowledge Graph Embeddings:
             https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/download/17366/15884
 
@@ -147,14 +139,6 @@ class ProjE_pointwise(ProjectionModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.projection import ProjE_pointwise
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = ProjE_pointwise()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         .. _ProjE-Embedding Projection for Knowledge Graph Completion:
             https://arxiv.org/abs/1611.05425
@@ -286,14 +270,6 @@ class TuckER(ProjectionModel):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.projection import TuckER
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = TuckER()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _TuckER-Tensor Factorization for Knowledge Graph Completion:
             https://arxiv.org/pdf/1901.09590.pdf
 
@@ -375,14 +351,6 @@ class InteractE(ProjectionModel):
        Args:
            config (object): Model configuration parameters.
 
-       Examples:
-           >>> from pykg2vec.models.projection import InteractE
-           >>> from pykg2vec.utils.trainer import Trainer
-           >>> model = InteractE()
-           >>> trainer = Trainer(model=model)
-           >>> trainer.build_model()
-           >>> trainer.train_model()
-
        .. _InteractE\: Improving Convolution-based Knowledge Graph Embeddings by Increasing Feature Interactions:
             https://arxiv.org/abs/1911.00219
 
@@ -390,7 +358,7 @@ class InteractE(ProjectionModel):
 
     def __init__(self, **kwargs):
         super(InteractE, self).__init__(self.__class__.__name__.lower())
-        param_list = ["tot_entity", "tot_relation", "input_dropout", "hidden_dropout", "feature_map_dropout",
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "input_dropout", "hidden_dropout", "feature_map_dropout",
                       "feature_permutation", "num_filters", "kernel_size", "reshape_height", "reshape_width"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
@@ -551,7 +519,7 @@ class HypER(ProjectionModel):
 
     def __init__(self, **kwargs):
         super(HypER, self).__init__(self.__class__.__name__.lower())
-        param_list = ["tot_entity", "tot_relation", "ent_vec_dim", "rel_vec_dim", "input_dropout", "hidden_dropout", "feature_map_dropout"]
+        param_list = ["tot_entity", "tot_relation", "ent_hidden_size", "rel_hidden_size", "input_dropout", "hidden_dropout", "feature_map_dropout"]
         param_dict = self.load_params(param_list, kwargs)
         self.__dict__.update(param_dict)
         self.device = kwargs["device"]
@@ -563,20 +531,20 @@ class HypER(ProjectionModel):
         num_total_ent = self.tot_entity
         num_total_rel = self.tot_relation
 
-        self.ent_embeddings = NamedEmbedding("ent_embeddings", num_total_ent, self.ent_vec_dim, padding_idx=0)
-        self.rel_embeddings = NamedEmbedding("rel_embeddings", num_total_rel, self.rel_vec_dim, padding_idx=0)
+        self.ent_embeddings = NamedEmbedding("ent_embeddings", num_total_ent, self.ent_hidden_size, padding_idx=0)
+        self.rel_embeddings = NamedEmbedding("rel_embeddings", num_total_rel, self.rel_hidden_size, padding_idx=0)
         self.inp_drop = nn.Dropout(self.input_dropout)
         self.hidden_drop = nn.Dropout(self.hidden_dropout)
         self.feature_map_drop = nn.Dropout2d(self.feature_map_dropout)
 
         self.bn0 = torch.nn.BatchNorm2d(self.in_channels)
         self.bn1 = torch.nn.BatchNorm2d(self.out_channels)
-        self.bn2 = torch.nn.BatchNorm1d(self.ent_vec_dim)
+        self.bn2 = torch.nn.BatchNorm1d(self.ent_hidden_size)
         self.register_parameter("b", nn.Parameter(torch.zeros(num_total_ent)))
-        fc_length = (1 - self.filt_h + 1) * (self.ent_vec_dim - self.filt_w + 1) * self.out_channels
-        self.fc = torch.nn.Linear(fc_length, self.ent_vec_dim)
+        fc_length = (1 - self.filt_h + 1) * (self.ent_hidden_size - self.filt_w + 1) * self.out_channels
+        self.fc = torch.nn.Linear(fc_length, self.ent_hidden_size)
         fc1_length = self.in_channels * self.out_channels * self.filt_h * self.filt_w
-        self.fc1 = torch.nn.Linear(self.rel_vec_dim, fc1_length)
+        self.fc1 = torch.nn.Linear(self.rel_hidden_size, fc1_length)
 
         nn.init.xavier_uniform_(self.ent_embeddings.weight.data)
         nn.init.xavier_uniform_(self.rel_embeddings.weight.data)
@@ -640,6 +608,134 @@ class HypER(ProjectionModel):
         x += self.b.expand_as(x)
         pred = F.sigmoid(x)
         return pred
+
+    def predict_tail_rank(self, e, r, topk=-1):
+        _, rank = torch.topk(-self.forward(e, r, direction="tail"), k=topk)
+        return rank
+
+    def predict_head_rank(self, e, r, topk=-1):
+        _, rank = torch.topk(-self.forward(e, r, direction="head"), k=topk)
+        return rank
+
+
+class AcrE(ProjectionModel):
+    """
+       `Knowledge Graph Embedding with Atrous Convolution and Residual Learning`_
+
+       Args:
+           config (object): Model configuration parameters.
+
+       .. _Knowledge Graph Embedding with Atrous Convolution and Residual Learning:
+            https://arxiv.org/abs/2010.12121
+
+    """
+
+    def __init__(self, **kwargs):
+        super(AcrE, self).__init__(self.__class__.__name__.lower())
+        param_list = ["tot_entity", "tot_relation", "hidden_size", "input_dropout", "hidden_dropout", "feature_map_dropout",
+                      "in_channels", "way", "first_atrous", "second_atrous", "third_atrous", "acre_bias"]
+        param_dict = self.load_params(param_list, kwargs)
+        self.__dict__.update(param_dict)
+
+        num_total_ent = self.tot_entity
+        num_total_rel = self.tot_relation
+        k = self.hidden_size
+
+        self.ent_embeddings = NamedEmbedding("ent_embedding", num_total_ent, k, padding_idx=None)
+        self.rel_embeddings = NamedEmbedding("rel_embedding", num_total_rel * 2, k, padding_idx=None)
+
+        self.inp_drop = torch.nn.Dropout(self.input_dropout)
+        self.hidden_drop = torch.nn.Dropout(self.hidden_dropout)
+        self.feature_map_drop = torch.nn.Dropout2d(self.feature_map_dropout)
+        self.bn0 = torch.nn.BatchNorm2d(1)
+        self.bn1 = torch.nn.BatchNorm2d(self.in_channels)
+        self.bn2 = torch.nn.BatchNorm1d(k)
+        self.fc = torch.nn.Linear(self.in_channels * 400, k)
+        self.padding = 0
+
+        if self.way == "serial":
+            self.conv1 = torch.nn.Conv2d(1, self.in_channels, (3, 3), 1, self.first_atrous, bias=self.acre_bias,
+                                         dilation=self.first_atrous)
+            self.conv2 = torch.nn.Conv2d(self.in_channels, self.in_channels, (3, 3), 1, self.second_atrous,
+                                         bias=self.acre_bias, dilation=self.second_atrous)
+            self.conv3 = torch.nn.Conv2d(self.in_channels, self.in_channels, (3, 3), 1, self.third_atrous, bias=self.acre_bias,
+                                         dilation=self.third_atrous)
+        else:
+            self.conv1 = torch.nn.Conv2d(1, self.in_channels, (3, 3), 1, self.first_atrous, bias=self.acre_bias,
+                                         dilation=self.first_atrous)
+            self.conv2 = torch.nn.Conv2d(1, self.in_channels, (3, 3), 1, self.second_atrous, bias=self.acre_bias,
+                                         dilation=self.second_atrous)
+            self.conv3 = torch.nn.Conv2d(1, self.in_channels, (3, 3), 1, self.third_atrous, bias=self.acre_bias,
+                                         dilation=self.third_atrous)
+            self.W_gate_e = torch.nn.Linear(1600, 400)
+
+        self.register_parameter("bias", nn.Parameter(torch.zeros(num_total_ent)))
+
+        nn.init.xavier_uniform_(self.ent_embeddings.weight.data)
+        nn.init.xavier_uniform_(self.rel_embeddings.weight.data)
+
+        self.parameter_list = [
+            self.ent_embeddings,
+            self.rel_embeddings,
+        ]
+
+        self.loss = Criterion.multi_class_bce
+
+    def embed(self, h, r, t):
+        """Function to get the embedding value.
+
+           Args:
+               h (Tensor): Head entities ids.
+               r (Tensor): Relation ids of the triple.
+               t (Tensor): Tail entity ids of the triple.
+
+            Returns:
+                Tensors: Returns head, relation and tail embedding Tensors.
+        """
+        emb_h = self.ent_embeddings(h)
+        emb_r = self.rel_embeddings(r)
+        emb_t = self.ent_embeddings(t)
+
+        return emb_h, emb_r, emb_t
+
+    def embed2(self, e, r):
+        emb_e = self.ent_embeddings(e)
+        emb_r = self.rel_embeddings(r)
+        return emb_e, emb_r
+
+    def forward(self, e, r, direction="tail"):
+        assert direction in ("head", "tail"), "Unknown forward direction"
+        emb_e, emb_r = self.embed2(e, r)
+        sub_emb = emb_e.view(-1, 1, 10, 20)
+        rel_emb = emb_r.view(-1, 1, 10, 20)
+        comb_emb = torch.cat([sub_emb, rel_emb], dim=2)
+        stack_inp = self.bn0(comb_emb)
+        x = self.inp_drop(stack_inp)
+        res = x
+        if self.way == "serial":
+            x = self.conv1(x)
+            x = self.conv2(x)
+            x = self.conv3(x)
+            x = x + res
+        else:
+            conv1 = self.conv1(x).view(-1, self.in_channels, 400)
+            conv2 = self.conv2(x).view(-1, self.in_channels, 400)
+            conv3 = self.conv3(x).view(-1, self.in_channels, 400)
+            res = res.expand(-1, self.in_channels, 20, 20).view(-1, self.in_channels, 400)
+            x = torch.cat((res, conv1, conv2, conv3), dim=2)
+            x = self.W_gate_e(x).view(-1, self.in_channels, 20, 20)
+        x = self.bn1(x)
+        x = F.relu(x)
+        x = self.feature_map_drop(x)
+        x = x.view(x.shape[0], -1)
+        x = self.fc(x)
+        x = self.hidden_drop(x)
+        x = self.bn2(x)
+        x = F.relu(x)
+        x = torch.mm(x, self.ent_embeddings.weight.transpose(1, 0))
+        x += self.bias.expand_as(x)
+
+        return torch.sigmoid(x)
 
     def predict_tail_rank(self, e, r, topk=-1):
         _, rank = torch.topk(-self.forward(e, r, direction="tail"), k=topk)

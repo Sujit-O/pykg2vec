@@ -8,17 +8,15 @@ os:
   - linux
 
 python:
-  - "3.6"
+  - "3.7"
 
 env:
   - COVERAGE_RCFILE=".coveragerc" PYLINTRC=".pylintrc"
 
 install:
-  - pip install -r requirements.txt
-  - pip install .
-  - pip uninstall -y bson && pip install pymongo
-  - pip install 'pytest>=3.6'
-  - pip install -r requirements-dev.txt
+  - pip install -r requirements.txt --no-cache-dir
+  - pip install -e . --no-cache-dir
+  - pip install -r requirements-dev.txt --no-cache-dir
 
 script:
   - pytest --disable-pytest-warnings --cov pykg2vec

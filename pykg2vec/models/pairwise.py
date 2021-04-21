@@ -24,14 +24,6 @@ class TransE(PairwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.pairwise import TransE
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = TransE()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         Portion of the code based on `OpenKE_TransE`_ and `wencolani`_.
 
         .. _OpenKE_TransE: https://github.com/thunlp/OpenKE/blob/master/models/TransE.py
@@ -114,14 +106,6 @@ class TransH(PairwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pairwise import TransH
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = TransH()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         Portion of the code based on `OpenKE_TransH`_ and `thunlp_TransH`_.
 
@@ -207,14 +191,6 @@ class TransD(PairwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pairwise import TransD
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = TransD()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         Portion of the code based on `OpenKE_TransD`_.
 
@@ -312,14 +288,6 @@ class TransM(PairwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.pairwise import TransM
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = TransM()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _Transition-based Knowledge Graph Embedding with Relational Mapping Properties:
             https://pdfs.semanticscholar.org/0ddd/f37145689e5f2899f8081d9971882e6ff1e9.pdf
 
@@ -405,14 +373,6 @@ class TransR(PairwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pairwise import TransR
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = TransR()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         .. _thunlp_transR:
             https://github.com/thunlp/TensorFlow-TransX/blob/master/transR.py
@@ -519,14 +479,6 @@ class SLM(PairwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.pairwise import SLM
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = SLM()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _Reasoning With Neural Tensor Networks for Knowledge Base Completion:
             https://nlp.stanford.edu/pubs/SocherChenManningNg_NIPS2013.pdf
     """
@@ -601,14 +553,6 @@ class SME(PairwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pairwise import SME
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = SME()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         Portion of the code based on glorotxa_.
 
@@ -725,14 +669,6 @@ class SME_BL(SME):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.pairwise import SME
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = SME_BL()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _`SME`: api.html#pykg2vec.models.pairwise.SME
 
     """
@@ -799,14 +735,6 @@ class RotatE(PairwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.pairwise import RotatE
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = RotatE()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _Rotate-Knowledge graph embedding by relation rotation in complex space:
             https://openreview.net/pdf?id=HkgEQnRqYQ
     """
@@ -872,14 +800,6 @@ class Rescal(PairwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pairwise import Rescal
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = Rescal()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         .. _mnick: https://github.com/mnick/rescal.py/blob/master/rescal/rescal.py
 
@@ -957,14 +877,6 @@ class NTN(PairwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pairwise import NTN
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = NTN()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         .. _siddharth-agrawal:
             https://github.com/siddharth-agrawal/Neural-Tensor-Network/blob/master/neuralTensorNetwork.py
@@ -1064,14 +976,6 @@ class KG2E(PairwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pairwise import KG2E
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = KG2E()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         .. _`mana-ysh's repository`:
             https://github.com/mana-ysh/gaussian-embedding/blob/master/src/models/gaussian_model.py
@@ -1188,14 +1092,6 @@ class HoLE(PairwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pairwise import HoLE
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = HoLE()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         .. _Holographic Embeddings of Knowledge Graphs:
             https://arxiv.org/pdf/1510.04935.pdf

@@ -34,6 +34,7 @@ def tunning_function(name):
     assert bays_opt.return_best() is not None
 
 @pytest.mark.parametrize('model_name', [
+    # 'acre',
     'analogy',
     'complex',
     'complexn3',
@@ -42,6 +43,8 @@ def tunning_function(name):
     'cp',
     'distmult',
     'hole',
+    # "hyper",
+    # "interacte",
     'kg2e',
     'ntn',
     # 'proje_pointwise',
@@ -64,6 +67,7 @@ def test_tuning(model_name):
     tunning_function(model_name)
 
 @pytest.mark.parametrize('model_name', [
+    'acre',
     'analogy',
     'complex',
     'complexn3',
@@ -72,6 +76,8 @@ def test_tuning(model_name):
     'cp',
     'distmult',
     'hole',
+    'hyper',
+    'interacte',
     'kg2e',
     'ntn',
     'proje_pointwise',
@@ -101,6 +107,7 @@ def test_hyperparamter_loader(model_name):
     assert hyperparams["optimizer"] is not None
 
 @pytest.mark.parametrize('model_name', [
+    # 'acre',
     'analogy',
     'complex',
     'complexn3',
@@ -109,6 +116,8 @@ def test_hyperparamter_loader(model_name):
     'cp',
     'distmult',
     'hole',
+    # "hyper",
+    # "interacte",
     'kg2e',
     'ntn',
     # 'proje_pointwise',

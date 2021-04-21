@@ -46,6 +46,8 @@ class Config:
     def __init__(self, args):
         for arg_name in vars(args):
             self.__dict__[arg_name] = getattr(args, arg_name)
+        self.dataset_name = args.dataset_name
+        self.model_name = args.model_name
 
         # Training and evaluating related variables
         self.hits = [1, 3, 5, 10]

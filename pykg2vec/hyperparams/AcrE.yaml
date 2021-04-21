@@ -1,0 +1,76 @@
+model_name: "AcrE"
+datasets:
+  - dataset: "freebase15k_237"
+    parameters:
+      learning_rate: 0.001
+      l1_flag: True
+      hidden_size: 200
+      input_dropout: 0.3
+      feature_map_dropout: 0.2
+      hidden_dropout: 0.5
+      in_channels: 32
+      way: "serial"
+      label_smoothing: 0.1
+      batch_size: 128
+      optimizer: "adam"
+      neg_rate: 0
+
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.001
+      l1_flag: True
+      hidden_size: 200
+      input_dropout: 0.2
+      feature_map_dropout: 0.2
+      hidden_dropout: 0.2
+      in_channels: 32
+      way: "serial"
+      label_smoothing: 0.1
+      batch_size: 256
+      optimizer: "adam"
+      neg_rate: 0
+
+  - dataset: "kinship"
+    parameters:
+      learning_rate: 0.001
+      l1_flag: True
+      hidden_size: 200
+      input_dropout: 0.2
+      feature_map_dropout: 0.5
+      hidden_dropout: 0.5
+      in_channels: 32
+      way: "serial"
+      label_smoothing: 0.1
+      batch_size: 128
+      optimizer: "adam"
+      neg_rate: 0
+
+  - dataset: "wordnet18_rr"
+    parameters:
+      learning_rate: 0.00125
+      l1_flag: True
+      hidden_size: 200
+      input_dropout: 0.2
+      feature_map_dropout: 0.1
+      hidden_dropout: 0.5
+      in_channels: 32
+      way: "serial"
+      label_smoothing: 0.1
+      batch_size: 256
+      optimizer: "adam"
+      neg_rate: 0
+
+  - dataset: "wordnet18"
+    parameters:
+      learning_rate: 0.0012
+      l1_flag: True
+      hidden_size: 200
+      input_dropout: 0.2
+      feature_map_dropout: 0.3
+      hidden_dropout: 0.3
+      in_channels: 32
+      way: "serial"
+      label_smoothing: 0.1
+      batch_size: 256
+      optimizer: "adam"
+      neg_rate: 0

@@ -42,6 +42,7 @@ setuptools.setup(
             "pykg2vec-train=scripts.pykg2vec_train:main",
             "pykg2vec-infer=scripts.pykg2vec_infer:main",
             "pykg2vec-tune=scripts.pykg2vec_tune:main",
+            "pykg2vec-test=scripts.pykg2vec_test:main",
         ]
     }
 )

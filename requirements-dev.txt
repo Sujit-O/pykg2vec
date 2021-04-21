@@ -1,3 +1,5 @@
+pytest>=3.6
+pymongo>=3.11.3
 coverage>=5.0.4
 coveralls>=1.11.1
 pytest-cov>=2.8.1

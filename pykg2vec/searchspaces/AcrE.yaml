@@ -1,0 +1,3 @@
+model_name: "AcrE"
+dataset: "freebase15k"
+search_space: null

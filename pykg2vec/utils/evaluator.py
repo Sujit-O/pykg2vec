@@ -274,7 +274,7 @@ class Evaluator:
 
     def test_rel_rank(self, h, t, topk=-1):
         if hasattr(self.model, 'predict_rel_rank'):
-            # TODO: This is not implemented for conve, convkb, proje_pointwise, tucker, interacte and hyper
+            # TODO: This is not implemented for conve, proje_pointwise, tucker, interacte, hyper and acre
             rank = self.model.predict_rel_rank(h.to(self.config.device), t.to(self.config.device), topk=topk)
             return rank.squeeze(0)
 
@@ -303,6 +303,7 @@ class Evaluator:
             tot_valid_to_test = 10
 
         self._logger.info("Full-Testing on [%d/%d] Triples in the test set." % (tot_valid_to_test, len(self.test_data)))
+
         return self.test(self.test_data, tot_valid_to_test, epoch=epoch)
 
     def test(self, data, num_of_test, epoch=None):

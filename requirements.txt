@@ -1,9 +1,8 @@
-torch>=1.5.0
+torch<1.7.0
 sphinx>=2.1.2
-networkx>=2.2
 setuptools>=40.8.0
 matplotlib>=3.0.3
-numpy>=1.16.2
+numpy>=1.16.5
 seaborn>=0.9.0
 scikit_learn>=0.20.3
 hyperopt>=0.2.1

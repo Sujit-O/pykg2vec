@@ -15,7 +15,7 @@ from pykg2vec.data.kgcontroller import KnowledgeGraph
 def testing_function_with_args(name, l1_flag, display=False):
     """Function to test the models with arguments."""
     # getting the customized configurations from the command-line arguments.
-    args = KGEArgParser().get_args([])
+    args = KGEArgParser().get_args(["-exp", "True", "-mn", name])
 
     # Preparing data and cache the data for later usage
     knowledge_graph = KnowledgeGraph(dataset=args.dataset_name)
@@ -29,9 +29,12 @@ def testing_function_with_args(name, l1_flag, display=False):
     config.test_step = 1
     config.test_num = 10
     config.disp_result = display
-    config.save_model = True
-    config.l1_flag = l1_flag
+    config.save_model = False
     config.debug = True
+    config.ent_hidden_size = 10
+    config.rel_hidden_size = 10
+    config.channels = 2
+    config.l1_flag = l1_flag
 
     model = model_def(**config.__dict__)
 
@@ -39,9 +42,6 @@ def testing_function_with_args(name, l1_flag, display=False):
     trainer = Trainer(model, config)
     trainer.build_model()
     trainer.train_model()
-
-    #can perform all the inference here after training the model
-    trainer.enter_interactive_mode()
 
     #takes head, relation
     tails = trainer.infer_tails(1, 10, topk=5)
@@ -52,13 +52,12 @@ def testing_function_with_args(name, l1_flag, display=False):
     assert len(heads) == 5
 
     #takes head, tail
-    if not name in ["conve", "proje_pointwise", "tucker"]:
+    if not name in ["conve", "proje_pointwise", "tucker", "interacte", "hyper", "acre"]:
         relations = trainer.infer_rels(1, 20, topk=5)
         assert len(relations) == 5
 
-    trainer.exit_interactive_mode()
-
 @pytest.mark.parametrize("model_name", [
+    'acre',
     'analogy',
     'complex',
     'complexn3',
@@ -67,6 +66,8 @@ def testing_function_with_args(name, l1_flag, display=False):
     'cp',
     'distmult',
     'hole',
+    "hyper",
+    "interacte",
     'kg2e',
     'ntn',
     'proje_pointwise',
@@ -91,12 +92,22 @@ def test_inference_on_pretrained_model():
     args = KGEArgParser().get_args([])
     config_def, model_def = Importer().import_model_config("transe")
     config = config_def(args)
-    config.load_from_data = os.path.join(os.path.dirname(__file__), "resource", "pretrained", "TransE")
-
+    config.epochs = 1
+    config.test_step = 1
+    config.test_num = 1
+    config.disp_result = False
+    config.save_model = True
+    config.debug = True
     model = model_def(**config.__dict__)
+    trainer = Trainer(model, config)
+    trainer.build_model()
+    trainer.train_model()
+
+    config.load_from_data = os.path.join(config.path_tmp, model.model_name)
+    trained_model = model_def(**config.__dict__)
 
     # Create the model and load the trained weights.
-    trainer = Trainer(model, config)
+    trainer = Trainer(trained_model, config)
     trainer.build_model()
 
     #takes head, relation

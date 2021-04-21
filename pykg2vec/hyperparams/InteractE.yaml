@@ -50,3 +50,20 @@ datasets:
       batch_size: 128
       optimizer: "adam"
       neg_rate: 0
+
+  - dataset: "freebase15k"
+    parameters:
+      learning_rate: 0.0001
+      l1_flag: False
+      feature_permutation: 1
+      num_filters: 96
+      kernel_size: 9
+      reshape_height: 20
+      reshape_width: 10
+      input_dropout: 0.2
+      feature_map_dropout: 0.5
+      hidden_dropout: 0.3
+      label_smoothing: 0.1
+      batch_size: 128
+      optimizer: "adam"
+      neg_rate: 0

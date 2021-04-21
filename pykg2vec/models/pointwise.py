@@ -17,14 +17,6 @@ class ANALOGY(PointwiseModel):
        Args:
            config (object): Model configuration parameters.
 
-       Examples:
-           >>> from pykg2vec.models.pointwise import ANALOGY
-           >>> from pykg2vec.utils.trainer import Trainer
-           >>> model = ANALOGY()
-           >>> trainer = Trainer(model=model)
-           >>> trainer.build_model()
-           >>> trainer.train_model()
-
        .. _Analogical Inference for Multi-relational Embeddings:
            http://proceedings.mlr.press/v70/liu17d/liu17d.pdf
 
@@ -136,14 +128,6 @@ class Complex(PointwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.pointwise import Complex
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = Complex()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _Complex Embeddings for Simple Link Prediction:
             http://proceedings.mlr.press/v48/trouillon16.pdf
 
@@ -227,14 +211,6 @@ class ComplexN3(Complex):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.pointwise import ComplexN3
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = ComplexN3()
-            >>> trainer = Trainer(model=model, debug=False)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _Complex Embeddings for Simple Link Prediction:
             http://proceedings.mlr.press/v48/trouillon16.pdf
 
@@ -271,14 +247,6 @@ class ConvKB(PointwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pointwise import ConvKB
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = ConvKB()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         .. _daiquocnguyen:
             https://github.com/daiquocnguyen/ConvKB
@@ -357,14 +325,6 @@ class CP(PointwiseModel):
            Args:
                config (object): Model configuration parameters.
 
-           Examples:
-               >>> from pykg2vec.models.pointwise import CP
-               >>> from pykg2vec.utils.trainer import Trainer
-               >>> model = CP()
-               >>> trainer = Trainer(model=model)
-               >>> trainer.build_model()
-               >>> trainer.train_model()
-
            .. _Canonical Tensor Decomposition for Knowledge Base Completion:
                http://proceedings.mlr.press/v80/lacroix18a/lacroix18a.pdf
 
@@ -438,14 +398,6 @@ class DistMult(PointwiseModel):
         Args:
             config (object): Model configuration parameters.
 
-        Examples:
-            >>> from pykg2vec.models.pointwise import DistMult
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = DistMult()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
-
         .. _EMBEDDING ENTITIES AND RELATIONS FOR LEARNING AND INFERENCE IN KNOWLEDGE BASES:
             https://arxiv.org/pdf/1412.6575.pdf
 
@@ -512,14 +464,6 @@ class SimplE(PointwiseModel):
 
            Args:
                config (object): Model configuration parameters.
-
-           Examples:
-               >>> from pykg2vec.models.pointwise import SimplE
-               >>> from pykg2vec.utils.trainer import Trainer
-               >>> model = SimplE()
-               >>> trainer = Trainer(model=model)
-               >>> trainer.build_model()
-               >>> trainer.train_model()
 
            .. _SimplE Embedding for Link Prediction in Knowledge Graphs:
                https://papers.nips.cc/paper/7682-simple-embedding-for-link-prediction-in-knowledge-graphs.pdf
@@ -599,14 +543,6 @@ class SimplE_ignr(SimplE):
            Args:
                config (object): Model configuration parameters.
 
-           Examples:
-               >>> from pykg2vec.models.pointwise import SimplE_ignr
-               >>> from pykg2vec.utils.trainer import Trainer
-               >>> model = SimplE_ignr()
-               >>> trainer = Trainer(model=model)
-               >>> trainer.build_model()
-               >>> trainer.train_model()
-
            .. _SimplE Embedding for Link Prediction in Knowledge Graphs:
                https://papers.nips.cc/paper/7682-simple-embedding-for-link-prediction-in-knowledge-graphs.pdf
 
@@ -651,14 +587,6 @@ class QuatE(PointwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pointwise import QuatE
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = QuatE()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         .. _cheungdaven: https://github.com/cheungdaven/QuatE.git
 
@@ -847,14 +775,6 @@ class OctonionE(PointwiseModel):
 
         Args:
             config (object): Model configuration parameters.
-
-        Examples:
-            >>> from pykg2vec.models.pointwise import OctonionE
-            >>> from pykg2vec.utils.trainer import Trainer
-            >>> model = OctonionE()
-            >>> trainer = Trainer(model=model)
-            >>> trainer.build_model()
-            >>> trainer.train_model()
 
         .. _cheungdaven: https://github.com/cheungdaven/QuatE.git
 
@@ -1087,14 +1007,6 @@ class MuRP(PointwiseModel):
 
        Args:
            config (object): Model configuration parameters.
-
-       Examples:
-           >>> from pykg2vec.models.pairwise import MuRP
-           >>> from pykg2vec.utils.trainer import Trainer
-           >>> model = MuRP()
-           >>> trainer = Trainer(model=model)
-           >>> trainer.build_model()
-           >>> trainer.train_model()
 
        .. _Multi-relational Poincaré Graph Embeddings:
            https://arxiv.org/abs/1905.09791

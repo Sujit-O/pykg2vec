@@ -9,8 +9,8 @@ datasets:
       hidden_dropout: 0.3
       label_smoothing: 0.0
       batch_size: 128
-      ent_vec_dim: 200
-      rel_vec_dim: 200
+      ent_hidden_size: 200
+      rel_hidden_size: 200
       optimizer: "adam"
       neg_rate: 0
 
@@ -23,8 +23,8 @@ datasets:
       hidden_dropout: 0.3
       label_smoothing: 0.1
       batch_size: 128
-      ent_vec_dim: 200
-      rel_vec_dim: 200
+      ent_hidden_size: 200
+      rel_hidden_size: 200
       optimizer: "adam"
       neg_rate: 0
 
@@ -37,8 +37,8 @@ datasets:
       hidden_dropout: 0.3
       label_smoothing: 0.1
       batch_size: 128
-      ent_vec_dim: 200
-      rel_vec_dim: 200
+      ent_hidden_size: 200
+      rel_hidden_size: 200
       optimizer: "adam"
       neg_rate: 0
 
@@ -51,7 +51,7 @@ datasets:
       hidden_dropout: 0.3
       label_smoothing: 0.1
       batch_size: 128
-      ent_vec_dim: 200
-      rel_vec_dim: 200
+      ent_hidden_size: 200
+      rel_hidden_size: 200
       optimizer: "adam"
       neg_rate: 0

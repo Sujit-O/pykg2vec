@@ -39,6 +39,9 @@ def main():
     trainer = Trainer(model, config)
     trainer.build_model()
 
+    if config.load_from_data is None:
+        trainer.train_model()
+
     trainer.infer_tails(1, 10, topk=5)
     trainer.infer_heads(10, 20, topk=5)
     trainer.infer_rels(1, 20, topk=5)

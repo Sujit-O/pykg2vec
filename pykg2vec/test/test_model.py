@@ -11,6 +11,7 @@ from pykg2vec.data.kgcontroller import KnowledgeGraph
 
 
 @pytest.mark.parametrize("model_name", [
+    'acre',
     'analogy',
     'complex',
     'complexn3',
@@ -39,7 +40,6 @@ from pykg2vec.data.kgcontroller import KnowledgeGraph
     'transr',
     'transd',
     'transm',
-
 ])
 def test_kge_methods(model_name):
     """Function to test a set of KGE algorithsm."""
@@ -50,12 +50,11 @@ def test_error_on_importing_model():
         Importer().import_model_config("unknown")
     assert "unknown model has not been implemented. please select from" in str(e)
 
-
 @pytest.mark.skip(reason="This is a functional method.")
 def testing_function(name):
     """Function to test the models with arguments."""
     # getting the customized configurations from the command-line arguments.
-    args = KGEArgParser().get_args(['-exp', 'True'])
+    args = KGEArgParser().get_args(['-exp', 'True', '-mn', name])
 
     # Preparing data and cache the data for later usage
     knowledge_graph = KnowledgeGraph(dataset=args.dataset_name)
